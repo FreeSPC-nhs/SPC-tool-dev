@@ -7,7 +7,7 @@
 //  - Baseline: use first N points for centre line & limits (optional)
 //  - Target line (goal value) optional
 //  - Summary panel with basic NHS-style interpretation
-//  - Download main chart as PNG
+//  - Download main chart as PNG	
 //  - Custom chart title and axis labels
 
 let rawRows = [];
@@ -63,6 +63,13 @@ const spcHelperOutput   = document.getElementById("spcHelperOutput");
 
 const mrPanel           = document.getElementById("mrPanel");
 const mrChartCanvas     = document.getElementById("mrChartCanvas");
+
+const targetEnabledCheckbox = document.getElementById("targetEnabledCheckbox");
+
+function isTargetEnabled() {
+  return !targetEnabledCheckbox ? true : !!targetEnabledCheckbox.checked;
+}
+
 
 function guessColumns(rows) {
   if (!rows || rows.length === 0) return { dateCol: null, valueCol: null, hasDateCandidate: false };
@@ -132,6 +139,48 @@ function setAxisType(type) {
     r.checked = (r.value === type);
   });
 }
+
+function applyPresentationEditsLive() {
+  if (!currentChart) return;
+
+  const title = (chartTitleInput?.value || "").trim();
+  const xLabel = (xAxisLabelInput?.value || "").trim();
+  const yLabel = (yAxisLabelInput?.value || "").trim();
+
+  // Title
+  if (currentChart.options?.plugins?.title) {
+    currentChart.options.plugins.title.display = !!title;
+    currentChart.options.plugins.title.text = title;
+  }
+
+  // Axes
+  if (currentChart.options?.scales?.x?.title) {
+    currentChart.options.scales.x.title.display = !!xLabel;
+    currentChart.options.scales.x.title.text = xLabel;
+  }
+  if (currentChart.options?.scales?.y?.title) {
+    currentChart.options.scales.y.title.display = !!yLabel;
+    currentChart.options.scales.y.title.text = yLabel;
+  }
+
+  // Update without animation for a crisp “as you type” feel
+  currentChart.update("none");
+}
+
+function debounce(fn, ms = 80) {
+  let t;
+  return (...args) => {
+    clearTimeout(t);
+    t = setTimeout(() => fn(...args), ms);
+  };
+}
+
+const applyPresentationEditsLiveDebounced = debounce(applyPresentationEditsLive, 60);
+
+if (chartTitleInput) chartTitleInput.addEventListener("input", applyPresentationEditsLiveDebounced);
+if (xAxisLabelInput) xAxisLabelInput.addEventListener("input", applyPresentationEditsLiveDebounced);
+if (yAxisLabelInput) yAxisLabelInput.addEventListener("input", applyPresentationEditsLiveDebounced);
+
 
 
 function loadRows(rows) {
@@ -210,6 +259,40 @@ function clearError() {
   if (errorMessage) errorMessage.textContent = "";
 }
 
+
+function getTargetValue() {
+  // If there is a show/hide checkbox, respect it
+  if (targetEnabledCheckbox && !targetEnabledCheckbox.checked) {
+    return null;
+  }
+
+  if (!targetInput) return null;
+
+  const v = targetInput.value.trim();
+  if (v === "") return null;
+
+  const num = Number(v);
+  return isFinite(num) ? num : null;
+}
+
+
+if (targetEnabledCheckbox) {
+  targetEnabledCheckbox.addEventListener("change", () => {
+    if (currentChart) generateButton.click();
+  });
+}
+
+
+let dataModelDirty = false;
+
+function markDataModelDirty() {
+  dataModelDirty = true;
+  showError("Data changed — click Generate chart to refresh the chart and analysis.");
+}
+function clearDataModelDirty() {
+  dataModelDirty = false;
+  // don’t clearError() automatically; user may still want to see tips
+}
 
 
 //---- Add annotations button
@@ -342,6 +425,9 @@ fileInput.addEventListener("change", async () => {
 
       if (!loadRows(objRows)) return;
     }
+
+	markDataModelDirty();
+
 
     // Reset annotations and splits because the data changed
     annotations = [];
@@ -724,13 +810,6 @@ function populateAnnotationDateOptions(labels) {
   annotationDateInput.value = "";
 }
 
-function getTargetValue() {
-  if (!targetInput) return null;
-  const v = targetInput.value.trim();
-  if (v === "") return null;
-  const num = Number(v);
-  return isFinite(num) ? num : null;
-}
 
 function getAxisType() {
   const radios = document.querySelectorAll("input[name='axisType']");
@@ -949,6 +1028,7 @@ if (dataEditorApplyButton) {
         rows = stripDuplicateHeaderRow(rows, headers);
 
         if (!loadRows(rows)) return;
+
 
       } else {
         // No headers -> ask user
@@ -1324,9 +1404,11 @@ function toNumericValue(raw) {
 
 
 // ---- Generate chart button ----
-
 generateButton.addEventListener("click", () => {
+  // Don’t auto-clear tips; only clear “hard errors”
+  // If you want to preserve tips, comment out clearError().
   clearError();
+
   if (summaryDiv) summaryDiv.innerHTML = "";
   if (capabilityDiv) capabilityDiv.innerHTML = "";
 
@@ -1336,74 +1418,58 @@ generateButton.addEventListener("click", () => {
   const valueCol = valueSelect.value;
   const axisType = getAxisType();
 
-let parsedPoints;
+  // --- 1) Build points depending on axis type ---
+  let parsedPoints;
 
-// --- 1. Build points depending on axis type ---
+  if (axisType === "date") {
+    parsedPoints = rawRows
+      .map((row) => {
+        const d = parseDateValue(row[dateCol]);
+        const y = toNumericValue(row[valueCol]);
+        if (!isFinite(d.getTime()) || !isFinite(y)) return null;
+        return { x: d, y };
+      })
+      .filter(Boolean);
+  } else {
+    // sequence/category axis
+    parsedPoints = rawRows
+      .map((row, idx) => {
+        const y = toNumericValue(row[valueCol]);
+        if (!isFinite(y)) return null;
 
-if (axisType === "date") {
-  // Time series: parse dates, sort later
-  parsedPoints = rawRows
-    .map((row) => {
-      const xRaw  = row[dateCol];
-      const yRaw  = row[valueCol];
+        const rawLabel = row[dateCol];
+        const label =
+          rawLabel !== undefined && rawLabel !== null && String(rawLabel).trim() !== ""
+            ? String(rawLabel)
+            : `Point ${idx + 1}`;
 
-      const d = parseDateValue(xRaw);
-      const y = toNumericValue(yRaw);
+        return { x: idx, y, label };
+      })
+      .filter(Boolean);
+  }
 
-      if (!isFinite(d.getTime()) || !isFinite(y)) return null;
-      return { x: d, y };
-    })
-    .filter(p => p !== null);
-} else {
-  // Sequence / category: keep row order, use label text
-  parsedPoints = rawRows
-    .map((row, idx) => {
-      const labelRaw = row[dateCol];   // may be patient ID / category / blank
-      const yRaw     = row[valueCol];
+  // You can lower this if you want charts from fewer points
+  if (parsedPoints.length < 3) {
+    showError("Not enough valid data points after parsing. Check your column choices.");
+    return;
+  }
 
-      const y = toNumericValue(yRaw);
-      if (!isFinite(y)) return null;
+  // --- 2) Create points + labels for the chart ---
+  let points, labels;
 
-      const labelText = (labelRaw !== undefined && labelRaw !== null && String(labelRaw).trim() !== "")
-        ? String(labelRaw)
-        : `Point ${idx + 1}`;  // fallback if X column is empty
+  if (axisType === "date") {
+    points = [...parsedPoints].sort((a, b) => a.x - b.x);
+    labels = points.map((p) => p.x.toISOString().slice(0, 10));
+  } else {
+    points = parsedPoints;
+    labels = points.map((p) => p.label);
+  }
 
-      return {
-        x: idx,        // numeric index just for ordering
-        y,
-        label: labelText
-      };
-    })
-    .filter(p => p !== null);
-}
-
-if (parsedPoints.length < 5) {
-  errorMessage.textContent = "Not enough valid data points. Please check your column choices and ensure that there are at least 5 data points.";
-  return;
-}
-
-// --- 2. Create points + labels for the chart ---
-
-let points;
-let labels;
-
-if (axisType === "date") {
-  // sort by time
-  points = [...parsedPoints].sort((a, b) => a.x - b.x);
-  labels = points.map(p => p.x.toISOString().slice(0, 10));
-} else {
-  // keep sequence order
-  points = parsedPoints;
-  labels = points.map(p => p.label);
-}
-
-  // baseline interpretation
+  // --- baseline interpretation ---
   let baselineCount = null;
   if (baselineInput && baselineInput.value.trim() !== "") {
-    const parsed = parseInt(baselineInput.value, 10);
-    if (!isNaN(parsed) && parsed >= 2) {
-      baselineCount = Math.min(parsed, points.length);
-    }
+    const n = parseInt(baselineInput.value, 10);
+    if (!isNaN(n) && n >= 2) baselineCount = Math.min(n, points.length);
   }
 
   const chartType = getSelectedChartType();
@@ -1417,18 +1483,20 @@ if (axisType === "date") {
     mrChart.destroy();
     mrChart = null;
   }
-  if (mrPanel) {
-    mrPanel.style.display = "none";
-  }
+  if (mrPanel) mrPanel.style.display = "none";
 
   if (chartType === "run") {
     drawRunChart(points, baselineCount, labels);
-} else {
+  } else {
     drawXmRChart(points, baselineCount, labels);
-}
+  }
 
-renderHelperState();
+  // clear “data changed” banner once we’ve successfully regenerated
+  if (typeof clearDataModelDirty === "function") clearDataModelDirty();
+
+  renderHelperState();
 });
+
 
 // ---- Chart drawing ----
 
@@ -1553,6 +1621,9 @@ function drawRunChart(points, baselineCount, labels) {
       }
     }
   });
+
+	clearDataModelDirty();
+
 
   updateRunSummary(points, median, runFlags, baselineCountUsed);
 }
