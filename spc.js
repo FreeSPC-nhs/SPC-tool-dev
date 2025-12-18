@@ -105,16 +105,22 @@ function guessColumns(rows) {
   const bestDate = scored.slice().sort((a, b) => b.d - a.d)[0];
   const bestNum  = scored.slice().sort((a, b) => b.n - a.n)[0];
 
-  const dateCol = bestDate && bestDate.d >= 0.6 ? bestDate.col : null;
+  const dateCol = bestDate && bestDate.d >= 0.4 ? bestDate.col : null;
 
   // Pick numeric value column, but avoid using the date column for values if possible
-  let valueCol = bestNum && bestNum.n >= 0.6 ? bestNum.col : null;
+  let valueCol = bestNum && bestNum.n >= 0.4 ? bestNum.col : null;
   if (dateCol && valueCol === dateCol) {
     const nextBestNum = scored
       .filter(s => s.col !== dateCol)
       .sort((a, b) => b.n - a.n)[0];
     valueCol = nextBestNum && nextBestNum.n >= 0.6 ? nextBestNum.col : valueCol;
   }
+
+// If we didn't meet threshold but there is still a "best" date-like column, use it if it's clearly best
+if (!dateCol && bestDate && bestDate.d > 0) {
+  dateCol = bestDate.col;
+}
+
 
   return { dateCol, valueCol };
 }
@@ -174,7 +180,6 @@ function loadRows(rows) {
 
 
   columnSelectors.style.display = "block";
-  errorMessage.textContent = "";
   return true;
 }
 
@@ -693,6 +698,58 @@ if (dataEditorCancelButton) {
 }
 
 
+function rowDataLikenessScore(rowArr) {
+  // Score = fraction of cells that look like a date OR a number
+  if (!Array.isArray(rowArr) || rowArr.length === 0) return 0;
+
+  let total = 0;
+  let looksLikeData = 0;
+
+  for (const cell of rowArr) {
+    const s = String(cell ?? "").trim();
+    if (!s) continue;
+    total++;
+
+    // numeric?
+    const num = toNumericValue(s);
+    const isNum = isFinite(num);
+
+    // date?
+    const d = parseDateValue(s);
+    const isDate = isFinite(d.getTime());
+
+    if (isNum || isDate) looksLikeData++;
+  }
+
+  return total === 0 ? 0 : looksLikeData / total;
+}
+
+function stripDuplicateHeaderRow(rows, headers) {
+  // If first "data row" repeats the headers (common after accidental double header),
+  // remove it.
+  if (!rows || rows.length === 0) return rows;
+  const first = rows[0];
+  if (!first) return rows;
+
+  const keys = headers || Object.keys(first);
+  if (!keys || keys.length === 0) return rows;
+
+  let matches = 0;
+  let checked = 0;
+  for (const k of keys) {
+    const v = first[k];
+    if (v === null || v === undefined) continue;
+    checked++;
+    if (String(v).trim().toLowerCase() === String(k).trim().toLowerCase()) matches++;
+  }
+
+  // If most columns match their own header text, treat it as a duplicate header row
+  if (checked > 0 && matches / checked >= 0.7) {
+    return rows.slice(1);
+  }
+  return rows;
+}
+
 if (dataEditorApplyButton) {
   dataEditorApplyButton.addEventListener("click", () => {
     if (!dataEditorTextarea) return;
@@ -704,7 +761,7 @@ if (dataEditorApplyButton) {
     }
 
     try {
-      // First pass: parse WITHOUT headers so we can detect if the first row looks like headers
+      // Preview without headers
       const preview = Papa.parse(text, {
         header: false,
         dynamicTyping: false,
@@ -719,21 +776,27 @@ if (dataEditorApplyButton) {
 
       const rows2D = preview.data;
       if (!rows2D || rows2D.length < 2) {
-        showError("Please paste at least 2 rows (a header row + at least 1 data row).");
+        showError("Please paste at least 2 rows.");
         return;
       }
 
-      const firstRow = rows2D[0].map(x => String(x ?? "").trim());
-      const secondRow = rows2D[1];
+      const r0 = rows2D[0];
+      const r1 = rows2D[1];
 
-      // Heuristic: if first row contains mostly non-numeric strings and second row contains numeric -> treat as headers
-      const firstRowLooksLikeHeader =
-        firstRow.some(cell => cell && !isFinite(Number(cell))) &&
-        secondRow.some(cell => isFinite(toNumericValue(cell)));
+      const score0 = rowDataLikenessScore(r0);
+      const score1 = rowDataLikenessScore(r1);
 
-      // If headers exist, parse normally
-      if (firstRowLooksLikeHeader) {
-        const results = Papa.parse(text, { header: true, dynamicTyping: true, skipEmptyLines: true });
+      // Header if row0 looks much LESS like data than row1
+      // (e.g., "Date,Value" vs "2024-01-01,12")
+      const looksLikeHeader = (score1 - score0) >= 0.35;
+
+      if (looksLikeHeader) {
+        // Parse with header row
+        const results = Papa.parse(text, {
+          header: true,
+          dynamicTyping: true,
+          skipEmptyLines: true
+        });
 
         if (results.errors && results.errors.length > 0) {
           console.error(results.errors);
@@ -741,26 +804,28 @@ if (dataEditorApplyButton) {
           return;
         }
 
-        const rows = results.data;
+        let rows = results.data || [];
+        // Strip accidental duplicate header row if present
+        const headers = results.meta && results.meta.fields ? results.meta.fields : null;
+        rows = stripDuplicateHeaderRow(rows, headers);
+
         if (!loadRows(rows)) return;
 
       } else {
-        // No headers: ask user what to do
+        // No headers -> ask user
         const ok = confirm(
           "It looks like your pasted data does not include column headings.\n\n" +
-          "Click OK to treat the first row as DATA (I will create column names like Column1, Column2).\n" +
+          "Click OK to treat the first row as DATA (I will create Column1, Column2...).\n" +
           "Click Cancel if the first row IS a header row (then please add headings and try again)."
         );
 
         if (!ok) {
-          showError("Please add a header row (e.g. Date,Value) then click Apply again.");
+          showError("Please include a header row (e.g. Date,Value) then click Apply again.");
           return;
         }
 
-        // Parse without header, then convert to objects with Column1/Column2...
-        const noHead = Papa.parse(text, { header: false, dynamicTyping: true, skipEmptyLines: true });
-        const data2D = noHead.data;
-
+        // Convert 2D array into objects Column1/Column2...
+        const data2D = rows2D;
         const colCount = Math.max(...data2D.map(r => r.length));
         const headers = Array.from({ length: colCount }, (_, i) => `Column${i + 1}`);
 
@@ -789,6 +854,7 @@ if (dataEditorApplyButton) {
     }
   });
 }
+
 
 
 // ---- Summary helpers ----
