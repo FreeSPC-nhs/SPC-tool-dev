@@ -134,6 +134,37 @@ function guessColumns(rows) {
   return { dateCol, valueCol, hasDateCandidate };
 }
 
+function hideMrPanelNow() {
+  if (mrChart) {
+    mrChart.destroy();
+    mrChart = null;
+  }
+  if (mrPanel) {
+    mrPanel.style.display = "none";
+  }
+}
+
+if (showMRCheckbox) {
+  showMRCheckbox.addEventListener("change", () => {
+    const chartType = getSelectedChartType ? getSelectedChartType() : "run";
+
+    // If you're not on XmR, MR chart isn't relevant anyway
+    if (chartType !== "xmr") {
+      hideMrPanelNow();
+      return;
+    }
+
+    // If you already have a chart, just regenerate to show/hide MR
+    if (currentChart) {
+      generateButton.click();
+    } else {
+      hideMrPanelNow();
+    }
+  });
+}
+
+
+
 function setAxisType(type) {
   document.querySelectorAll("input[name='axisType']").forEach(r => {
     r.checked = (r.value === type);
@@ -174,6 +205,43 @@ function applyPresentationEditsLive() {
   // Update without animation for a crisp “as you type” feel
   currentChart.update("none");
 }
+
+function hasValidTargetInput() {
+  if (!targetInput) return false;
+  const v = targetInput.value.trim();
+  if (v === "") return false;
+  const num = Number(v);
+  return isFinite(num);
+}
+
+function updateTargetToggleVisibility() {
+  if (!targetToggleBtn) return;
+
+  if (hasValidTargetInput()) {
+    targetToggleBtn.style.display = "inline-flex";
+  } else {
+    // No target defined: hide button and force target OFF
+    targetToggleBtn.style.display = "none";
+    targetEnabled = false;              // assumes you use the button toggle model
+    if (typeof updateTargetToggleBtn === "function") updateTargetToggleBtn();
+  }
+}
+
+// When user types target value: show/hide button and (optionally) redraw
+if (targetInput) {
+  targetInput.addEventListener("input", () => {
+    updateTargetToggleVisibility();
+
+    // If user clears the target, redraw to remove the line immediately
+    if (!hasValidTargetInput() && currentChart) {
+      generateButton.click();
+    }
+  });
+}
+
+// Call once on load
+updateTargetToggleVisibility();
+	
 
 function debounce(fn, ms = 80) {
   let t;
@@ -2612,6 +2680,9 @@ function toggleSpcHelper() {
   }
 }
 
+
+
+
 const spcHelperCloseBtn = document.getElementById("spcHelperCloseBtn");
 
 if (spcHelperCloseBtn) {
@@ -2672,6 +2743,14 @@ function enforceChartTypeSuitabilityAndRegen() {
 
 document.querySelectorAll("input[name='chartType']").forEach(r => {
   r.addEventListener("change", enforceChartTypeSuitabilityAndRegen);
+});
+
+document.querySelectorAll("input[name='axisType']").forEach((r) => {
+  r.addEventListener("change", () => {
+    if (rawRows && rawRows.length) {
+      generateButton.click();
+    }
+  });
 });
 
 
