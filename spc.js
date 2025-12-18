@@ -64,6 +64,62 @@ const spcHelperOutput   = document.getElementById("spcHelperOutput");
 const mrPanel           = document.getElementById("mrPanel");
 const mrChartCanvas     = document.getElementById("mrChartCanvas");
 
+function guessColumns(rows) {
+  if (!rows || rows.length === 0) return { dateCol: null, valueCol: null };
+
+  const sample = rows.slice(0, Math.min(rows.length, 50));
+  const cols = Object.keys(sample[0] || {});
+  if (cols.length === 0) return { dateCol: null, valueCol: null };
+
+  function dateScore(col) {
+    let valid = 0, total = 0;
+    for (const r of sample) {
+      const raw = r[col];
+      if (raw === null || raw === undefined || String(raw).trim() === "") continue;
+      total++;
+      const d = parseDateValue(raw);
+      if (isFinite(d.getTime())) valid++;
+    }
+    return total === 0 ? 0 : valid / total;
+  }
+
+  function numericScore(col) {
+    let valid = 0, total = 0;
+    for (const r of sample) {
+      const raw = r[col];
+      if (raw === null || raw === undefined || String(raw).trim() === "") continue;
+      total++;
+      const y = toNumericValue(raw);
+      if (isFinite(y)) valid++;
+    }
+    return total === 0 ? 0 : valid / total;
+  }
+
+  const scored = cols.map(c => ({
+    col: c,
+    d: dateScore(c),
+    n: numericScore(c)
+  }));
+
+  // Pick the "most date-like" column if it is reasonably date-ish
+  const bestDate = scored.slice().sort((a, b) => b.d - a.d)[0];
+  const bestNum  = scored.slice().sort((a, b) => b.n - a.n)[0];
+
+  const dateCol = bestDate && bestDate.d >= 0.6 ? bestDate.col : null;
+
+  // Pick numeric value column, but avoid using the date column for values if possible
+  let valueCol = bestNum && bestNum.n >= 0.6 ? bestNum.col : null;
+  if (dateCol && valueCol === dateCol) {
+    const nextBestNum = scored
+      .filter(s => s.col !== dateCol)
+      .sort((a, b) => b.n - a.n)[0];
+    valueCol = nextBestNum && nextBestNum.n >= 0.6 ? nextBestNum.col : valueCol;
+  }
+
+  return { dateCol, valueCol };
+}
+
+
 function loadRows(rows) {
   if (!rows || rows.length === 0) {
     errorMessage.textContent = "No rows found in the data.";
@@ -93,6 +149,29 @@ function loadRows(rows) {
     opt2.textContent = col;
     valueSelect.appendChild(opt2);
   });
+
+ // --- NEW: auto-guess defaults ---
+  const guessed = guessColumns(rows);
+
+  if (guessed.dateCol) {
+    dateSelect.value = guessed.dateCol;
+  } else {
+    dateSelect.selectedIndex = 0;
+  }
+
+  if (guessed.valueCol) {
+    valueSelect.value = guessed.valueCol;
+  } else {
+    valueSelect.selectedIndex = Math.min(1, valueSelect.options.length - 1);
+  }
+
+  // If we couldn't confidently detect a numeric column, give a hint
+  if (!guessed.valueCol) {
+    showError("Tip: I couldn’t confidently detect a numeric value column. Please check the Value dropdown before generating a chart.");
+  } else {
+    clearError();
+  }
+
 
   columnSelectors.style.display = "block";
   errorMessage.textContent = "";
