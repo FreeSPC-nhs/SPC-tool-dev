@@ -2758,6 +2758,49 @@ function enforceChartTypeSuitabilityAndRegen() {
   generateButton.click();
 }
 
+// ---- Auto-regenerate when chart type or axis type changes ----
+function wireAutoRedrawControls() {
+  // Chart type radios (run / xmr)
+  document.querySelectorAll("input[name='chartType']").forEach(radio => {
+    radio.addEventListener("change", () => {
+      // show/hide MR toggle row + MR panel
+      if (typeof updateMrToggleVisibility === "function") {
+        updateMrToggleVisibility();
+      }
+
+      // only regenerate if data exists
+      if (rawRows && rawRows.length) {
+        // Enforce minimum points for XmR + regen
+        if (typeof enforceChartTypeSuitabilityAndRegen === "function") {
+          enforceChartTypeSuitabilityAndRegen();
+        } else {
+          generateButton.click();
+        }
+      }
+    });
+  });
+
+  // Axis type radios (date / sequence)
+  document.querySelectorAll("input[name='axisType']").forEach(radio => {
+    radio.addEventListener("change", () => {
+      if (rawRows && rawRows.length) {
+        generateButton.click();
+      }
+    });
+  });
+
+  // Run once on load so MR toggle visibility matches initial selection
+  if (typeof updateMrToggleVisibility === "function") {
+    updateMrToggleVisibility();
+  }
+}
+
+// Call after the DOM is available (safe even if script is at bottom, but robust)
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", wireAutoRedrawControls);
+} else {
+  wireAutoRedrawControls();
+}
 
 
 if (downloadPdfBtn) {
