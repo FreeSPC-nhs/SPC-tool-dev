@@ -64,12 +64,6 @@ const spcHelperOutput   = document.getElementById("spcHelperOutput");
 const mrPanel           = document.getElementById("mrPanel");
 const mrChartCanvas     = document.getElementById("mrChartCanvas");
 
-const targetEnabledCheckbox = document.getElementById("targetEnabledCheckbox");
-
-function isTargetEnabled() {
-  return !targetEnabledCheckbox ? true : !!targetEnabledCheckbox.checked;
-}
-
 
 function guessColumns(rows) {
   if (!rows || rows.length === 0) return { dateCol: null, valueCol: null, hasDateCandidate: false };
@@ -163,13 +157,6 @@ if (showMRCheckbox) {
   });
 }
 
-
-
-function setAxisType(type) {
-  document.querySelectorAll("input[name='axisType']").forEach(r => {
-    r.checked = (r.value === type);
-  });
-}
 
 const targetToggleBtn = document.getElementById("targetToggleBtn");
 let targetEnabled = true;
@@ -348,12 +335,6 @@ function getTargetValue() {
 }
 
 
-
-if (targetEnabledCheckbox) {
-  targetEnabledCheckbox.addEventListener("change", () => {
-    if (currentChart) generateButton.click();
-  });
-}
 
 if (targetToggleBtn) {
   updateTargetToggleBtn();
@@ -2723,35 +2704,40 @@ function countValidNumericPoints() {
 }
 
 function enforceChartTypeSuitabilityAndRegen() {
-  const chartType = getSelectedChartType();
-  const n = countValidNumericPoints();
+  if (!rawRows || !rawRows.length) return;
 
-  // Run chart can work with small n; XmR needs enough points to be meaningful.
+  const chartType = getSelectedChartType();
+  const valueCol = valueSelect?.value;
+
+  let validPoints = 0;
+  if (valueCol) {
+    for (const row of rawRows) {
+      const y = toNumericValue(row[valueCol]);
+      if (isFinite(y)) validPoints++;
+    }
+  }
+
   const minXmr = 12;
 
-  if (chartType === "xmr" && n < minXmr) {
-    showError(`XmR needs at least ${minXmr} valid points. You currently have ${n}. Switch to a run chart or add more data.`);
-    // Optional: automatically revert to run
-    const runRadio = document.querySelector("input[name='chartType'][value='run']");
+  if (chartType === "xmr" && validPoints < minXmr) {
+    showError(
+      `XmR charts need at least ${minXmr} valid numeric points. ` +
+      `You currently have ${validPoints}. Switching back to a run chart.`
+    );
+
+    // revert to run chart
+    const runRadio = document.querySelector(
+      "input[name='chartType'][value='run']"
+    );
     if (runRadio) runRadio.checked = true;
+
     return;
   }
 
-  // If data exists, regenerate immediately
-  if (rawRows && rawRows.length) generateButton.click();
+  // Suitable → regenerate immediately
+  generateButton.click();
 }
 
-document.querySelectorAll("input[name='chartType']").forEach(r => {
-  r.addEventListener("change", enforceChartTypeSuitabilityAndRegen);
-});
-
-document.querySelectorAll("input[name='axisType']").forEach((r) => {
-  r.addEventListener("change", () => {
-    if (rawRows && rawRows.length) {
-      generateButton.click();
-    }
-  });
-});
 
 
 if (downloadPdfBtn) {
