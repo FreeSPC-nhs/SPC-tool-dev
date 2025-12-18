@@ -2528,6 +2528,26 @@ function renderHelperState() {
   }
 }
 
+const mrToggleRow = document.getElementById("mrToggleRow");
+
+function updateMrToggleVisibility() {
+  const chartType = getSelectedChartType();
+
+  if (mrToggleRow) {
+    mrToggleRow.style.display = (chartType === "xmr") ? "flex" : "none";
+  }
+
+  // If we're not in XmR mode, ensure MR panel is hidden (and chart destroyed)
+  if (chartType !== "xmr") {
+    hideMrPanelNow();
+  } else {
+    // On first load into XmR, default ON if checkbox exists
+    if (showMRCheckbox && showMRCheckbox.checked !== true) {
+      // don’t force it on if user explicitly turned it off later;
+      // this line only matters for initial state where it should be checked in HTML anyway
+    }
+  }
+}
 
 
 
