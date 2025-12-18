@@ -166,7 +166,9 @@ function loadRows(rows) {
     dateSelect.value = guessed.dateCol;
   } else {
     dateSelect.selectedIndex = 0;
-    setAxisType("index"); // <-- ensure run chart uses sequence
+    showError(
+    "Tip: No date column detected. I’ll treat the data as a simple sequence (run chart by order)."
+  );
   }
 
   if (guessed.valueCol) {
