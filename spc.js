@@ -59,6 +59,11 @@ const spcHelperChipsGeneral = document.getElementById("spcHelperChipsGeneral");
 const spcHelperChipsChart   = document.getElementById("spcHelperChipsChart");
 const spcHelperOutput   = document.getElementById("spcHelperOutput");
 
+const shiftRulePointsInput = document.getElementById("shiftRulePoints");
+const trendRulePointsInput = document.getElementById("trendRulePoints");
+const flagSpecialCauseOnChartCheckbox = document.getElementById("flagSpecialCauseOnChart");
+const lclClampRow = document.getElementById("lclClampRow");
+const clampLclAtZeroCheckbox = document.getElementById("clampLclAtZero");
 
 
 const mrPanel           = document.getElementById("mrPanel");
@@ -354,6 +359,24 @@ if (baselineInput) {
   baselineInput.addEventListener("change", debouncedRegen);
 }
 
+if (shiftRulePointsInput) {
+  shiftRulePointsInput.addEventListener("input", debouncedRegen);
+  shiftRulePointsInput.addEventListener("change", debouncedRegen);
+}
+if (trendRulePointsInput) {
+  trendRulePointsInput.addEventListener("input", debouncedRegen);
+  trendRulePointsInput.addEventListener("change", debouncedRegen);
+}
+if (flagSpecialCauseOnChartCheckbox) {
+  flagSpecialCauseOnChartCheckbox.addEventListener("change", () => {
+    if (rawRows && rawRows.length) generateButton.click();
+  });
+}
+if (clampLclAtZeroCheckbox) {
+  clampLclAtZeroCheckbox.addEventListener("change", () => {
+    if (rawRows && rawRows.length) generateButton.click();
+  });
+}
 
 
 let dataModelDirty = false;
@@ -634,6 +657,100 @@ function escapeHtml(str) {
     .replace(/>/g, "&gt;");
 }
 
+function getRuleSettings() {
+  const shift = shiftRulePointsInput ? parseInt(shiftRulePointsInput.value, 10) : NaN;
+  const trend = trendRulePointsInput ? parseInt(trendRulePointsInput.value, 10) : NaN;
+
+  return {
+    shiftLength: Number.isFinite(shift) && shift >= 3 ? shift : 8,
+    trendLength: Number.isFinite(trend) && trend >= 3 ? trend : 6
+  };
+}
+
+function shouldFlagSpecialCauseOnChart() {
+  return flagSpecialCauseOnChartCheckbox ? !!flagSpecialCauseOnChartCheckbox.checked : true;
+}
+
+function shouldClampLclAtZero() {
+  // only allow if UI row is visible
+  if (!lclClampRow || lclClampRow.style.display === "none") return false;
+  return clampLclAtZeroCheckbox ? !!clampLclAtZeroCheckbox.checked : false;
+}
+
+function setLclClampVisibility(shouldShow) {
+  if (!lclClampRow) return;
+  lclClampRow.style.display = shouldShow ? "block" : "none";
+
+  // if the option disappears, clear it to avoid “sticky” state
+  if (!shouldShow && clampLclAtZeroCheckbox) clampLclAtZeroCheckbox.checked = false;
+}
+
+function findLongRunRanges(values, centre, runLength) {
+  const ranges = [];
+  let start = 0;
+
+  while (start < values.length) {
+    const v = values[start];
+    const side = v > centre ? "above" : v < centre ? "below" : "on";
+    if (side === "on") { start++; continue; }
+
+    let end = start + 1;
+    while (end < values.length) {
+      const v2 = values[end];
+      const side2 = v2 > centre ? "above" : v2 < centre ? "below" : "on";
+      if (side2 !== side) break;
+      end++;
+    }
+
+    const len = end - start;
+    if (len >= runLength) ranges.push({ start, end: end - 1, side, len });
+
+    start = end;
+  }
+  return ranges;
+}
+
+function flagFromRanges(n, ranges) {
+  const flags = new Array(n).fill(false);
+  ranges.forEach(r => {
+    for (let i = r.start; i <= r.end; i++) flags[i] = true;
+  });
+  return flags;
+}
+
+function findTrendRanges(values, length) {
+  const ranges = [];
+  if (values.length < length) return ranges;
+
+  let incStart = 0, incLen = 1;
+  let decStart = 0, decLen = 1;
+
+  for (let i = 1; i < values.length; i++) {
+    if (values[i] > values[i - 1]) {
+      incLen++; decLen = 1; decStart = i;
+    } else if (values[i] < values[i - 1]) {
+      decLen++; incLen = 1; incStart = i;
+    } else {
+      incLen = 1; decLen = 1; incStart = i; decStart = i;
+    }
+
+    if (incLen >= length) {
+      const start = i - incLen + 1;
+      ranges.push({ start, end: i, direction: "increasing", len: incLen });
+      incLen = 1; // avoid overlapping spam; simple approach
+      incStart = i;
+    }
+    if (decLen >= length) {
+      const start = i - decLen + 1;
+      ranges.push({ start, end: i, direction: "decreasing", len: decLen });
+      decLen = 1;
+      decStart = i;
+    }
+  }
+
+  return ranges;
+}
+
 
 function parseTabularTextWithHeaderDetection(text) {
   const preview = Papa.parse(text, {
@@ -789,7 +906,7 @@ function populateSplitOptions(labels) {
 /**
  * Compute XmR statistics and MR values.
  */
-function computeXmR(points, baselineCount) {
+function computeXmR(points, baselineCount, clampLclAtZero = false) {
   const pts = [...points].sort((a, b) => a.x - b.x);
 
   let baselineCountUsed;
@@ -801,25 +918,23 @@ function computeXmR(points, baselineCount) {
 
   const baseline = pts.slice(0, baselineCountUsed);
 
-  const mean =
-    baseline.reduce((sum, p) => sum + p.y, 0) / baseline.length;
+  const mean = baseline.reduce((sum, p) => sum + p.y, 0) / baseline.length;
 
-  // moving ranges for baseline (for sigma estimate)
   const baselineMRs = [];
   for (let i = 1; i < baseline.length; i++) {
     baselineMRs.push(Math.abs(baseline[i].y - baseline[i - 1].y));
   }
-  const avgMR =
-    baselineMRs.length > 0
-      ? baselineMRs.reduce((sum, v) => sum + v, 0) / baselineMRs.length
-      : 0;
 
-  const sigma = avgMR === 0 ? 0 : avgMR / 1.128; // d2 for n=2
+  const avgMR = baselineMRs.length
+    ? baselineMRs.reduce((sum, v) => sum + v, 0) / baselineMRs.length
+    : 0;
+
+  const sigma = avgMR === 0 ? 0 : avgMR / 1.128;
 
   const ucl = mean + 3 * sigma;
-  const lcl = mean - 3 * sigma;
+  const rawLcl = mean - 3 * sigma;
+  const lcl = (clampLclAtZero && rawLcl < 0) ? 0 : rawLcl;
 
- // MR values for full series (for MR chart)
   const mrValues = [];
   for (let i = 1; i < pts.length; i++) {
     mrValues.push(Math.abs(pts[i].y - pts[i - 1].y));
@@ -835,12 +950,14 @@ function computeXmR(points, baselineCount) {
     mean,
     ucl,
     lcl,
+    rawLcl,
     sigma,
     avgMR,
     baselineCountUsed,
     mrValues
   };
 }
+	
 
 // Get title / axis labels with fallbacks
 function getChartLabels(defaultTitle, defaultX, defaultY) {
@@ -1151,44 +1268,53 @@ if (dataEditorApplyButton) {
 
 // ---- Summary helpers ----
 
-function updateRunSummary(points, median, runFlags, baselineCountUsed) {
+function updateRunSummary(points, median, ruleHits, baselineCountUsed) {
   if (!summaryDiv) return;
 
-  const n = points.length;
-  const nRunPoints = runFlags.filter(Boolean).length;
-  const hasRunViolation = nRunPoints > 0;
+  const { shiftLength, trendLength } = getRuleSettings();
+  const runRanges = ruleHits?.runRanges || [];
+  const trendRanges = ruleHits?.trendRanges || [];
 
-  const values = points.map(p => p.y);
-  const hasTrend = detectTrend(values, 6);
+  const n = points.length;
 
   let html = `<h3>Summary (Run chart)</h3>`;
   html += `<ul>`;
   html += `<li>Number of points: <strong>${n}</strong></li>`;
-  if (baselineCountUsed && baselineCountUsed < n) {
-    html += `<li>Baseline: first <strong>${baselineCountUsed}</strong> points used to calculate median.</li>`;
-  } else {
-    html += `<li>Baseline: all points used to calculate median.</li>`;
-  }
+  html += baselineCountUsed && baselineCountUsed < n
+    ? `<li>Baseline: first <strong>${baselineCountUsed}</strong> points used to calculate median.</li>`
+    : `<li>Baseline: all points used to calculate median.</li>`;
   html += `<li>Median: <strong>${median.toFixed(3)}</strong></li>`;
+  html += `</ul>`;
 
-  const signals = [];
-  if (hasRunViolation) {
-    signals.push("a run of 8 or more points on one side of the median");
-  }
-  if (hasTrend) {
-    signals.push("a trend of 6 or more points all increasing or all decreasing");
-  }
+  html += `<h4>Rules identified</h4>`;
+  html += `<ul>`;
 
-  if (signals.length === 0) {
-    html += `<li><strong>Special cause:</strong> No rule breaches detected (based on long runs or trends). Variation appears consistent with common-cause only, but always interpret in clinical context.</li>`;
+  // Rule 1: Shift / long run
+  if (runRanges.length) {
+    const parts = runRanges.map(r => `points ${r.start + 1}–${r.end + 1} (${r.side}, length ${r.len})`);
+    html += `<li><strong>Rule 1 — Shift:</strong> YES (≥${shiftLength} on one side). ${parts.join("; ")}.</li>`;
   } else {
-    html += `<li><strong>Special cause:</strong> Signals suggesting special-cause variation based on: ${signals.join("; ")}.</li>`;
+    html += `<li><strong>Rule 1 — Shift:</strong> No (≥${shiftLength} on one side).</li>`;
+  }
+
+  // Rule 2: Trend
+  if (trendRanges.length) {
+    const parts = trendRanges.map(r => `points ${r.start + 1}–${r.end + 1} (${r.direction}, length ${r.len})`);
+    html += `<li><strong>Rule 2 — Trend:</strong> YES (≥${trendLength} consecutive moves). ${parts.join("; ")}.</li>`;
+  } else {
+    html += `<li><strong>Rule 2 — Trend:</strong> No (≥${trendLength} consecutive moves).</li>`;
   }
 
   html += `</ul>`;
 
+  const anySignals = runRanges.length || trendRanges.length;
+  html += anySignals
+    ? `<p><strong>Interpretation:</strong> Special-cause signals are present (see rules above). Consider what changed at those times.</p>`
+    : `<p><strong>Interpretation:</strong> No rule breaches detected from shift/trend rules. Variation looks consistent with common-cause only (interpret in context).</p>`;
+
   summaryDiv.innerHTML = html;
 }
+
 
 // ---- Summary helpers ----
 
@@ -1576,6 +1702,7 @@ generateButton.addEventListener("click", () => {
 function drawRunChart(points, baselineCount, labels) {
   const n = points.length;
 
+  // Baseline count used for median
   let baselineCountUsed;
   if (baselineCount && baselineCount >= 2) {
     baselineCountUsed = Math.min(baselineCount, n);
@@ -1584,19 +1711,44 @@ function drawRunChart(points, baselineCount, labels) {
   }
 
   const baselineValues = points.slice(0, baselineCountUsed).map(p => p.y);
-
-  
   const values = points.map(p => p.y);
   const median = computeMedian(baselineValues);
-  
+
   // Keep annotation date dropdown in sync with the current chart dates
   populateAnnotationDateOptions(labels);
 
-  // Detect runs of >= 8 points on same side of median
-  const runFlags = detectLongRuns(values, median, 8);
+  // Rule settings (defaults to 8 + 6 if inputs are missing/invalid)
+  const { shiftLength, trendLength } = (typeof getRuleSettings === "function")
+    ? getRuleSettings()
+    : { shiftLength: 8, trendLength: 6 };
 
-  // Colours: orange for run violations, dark blue otherwise
-  const pointColours = values.map((_, i) => (runFlags[i] ? "#ff8c00" : "#003f87"));
+  // Detect rule hits (ranges)
+  const runRanges = (typeof findLongRunRanges === "function")
+    ? findLongRunRanges(values, median, shiftLength)
+    : [];
+
+  const trendRanges = (typeof findTrendRanges === "function")
+    ? findTrendRanges(values, trendLength)
+    : [];
+
+  // Convert ranges -> per-point flags
+  const runFlags = (typeof flagFromRanges === "function")
+    ? flagFromRanges(values.length, runRanges)
+    : new Array(values.length).fill(false);
+
+  const trendFlags = (typeof flagFromRanges === "function")
+    ? flagFromRanges(values.length, trendRanges)
+    : new Array(values.length).fill(false);
+
+  // Point colours (optional special-cause highlighting)
+  const flagOnChart = (typeof shouldFlagSpecialCauseOnChart === "function")
+    ? shouldFlagSpecialCauseOnChart()
+    : true;
+
+  const pointColours = values.map((_, i) => {
+    if (!flagOnChart) return "#003f87";
+    return (runFlags[i] || trendFlags[i]) ? "#ff8c00" : "#003f87";
+  });
 
   const { title, xLabel, yLabel } = getChartLabels(
     "Run Chart",
@@ -1608,22 +1760,20 @@ function drawRunChart(points, baselineCount, labels) {
 
   const datasets = [
     {
-      // DATA LINE
       label: "Value",
       data: values,
       pointRadius: 4,
       pointBackgroundColor: pointColours,
-      borderColor: "#003f87", // dark blue
+      borderColor: "#003f87",
       borderWidth: 2,
       fill: false
     },
     {
-      // MEDIAN
       label: "Median",
       data: values.map(() => median),
       borderDash: [6, 4],
       borderWidth: 2,
-      borderColor: "#e41a1c", // red-ish
+      borderColor: "#e41a1c",
       pointRadius: 0,
       pointHoverRadius: 0,
       fill: false
@@ -1636,7 +1786,7 @@ function drawRunChart(points, baselineCount, labels) {
       data: values.map(() => target),
       borderDash: [4, 2],
       borderWidth: 2,
-      borderColor: "#fdae61", // orange-ish
+      borderColor: "#fdae61",
       pointRadius: 0,
       pointHoverRadius: 0,
       fill: false
@@ -1651,15 +1801,12 @@ function drawRunChart(points, baselineCount, labels) {
     },
     options: {
       responsive: true,
- 	maintainAspectRatio: false,
+      maintainAspectRatio: false,
       plugins: {
         title: {
           display: true,
           text: title,
-          font: {
-            size: 16,
-            weight: "bold"
-          }
+          font: { size: 16, weight: "bold" }
         },
         legend: {
           display: true,
@@ -1667,8 +1814,8 @@ function drawRunChart(points, baselineCount, labels) {
           align: "center"
         },
         annotation: {
-         annotations: buildAnnotationConfig(labels)
-       }
+          annotations: buildAnnotationConfig(labels)
+        }
       },
       elements: {
         point: {
@@ -1679,26 +1826,20 @@ function drawRunChart(points, baselineCount, labels) {
       scales: {
         x: {
           grid: { display: false },
-          title: {
-            display: !!xLabel,
-            text: xLabel
-          }
+          title: { display: !!xLabel, text: xLabel }
         },
         y: {
           grid: { display: false },
-          title: {
-            display: !!yLabel,
-            text: yLabel
-          }
+          title: { display: !!yLabel, text: yLabel }
         }
       }
     }
   });
 
-	clearDataModelDirty();
+  clearDataModelDirty();
 
-
-  updateRunSummary(points, median, runFlags, baselineCountUsed);
+  // Pass structured rule hits so the summary can label them clearly
+  updateRunSummary(points, median, { runRanges, trendRanges }, baselineCountUsed);
 }
 
 function drawXmRChart(points, baselineCount, labels) {
@@ -1706,9 +1847,25 @@ function drawXmRChart(points, baselineCount, labels) {
 
   const n = points.length;
   if (n < 12) {
-    errorMessage.textContent = "XmR chart needs at least 12 points.";
+    if (errorMessage) errorMessage.textContent = "XmR chart needs at least 12 points.";
     return;
   }
+
+  // ---- Read “rules & interpretation” settings (with safe fallbacks) ----
+  const { shiftLength, trendLength } =
+    (typeof getRuleSettings === "function")
+      ? getRuleSettings()
+      : { shiftLength: 8, trendLength: 6 };
+
+  const flagOnChart =
+    (typeof shouldFlagSpecialCauseOnChart === "function")
+      ? shouldFlagSpecialCauseOnChart()
+      : true;
+
+  const clampLcl =
+    (typeof shouldClampLclAtZero === "function")
+      ? shouldClampLclAtZero()
+      : false;
 
   // ----- Segment definition from splits -----
   let effectiveSplits = Array.isArray(splits) ? splits.slice() : [];
@@ -1725,24 +1882,29 @@ function drawXmRChart(points, baselineCount, labels) {
   segmentEnds.push(n - 1);
 
   // Compute a "global" XmR as a fallback (no splits)
-  const globalResult = computeXmR(points, baselineCount);
+  // (computeXmR should accept clampLcl as third arg; if not, it’ll just ignore it)
+  const globalResult = computeXmR(points, baselineCount, clampLcl);
 
   // ----- Global arrays for plotting -----
   const values = points.map(p => p.y);
 
-  const meanLine      = new Array(n).fill(NaN);
-  const uclLine       = new Array(n).fill(NaN);
-  const lclLine       = new Array(n).fill(NaN);
-  const oneSigmaUp    = new Array(n).fill(NaN);
-  const oneSigmaDown  = new Array(n).fill(NaN);
-  const twoSigmaUp    = new Array(n).fill(NaN);
-  const twoSigmaDown  = new Array(n).fill(NaN);
-  const pointColours  = new Array(n).fill("#003f87");
+  const meanLine     = new Array(n).fill(NaN);
+  const uclLine      = new Array(n).fill(NaN);
+  const lclLine      = new Array(n).fill(NaN);
+  const oneSigmaUp   = new Array(n).fill(NaN);
+  const oneSigmaDown = new Array(n).fill(NaN);
+  const twoSigmaUp   = new Array(n).fill(NaN);
+  const twoSigmaDown = new Array(n).fill(NaN);
+
+  const pointColours = new Array(n).fill("#003f87");
 
   let anySigma = false;
 
-  // We'll collect per-period results for the new summary
+  // We'll collect per-period results for the summary
   const segmentSummaries = [];
+
+  // Track whether any raw LCL would be below 0 (so we can show the option conditionally)
+  let anyRawLclBelowZero = false;
 
   // ----- Per-segment XmR -----
   for (let s = 0; s < segmentStarts.length; s++) {
@@ -1751,18 +1913,23 @@ function drawXmRChart(points, baselineCount, labels) {
 
     const segPoints = points.slice(start, end + 1);
 
-    // Only the first segment uses the user-specified baseline;
-    // later segments use all their points as baseline.
+    // Only the first segment uses the user baseline; later segments use all points as baseline.
     const segBaseline = s === 0 ? baselineCount : null;
 
-    const segResult = computeXmR(segPoints, segBaseline);
+    const segResult = computeXmR(segPoints, segBaseline, clampLcl);
     const segPts    = segResult.points;
-    const mean      = segResult.mean;
-    const ucl       = segResult.ucl;
-    const lcl       = segResult.lcl;
-    const sigma     = segResult.sigma;
 
-    // Store summary info for this period
+    const mean  = segResult.mean;
+    const ucl   = segResult.ucl;
+    const lcl   = segResult.lcl;
+    const sigma = segResult.sigma;
+
+    // If computeXmR returns rawLcl, use it to decide whether to show the clamp option
+    if (typeof segResult.rawLcl === "number" && segResult.rawLcl < 0) {
+      anyRawLclBelowZero = true;
+    }
+
+    // Store for multi-period summary
     segmentSummaries.push({
       startIndex: start,
       endIndex: end,
@@ -1771,12 +1938,38 @@ function drawXmRChart(points, baselineCount, labels) {
       result: segResult
     });
 
+    // Extra rule detection for colouring (shift/trend relative to MEAN within this segment)
+    const segValues = segPts.map(p => p.y);
+
+    const runRanges = (typeof findLongRunRanges === "function")
+      ? findLongRunRanges(segValues, mean, shiftLength)
+      : [];
+
+    const trendRanges = (typeof findTrendRanges === "function")
+      ? findTrendRanges(segValues, trendLength)
+      : [];
+
+    const runFlags = (typeof flagFromRanges === "function")
+      ? flagFromRanges(segValues.length, runRanges)
+      : new Array(segValues.length).fill(false);
+
+    const trendFlags = (typeof flagFromRanges === "function")
+      ? flagFromRanges(segValues.length, trendRanges)
+      : new Array(segValues.length).fill(false);
+
     for (let i = 0; i < segPts.length; i++) {
       const globalIdx = start + i;
 
-      // Flag special-cause points within this segment
-      if (segPts[i].beyondLimits) {
-        pointColours[globalIdx] = "#d73027";
+      // Colouring:
+      // - beyond limits = red
+      // - shift/trend = orange
+      // - otherwise blue
+      if (flagOnChart) {
+        if (segPts[i].beyondLimits) {
+          pointColours[globalIdx] = "#d73027";
+        } else if (runFlags[i] || trendFlags[i]) {
+          pointColours[globalIdx] = "#ff8c00";
+        }
       }
 
       // Centre line & limits
@@ -1784,7 +1977,7 @@ function drawXmRChart(points, baselineCount, labels) {
       uclLine[globalIdx]  = ucl;
       lclLine[globalIdx]  = lcl;
 
-      // Sigma lines (if we have a valid sigma)
+      // Sigma lines (only if sigma is valid)
       if (sigma && sigma > 0) {
         anySigma = true;
         oneSigmaUp[globalIdx]   = mean + sigma;
@@ -1793,6 +1986,15 @@ function drawXmRChart(points, baselineCount, labels) {
         twoSigmaDown[globalIdx] = mean - 2 * sigma;
       }
     }
+  }
+
+  // ---- Show/hide the “Fix LCL at 0” option only when relevant ----
+  if (typeof setLclClampVisibility === "function") {
+    setLclClampVisibility(anyRawLclBelowZero);
+  } else {
+    // Fallback if you haven't added the helper yet
+    const row = document.getElementById("lclClampRow");
+    if (row) row.style.display = anyRawLclBelowZero ? "block" : "none";
   }
 
   // ----- Build datasets -----
@@ -1838,6 +2040,7 @@ function drawXmRChart(points, baselineCount, labels) {
     }
   );
 
+  // Optional sigma reference lines
   if (anySigma) {
     const sigmaStyle = {
       borderColor: "rgba(0,0,0,0.12)",
@@ -1845,6 +2048,7 @@ function drawXmRChart(points, baselineCount, labels) {
       borderDash: [2, 2],
       pointRadius: 0
     };
+
     datasets.push(
       { label: "+1σ", data: oneSigmaUp,   ...sigmaStyle },
       { label: "-1σ", data: oneSigmaDown, ...sigmaStyle },
@@ -1853,13 +2057,13 @@ function drawXmRChart(points, baselineCount, labels) {
     );
   }
 
-  // ----- Target line (optional) -----
+  // Target line (optional)
   const target = getTargetValue();
   if (target !== null) {
     datasets.push({
       label: "Target",
       data: values.map(() => target),
-      borderColor: "#fdae61",   // NHS-style orange
+      borderColor: "#fdae61",
       borderWidth: 2,
       borderDash: [4, 2],
       pointRadius: 0,
@@ -1872,18 +2076,13 @@ function drawXmRChart(points, baselineCount, labels) {
   populateSplitOptions(labels);
 
   // ----- Create chart -----
-  if (currentChart) {
-    currentChart.destroy();
-  }
+  if (currentChart) currentChart.destroy();
 
-  const title = chartTitleInput.value.trim() || "I-MR Chart";
+  const { title, xLabel, yLabel } = getChartLabels("I-MR Chart", "Date", "Value");
 
   currentChart = new Chart(chartCanvas, {
     type: "line",
-    data: {
-      labels: labels,
-      datasets: datasets
-    },
+    data: { labels, datasets },
     options: {
       responsive: true,
       maintainAspectRatio: false,
@@ -1891,10 +2090,7 @@ function drawXmRChart(points, baselineCount, labels) {
         title: {
           display: true,
           text: title,
-          font: {
-            size: 16,
-            weight: "bold"
-          }
+          font: { size: 16, weight: "bold" }
         },
         legend: {
           display: true,
@@ -1906,35 +2102,25 @@ function drawXmRChart(points, baselineCount, labels) {
         }
       },
       elements: {
-        point: {
-          radius: 0,
-          hoverRadius: 0
-        }
+        point: { radius: 0, hoverRadius: 0 }
       },
       scales: {
         x: {
           grid: { display: false },
-          title: {
-            display: !!xAxisLabelInput.value.trim(),
-            text: xAxisLabelInput.value.trim()
-          }
+          title: { display: !!xLabel, text: xLabel }
         },
         y: {
           grid: { display: false },
-          title: {
-            display: !!yAxisLabelInput.value.trim(),
-            text: yAxisLabelInput.value.trim()
-          }
+          title: { display: !!yLabel, text: yLabel }
         }
       }
     }
   });
 
-  // ----- New: multi-period summary -----
+  // ----- Summary -----
   if (segmentSummaries.length > 0) {
     updateXmRMultiSummary(segmentSummaries, points.length);
   } else {
-    // Fallback: treat whole series as a single period
     updateXmRMultiSummary(
       [{
         startIndex: 0,

@@ -785,6 +785,51 @@ body.sidebar-collapsed .main {
 	</div>
         </div>
       	</details>
+<!-- Section 6: Rules & interpretation -->
+<details>
+  <summary>6. Rules &amp; interpretation</summary>
+  <div class="panel">
+
+    <div class="hint">
+      Adjust the rule thresholds used in the summary and (optionally) point highlighting.
+    </div>
+
+    <div>
+      <label>
+        Shift (run) length:
+        <input type="number" id="shiftRulePoints" min="3" step="1" value="8" style="width: 6rem;" />
+      </label>
+      <div class="hint small-hint">Default: 8 points on one side of the centre line.</div>
+    </div>
+
+    <div>
+      <label>
+        Trend length:
+        <input type="number" id="trendRulePoints" min="3" step="1" value="6" style="width: 6rem;" />
+      </label>
+      <div class="hint small-hint">Default: 6 consecutive increases or decreases.</div>
+    </div>
+
+    <hr />
+
+    <label class="radio-pill" style="display:inline-flex; gap:0.5rem; align-items:center;">
+      <input type="checkbox" id="flagSpecialCauseOnChart" checked />
+      Flag special-cause signals on the chart
+    </label>
+
+    <!-- Only shown when the current XmR LCL would be below 0 -->
+    <div id="lclClampRow" style="display:none; margin-top:0.5rem;">
+      <label class="radio-pill" style="display:inline-flex; gap:0.5rem; align-items:center;">
+        <input type="checkbox" id="clampLclAtZero" />
+        Fix LCL at 0 (when calculated LCL is below 0)
+      </label>
+      <div class="hint small-hint">
+        Useful for measures that cannot go below zero (e.g. counts, times).
+      </div>
+    </div>
+
+  </div>
+</details>
 
 
 
