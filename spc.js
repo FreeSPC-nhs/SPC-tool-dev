@@ -617,6 +617,7 @@ if (dataEditorCancelButton) {
 if (dataEditorApplyButton) {
   dataEditorApplyButton.addEventListener("click", () => {
     if (!dataEditorTextarea) return;
+
     const text = dataEditorTextarea.value.trim();
     if (!text) {
       alert("Please paste or type some data first.");
@@ -625,95 +626,90 @@ if (dataEditorApplyButton) {
 
     try {
       // First pass: parse WITHOUT headers so we can detect if the first row looks like headers
-const preview = Papa.parse(text, {
-  header: false,
-  dynamicTyping: false,
-  skipEmptyLines: true
-});
+      const preview = Papa.parse(text, {
+        header: false,
+        dynamicTyping: false,
+        skipEmptyLines: true
+      });
 
-if (preview.errors && preview.errors.length > 0) {
-  console.error(preview.errors);
-  showError("Error parsing pasted data: " + preview.errors[0].message);
-  return;
-}
+      if (preview.errors && preview.errors.length > 0) {
+        console.error(preview.errors);
+        showError("Error parsing pasted data: " + preview.errors[0].message);
+        return;
+      }
 
-const rows2D = preview.data;
-if (!rows2D || rows2D.length < 2) {
-  showError("Please paste at least 2 rows (a header row + at least 1 data row).");
-  return;
-}
+      const rows2D = preview.data;
+      if (!rows2D || rows2D.length < 2) {
+        showError("Please paste at least 2 rows (a header row + at least 1 data row).");
+        return;
+      }
 
-const firstRow = rows2D[0].map(x => String(x ?? "").trim());
-const secondRow = rows2D[1];
+      const firstRow = rows2D[0].map(x => String(x ?? "").trim());
+      const secondRow = rows2D[1];
 
-// Heuristic: if first row contains mostly non-numeric strings and second row contains numeric -> treat as headers
-const firstRowLooksLikeHeader =
-  firstRow.some(cell => cell && !isFinite(Number(cell))) &&
-  secondRow.some(cell => isFinite(toNumericValue(cell)));
+      // Heuristic: if first row contains mostly non-numeric strings and second row contains numeric -> treat as headers
+      const firstRowLooksLikeHeader =
+        firstRow.some(cell => cell && !isFinite(Number(cell))) &&
+        secondRow.some(cell => isFinite(toNumericValue(cell)));
 
-let results;
-if (firstRowLooksLikeHeader) {
-  results = Papa.parse(text, { header: true, dynamicTyping: true, skipEmptyLines: true });
-} else {
-  // No headers: ask user once
-  const ok = confirm(
-    "It looks like your pasted data does not include column headings.\n\n" +
-    "Click OK to treat the first row as DATA (I will create column names like Column1, Column2).\n" +
-    "Click Cancel if the first row IS a header row (then please add headings and try again)."
-  );
+      // If headers exist, parse normally
+      if (firstRowLooksLikeHeader) {
+        const results = Papa.parse(text, { header: true, dynamicTyping: true, skipEmptyLines: true });
 
-  if (!ok) {
-    showError("Please add a header row (e.g. Date,Value) then click Apply again.");
-    return;
-  }
+        if (results.errors && results.errors.length > 0) {
+          console.error(results.errors);
+          showError("Error parsing pasted data: " + results.errors[0].message);
+          return;
+        }
 
-  // Parse without header, then convert to objects with Column1/Column2...
-  const noHead = Papa.parse(text, { header: false, dynamicTyping: true, skipEmptyLines: true });
-  const data2D = noHead.data;
+        const rows = results.data;
+        if (!loadRows(rows)) return;
 
-  const colCount = Math.max(...data2D.map(r => r.length));
-  const headers = Array.from({ length: colCount }, (_, i) => `Column${i + 1}`);
+      } else {
+        // No headers: ask user what to do
+        const ok = confirm(
+          "It looks like your pasted data does not include column headings.\n\n" +
+          "Click OK to treat the first row as DATA (I will create column names like Column1, Column2).\n" +
+          "Click Cancel if the first row IS a header row (then please add headings and try again)."
+        );
 
-  const objRows = data2D.map(r => {
-    const o = {};
-    headers.forEach((h, i) => (o[h] = r[i]));
-    return o;
+        if (!ok) {
+          showError("Please add a header row (e.g. Date,Value) then click Apply again.");
+          return;
+        }
+
+        // Parse without header, then convert to objects with Column1/Column2...
+        const noHead = Papa.parse(text, { header: false, dynamicTyping: true, skipEmptyLines: true });
+        const data2D = noHead.data;
+
+        const colCount = Math.max(...data2D.map(r => r.length));
+        const headers = Array.from({ length: colCount }, (_, i) => `Column${i + 1}`);
+
+        const objRows = data2D.map(r => {
+          const o = {};
+          headers.forEach((h, i) => (o[h] = r[i]));
+          return o;
+        });
+
+        if (!loadRows(objRows)) return;
+      }
+
+      // Reset annotations/splits because the data changed
+      annotations = [];
+      if (annotationDateInput) annotationDateInput.value = "";
+      if (annotationLabelInput) annotationLabelInput.value = "";
+      splits = [];
+      if (splitPointSelect) splitPointSelect.innerHTML = "";
+
+      closeDataEditor();
+      clearError();
+
+    } catch (e) {
+      console.error(e);
+      showError("Unexpected error parsing pasted data.");
+    }
   });
-
-  if (!loadRows(objRows)) return;
-
-  // Reset annotations/splits as you already do
-  annotations = [];
-  if (annotationDateInput) annotationDateInput.value = "";
-  if (annotationLabelInput) annotationLabelInput.value = "";
-  splits = [];
-  if (splitPointSelect) splitPointSelect.innerHTML = "";
-
-  closeDataEditor();
-  clearError();
-  return;
 }
-
-// Header mode result
-if (results.errors && results.errors.length > 0) {
-  console.error(results.errors);
-  showError("Error parsing pasted data: " + results.errors[0].message);
-  return;
-}
-
-const rows = results.data;
-if (!loadRows(rows)) return;
-
-// Reset annotations/splits as you already do
-annotations = [];
-if (annotationDateInput) annotationDateInput.value = "";
-if (annotationLabelInput) annotationLabelInput.value = "";
-splits = [];
-if (splitPointSelect) splitPointSelect.innerHTML = "";
-
-closeDataEditor();
-clearError();
-
 
 
 // ---- Summary helpers ----
