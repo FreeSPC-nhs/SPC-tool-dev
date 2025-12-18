@@ -65,12 +65,11 @@ const mrPanel           = document.getElementById("mrPanel");
 const mrChartCanvas     = document.getElementById("mrChartCanvas");
 
 function guessColumns(rows) {
-  if (!rows || rows.length === 0) return { dateCol: null, valueCol: null };
+  if (!rows || rows.length === 0) return { dateCol: null, valueCol: null, hasDateCandidate: false };
 
   const sample = rows.slice(0, Math.min(rows.length, 50));
   const cols = Object.keys(sample[0] || {});
-  if (cols.length === 0) return { dateCol: null, valueCol: null };
-  const hasDateCandidate = !!dateCol;
+  if (cols.length === 0) return { dateCol: null, valueCol: null, hasDateCandidate: false };
 
   function dateScore(col) {
     let valid = 0, total = 0;
@@ -102,33 +101,32 @@ function guessColumns(rows) {
     n: numericScore(c)
   }));
 
-  // Pick the "most date-like" column if it is reasonably date-ish
-  // Prefer columns that look date-like AND not strongly numeric
-const bestDate = scored
-  .filter(s => s.d > 0 && s.n < 0.5) // exclude mostly-numeric columns
-  .sort((a, b) => b.d - a.d)[0];
+  // Prefer date-like columns that are NOT strongly numeric (prevents "Value" being treated as a date)
+  const bestDate = scored
+    .filter(s => s.d > 0 && s.n < 0.5)
+    .sort((a, b) => b.d - a.d)[0];
 
-  const bestNum  = scored.slice().sort((a, b) => b.n - a.n)[0];
+  const bestNum = scored.slice().sort((a, b) => b.n - a.n)[0];
 
-  const dateCol = bestDate && bestDate.d >= 0.4 ? bestDate.col : null;
+  // Use let (we may adjust later)
+  let dateCol = bestDate && bestDate.d >= 0.4 ? bestDate.col : null;
 
-  // Pick numeric value column, but avoid using the date column for values if possible
+  // Pick numeric value column
   let valueCol = bestNum && bestNum.n >= 0.4 ? bestNum.col : null;
+
+  // If the best numeric happens to be the same as dateCol, pick the next best numeric column
   if (dateCol && valueCol === dateCol) {
     const nextBestNum = scored
       .filter(s => s.col !== dateCol)
       .sort((a, b) => b.n - a.n)[0];
-    valueCol = nextBestNum && nextBestNum.n >= 0.6 ? nextBestNum.col : valueCol;
+    if (nextBestNum && nextBestNum.n >= 0.4) valueCol = nextBestNum.col;
   }
 
-// If we didn't meet threshold but there is still a "best" date-like column, use it if it's clearly best
-if (!dateCol && bestDate && bestDate.d > 0) {
-  dateCol = bestDate.col;
-}
-
+  const hasDateCandidate = !!dateCol;
 
   return { dateCol, valueCol, hasDateCandidate };
 }
+
 
 
 function loadRows(rows) {
