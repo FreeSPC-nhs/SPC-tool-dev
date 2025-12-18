@@ -70,6 +70,7 @@ function guessColumns(rows) {
   const sample = rows.slice(0, Math.min(rows.length, 50));
   const cols = Object.keys(sample[0] || {});
   if (cols.length === 0) return { dateCol: null, valueCol: null };
+  const hasDateCandidate = !!dateCol;
 
   function dateScore(col) {
     let valid = 0, total = 0;
@@ -102,7 +103,11 @@ function guessColumns(rows) {
   }));
 
   // Pick the "most date-like" column if it is reasonably date-ish
-  const bestDate = scored.slice().sort((a, b) => b.d - a.d)[0];
+  // Prefer columns that look date-like AND not strongly numeric
+const bestDate = scored
+  .filter(s => s.d > 0 && s.n < 0.5) // exclude mostly-numeric columns
+  .sort((a, b) => b.d - a.d)[0];
+
   const bestNum  = scored.slice().sort((a, b) => b.n - a.n)[0];
 
   const dateCol = bestDate && bestDate.d >= 0.4 ? bestDate.col : null;
@@ -122,7 +127,7 @@ if (!dateCol && bestDate && bestDate.d > 0) {
 }
 
 
-  return { dateCol, valueCol };
+  return { dateCol, valueCol, hasDateCandidate };
 }
 
 
@@ -163,13 +168,18 @@ function loadRows(rows) {
     dateSelect.value = guessed.dateCol;
   } else {
     dateSelect.selectedIndex = 0;
+    setAxisType("index"); // <-- ensure run chart uses sequence
   }
 
   if (guessed.valueCol) {
-    valueSelect.value = guessed.valueCol;
-  } else {
-    valueSelect.selectedIndex = Math.min(1, valueSelect.options.length - 1);
-  }
+  valueSelect.value = guessed.valueCol;
+}
+
+if (!guessed.hasDateCandidate) {
+  showError(
+    "Tip: No date column detected. I’ll treat the data as a simple sequence (run chart by order)."
+  );
+}
 
   // If we couldn't confidently detect a numeric column, give a hint
   if (!guessed.valueCol) {
