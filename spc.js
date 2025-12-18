@@ -99,6 +99,14 @@ function loadRows(rows) {
   return true;
 }
 
+function showError(msg) {
+  if (errorMessage) errorMessage.textContent = msg;
+}
+function clearError() {
+  if (errorMessage) errorMessage.textContent = "";
+}
+
+
 
 //---- Add annotations button
 
@@ -252,6 +260,40 @@ function resetAll() {
   if (dataEditorOverlay) dataEditorOverlay.style.display = "none";
 
   console.log("All elements reset.");
+}
+
+
+function validateBeforeGenerate() {
+  if (!rawRows || rawRows.length === 0) {
+    showError("No data loaded yet. Upload a CSV or use the data editor first.");
+    return false;
+  }
+
+  const dateCol = dateSelect?.value;
+  const valueCol = valueSelect?.value;
+
+  if (!dateCol || !valueCol) {
+    showError("Please choose both an X-axis column and a value column.");
+    return false;
+  }
+
+  // Check at least 3 valid numeric points
+  let good = 0;
+  for (const row of rawRows) {
+    const y = toNumericValue(row[valueCol]);
+    if (isFinite(y)) good++;
+  }
+
+  if (good < 3) {
+    showError(
+      "I can’t create a chart yet: I need at least 3 numeric values in the selected value column. " +
+      "Check the column selection and make sure the values are numbers (e.g. 12.3 not '12,3' or text)."
+    );
+    return false;
+  }
+
+  clearError();
+  return true;
 }
 
 
@@ -571,14 +613,6 @@ if (dataEditorCancelButton) {
   });
 }
 
-// Optional: close when clicking outside the dialog
-if (dataEditorOverlay) {
-  dataEditorOverlay.addEventListener("click", (e) => {
-    if (e.target === dataEditorOverlay) {
-      closeDataEditor();
-    }
-  });
-}
 
 if (dataEditorApplyButton) {
   dataEditorApplyButton.addEventListener("click", () => {
@@ -590,37 +624,96 @@ if (dataEditorApplyButton) {
     }
 
     try {
-      const results = Papa.parse(text, {
-        header: true,
-        dynamicTyping: true,
-        skipEmptyLines: true
-      });
+      // First pass: parse WITHOUT headers so we can detect if the first row looks like headers
+const preview = Papa.parse(text, {
+  header: false,
+  dynamicTyping: false,
+  skipEmptyLines: true
+});
 
-      if (results.errors && results.errors.length > 0) {
-        console.error(results.errors);
-        errorMessage.textContent = "Error parsing pasted data: " + results.errors[0].message;
-        return;
-      }
-
-      const rows = results.data;
-      if (!loadRows(rows)) {
-        return;
-      }
-
-      // Reset annotations and splits because the data changed
-      annotations = [];
-      if (annotationDateInput) annotationDateInput.value = "";
-      if (annotationLabelInput) annotationLabelInput.value = "";
-      splits = [];
-      if (splitPointSelect) splitPointSelect.innerHTML = "";
-
-      closeDataEditor();
-    } catch (e) {
-      console.error(e);
-      errorMessage.textContent = "Unexpected error parsing pasted data.";
-    }
-  });
+if (preview.errors && preview.errors.length > 0) {
+  console.error(preview.errors);
+  showError("Error parsing pasted data: " + preview.errors[0].message);
+  return;
 }
+
+const rows2D = preview.data;
+if (!rows2D || rows2D.length < 2) {
+  showError("Please paste at least 2 rows (a header row + at least 1 data row).");
+  return;
+}
+
+const firstRow = rows2D[0].map(x => String(x ?? "").trim());
+const secondRow = rows2D[1];
+
+// Heuristic: if first row contains mostly non-numeric strings and second row contains numeric -> treat as headers
+const firstRowLooksLikeHeader =
+  firstRow.some(cell => cell && !isFinite(Number(cell))) &&
+  secondRow.some(cell => isFinite(toNumericValue(cell)));
+
+let results;
+if (firstRowLooksLikeHeader) {
+  results = Papa.parse(text, { header: true, dynamicTyping: true, skipEmptyLines: true });
+} else {
+  // No headers: ask user once
+  const ok = confirm(
+    "It looks like your pasted data does not include column headings.\n\n" +
+    "Click OK to treat the first row as DATA (I will create column names like Column1, Column2).\n" +
+    "Click Cancel if the first row IS a header row (then please add headings and try again)."
+  );
+
+  if (!ok) {
+    showError("Please add a header row (e.g. Date,Value) then click Apply again.");
+    return;
+  }
+
+  // Parse without header, then convert to objects with Column1/Column2...
+  const noHead = Papa.parse(text, { header: false, dynamicTyping: true, skipEmptyLines: true });
+  const data2D = noHead.data;
+
+  const colCount = Math.max(...data2D.map(r => r.length));
+  const headers = Array.from({ length: colCount }, (_, i) => `Column${i + 1}`);
+
+  const objRows = data2D.map(r => {
+    const o = {};
+    headers.forEach((h, i) => (o[h] = r[i]));
+    return o;
+  });
+
+  if (!loadRows(objRows)) return;
+
+  // Reset annotations/splits as you already do
+  annotations = [];
+  if (annotationDateInput) annotationDateInput.value = "";
+  if (annotationLabelInput) annotationLabelInput.value = "";
+  splits = [];
+  if (splitPointSelect) splitPointSelect.innerHTML = "";
+
+  closeDataEditor();
+  clearError();
+  return;
+}
+
+// Header mode result
+if (results.errors && results.errors.length > 0) {
+  console.error(results.errors);
+  showError("Error parsing pasted data: " + results.errors[0].message);
+  return;
+}
+
+const rows = results.data;
+if (!loadRows(rows)) return;
+
+// Reset annotations/splits as you already do
+annotations = [];
+if (annotationDateInput) annotationDateInput.value = "";
+if (annotationLabelInput) annotationLabelInput.value = "";
+splits = [];
+if (splitPointSelect) splitPointSelect.innerHTML = "";
+
+closeDataEditor();
+clearError();
+
 
 
 // ---- Summary helpers ----
@@ -953,23 +1046,14 @@ function toNumericValue(raw) {
 // ---- Generate chart button ----
 
 generateButton.addEventListener("click", () => {
-  errorMessage.textContent = "";
+  clearError();
   if (summaryDiv) summaryDiv.innerHTML = "";
   if (capabilityDiv) capabilityDiv.innerHTML = "";
 
-  if (!rawRows || rawRows.length === 0) {
-    errorMessage.textContent = "Please upload a CSV file first.";
-    return;
-  }
+  if (!validateBeforeGenerate()) return;
 
-  const dateCol  = dateSelect.value;
+  const dateCol = dateSelect.value;
   const valueCol = valueSelect.value;
-
-  if (!dateCol || !valueCol) {
-    errorMessage.textContent = "Please choose both a date column and a value column.";
-    return;
-  }
-
   const axisType = getAxisType();
 
 let parsedPoints;
