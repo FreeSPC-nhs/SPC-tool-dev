@@ -261,45 +261,66 @@ if (toggleSidebarButton) {
 }
 
 // ---- CSV upload & column selection ----
-
-fileInput.addEventListener("change", () => {
+fileInput.addEventListener("change", async () => {
   const file = fileInput.files[0];
   if (!file) return;
 
-  errorMessage.textContent = "";
+  clearError();
   if (summaryDiv) summaryDiv.innerHTML = "";
   if (capabilityDiv) capabilityDiv.innerHTML = "";
-  annotations = [];
-  if (annotationDateInput) annotationDateInput.value = "";
-  if (annotationLabelInput) annotationLabelInput.value = "";
-  splits = [];
-  if (splitPointSelect) splitPointSelect.innerHTML = "";
 
-  Papa.parse(file, {
-    header: true,
-    dynamicTyping: true,
-    skipEmptyLines: true,
-    complete: (results) => {
-  const rows = results.data;
+  try {
+    const text = await file.text();
+    const parsed = parseTabularTextWithHeaderDetection(text);
 
-  // Use the shared loader so CSV and pasted data behave the same
-  if (!loadRows(rows)) {
-    return;
-  }
-
-  // Reset annotations and splits because the data changed
-  annotations = [];
-  if (annotationDateInput) annotationDateInput.value = "";
-  if (annotationLabelInput) annotationLabelInput.value = "";
-  splits = [];
-  if (splitPointSelect) splitPointSelect.innerHTML = "";
-},
-
-    error: (err) => {
-      errorMessage.textContent = "Error parsing CSV: " + err.message;
+    if (!parsed.ok) {
+      showError("Error parsing CSV: " + parsed.message);
+      return;
     }
-  });
+
+    if (parsed.hadHeader) {
+      // Normal case: CSV has headers
+      if (!loadRows(parsed.rows)) return;
+
+    } else {
+      // No headers detected — ask the user
+      const ok = confirm(
+        "It looks like your CSV does not include column headings.\n\n" +
+        "Click OK to treat the first row as DATA (I will create Column1, Column2...).\n" +
+        "Click Cancel if the first row IS a header row (then add headings and upload again)."
+      );
+
+      if (!ok) {
+        showError("Please add a header row (e.g. Date,Value) and upload again.");
+        return;
+      }
+
+      const data2D = parsed.rows2D;
+      const colCount = Math.max(...data2D.map(r => r.length));
+      const headers = Array.from({ length: colCount }, (_, i) => `Column${i + 1}`);
+
+      const objRows = data2D.map(r => {
+        const o = {};
+        headers.forEach((h, i) => (o[h] = r[i]));
+        return o;
+      });
+
+      if (!loadRows(objRows)) return;
+    }
+
+    // Reset annotations and splits because the data changed
+    annotations = [];
+    if (annotationDateInput) annotationDateInput.value = "";
+    if (annotationLabelInput) annotationLabelInput.value = "";
+    splits = [];
+    if (splitPointSelect) splitPointSelect.innerHTML = "";
+
+  } catch (err) {
+    console.error(err);
+    showError("Unexpected error reading the CSV file.");
+  }
 });
+
 
 function resetAll() {
   // --- Clear stored data ---
@@ -418,6 +439,49 @@ function escapeHtml(str) {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
 }
+
+
+function parseTabularTextWithHeaderDetection(text) {
+  const preview = Papa.parse(text, {
+    header: false,
+    dynamicTyping: false,
+    skipEmptyLines: true
+  });
+
+  if (preview.errors && preview.errors.length) {
+    return { ok: false, message: preview.errors[0].message };
+  }
+
+  const rows2D = preview.data || [];
+  if (rows2D.length < 2) {
+    return { ok: false, message: "Please provide at least 2 rows." };
+  }
+
+  const r0 = rows2D[0];
+  const r1 = rows2D[1];
+
+  // Same scoring functions you already added for the data editor:
+  const score0 = rowDataLikenessScore(r0);
+  const score1 = rowDataLikenessScore(r1);
+  const looksLikeHeader = (score1 - score0) >= 0.35;
+
+  if (looksLikeHeader) {
+    const results = Papa.parse(text, { header: true, dynamicTyping: true, skipEmptyLines: true });
+    if (results.errors && results.errors.length) {
+      return { ok: false, message: results.errors[0].message };
+    }
+
+    let rows = results.data || [];
+    const headers = results.meta && results.meta.fields ? results.meta.fields : null;
+    rows = stripDuplicateHeaderRow(rows, headers);
+
+    return { ok: true, rows, hadHeader: true };
+  }
+
+  // No header detected
+  return { ok: true, rows2D, hadHeader: false };
+}
+
 
 
 function computeMedian(values) {
@@ -1266,7 +1330,7 @@ if (axisType === "date") {
 }
 
 if (parsedPoints.length < 5) {
-  errorMessage.textContent = "Not enough valid data points after parsing. Check your column choices.";
+  errorMessage.textContent = "Not enough valid data points. Please check your column choices and ensure that there are at least 5 data points.";
   return;
 }
 
