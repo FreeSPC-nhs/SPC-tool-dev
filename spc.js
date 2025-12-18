@@ -278,8 +278,43 @@ fileInput.addEventListener("change", async () => {
       return;
     }
 
+    // If header detection said "no header", but the first two rows are identical header-like rows
+    // (e.g. Date,Value repeated), treat it as header mode and just remove the duplicate header row.
+    if (!parsed.hadHeader && parsed.rows2D && parsed.rows2D.length >= 2) {
+      const r0 = parsed.rows2D[0];
+      const r1 = parsed.rows2D[1];
+
+      const score0 = rowDataLikenessScore(r0);
+      const duplicateHeaderRow = rowsEqualNormalized(r0, r1) && score0 <= 0.2;
+
+      if (duplicateHeaderRow) {
+        // Parse as headered CSV so fields are created, then strip the duplicate header row
+        const results = Papa.parse(text, { header: true, dynamicTyping: true, skipEmptyLines: true });
+
+        if (results.errors && results.errors.length > 0) {
+          console.error(results.errors);
+          showError("Error parsing CSV: " + results.errors[0].message);
+          return;
+        }
+
+        let rows = results.data || [];
+        const headers = results.meta && results.meta.fields ? results.meta.fields : null;
+        rows = stripDuplicateHeaderRow(rows, headers);
+
+        if (!loadRows(rows)) return;
+
+        // Reset annotations/splits because the data changed
+        annotations = [];
+        if (annotationDateInput) annotationDateInput.value = "";
+        if (annotationLabelInput) annotationLabelInput.value = "";
+        splits = [];
+        if (splitPointSelect) splitPointSelect.innerHTML = "";
+        return;
+      }
+    }
+
     if (parsed.hadHeader) {
-      // Normal case: CSV has headers
+      // Normal case: CSV has headers (already stripped of duplicate header row inside parser)
       if (!loadRows(parsed.rows)) return;
 
     } else {
@@ -788,6 +823,17 @@ if (dataEditorCancelButton) {
   });
 }
 
+function rowsEqualNormalized(a, b) {
+  if (!Array.isArray(a) || !Array.isArray(b)) return false;
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    const sa = String(a[i] ?? "").trim().toLowerCase();
+    const sb = String(b[i] ?? "").trim().toLowerCase();
+    if (sa !== sb) return false;
+  }
+  return true;
+}
+
 
 function rowDataLikenessScore(rowArr) {
   // Score = fraction of cells that look like a date OR a number
@@ -879,7 +925,9 @@ if (dataEditorApplyButton) {
 
       // Header if row0 looks much LESS like data than row1
       // (e.g., "Date,Value" vs "2024-01-01,12")
-      const looksLikeHeader = (score1 - score0) >= 0.35;
+      const duplicateHeaderRow = rowsEqualNormalized(r0, r1) && score0 <= 0.2;
+
+	const looksLikeHeader =  (score1 - score0) >= 0.35 ||  duplicateHeaderRow;
 
       if (looksLikeHeader) {
         // Parse with header row
