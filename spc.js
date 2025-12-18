@@ -793,6 +793,40 @@ function parseTabularTextWithHeaderDetection(text) {
   return { ok: true, rows2D, hadHeader: false };
 }
 
+function computeMAD(values, centre) {
+  const absDevs = values.map(v => Math.abs(v - centre));
+  return computeMedian(absDevs);
+}
+
+/**
+ * Astronomical point detection using modified z-score (MAD-based).
+ * Common robust rule of thumb: |z| > 3.5
+ * Returns { indices: number[], flags: boolean[] }
+ */
+function findAstronomicalPoints(values, centre, referenceValues = null, threshold = 3.5) {
+  const ref = (Array.isArray(referenceValues) && referenceValues.length >= 3) ? referenceValues : values;
+  const refMedian = centre;
+  const mad = computeMAD(ref, refMedian);
+
+  const flags = new Array(values.length).fill(false);
+  const indices = [];
+
+  // If MAD is 0 (flat data), there is no sensible astronomical rule
+  if (!mad || mad === 0 || !Number.isFinite(mad)) return { indices, flags, mad: 0 };
+
+  // modified z-score constant
+  const c = 0.6745;
+
+  for (let i = 0; i < values.length; i++) {
+    const z = (c * (values[i] - refMedian)) / mad;
+    if (Math.abs(z) > threshold) {
+      flags[i] = true;
+      indices.push(i);
+    }
+  }
+
+  return { indices, flags, mad };
+}
 
 
 function computeMedian(values) {
@@ -1274,6 +1308,7 @@ function updateRunSummary(points, median, ruleHits, baselineCountUsed) {
   const { shiftLength, trendLength } = getRuleSettings();
   const runRanges = ruleHits?.runRanges || [];
   const trendRanges = ruleHits?.trendRanges || [];
+  const astro = ruleHits?.astro || { indices: [] };
 
   const n = points.length;
 
@@ -1289,7 +1324,7 @@ function updateRunSummary(points, median, ruleHits, baselineCountUsed) {
   html += `<h4>Rules identified</h4>`;
   html += `<ul>`;
 
-  // Rule 1: Shift / long run
+  // Rule 1: Shift
   if (runRanges.length) {
     const parts = runRanges.map(r => `points ${r.start + 1}–${r.end + 1} (${r.side}, length ${r.len})`);
     html += `<li><strong>Rule 1 — Shift:</strong> YES (≥${shiftLength} on one side). ${parts.join("; ")}.</li>`;
@@ -1305,20 +1340,29 @@ function updateRunSummary(points, median, ruleHits, baselineCountUsed) {
     html += `<li><strong>Rule 2 — Trend:</strong> No (≥${trendLength} consecutive moves).</li>`;
   }
 
+  // Rule 3: Astronomical point
+  if (astro.indices && astro.indices.length) {
+    const pts = astro.indices.map(i => `point ${i + 1}`).join(", ");
+    html += `<li><strong>Rule 3 — Astronomical point:</strong> YES (${pts}).</li>`;
+  } else {
+    html += `<li><strong>Rule 3 — Astronomical point:</strong> No.</li>`;
+  }
+
   html += `</ul>`;
 
-  const anySignals = runRanges.length || trendRanges.length;
+  const anySignals = runRanges.length || trendRanges.length || (astro.indices && astro.indices.length);
   html += anySignals
-    ? `<p><strong>Interpretation:</strong> Special-cause signals are present (see rules above). Consider what changed at those times.</p>`
-    : `<p><strong>Interpretation:</strong> No rule breaches detected from shift/trend rules. Variation looks consistent with common-cause only (interpret in context).</p>`;
+    ? `<p><strong>Interpretation:</strong> Special-cause signals are present. See the labelled rules above and consider what changed at those times.</p>`
+    : `<p><strong>Interpretation:</strong> No rule breaches detected from shift/trend/astronomical rules. Variation looks consistent with common-cause only (interpret in context).</p>`;
 
   summaryDiv.innerHTML = html;
 }
 
 
+
 // ---- Summary helpers ----
 
-// Multi-period XmR summary (handles baseline + splits)
+// Multi-period XmR summary (handles baseline + splits) — lay-user interpretation + astronomical points
 function updateXmRMultiSummary(segments, totalPoints) {
   if (!summaryDiv) return;
 
@@ -1331,12 +1375,18 @@ function updateXmRMultiSummary(segments, totalPoints) {
   const target = getTargetValue();
   const direction = targetDirectionInput ? targetDirectionInput.value : "above";
 
+  // Use configured thresholds if available (defaults stay 8 and 6)
+  const { shiftLength, trendLength } =
+    (typeof getRuleSettings === "function")
+      ? getRuleSettings()
+      : { shiftLength: 8, trendLength: 6 };
+
   let html = `<h3>Summary (XmR chart)</h3>`;
   html += `<p>Total number of points: <strong>${totalPoints}</strong>. `;
   html += `The chart is divided into <strong>${segments.length}</strong> period${segments.length > 1 ? "s" : ""} `;
   html += `(based on the baseline and any splits).</p>`;
 
-  // We'll also keep track of the last period's signals for the capability badge
+  // For capability badge (last period only)
   let lastPeriodSignals = [];
   let lastPeriodCapability = null;
   let lastPeriodHasCapability = false;
@@ -1345,33 +1395,72 @@ function updateXmRMultiSummary(segments, totalPoints) {
     const { startIndex, endIndex, labelStart, labelEnd, result } = seg;
     const { mean, ucl, lcl, sigma, avgMR, baselineCountUsed } = result;
 
-    const points = result.points;
+    const points = result.points || [];
     const n = points.length;
     const values = points.map(p => p.y);
-    const nBeyond = points.filter(p => p.beyondLimits).length;
 
-    const runFlags = detectLongRuns(values, mean, 8);
-    const nRunPoints = runFlags.filter(Boolean).length;
-    const hasRunViolation = nRunPoints > 0;
-    const hasTrend = detectTrend(values, 6);
+    // --- Special-cause detection (simple, lay-focused labels) ---
+    // 1) Points beyond limits
+    const beyondIdx = [];
+    points.forEach((p, i) => {
+      if (p.beyondLimits) beyondIdx.push(i);
+    });
 
+    // 2) Sustained shift (run on one side of mean)
+    let runRanges = [];
+    if (typeof findLongRunRanges === "function") {
+      runRanges = findLongRunRanges(values, mean, shiftLength) || [];
+    } else {
+      // fallback: your existing boolean flags
+      const runFlags = detectLongRuns(values, mean, shiftLength);
+      let any = runFlags.some(Boolean);
+      if (any) runRanges = [{ start: 0, end: 0 }]; // placeholder (we won't list ranges in fallback)
+    }
+
+    // 3) Trend
+    let trendRanges = [];
+    if (typeof findTrendRanges === "function") {
+      trendRanges = findTrendRanges(values, trendLength) || [];
+    } else {
+      const hasTrend = detectTrend(values, trendLength);
+      if (hasTrend) trendRanges = [{ start: 0, end: 0 }]; // placeholder
+    }
+
+    // 4) Astronomical point (robust outlier)
+    // Use baseline of this *period* to set the reference for outlier detection where possible.
+    let astro = { indices: [], flags: [] };
+    if (typeof findAstronomicalPoints === "function") {
+      const periodBaselineCount = (baselineCountUsed && baselineCountUsed >= 3) ? baselineCountUsed : n;
+      const refValues = values.slice(0, Math.min(periodBaselineCount, values.length));
+      astro = findAstronomicalPoints(values, mean, refValues, 3.5) || { indices: [], flags: [] };
+    }
+
+    // Build simple signals list
     const signals = [];
-    if (nBeyond > 0) {
-      signals.push("one or more points beyond the control limits");
-    }
-    if (hasRunViolation) {
-      signals.push("a run of 8 or more points on one side of the mean");
-    }
-    if (hasTrend) {
-      signals.push("a trend of 6 or more points all increasing or all decreasing");
+
+    if (beyondIdx.length > 0) {
+      signals.push("one or more points are outside the control limits");
     }
 
+    if (runRanges.length > 0) {
+      signals.push("a sustained shift (many points on the same side of the mean)");
+    }
+
+    if (trendRanges.length > 0) {
+      signals.push("a sustained trend (steady increase or decrease)");
+    }
+
+    if (astro.indices && astro.indices.length > 0) {
+      signals.push("an unusual outlier (an ‘astronomical’ point)");
+    }
+
+    // Capability (only if target exists and sigma > 0)
     let capability = null;
     if (target !== null && sigma > 0) {
       capability = computeTargetCapability(mean, sigma, target, direction);
     }
 
-    // How many points in this period meet the target?
+    // Target coverage in this period
     let targetCoverageText = "";
     if (target !== null && n > 0) {
       let hits = 0;
@@ -1413,17 +1502,32 @@ function updateXmRMultiSummary(segments, totalPoints) {
 
     if (target !== null) {
       html += `<li>Target: <strong>${target}</strong> (${direction === "above" ? "at or above is better" : "at or below is better"}). `;
-      if (targetCoverageText) {
-        html += targetCoverageText + `</li>`;
-      } else {
-        html += `Target coverage not calculated for this period.</li>`;
-      }
+      html += targetCoverageText ? (targetCoverageText + `</li>`) : `Target coverage not calculated for this period.</li>`;
     }
 
+    // Simple, clearly labelled interpretation
     if (signals.length === 0) {
-      html += `<li><strong>Special cause:</strong> No rule breaches detected in this period (points within limits, no long runs or clear trend). Pattern is consistent with common-cause variation, but always interpret in clinical context.</li>`;
+      html += `<li><strong>Interpretation:</strong> No clear special-cause signals were detected in this period. The pattern is consistent with natural/common variation (still interpret in clinical context).</li>`;
     } else {
-      html += `<li><strong>Special cause:</strong> In this period, signals suggesting special-cause variation were detected based on: ${signals.join("; ")}.</li>`;
+      html += `<li><strong>Interpretation:</strong> This period shows special-cause signals: ${signals.join("; ")}.</li>`;
+
+      // Optional: very short “where” hints (kept minimal)
+      const whereBits = [];
+
+      if (beyondIdx.length > 0) {
+        const shown = beyondIdx.slice(0, 3).map(i => (startIndex + i + 1));
+        whereBits.push(`outside limits at point${shown.length > 1 ? "s" : ""} ${shown.join(", ")}${beyondIdx.length > 3 ? ", …" : ""}`);
+      }
+
+      if (astro.indices && astro.indices.length > 0) {
+        const shown = astro.indices.slice(0, 3).map(i => (startIndex + i + 1));
+        whereBits.push(`outlier at point${shown.length > 1 ? "s" : ""} ${shown.join(", ")}${astro.indices.length > 3 ? ", …" : ""}`);
+      }
+
+      // Only add “where” if we actually have something specific to show
+      if (whereBits.length > 0) {
+        html += `<li><strong>Where to look:</strong> ${whereBits.join("; ")}.</li>`;
+      }
     }
 
     if (capability && sigma > 0) {
@@ -1436,39 +1540,48 @@ function updateXmRMultiSummary(segments, totalPoints) {
 
     html += `</ul>`;
 
-    // Remember last period's signals + capability for the badge
-if (idx === segments.length - 1) {
-  lastPeriodSignals = signals;
-  lastPeriodCapability = capability;
-  lastPeriodHasCapability = sigma > 0 && !!capability;
+    // Remember last period for badge + helper (store structured information)
+    if (idx === segments.length - 1) {
+      lastPeriodSignals = signals;
+      lastPeriodCapability = capability;
+      lastPeriodHasCapability = sigma > 0 && !!capability;
 
-  // Also store a structured summary for the SPC helper (last / current period)
-  lastXmRAnalysis = {
-    mean,
-    ucl,
-    lcl,
-    sigma,
-    avgMR,
-    n,
-    signals: signals.slice(),
-    hasTrend,
-    hasRunViolation,
-    baselineCountUsed,
-    target,
-    direction,
-    capability,
-    isStable: signals.length === 0
-  };
-}
+      const hasTrend = trendRanges.length > 0;
+      const hasRunViolation = runRanges.length > 0;
+      const hasAstronomical = !!(astro.indices && astro.indices.length > 0);
+      const nBeyond = beyondIdx.length;
+
+      lastXmRAnalysis = {
+        mean,
+        ucl,
+        lcl,
+        sigma,
+        avgMR,
+        n,
+        signals: signals.slice(),
+        hasTrend,
+        hasRunViolation,
+        hasAstronomical,
+        nBeyond,
+        baselineCountUsed,
+        target,
+        direction,
+        capability,
+        isStable: signals.length === 0,
+        // thresholds used (handy for helper explanations)
+        shiftLength,
+        trendLength
+      };
+    }
   });
 
   if (target !== null && segments.length > 1) {
-    html += `<p><em>Note:</em> comparing means, limits and target performance between periods gives an indication of whether the process has changed after interventions.</p>`;
+    html += `<p><em>Note:</em> comparing means, limits and target performance between periods can indicate whether the process changed after interventions.</p>`;
   }
 
   summaryDiv.innerHTML = html;
 
-  // Capability badge – focus on the last period (as a simple headline)
+  // Capability badge – last period only
   if (!capabilityDiv) return;
 
   if (target === null || !lastPeriodHasCapability) {
@@ -1740,15 +1853,22 @@ function drawRunChart(points, baselineCount, labels) {
     ? flagFromRanges(values.length, trendRanges)
     : new Array(values.length).fill(false);
 
+   // Astronomical points (MAD-based), using baseline values as the reference
+   const astro = findAstronomicalPoints(values, median, baselineValues, 3.5);
+   const astroFlags = astro.flags;
+
+
   // Point colours (optional special-cause highlighting)
   const flagOnChart = (typeof shouldFlagSpecialCauseOnChart === "function")
     ? shouldFlagSpecialCauseOnChart()
     : true;
 
   const pointColours = values.map((_, i) => {
-    if (!flagOnChart) return "#003f87";
-    return (runFlags[i] || trendFlags[i]) ? "#ff8c00" : "#003f87";
-  });
+  if (!flagOnChart) return "#003f87";
+  if (astroFlags[i]) return "#d73027"; // red for astronomical
+  return (runFlags[i] || trendFlags[i]) ? "#ff8c00" : "#003f87";
+});
+
 
   const { title, xLabel, yLabel } = getChartLabels(
     "Run Chart",
@@ -1839,7 +1959,8 @@ function drawRunChart(points, baselineCount, labels) {
   clearDataModelDirty();
 
   // Pass structured rule hits so the summary can label them clearly
-  updateRunSummary(points, median, { runRanges, trendRanges }, baselineCountUsed);
+  updateRunSummary(points, median, { runRanges, trendRanges, astro }, baselineCountUsed);
+
 }
 
 function drawXmRChart(points, baselineCount, labels) {
