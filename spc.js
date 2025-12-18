@@ -127,6 +127,11 @@ function guessColumns(rows) {
   return { dateCol, valueCol, hasDateCandidate };
 }
 
+function setAxisType(type) {
+  document.querySelectorAll("input[name='axisType']").forEach(r => {
+    r.checked = (r.value === type);
+  });
+}
 
 
 function loadRows(rows) {
@@ -159,34 +164,39 @@ function loadRows(rows) {
     valueSelect.appendChild(opt2);
   });
 
- // --- NEW: auto-guess defaults ---
-  const guessed = guessColumns(rows);
+// --- NEW: auto-guess defaults ---
+const guessed = guessColumns(rows);
 
-  if (guessed.dateCol) {
-    dateSelect.value = guessed.dateCol;
-  } else {
-    dateSelect.selectedIndex = 0;
-    showError(
-    "Tip: No date column detected. I’ll treat the data as a simple sequence (run chart by order)."
-  );
+// Choose X column (date/sequence)
+if (guessed.dateCol) {
+  dateSelect.value = guessed.dateCol;
+} else {
+  // No date column detected: fall back to first column and switch axis to sequence
+  dateSelect.selectedIndex = 0;
+
+  // If your UI has axisType radios (date/sequence), ensure it is set to sequence
+  if (typeof setAxisType === "function") {
+    setAxisType("sequence");
   }
 
-  if (guessed.valueCol) {
+  showError("Tip: No date column detected. I’ll treat the data as a simple sequence (run chart by order).");
+}
+
+// Choose Y (value) column
+if (guessed.valueCol) {
   valueSelect.value = guessed.valueCol;
-}
+} else {
+  // Fall back to second column if available, otherwise first
+  valueSelect.selectedIndex = Math.min(1, valueSelect.options.length - 1);
 
-if (!guessed.hasDateCandidate) {
-  showError(
-    "Tip: No date column detected. I’ll treat the data as a simple sequence (run chart by order)."
-  );
-}
-
-  // If we couldn't confidently detect a numeric column, give a hint
-  if (!guessed.valueCol) {
+  // Only show this hint if we haven't already shown the "no date" hint above
+  // (do not clear errors here)
+  if (errorMessage && !errorMessage.textContent) {
     showError("Tip: I couldn’t confidently detect a numeric value column. Please check the Value dropdown before generating a chart.");
-  } else {
-    clearError();
   }
+}
+
+// Do NOT call clearError() here — we want hints to remain visible
 
 
   columnSelectors.style.display = "block";
@@ -629,6 +639,13 @@ function getAxisType() {
     if (r.checked) return r.value;
   }
   return "date"; // sensible default
+}
+
+function setAxisType(type) {
+  const radios = document.querySelectorAll("input[name='axisType']");
+  for (const r of radios) {
+    r.checked = (r.value === type);
+  }
 }
 
 function buildAnnotationConfig(labels) {
