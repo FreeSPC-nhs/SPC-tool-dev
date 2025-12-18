@@ -140,6 +140,14 @@ function setAxisType(type) {
   });
 }
 
+const targetToggleBtn = document.getElementById("targetToggleBtn");
+let targetEnabled = true;
+
+function updateTargetToggleBtn() {
+  if (!targetToggleBtn) return;
+  targetToggleBtn.textContent = targetEnabled ? "Hide target line" : "Show target line";
+}
+
 function applyPresentationEditsLive() {
   if (!currentChart) return;
 
@@ -261,11 +269,7 @@ function clearError() {
 
 
 function getTargetValue() {
-  // If there is a show/hide checkbox, respect it
-  if (targetEnabledCheckbox && !targetEnabledCheckbox.checked) {
-    return null;
-  }
-
+  if (!targetEnabled) return null;
   if (!targetInput) return null;
 
   const v = targetInput.value.trim();
@@ -276,11 +280,31 @@ function getTargetValue() {
 }
 
 
+
 if (targetEnabledCheckbox) {
   targetEnabledCheckbox.addEventListener("change", () => {
     if (currentChart) generateButton.click();
   });
 }
+
+if (targetToggleBtn) {
+  updateTargetToggleBtn();
+  targetToggleBtn.addEventListener("click", () => {
+    targetEnabled = !targetEnabled;
+    updateTargetToggleBtn();
+    if (currentChart) generateButton.click();
+  });
+}
+
+const debouncedRegen = debounce(() => {
+  if (rawRows && rawRows.length) generateButton.click();
+}, 250);
+
+if (baselineInput) {
+  baselineInput.addEventListener("input", debouncedRegen);
+  baselineInput.addEventListener("change", debouncedRegen);
+}
+
 
 
 let dataModelDirty = false;
@@ -2612,6 +2636,42 @@ document.addEventListener("keydown", (e) => {
       spcHelperPanel.classList.remove("visible");
     }
   }
+});
+
+function countValidNumericPoints() {
+  if (!rawRows || !rawRows.length) return 0;
+  const valueCol = valueSelect?.value;
+  if (!valueCol) return 0;
+
+  let n = 0;
+  for (const row of rawRows) {
+    const y = toNumericValue(row[valueCol]);
+    if (isFinite(y)) n++;
+  }
+  return n;
+}
+
+function enforceChartTypeSuitabilityAndRegen() {
+  const chartType = getSelectedChartType();
+  const n = countValidNumericPoints();
+
+  // Run chart can work with small n; XmR needs enough points to be meaningful.
+  const minXmr = 12;
+
+  if (chartType === "xmr" && n < minXmr) {
+    showError(`XmR needs at least ${minXmr} valid points. You currently have ${n}. Switch to a run chart or add more data.`);
+    // Optional: automatically revert to run
+    const runRadio = document.querySelector("input[name='chartType'][value='run']");
+    if (runRadio) runRadio.checked = true;
+    return;
+  }
+
+  // If data exists, regenerate immediately
+  if (rawRows && rawRows.length) generateButton.click();
+}
+
+document.querySelectorAll("input[name='chartType']").forEach(r => {
+  r.addEventListener("change", enforceChartTypeSuitabilityAndRegen);
 });
 
 
