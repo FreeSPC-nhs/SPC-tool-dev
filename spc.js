@@ -1980,8 +1980,6 @@ function toNumericValue(raw) {
 
 // ---- Generate chart button ----
 generateButton.addEventListener("click", () => {
-  // Don’t auto-clear tips; only clear “hard errors”
-  // If you want to preserve tips, comment out clearError().
   clearError();
 
   if (summaryDiv) summaryDiv.innerHTML = "";
@@ -1989,92 +1987,104 @@ generateButton.addEventListener("click", () => {
 
   if (!validateBeforeGenerate()) return;
 
-  const dateCol = dateSelect.value;
-  const valueCol = valueSelect.value;
-  const axisType = getAxisType();
+  try {
+    const dateCol = dateSelect.value;
+    const valueCol = valueSelect.value;
+    const axisType = getAxisType();
 
-  // --- 1) Build points depending on axis type ---
-  let parsedPoints;
+    // --- 1) Build points depending on axis type ---
+    let parsedPoints;
 
-  if (axisType === "date") {
-    parsedPoints = rawRows
-      .map((row) => {
-        const d = parseDateValue(row[dateCol]);
-        const y = toNumericValue(row[valueCol]);
-        if (!isFinite(d.getTime()) || !isFinite(y)) return null;
-        return { x: d, y };
-      })
-      .filter(Boolean);
-  } else {
-    // sequence/category axis
-    parsedPoints = rawRows
-      .map((row, idx) => {
-        const y = toNumericValue(row[valueCol]);
-        if (!isFinite(y)) return null;
+    if (axisType === "date") {
+      parsedPoints = rawRows
+        .map((row) => {
+          const d = parseDateValue(row[dateCol]);
+          const y = toNumericValue(row[valueCol]);
+          if (!d || !isFinite(d.getTime()) || !isFinite(y)) return null;
+          return { x: d, y };
+        })
+        .filter(Boolean);
+    } else {
+      // sequence/category axis
+      parsedPoints = rawRows
+        .map((row, idx) => {
+          const y = toNumericValue(row[valueCol]);
+          if (!isFinite(y)) return null;
 
-        const rawLabel = row[dateCol];
-        const label =
-          rawLabel !== undefined && rawLabel !== null && String(rawLabel).trim() !== ""
-            ? String(rawLabel)
-            : `Point ${idx + 1}`;
+          const rawLabel = row[dateCol];
+          const label =
+            rawLabel !== undefined &&
+            rawLabel !== null &&
+            String(rawLabel).trim() !== ""
+              ? String(rawLabel)
+              : `Point ${idx + 1}`;
 
-        return { x: idx, y, label };
-      })
-      .filter(Boolean);
+          return { x: idx, y, label };
+        })
+        .filter(Boolean);
+    }
+
+    // You can lower this if you want charts from fewer points
+    if (parsedPoints.length < 3) {
+      showError("Not enough valid data points after parsing. Check your column choices.");
+      return;
+    }
+
+    // --- 2) Create points + labels for the chart ---
+    let points, labels;
+
+    if (axisType === "date") {
+      points = [...parsedPoints].sort((a, b) => a.x - b.x);
+      labels = points.map((p) => p.x.toISOString().slice(0, 10));
+    } else {
+      points = parsedPoints;
+      labels = points.map((p) => p.label);
+    }
+
+    // --- baseline interpretation ---
+    let baselineCount = null;
+    if (baselineInput && baselineInput.value.trim() !== "") {
+      const n = parseInt(baselineInput.value, 10);
+      if (!isNaN(n) && n >= 2) baselineCount = Math.min(n, points.length);
+    }
+
+    const chartType = getSelectedChartType();
+
+    // clear existing charts
+    if (currentChart) {
+      currentChart.destroy();
+      currentChart = null;
+    }
+    if (mrChart) {
+      mrChart.destroy();
+      mrChart = null;
+    }
+    if (mrPanel) mrPanel.style.display = "none";
+
+    // draw the selected chart
+    if (chartType === "run") {
+      drawRunChart(points, baselineCount, labels);
+    } else {
+      drawXmRChart(points, baselineCount, labels);
+    }
+
+    // optional: clear dirty flag after successful draw
+    if (typeof clearDataModelDirty === "function") clearDataModelDirty();
+  } finally {
+    // Always re-render helper UI state (even if chart drawing throws)
+    if (typeof renderHelperState === "function") renderHelperState();
+
+    // Hide quick-start once a chart exists (robust even if localStorage is blocked)
+    if (currentChart) {
+      if (typeof markFirstRunComplete === "function") {
+        markFirstRunComplete();
+      } else {
+        const guide = document.getElementById("firstRunGuide");
+        if (guide) guide.style.display = "none";
+      }
+    }
   }
-
-  // You can lower this if you want charts from fewer points
-  if (parsedPoints.length < 3) {
-    showError("Not enough valid data points after parsing. Check your column choices.");
-    return;
-  }
-
-  // --- 2) Create points + labels for the chart ---
-  let points, labels;
-
-  if (axisType === "date") {
-    points = [...parsedPoints].sort((a, b) => a.x - b.x);
-    labels = points.map((p) => p.x.toISOString().slice(0, 10));
-  } else {
-    points = parsedPoints;
-    labels = points.map((p) => p.label);
-  }
-
-  // --- baseline interpretation ---
-  let baselineCount = null;
-  if (baselineInput && baselineInput.value.trim() !== "") {
-    const n = parseInt(baselineInput.value, 10);
-    if (!isNaN(n) && n >= 2) baselineCount = Math.min(n, points.length);
-  }
-
-  const chartType = getSelectedChartType();
-
-  // clear existing charts
-  if (currentChart) {
-    currentChart.destroy();
-    currentChart = null;
-  }
-  if (mrChart) {
-    mrChart.destroy();
-    mrChart = null;
-  }
-  if (mrPanel) mrPanel.style.display = "none";
-
-  if (chartType === "run") {
-    drawRunChart(points, baselineCount, labels);
-  } else {
-    drawXmRChart(points, baselineCount, labels);
-  }
-
-if (typeof clearDataModelDirty === "function") clearDataModelDirty();
-
-//  THIS is the important new line
-if (typeof markFirstRunComplete === "function") markFirstRunComplete();
-
-renderHelperState();
-
 });
-
 
 // ---- Chart drawing ----
 
@@ -2260,12 +2270,26 @@ function drawRunChart(points, baselineCount, labels) {
 
     clearDataModelDirty();
 
-  // Update summary (this already handles splits/sections in your newer summary)
-  const ruleHits = {
-    runRanges,
-    trendRanges,
-    astro
-  };
+  // ----- Build summary inputs safely -----
+  // Use a simple "overall baseline" for summary fields (the chart median line is still piecewise)
+  const baselineCountUsed =
+    (baselineCount && baselineCount >= 2)
+      ? Math.min(baselineCount, values.length)
+      : values.length;
+
+  const median = (typeof computeMedian === "function")
+    ? computeMedian(values.slice(0, baselineCountUsed))
+    : null;
+
+  // Use the arrays you actually built earlier in drawRunChart
+  const runRanges = runRangesAll;       // <- IMPORTANT: these exist
+  const trendRanges = trendRangesAll;   // <- IMPORTANT: these exist
+
+  // If you don't calculate astronomical points here, keep a safe empty structure
+  const astro = { indices: [], flags: [] };
+
+  // Update summary
+  const ruleHits = { runRanges, trendRanges, astro };
 
   if (typeof updateRunSummary === "function") {
     updateRunSummary(points, median, ruleHits, baselineCountUsed);
@@ -2279,25 +2303,20 @@ function drawRunChart(points, baselineCount, labels) {
     baselineCountUsed,
     shiftLength,
     trendLength,
-    runRanges: runRanges || [],
-    trendRanges: trendRanges || [],
-    astro: astro || { indices: [], flags: [] },
+    runRanges,
+    trendRanges,
+    astro,
     splits: Array.isArray(splits) ? splits.slice() : [],
     hasShift: Array.isArray(runRanges) && runRanges.length > 0,
     hasTrend: Array.isArray(trendRanges) && trendRanges.length > 0,
-    hasAstronomical: !!(astro && astro.indices && astro.indices.length),
-    isStable: !(
-      (runRanges && runRanges.length) ||
-      (trendRanges && trendRanges.length) ||
-      (astro && astro.indices && astro.indices.length)
-    )
+    hasAstronomical: false,
+    isStable: !(runRanges.length || trendRanges.length)
   };
 
   // If helper is open, refresh chips/intro to match the current chart
   if (spcHelperPanel && spcHelperPanel.classList.contains("visible")) {
     if (typeof renderHelperState === "function") renderHelperState();
   }
-}
 
 
 
