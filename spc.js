@@ -386,24 +386,36 @@ const recalcPrompt = document.getElementById("recalcPrompt");
 const firstRunGuide = document.getElementById("firstRunGuide");
 const FIRST_RUN_KEY = "spc_first_run_done_v1";
 
-let dataModelDirty = false;
+// Safe storage wrappers (localStorage can throw in some browser/privacy modes)
+function safeGetItem(key) {
+  try { return localStorage.getItem(key); } catch (e) { return null; }
+}
+function safeSetItem(key, value) {
+  try { localStorage.setItem(key, value); } catch (e) {}
+}
+function safeRemoveItem(key) {
+  try { localStorage.removeItem(key); } catch (e) {}
+}
 
-// --- First-run guide helpers (keep these) ---
 function updateFirstRunGuideVisibility() {
   if (!firstRunGuide) return;
-  const done = localStorage.getItem(FIRST_RUN_KEY) === "1";
+  const done = safeGetItem(FIRST_RUN_KEY) === "1";
   firstRunGuide.style.display = done ? "none" : "block";
 }
 
 function markFirstRunComplete() {
-  try { localStorage.setItem(FIRST_RUN_KEY, "1"); } catch (e) {}
+  safeSetItem(FIRST_RUN_KEY, "1");
   updateFirstRunGuideVisibility();
 }
 
 function clearFirstRunFlag() {
-  try { localStorage.removeItem(FIRST_RUN_KEY); } catch (e) {}
+  safeRemoveItem(FIRST_RUN_KEY);
   updateFirstRunGuideVisibility();
 }
+
+// On initial load
+updateFirstRunGuideVisibility();
+
 
 // --- Replace the recalc prompt with a red button state ---
 function setGenerateNeedsRecalc(needs) {
@@ -696,7 +708,7 @@ function resetAll() {
     updateMrToggleVisibility();
   }
 clearFirstRunFlag();
-hideRecalcPrompt();
+if (typeof setGenerateNeedsRecalc === "function") setGenerateNeedsRecalc(false);
 
   console.log("All elements reset.");
 }
@@ -2054,12 +2066,13 @@ generateButton.addEventListener("click", () => {
     drawXmRChart(points, baselineCount, labels);
   }
 
-clearDataModelDirty();
-markFirstRunComplete();
+if (typeof clearDataModelDirty === "function") clearDataModelDirty();
 
+//  THIS is the important new line
+if (typeof markFirstRunComplete === "function") markFirstRunComplete();
 
 renderHelperState();
-});
+
 
 
 
@@ -3580,13 +3593,19 @@ if (chartContextMenu) {
 if (action === "clearSplits") {
   // EXACT same behaviour as the sidebar button:
   if (clearSplitsButton) {
-    clearSplitsButton.click();
-  } else {
-    // fallback (shouldn’t be needed)
+  clearSplitsButton.addEventListener("click", () => {
     splits = [];
-    if (splitPointSelect) splitPointSelect.value = "";
-    if (getSelectedChartType() === "xmr" && generateButton) generateButton.click();
-  }
+
+    if (splitPointSelect) {
+      splitPointSelect.value = "";
+    }
+
+    // Redraw for BOTH run and XmR charts
+    if (generateButton) generateButton.click();
+  });
+}
+
+
   return;
 }
 
