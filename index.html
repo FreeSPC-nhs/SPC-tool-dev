@@ -615,8 +615,22 @@ body.sidebar-collapsed .main {
 
 <div class="panel" id="exportButtons" style="margin-top:0.5rem;">
 <button id="toggleSidebarButton" class="sidebar-toggle" style="margin-left:0.5rem;"> Hide controls</button>
-<button id="generateButton" class="sidebar-generate" style="margin-left:0.5rem;">Generate chart</button> 
+
+<div style="display:inline-block; margin-left:0.5rem;">
+  <button id="generateButton" class="sidebar-generate" type="button">Generate / Recalculate</button>
+  <div id="recalcPrompt" style="
+    display:none;
+    margin-top:0.35rem;
+    font-weight:800;
+    font-size:0.95rem;
+    color:#b71c1c;
+  ">
+    Changes saved — click <span style="text-decoration:underline;">Generate / Recalculate</span>
+  </div>
+</div>
+
 <button id="resetButton" type="button" style="margin-left:0.5rem;">Reset tool</button>
+
 <button id="downloadPngButton" style="margin-left:0.5rem;">Download chart as PNG</button>
 <button id="downloadPdfButton" style="margin-left:0.5rem;">Download PDF report</button>
 <button type="button" style="margin-left:0.5rem;" onclick="toggleHelpSection()">Help &amp; guidance</button>
@@ -876,9 +890,29 @@ body.sidebar-collapsed .main {
 
         <div class="panel">
           <strong>Chart:</strong>
-          <div class="chart-container">
-            <canvas id="spcChart"></canvas>
-          </div>
+
+<div id="firstRunGuide" style="
+  margin:0.75rem 0 0.75rem 0;
+  padding:0.85rem 1rem;
+  border:2px solid #111;
+  border-radius:0.5rem;
+  background:#fffbe6;
+  font-weight:900;
+  font-size:1.05rem;
+  line-height:1.35;
+">
+  Quick start:
+  <ol style="margin:0.5rem 0 0 1.25rem; padding:0;">
+    <li>Paste data (or upload a file)</li>
+    <li>Select your Date and Value columns</li>
+    <li>Click <span style="text-decoration:underline;">Generate / Recalculate</span></li>
+  </ol>
+</div>
+
+<div class="chart-container">
+  <canvas id="spcChart"></canvas>
+</div>
+
           
           <div id="summary" style="margin-top: 1rem; font-size: 0.9rem;"></div>
           <div id="capability" style="margin-top: 1rem; font-size: 0.9rem;"></div>

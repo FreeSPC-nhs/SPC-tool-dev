@@ -380,16 +380,53 @@ if (clampLclAtZeroCheckbox) {
 }
 
 
+const recalcPrompt = document.getElementById("recalcPrompt");
+const firstRunGuide = document.getElementById("firstRunGuide");
+const FIRST_RUN_KEY = "spc_first_run_done_v1";
+
 let dataModelDirty = false;
+
+function showRecalcPrompt() {
+  if (recalcPrompt) recalcPrompt.style.display = "block";
+}
+
+function hideRecalcPrompt() {
+  if (recalcPrompt) recalcPrompt.style.display = "none";
+}
+
+function updateFirstRunGuideVisibility() {
+  if (!firstRunGuide) return;
+  const done = localStorage.getItem(FIRST_RUN_KEY) === "1";
+  firstRunGuide.style.display = done ? "none" : "block";
+}
+
+function markFirstRunComplete() {
+  try { localStorage.setItem(FIRST_RUN_KEY, "1"); } catch (e) {}
+  updateFirstRunGuideVisibility();
+}
+
+function clearFirstRunFlag() {
+  try { localStorage.removeItem(FIRST_RUN_KEY); } catch (e) {}
+  updateFirstRunGuideVisibility();
+}
 
 function markDataModelDirty() {
   dataModelDirty = true;
-  showError("Data changed — click Generate chart to refresh the chart and analysis.");
+
+  // Keep your existing message, but also show a bold prompt near the button
+  showError("Changes saved — click Generate / Recalculate to refresh the chart and analysis.");
+  showRecalcPrompt();
 }
+
 function clearDataModelDirty() {
   dataModelDirty = false;
+  hideRecalcPrompt();
   // don’t clearError() automatically; user may still want to see tips
 }
+
+// On initial load, show guide only until first successful generate
+updateFirstRunGuideVisibility();
+
 
 
 //---- Add annotations button
@@ -655,6 +692,8 @@ function resetAll() {
   if (typeof updateMrToggleVisibility === "function") {
     updateMrToggleVisibility();
   }
+clearFirstRunFlag();
+hideRecalcPrompt();
 
   console.log("All elements reset.");
 }
@@ -1343,8 +1382,12 @@ if (dataEditorApplyButton) {
       splits = [];
       if (splitPointSelect) splitPointSelect.innerHTML = "";
 
-      closeDataEditor();
-      clearError();
+      	closeDataEditor();
+	clearError();
+
+	// Auto-generate after applying data so it never feels like "nothing happened"
+	if (generateButton) generateButton.click();
+
 
     } catch (e) {
       console.error(e);
@@ -2008,11 +2051,18 @@ generateButton.addEventListener("click", () => {
     drawXmRChart(points, baselineCount, labels);
   }
 
-  // clear “data changed” banner once we’ve successfully regenerated
-  if (typeof clearDataModelDirty === "function") clearDataModelDirty();
+  // keep dirty state cleared if we generated
+if (typeof clearDataModelDirty === "function") clearDataModelDirty();
 
-  renderHelperState();
+// First successful generate hides the guide until Reset
+markFirstRunComplete();
+
+// Safety: hide prompt after successful generation
+hideRecalcPrompt();
+
+renderHelperState();
 });
+
 
 
 // ---- Chart drawing ----
