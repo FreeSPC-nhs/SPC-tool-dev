@@ -3591,23 +3591,12 @@ if (chartContextMenu) {
       }
 
 if (action === "clearSplits") {
-  // EXACT same behaviour as the sidebar button:
-  if (clearSplitsButton) {
-  clearSplitsButton.addEventListener("click", () => {
-    splits = [];
-
-    if (splitPointSelect) {
-      splitPointSelect.value = "";
-    }
-
-    // Redraw for BOTH run and XmR charts
-    if (generateButton) generateButton.click();
-  });
-}
-
-
+  splits = [];
+  if (splitPointSelect) splitPointSelect.value = "";
+  if (generateButton) generateButton.click();
   return;
 }
+
 
 
       if (action === "copyCharts") {
