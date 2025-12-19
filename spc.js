@@ -3569,7 +3569,6 @@ document.addEventListener("click", () => hideChartContextMenu());
 document.addEventListener("keydown", (e) => { if (e.key === "Escape") hideChartContextMenu(); });
 document.addEventListener("scroll", () => hideChartContextMenu(), true);
 
-// Menu actions
 // Menu actions (right-click menu)
 if (chartContextMenu) {
   chartContextMenu.addEventListener("click", async (e) => {
@@ -3578,7 +3577,7 @@ if (chartContextMenu) {
 
     const action = btn.getAttribute("data-action");
 
-    // IMPORTANT: capture the point index BEFORE hiding the menu
+    // capture the point index BEFORE hiding the menu
     const clickedPointIndex = contextMenuPointIndex;
 
     hideChartContextMenu();
@@ -3605,18 +3604,17 @@ if (chartContextMenu) {
           // Fallback: add directly and redraw
           addSplitAfterIndex(clickedPointIndex);
         }
-
         return;
       }
 
-if (action === "clearSplits") {
-  splits = [];
-  if (splitPointSelect) splitPointSelect.value = "";
-  if (generateButton) generateButton.click();
-  return;
-}
+      if (action === "clearSplits") {
+        // Clear splits immediately + redraw (same effect as your sidebar clear button)
+        splits = [];
+        if (splitPointSelect) splitPointSelect.value = "";
 
-
+        if (generateButton) generateButton.click();
+        return;
+      }
 
       if (action === "copyCharts") {
         const composite = buildCompositeCanvas({ includeSummaryText: false });
@@ -3633,7 +3631,6 @@ if (action === "clearSplits") {
       }
 
       if (action === "saveChartsAs") {
-        // No filename prompt needed — browser Save As dialog supports renaming
         const composite = buildCompositeCanvas({ includeSummaryText: false });
         downloadCanvasAsPng(composite, "spc-charts.png");
         return;
@@ -3644,7 +3641,6 @@ if (action === "clearSplits") {
     }
   });
 }
-
 
 function showHelperAnswer(questionText) {
   if (!spcHelperOutput) return;
