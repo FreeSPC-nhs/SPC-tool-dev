@@ -605,6 +605,16 @@ body.sidebar-collapsed .main {
   margin: 0.25rem 0;
 }
 
+/* Generate button turns red when changes are pending */
+#generateButton.needs-recalc {
+  background: #b00020 !important;
+  border-color: #b00020 !important;
+  color: #fff !important;
+}
+#generateButton.needs-recalc:hover {
+  filter: brightness(0.95);
+}
+
 
   </style>
 </head>
@@ -905,7 +915,7 @@ body.sidebar-collapsed .main {
   <ol style="margin:0.5rem 0 0 1.25rem; padding:0;">
     <li>Paste data (or upload a file)</li>
     <li>Select your Date and Value columns</li>
-    <li>Click <span style="text-decoration:underline;">Generate / Recalculate</span></li>
+    <li>Click Generate / Recalculate button </li>
   </ol>
 </div>
 

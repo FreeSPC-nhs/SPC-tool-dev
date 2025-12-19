@@ -108,31 +108,33 @@ function guessColumns(rows) {
     n: numericScore(c)
   }));
 
-  // Prefer date-like columns that are NOT strongly numeric (prevents "Value" being treated as a date)
+  // Prefer date-like columns that are NOT strongly numeric
   const bestDate = scored
     .filter(s => s.d > 0 && s.n < 0.5)
     .sort((a, b) => b.d - a.d)[0];
 
-  const bestNum = scored.slice().sort((a, b) => b.n - a.n)[0];
-
-  // Use let (we may adjust later)
+  // Use let so we can fall back gracefully
   let dateCol = bestDate && bestDate.d >= 0.4 ? bestDate.col : null;
+  const hasDateCandidate = !!dateCol;
 
-  // Pick numeric value column
-  let valueCol = bestNum && bestNum.n >= 0.4 ? bestNum.col : null;
-
-  // If the best numeric happens to be the same as dateCol, pick the next best numeric column
-  if (dateCol && valueCol === dateCol) {
-    const nextBestNum = scored
-      .filter(s => s.col !== dateCol)
-      .sort((a, b) => b.n - a.n)[0];
-    if (nextBestNum && nextBestNum.n >= 0.4) valueCol = nextBestNum.col;
+  // If we did NOT find a real date column, default X to the first column (category/sequence label)
+  if (!dateCol) {
+    dateCol = cols[0];
   }
 
-  const hasDateCandidate = !!dateCol;
+  // Pick the best numeric column EXCLUDING the chosen x/date column
+  const bestNumNotX = scored
+    .filter(s => s.col !== dateCol)
+    .sort((a, b) => b.n - a.n)[0];
+
+  let valueCol = bestNumNotX && bestNumNotX.n >= 0.4 ? bestNumNotX.col : null;
+
+  // If still nothing numeric found, last-resort fallback (prevents nulls)
+  if (!valueCol) valueCol = dateCol;
 
   return { dateCol, valueCol, hasDateCandidate };
 }
+
 
 function hideMrPanelNow() {
   if (mrChart) {
@@ -386,14 +388,7 @@ const FIRST_RUN_KEY = "spc_first_run_done_v1";
 
 let dataModelDirty = false;
 
-function showRecalcPrompt() {
-  if (recalcPrompt) recalcPrompt.style.display = "block";
-}
-
-function hideRecalcPrompt() {
-  if (recalcPrompt) recalcPrompt.style.display = "none";
-}
-
+// --- First-run guide helpers (keep these) ---
 function updateFirstRunGuideVisibility() {
   if (!firstRunGuide) return;
   const done = localStorage.getItem(FIRST_RUN_KEY) === "1";
@@ -410,23 +405,31 @@ function clearFirstRunFlag() {
   updateFirstRunGuideVisibility();
 }
 
+// --- Replace the recalc prompt with a red button state ---
+function setGenerateNeedsRecalc(needs) {
+  if (!generateButton) return;
+  generateButton.classList.toggle("needs-recalc", !!needs);
+  generateButton.title = needs ? "Changes saved — click Generate / Recalculate" : "";
+}
+
 function markDataModelDirty() {
   dataModelDirty = true;
 
-  // Keep your existing message, but also show a bold prompt near the button
-  showError("Changes saved — click Generate / Recalculate to refresh the chart and analysis.");
-  showRecalcPrompt();
+  // Don’t show extra red text; just make the button obvious
+  setGenerateNeedsRecalc(true);
+
+  // Optional: keep errors for *real* errors only (recommended)
+  // (so don't call showError here)
 }
 
 function clearDataModelDirty() {
   dataModelDirty = false;
-  hideRecalcPrompt();
+  setGenerateNeedsRecalc(false);
   // don’t clearError() automatically; user may still want to see tips
 }
 
 // On initial load, show guide only until first successful generate
 updateFirstRunGuideVisibility();
-
 
 
 //---- Add annotations button
@@ -2051,14 +2054,9 @@ generateButton.addEventListener("click", () => {
     drawXmRChart(points, baselineCount, labels);
   }
 
-  // keep dirty state cleared if we generated
-if (typeof clearDataModelDirty === "function") clearDataModelDirty();
-
-// First successful generate hides the guide until Reset
+clearDataModelDirty();
 markFirstRunComplete();
 
-// Safety: hide prompt after successful generation
-hideRecalcPrompt();
 
 renderHelperState();
 });
