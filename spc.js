@@ -2858,21 +2858,234 @@ function updateMrToggleVisibility() {
 
 
 
-// ---- Download chart as PNG ----
+// ===============================
+// Chart context menu + export tools
+// ===============================
 
+const chartContextMenu = document.getElementById("chartContextMenu");
+
+// Track which point index was right-clicked
+let contextMenuPointIndex = null;
+
+// Helper: hide menu
+function hideChartContextMenu() {
+  if (!chartContextMenu) return;
+  chartContextMenu.style.display = "none";
+  contextMenuPointIndex = null;
+}
+
+// Helper: show menu at cursor, clamped to viewport
+function showChartContextMenu(clientX, clientY, pointIndex) {
+  if (!chartContextMenu) return;
+
+  contextMenuPointIndex = pointIndex;
+
+  chartContextMenu.style.display = "block";
+  chartContextMenu.style.left = "0px";
+  chartContextMenu.style.top = "0px";
+
+  // Clamp so it stays on-screen
+  const menuRect = chartContextMenu.getBoundingClientRect();
+  const pad = 8;
+  let x = clientX;
+  let y = clientY;
+
+  if (x + menuRect.width + pad > window.innerWidth) x = window.innerWidth - menuRect.width - pad;
+  if (y + menuRect.height + pad > window.innerHeight) y = window.innerHeight - menuRect.height - pad;
+  if (x < pad) x = pad;
+  if (y < pad) y = pad;
+
+  chartContextMenu.style.left = `${x}px`;
+  chartContextMenu.style.top = `${y}px`;
+}
+
+// Helper: get the nearest chart point index from a mouse event
+function getNearestPointIndexFromEvent(evt) {
+  if (!currentChart) return null;
+
+  const elements = currentChart.getElementsAtEventForMode(
+    evt,
+    "nearest",
+    { intersect: true },
+    true
+  );
+
+  if (!elements || elements.length === 0) return null;
+
+  // Chart.js v3+: element has .index
+  const idx = elements[0].index;
+  return Number.isFinite(idx) ? idx : null;
+}
+
+// ---- Split helpers ----
+function addSplitAfterIndex(splitAfterIndex) {
+  if (!Number.isFinite(splitAfterIndex)) return;
+
+  // can’t split after last point
+  const labels = currentChart?.data?.labels || [];
+  if (labels.length === 0) return;
+  if (splitAfterIndex < 0 || splitAfterIndex >= labels.length - 1) {
+    alert("You can’t split after the last point.");
+    return;
+  }
+
+  // avoid duplicates
+  if (!splits.includes(splitAfterIndex)) {
+    splits.push(splitAfterIndex);
+    splits.sort((a, b) => a - b);
+  }
+
+  // keep the dropdown in sync (if present)
+  if (labels && labels.length) {
+    populateSplitOptions(labels);
+  }
+
+  // redraw with new split
+  if (generateButton) generateButton.click();
+}
+
+// ---- Export helpers ----
+
+// Return the canvases to export (main + MR if shown)
+function getExportCanvases() {
+  const canvases = [];
+  if (chartCanvas) canvases.push(chartCanvas);
+
+  const showMR = showMRCheckbox ? showMRCheckbox.checked : false;
+  const mrVisible = mrPanel && mrPanel.style.display !== "none";
+  if (showMR && mrVisible && mrChartCanvas) canvases.push(mrChartCanvas);
+
+  return canvases;
+}
+
+// Build one combined image from multiple canvases (stacked vertically).
+// Optionally add summary text under the charts.
+function buildCompositeCanvas({ includeSummaryText }) {
+  const canvases = getExportCanvases();
+  if (!canvases.length) return null;
+
+  // widths/heights from actual rendered pixels
+  const widths = canvases.map(c => c.width);
+  const heights = canvases.map(c => c.height);
+
+  const outWidth = Math.max(...widths);
+  const chartsHeight = heights.reduce((a, b) => a + b, 0);
+
+  // Summary text (plain) – keep it simple for clipboard/export
+  let summaryText = "";
+  if (includeSummaryText && summaryDiv) {
+    summaryText = (summaryDiv.innerText || "").trim();
+  }
+
+  // Basic text layout
+  const fontSize = 14;
+  const lineHeight = Math.round(fontSize * 1.35);
+  const padding = 16;
+
+  // Wrap text to fit image width
+  function wrapLines(ctx, text, maxWidth) {
+    if (!text) return [];
+    const words = text.replace(/\s+/g, " ").split(" ");
+    const lines = [];
+    let line = "";
+
+    for (const w of words) {
+      const test = line ? `${line} ${w}` : w;
+      if (ctx.measureText(test).width <= maxWidth) {
+        line = test;
+      } else {
+        if (line) lines.push(line);
+        line = w;
+      }
+    }
+    if (line) lines.push(line);
+    return lines;
+  }
+
+  // Create output canvas
+  const out = document.createElement("canvas");
+  const ctx = out.getContext("2d");
+
+  // temp set font for measuring
+  ctx.font = `${fontSize}px system-ui, -apple-system, Segoe UI, sans-serif`;
+
+  const textMaxWidth = Math.max(200, outWidth - padding * 2);
+  const textLines = wrapLines(ctx, summaryText, textMaxWidth);
+  const textHeight = summaryText ? (padding + textLines.length * lineHeight + padding) : 0;
+
+  out.width = outWidth;
+  out.height = chartsHeight + (summaryText ? textHeight : 0);
+
+  // White background
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, out.width, out.height);
+
+  // Draw charts
+  let y = 0;
+  canvases.forEach((c, i) => {
+    // center each canvas if narrower
+    const x = Math.round((outWidth - c.width) / 2);
+    ctx.drawImage(c, x, y);
+    y += c.height;
+  });
+
+  // Draw summary text
+  if (summaryText) {
+    // separator line
+    ctx.fillStyle = "#eef2f6";
+    ctx.fillRect(0, y, out.width, 1);
+    y += padding;
+
+    ctx.fillStyle = "#111111";
+    ctx.font = `${fontSize}px system-ui, -apple-system, Segoe UI, sans-serif`;
+
+    let ty = y + lineHeight;
+    for (const line of textLines) {
+      ctx.fillText(line, padding, ty);
+      ty += lineHeight;
+    }
+  }
+
+  return out;
+}
+
+async function copyCanvasToClipboard(canvas) {
+  if (!canvas) return;
+
+  // Modern clipboard image API
+  if (navigator.clipboard && window.ClipboardItem) {
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+    if (!blob) throw new Error("Failed to create image.");
+    await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+    return;
+  }
+
+  // Fallback
+  alert("Copy to clipboard is not supported in this browser. Try 'Save chart(s) as…' instead.");
+}
+
+function downloadCanvasAsPng(canvas, filename) {
+  if (!canvas) return;
+  const link = document.createElement("a");
+  link.href = canvas.toDataURL("image/png");
+  link.download = filename;
+  link.click();
+}
+
+// ---- Existing top button: Download chart as PNG ----
+// Update to download chart(s) (main + MR if shown), as one image.
 if (downloadBtn) {
   downloadBtn.addEventListener("click", () => {
     if (!currentChart) {
       alert("Please generate a chart first.");
       return;
     }
-    const link = document.createElement("a");
-    link.href = currentChart.toBase64Image(); // Chart.js helper
-    link.download = "spc-chart.png";
-    link.click();
+    const composite = buildCompositeCanvas({ includeSummaryText: false });
+    downloadCanvasAsPng(composite, "spc-charts.png");
   });
 }
 
+// ---- Existing split dropdown button still works ----
 if (addSplitButton) {
   addSplitButton.addEventListener("click", () => {
     if (!splitPointSelect) return;
@@ -2884,15 +3097,70 @@ if (addSplitButton) {
     }
 
     const idx = parseInt(value, 10);
-    if (!Number.isInteger(idx)) return;
+    if (!Number.isFinite(idx)) return;
 
-    if (!splits.includes(idx)) {
-      splits.push(idx);
+    addSplitAfterIndex(idx);
+  });
+}
+
+// ---- Right-click on chart: show menu ----
+if (chartCanvas) {
+  chartCanvas.addEventListener("contextmenu", (evt) => {
+    // Only show our menu when user right-clicks a point
+    const idx = getNearestPointIndexFromEvent(evt);
+    if (idx === null) return; // allow normal browser menu if not on a point
+
+    evt.preventDefault();
+    showChartContextMenu(evt.clientX, evt.clientY, idx);
+  });
+}
+
+// Hide menu on click elsewhere / escape / scroll
+document.addEventListener("click", () => hideChartContextMenu());
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") hideChartContextMenu(); });
+document.addEventListener("scroll", () => hideChartContextMenu(), true);
+
+// Menu actions
+if (chartContextMenu) {
+  chartContextMenu.addEventListener("click", async (e) => {
+    const btn = e.target.closest("button[data-action]");
+    if (!btn) return;
+
+    const action = btn.getAttribute("data-action");
+    hideChartContextMenu();
+
+    if (!currentChart) {
+      alert("Please generate a chart first.");
+      return;
     }
 
-    // Rebuild chart if we're on XmR
-    if (getSelectedChartType() === "xmr") {
-      generateButton.click();
+    try {
+      if (action === "addSplit") {
+        if (contextMenuPointIndex === null) return;
+        addSplitAfterIndex(contextMenuPointIndex);
+      }
+
+      if (action === "copyCharts") {
+        const composite = buildCompositeCanvas({ includeSummaryText: false });
+        await copyCanvasToClipboard(composite);
+        alert("Chart image copied to clipboard.");
+      }
+
+      if (action === "copyChartsAndAnalysis") {
+        const composite = buildCompositeCanvas({ includeSummaryText: true });
+        await copyCanvasToClipboard(composite);
+        alert("Chart + analysis image copied to clipboard.");
+      }
+
+      if (action === "saveChartsAs") {
+        const name = prompt("Save as file name (PNG):", "spc-charts.png") || "spc-charts.png";
+        const safe = name.toLowerCase().endsWith(".png") ? name : `${name}.png`;
+        const composite = buildCompositeCanvas({ includeSummaryText: false });
+        downloadCanvasAsPng(composite, safe);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Sorry — that action failed in this browser. Try 'Save chart(s) as…' instead.");
     }
   });
 }
