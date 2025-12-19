@@ -569,6 +569,34 @@ function resetAll() {
   // --- Reset target direction dropdown ---
   if (targetDirectionInput) targetDirectionInput.value = "above";
 
+  // --- Reset axis + chart type radios to defaults (match first load HTML) ---
+  const axisDateRadio = document.querySelector("input[name='axisType'][value='date']");
+  const axisSeqRadio = document.querySelector("input[name='axisType'][value='sequence']");
+  if (axisDateRadio) axisDateRadio.checked = true;
+  if (axisSeqRadio) axisSeqRadio.checked = false;
+
+  const runRadio = document.querySelector("input[name='chartType'][value='run']");
+  const xmrRadio = document.querySelector("input[name='chartType'][value='xmr']");
+  if (runRadio) runRadio.checked = true;
+  if (xmrRadio) xmrRadio.checked = false;
+
+  // MR toggle default (match first load)
+  const showMRCheckbox = document.getElementById("showMRCheckbox");
+  if (showMRCheckbox) showMRCheckbox.checked = true;
+
+  // --- Reset Rules & interpretation defaults ---
+  const shiftRulePointsInput = document.getElementById("shiftRulePoints");
+  const trendRulePointsInput = document.getElementById("trendRulePoints");
+  const flagSpecialCauseOnChart = document.getElementById("flagSpecialCauseOnChart");
+  const clampLclAtZero = document.getElementById("clampLclAtZero");
+  const lclClampRow = document.getElementById("lclClampRow");
+
+  if (shiftRulePointsInput) shiftRulePointsInput.value = "8";
+  if (trendRulePointsInput) trendRulePointsInput.value = "6";
+  if (flagSpecialCauseOnChart) flagSpecialCauseOnChart.checked = true;
+  if (clampLclAtZero) clampLclAtZero.checked = false;
+  if (lclClampRow) lclClampRow.style.display = "none";
+
   // --- Clear any error message ---
   if (errorMessage) errorMessage.textContent = "";
 
@@ -591,15 +619,41 @@ function resetAll() {
   // --- Hide MR panel ---
   if (mrPanel) mrPanel.style.display = "none";
 
-    // --- Reset AI helper ---
-  if (aiQuestionInput) aiQuestionInput.value = "";
-  if (spcHelperOutput) spcHelperOutput.innerHTML = "";
-  if (spcHelperPanel) spcHelperPanel.classList.remove("visible"); // keep consistent with toggleHelpSection()
-  renderHelperState();
-
   // --- Reset data editor ---
   if (dataEditorTextarea) dataEditorTextarea.value = "";
   if (dataEditorOverlay) dataEditorOverlay.style.display = "none";
+
+  // --- Hide Help section (first-load behaviour) ---
+  const help = document.getElementById("helpSection");
+  if (help) help.style.display = "none";
+
+  // --- Reset SPC helper (first-load behaviour) ---
+  if (aiQuestionInput) aiQuestionInput.value = "";
+  if (spcHelperOutput) spcHelperOutput.innerHTML = "";
+  if (spcHelperPanel) spcHelperPanel.classList.remove("visible");
+
+  // Re-render chip suggestions (safe even if helper never opened)
+  if (typeof renderHelperState === "function") renderHelperState();
+
+  // --- Ensure sidebar is visible (not collapsed) like first load ---
+  document.body.classList.remove("sidebar-collapsed");
+  const toggleBtn = document.getElementById("toggleSidebarButton");
+  if (toggleBtn) toggleBtn.textContent = " Hide controls";
+
+  // --- Collapse sidebar <details> to match first load:
+  // Section 1 open, everything else closed
+  const sidebar = document.querySelector("aside.sidebar");
+  if (sidebar) {
+    const details = Array.from(sidebar.querySelectorAll("details"));
+    details.forEach((d, i) => {
+      d.open = (i === 0);
+    });
+  }
+
+  // Keep MR toggle visibility consistent with chart type default
+  if (typeof updateMrToggleVisibility === "function") {
+    updateMrToggleVisibility();
+  }
 
   console.log("All elements reset.");
 }
