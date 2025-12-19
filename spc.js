@@ -1813,69 +1813,119 @@ generateButton.addEventListener("click", () => {
 // ---- Chart drawing ----
 
 function drawRunChart(points, baselineCount, labels) {
+  if (!chartCanvas) return;
+
   const n = points.length;
 
-  // Baseline count used for median
-  let baselineCountUsed;
-  if (baselineCount && baselineCount >= 2) {
-    baselineCountUsed = Math.min(baselineCount, n);
-  } else {
-    baselineCountUsed = n;
+  // ---- Read “rules & interpretation” settings (safe fallbacks) ----
+  const { shiftLength, trendLength } =
+    (typeof getRuleSettings === "function")
+      ? getRuleSettings()
+      : { shiftLength: 8, trendLength: 6 };
+
+  const flagOnChart =
+    (typeof shouldFlagSpecialCauseOnChart === "function")
+      ? shouldFlagSpecialCauseOnChart()
+      : true;
+
+  // ---- Keep dropdowns in sync ----
+  populateAnnotationDateOptions(labels);
+  if (typeof populateSplitOptions === "function") {
+    populateSplitOptions(labels);
   }
 
-  const baselineValues = points.slice(0, baselineCountUsed).map(p => p.y);
+  // ---- Segment definition from splits (same pattern as XmR) ----
+  let effectiveSplits = Array.isArray(splits) ? splits.slice() : [];
+  effectiveSplits = effectiveSplits
+    .filter(i => Number.isInteger(i) && i >= 0 && i < n - 1)
+    .sort((a, b) => a - b);
+
+  const segmentStarts = [0];
+  const segmentEnds = [];
+  effectiveSplits.forEach(idx => {
+    segmentEnds.push(idx);
+    segmentStarts.push(idx + 1);
+  });
+  segmentEnds.push(n - 1);
+
   const values = points.map(p => p.y);
-  const median = computeMedian(baselineValues);
 
-  // Keep annotation date dropdown in sync with the current chart dates
-  populateAnnotationDateOptions(labels);
+  // ---- Build piecewise median line + colours ----
+  const medianLine = new Array(n).fill(NaN);
+  const pointColours = new Array(n).fill("#003f87");
 
-  // Rule settings (defaults to 8 + 6 if inputs are missing/invalid)
-  const { shiftLength, trendLength } = (typeof getRuleSettings === "function")
-    ? getRuleSettings()
-    : { shiftLength: 8, trendLength: 6 };
+  // Collect rule hits (optional – useful if your summary wants it)
+  const runRangesAll = [];
+  const trendRangesAll = [];
 
-  // Detect rule hits (ranges)
-  const runRanges = (typeof findLongRunRanges === "function")
-    ? findLongRunRanges(values, median, shiftLength)
-    : [];
+  // Baseline applies only to first segment; later segments use full segment
+  for (let s = 0; s < segmentStarts.length; s++) {
+    const start = segmentStarts[s];
+    const end = segmentEnds[s];
+    const segPoints = points.slice(start, end + 1);
+    const segValues = segPoints.map(p => p.y);
 
-  const trendRanges = (typeof findTrendRanges === "function")
-    ? findTrendRanges(values, trendLength)
-    : [];
+    // baselineCount logic (only first segment honours baselineCount)
+    let segBaselineCountUsed;
+    if (s === 0 && baselineCount && baselineCount >= 2) {
+      segBaselineCountUsed = Math.min(baselineCount, segPoints.length);
+    } else {
+      segBaselineCountUsed = segPoints.length;
+    }
 
-  // Convert ranges -> per-point flags
-  const runFlags = (typeof flagFromRanges === "function")
-    ? flagFromRanges(values.length, runRanges)
-    : new Array(values.length).fill(false);
+    const segBaselineValues = segValues.slice(0, segBaselineCountUsed);
+    const segMedian = computeMedian(segBaselineValues);
 
-  const trendFlags = (typeof flagFromRanges === "function")
-    ? flagFromRanges(values.length, trendRanges)
-    : new Array(values.length).fill(false);
+    for (let i = start; i <= end; i++) {
+      medianLine[i] = segMedian;
+    }
 
-   // Astronomical points (MAD-based), using baseline values as the reference
-   const astro = findAstronomicalPoints(values, median, baselineValues, 3.5);
-   const astroFlags = astro.flags;
+    // Rule detection per segment
+    const localRunRanges =
+      (typeof findLongRunRanges === "function")
+        ? findLongRunRanges(segValues, segMedian, shiftLength)
+        : [];
 
+    const localTrendRanges =
+      (typeof findTrendRanges === "function")
+        ? findTrendRanges(segValues, trendLength)
+        : [];
 
-  // Point colours (optional special-cause highlighting)
-  const flagOnChart = (typeof shouldFlagSpecialCauseOnChart === "function")
-    ? shouldFlagSpecialCauseOnChart()
-    : true;
+    // Convert local ranges into global indices for summary use
+    localRunRanges.forEach(r => runRangesAll.push({
+      start: r.start + start,
+      end: r.end + start,
+      len: r.len,
+      side: r.side
+    }));
 
-  const pointColours = values.map((_, i) => {
-  if (!flagOnChart) return "#003f87";
-  if (astroFlags[i]) return "#d73027"; // red for astronomical
-  return (runFlags[i] || trendFlags[i]) ? "#ff8c00" : "#003f87";
-});
+    localTrendRanges.forEach(r => trendRangesAll.push({
+      start: r.start + start,
+      end: r.end + start,
+      len: r.len,
+      direction: r.direction
+    }));
 
+    // Colour flags (per point)
+    const runFlags =
+      (typeof flagFromRanges === "function")
+        ? flagFromRanges(segValues.length, localRunRanges)
+        : new Array(segValues.length).fill(false);
 
-  const { title, xLabel, yLabel } = getChartLabels(
-    "Run Chart",
-    "Date",
-    "Value"
-  );
+    const trendFlags =
+      (typeof flagFromRanges === "function")
+        ? flagFromRanges(segValues.length, localTrendRanges)
+        : new Array(segValues.length).fill(false);
 
+    for (let i = 0; i < segValues.length; i++) {
+      const globalIdx = start + i;
+      if (flagOnChart && (runFlags[i] || trendFlags[i])) {
+        pointColours[globalIdx] = "#ff8c00";
+      }
+    }
+  }
+
+  const { title, xLabel, yLabel } = getChartLabels("Run Chart", "Date", "Value");
   const target = getTargetValue();
 
   const datasets = [
@@ -1890,7 +1940,7 @@ function drawRunChart(points, baselineCount, labels) {
     },
     {
       label: "Median",
-      data: values.map(() => median),
+      data: medianLine,
       borderDash: [6, 4],
       borderWidth: 2,
       borderColor: "#e41a1c",
@@ -1915,10 +1965,7 @@ function drawRunChart(points, baselineCount, labels) {
 
   currentChart = new Chart(chartCanvas, {
     type: "line",
-    data: {
-      labels: labels,
-      datasets: datasets
-    },
+    data: { labels, datasets },
     options: {
       responsive: true,
       maintainAspectRatio: false,
@@ -1928,21 +1975,10 @@ function drawRunChart(points, baselineCount, labels) {
           text: title,
           font: { size: 16, weight: "bold" }
         },
-        legend: {
-          display: true,
-          position: "bottom",
-          align: "center"
-        },
-        annotation: {
-          annotations: buildAnnotationConfig(labels)
-        }
+        legend: { display: true, position: "bottom", align: "center" },
+        annotation: { annotations: buildAnnotationConfig(labels) }
       },
-      elements: {
-        point: {
-          radius: 0,
-          hoverRadius: 0
-        }
-      },
+      elements: { point: { radius: 0, hoverRadius: 0 } },
       scales: {
         x: {
           grid: { display: false },
@@ -1958,10 +1994,15 @@ function drawRunChart(points, baselineCount, labels) {
 
   clearDataModelDirty();
 
-  // Pass structured rule hits so the summary can label them clearly
-  updateRunSummary(points, median, { runRanges, trendRanges, astro }, baselineCountUsed);
-
+  // If you have the newer summary that accepts structured ranges, use that:
+  if (typeof updateRunSummary === "function") {
+    // Provide BOTH: a “representative” median and structured hits.
+    // (Run summary can ignore ranges if it doesn’t use them yet.)
+    const firstSegMedian = medianLine.find(v => !Number.isNaN(v)) ?? computeMedian(values);
+    updateRunSummary(points, firstSegMedian, { runRanges: runRangesAll, trendRanges: trendRangesAll }, null);
+  }
 }
+
 
 function drawXmRChart(points, baselineCount, labels) {
   if (!chartCanvas) return;
@@ -2959,6 +3000,103 @@ function getExportCanvases() {
   return canvases;
 }
 
+function renderCapabilityToCanvas(ctx, x, y, maxWidth) {
+  if (!capabilityDiv) return 0;
+
+  const text = (capabilityDiv.innerText || "").trim();
+  if (!text) return 0;
+
+  const baseFont = "system-ui, -apple-system, Segoe UI, sans-serif";
+  const pad = 12;
+
+  // Simple styling: “capability” vs “not stable” message
+  const isStableBadge = /PROCESS CAPABILITY/i.test(text);
+  const bg = isStableBadge ? "#fff59d" : "#ffe0b2";
+  const border = "#ccc";
+
+  // Estimate height using a basic wrap
+  function setFont(size, bold) {
+    ctx.font = `${bold ? "700" : "400"} ${size}px ${baseFont}`;
+  }
+
+  function wrapHeight(msg, width, size) {
+    setFont(size, false);
+    const words = msg.replace(/\s+/g, " ").trim().split(" ").filter(Boolean);
+    const lineHeight = Math.round(size * 1.35);
+    let line = "";
+    let lines = 0;
+
+    for (const w of words) {
+      const test = line ? `${line} ${w}` : w;
+      if (ctx.measureText(test).width <= width) {
+        line = test;
+      } else {
+        lines++;
+        line = w;
+      }
+    }
+    if (line) lines++;
+    return lines * lineHeight;
+  }
+
+  const boxWidth = Math.min(maxWidth, 520);
+  const innerWidth = boxWidth - pad * 2;
+
+  // Split into headline-ish first line + rest
+  const lines = text.split("\n").map(s => s.trim()).filter(Boolean);
+  const head = lines[0] || "Process capability";
+  const rest = lines.slice(1).join(" ");
+
+  const headH = wrapHeight(head, innerWidth, 14);
+  const restH = rest ? wrapHeight(rest, innerWidth, 12) : 0;
+
+  const boxH = pad + headH + (rest ? 6 + restH : 0) + pad;
+
+  // Draw box
+  ctx.fillStyle = bg;
+  ctx.fillRect(x, y, boxWidth, boxH);
+  ctx.strokeStyle = border;
+  ctx.strokeRect(x, y, boxWidth, boxH);
+
+  // Draw text
+  let cursorY = y + pad;
+
+  // Head
+  ctx.fillStyle = "#111";
+  setFont(14, true);
+  cursorY += Math.round(14 * 1.35);
+  ctx.fillText(head, x + pad, cursorY);
+
+  // Rest
+  if (rest) {
+    cursorY += 8;
+    setFont(12, false);
+
+    const words = rest.replace(/\s+/g, " ").trim().split(" ").filter(Boolean);
+    const lineHeight = Math.round(12 * 1.35);
+    let line = "";
+    let yy = cursorY;
+
+    for (const w of words) {
+      const test = line ? `${line} ${w}` : w;
+      if (ctx.measureText(test).width <= innerWidth) {
+        line = test;
+      } else {
+        ctx.fillText(line, x + pad, yy);
+        yy += lineHeight;
+        line = w;
+      }
+    }
+    if (line) {
+      ctx.fillText(line, x + pad, yy);
+      yy += lineHeight;
+    }
+  }
+
+  return boxH;
+}
+
+
 function renderSummaryToCanvas(ctx, x, y, maxWidth) {
   if (!summaryDiv) return 0;
 
@@ -3069,76 +3207,87 @@ function buildCompositeCanvas({ includeSummaryText }) {
   const canvases = getExportCanvases();
   if (!canvases.length) return null;
 
-  // widths/heights from actual rendered pixels
   const widths = canvases.map(c => c.width);
   const heights = canvases.map(c => c.height);
 
   const outWidth = Math.max(...widths);
   const chartsHeight = heights.reduce((a, b) => a + b, 0);
 
-  // Summary text (plain) – keep it simple for clipboard/export
-   const padding = 16;
+  const padding = 16;
 
-  // We will render formatted summary after we know output dimensions
-  const includeSummary = !!includeSummaryText && summaryDiv && (summaryDiv.innerText || "").trim().length > 0;
+  const includeSummary =
+    !!includeSummaryText &&
+    summaryDiv &&
+    (summaryDiv.innerText || "").trim().length > 0;
 
-  // Create output canvas
+  const includeCapability =
+    !!includeSummaryText &&
+    capabilityDiv &&
+    (capabilityDiv.innerText || "").trim().length > 0;
+
+  // Dry-run to compute analysis height
+  let analysisHeight = 0;
+  if (includeSummary || includeCapability) {
+    const tmp = document.createElement("canvas");
+    tmp.width = outWidth;
+    tmp.height = 4000;
+    const tctx = tmp.getContext("2d");
+    tctx.fillStyle = "#111";
+
+    let used = 0;
+
+    if (includeSummary) {
+      used += renderSummaryToCanvas(tctx, padding, padding + used, outWidth - padding * 2);
+      used += padding;
+    }
+
+    if (includeCapability) {
+      used += renderCapabilityToCanvas(tctx, padding, padding + used, outWidth - padding * 2);
+      used += padding;
+    }
+
+    analysisHeight = 1 + padding + used + padding;
+  }
+
   const out = document.createElement("canvas");
   const ctx = out.getContext("2d");
 
-  // First, compute text height by rendering to a temporary measurement canvas
-  let summaryHeight = 0;
-  if (includeSummary) {
-    // Use a dummy canvas context with a reasonable width to estimate height
-    const measureCanvas = document.createElement("canvas");
-    measureCanvas.width = Math.max(...widths);
-    measureCanvas.height = 10;
-    const mctx = measureCanvas.getContext("2d");
-    summaryHeight = 1 + padding + 300 + padding; // initial guess
-    // We'll do a second pass below using the actual renderer to compute height precisely.
-  }
-
-  // Size the output canvas (charts + optional summary area)
   out.width = outWidth;
-
-  // We'll compute actual summary height by doing a dry run with a temporary ctx
-  let actualSummaryHeight = 0;
-  if (includeSummary) {
-    const tmp = document.createElement("canvas");
-    tmp.width = outWidth;
-    tmp.height = 2000; // enough for most summaries
-    const tctx = tmp.getContext("2d");
-    tctx.fillStyle = "#111";
-    const used = renderSummaryToCanvas(tctx, padding, padding, outWidth - padding * 2);
-    actualSummaryHeight = padding + used + padding + 1; // + separator
-  }
-
-  out.height = chartsHeight + (includeSummary ? actualSummaryHeight : 0);
+  out.height = chartsHeight + ((includeSummary || includeCapability) ? analysisHeight : 0);
 
   // Background
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, out.width, out.height);
 
-  // Draw charts
+  // Charts
   let y = 0;
-  canvases.forEach((c) => {
+  canvases.forEach(c => {
     const x = Math.round((outWidth - c.width) / 2);
     ctx.drawImage(c, x, y);
     y += c.height;
   });
 
-  // Draw summary (formatted)
-  if (includeSummary) {
+  // Analysis separator
+  if (includeSummary || includeCapability) {
     ctx.fillStyle = "#eef2f6";
     ctx.fillRect(0, y, out.width, 1);
     y += padding;
 
-    renderSummaryToCanvas(ctx, padding, y, outWidth - padding * 2);
+    let cursorY = y;
+
+    if (includeSummary) {
+      const used = renderSummaryToCanvas(ctx, padding, cursorY, outWidth - padding * 2);
+      cursorY += used + padding;
+    }
+
+    if (includeCapability) {
+      renderCapabilityToCanvas(ctx, padding, cursorY, outWidth - padding * 2);
+    }
   }
 
   return out;
-
 }
+
 
 async function copyCanvasToClipboard(canvas) {
   if (!canvas) return;
@@ -3196,14 +3345,18 @@ function applySplitFromSidebarSelection() {
     splits.sort((a, b) => a - b);
   }
 
-  // IMPORTANT: keep behaviour identical to your existing sidebar:
-  // only rebuild the chart immediately if we're on XmR
-  if (getSelectedChartType() === "xmr") {
-    if (generateButton) generateButton.click();
-  } else {
-    // No visual markers requested, so just acknowledge quietly
-    // (optional) alert("Split added. Switch to XmR to see split control limits.");
+  // Keep dropdown in sync (use current chart labels if available)
+  const labels =
+    (currentChart && currentChart.data && Array.isArray(currentChart.data.labels))
+      ? currentChart.data.labels
+      : null;
+
+  if (labels && typeof populateSplitOptions === "function") {
+    populateSplitOptions(labels);
   }
+
+  // IMPORTANT: Always redraw (Run + XmR)
+  if (generateButton) generateButton.click();
 
   return true;
 }
