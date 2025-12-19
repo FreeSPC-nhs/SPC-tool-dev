@@ -2906,9 +2906,10 @@ function getNearestPointIndexFromEvent(evt) {
   const elements = currentChart.getElementsAtEventForMode(
     evt,
     "nearest",
-    { intersect: true },
+    { intersect: false }, // <-- important
     true
   );
+
 
   if (!elements || elements.length === 0) return null;
 
@@ -2958,6 +2959,101 @@ function getExportCanvases() {
   return canvases;
 }
 
+function renderSummaryToCanvas(ctx, x, y, maxWidth) {
+  if (!summaryDiv) return 0;
+
+  const root = summaryDiv.cloneNode(true);
+
+  // Basic styles
+  const baseFont = "system-ui, -apple-system, Segoe UI, sans-serif";
+  const styles = {
+    h3: { size: 18, bold: true, gapTop: 6, gapBottom: 8 },
+    h4: { size: 14, bold: true, gapTop: 10, gapBottom: 6 },
+    p:  { size: 13, bold: false, gapTop: 6, gapBottom: 6 },
+    li: { size: 13, bold: false, gapTop: 2, gapBottom: 2 }
+  };
+
+  function setFont(size, bold) {
+    ctx.font = `${bold ? "700" : "400"} ${size}px ${baseFont}`;
+  }
+
+  function drawWrappedText(text, startX, startY, size, bold, indent = 0, bullet = false) {
+    setFont(size, bold);
+    const words = text.replace(/\s+/g, " ").trim().split(" ").filter(Boolean);
+    const lineHeight = Math.round(size * 1.35);
+    const bulletText = bullet ? "• " : "";
+    let line = "";
+    let yy = startY;
+
+    const usableWidth = Math.max(80, maxWidth - indent);
+    const drawX = startX + indent;
+
+    for (const w of words) {
+      const test = line ? `${line} ${w}` : w;
+      const prefix = line === "" ? bulletText : "";
+      const width = ctx.measureText(prefix + test).width;
+      if (width <= usableWidth) {
+        line = test;
+      } else {
+        ctx.fillText((line === "" ? bulletText : "") + line, drawX, yy);
+        yy += lineHeight;
+        line = w;
+      }
+    }
+
+    if (line) {
+      ctx.fillText((bulletText) + line, drawX, yy);
+      yy += lineHeight;
+    }
+
+    return yy - startY;
+  }
+
+  let cursorY = y;
+  ctx.fillStyle = "#111";
+
+  // Walk children in order (simple renderer)
+  const children = Array.from(root.children);
+
+  for (const node of children) {
+    const tag = node.tagName ? node.tagName.toLowerCase() : "";
+    if (tag === "h3" || tag === "h4") {
+      const st = styles[tag];
+      cursorY += st.gapTop;
+      drawWrappedText(node.innerText || "", x, cursorY, st.size, st.bold, 0, false);
+      cursorY += st.gapBottom;
+    } else if (tag === "p") {
+      const st = styles.p;
+      cursorY += st.gapTop;
+      drawWrappedText(node.innerText || "", x, cursorY, st.size, st.bold, 0, false);
+      cursorY += st.gapBottom;
+    } else if (tag === "ul") {
+      const items = Array.from(node.querySelectorAll(":scope > li"));
+      for (const li of items) {
+        const st = styles.li;
+        cursorY += st.gapTop;
+
+        // crude bold support: if li contains <strong>, we render whole line normal but it’s still more readable
+        // If you want true mixed-weight text per line, we can do a more detailed inline-run renderer.
+        drawWrappedText(li.innerText || "", x, cursorY, st.size, false, 18, true);
+
+        cursorY += st.gapBottom;
+      }
+      cursorY += 4;
+    } else {
+      // fallback: treat as paragraph
+      const st = styles.p;
+      cursorY += st.gapTop;
+      drawWrappedText(node.innerText || "", x, cursorY, st.size, st.bold, 0, false);
+      cursorY += st.gapBottom;
+    }
+  }
+
+  return cursorY - y;
+}
+
+
+
 // Build one combined image from multiple canvases (stacked vertically).
 // Optionally add summary text under the charts.
 function buildCompositeCanvas({ includeSummaryText }) {
@@ -2972,81 +3068,67 @@ function buildCompositeCanvas({ includeSummaryText }) {
   const chartsHeight = heights.reduce((a, b) => a + b, 0);
 
   // Summary text (plain) – keep it simple for clipboard/export
-  let summaryText = "";
-  if (includeSummaryText && summaryDiv) {
-    summaryText = (summaryDiv.innerText || "").trim();
-  }
+   const padding = 16;
 
-  // Basic text layout
-  const fontSize = 14;
-  const lineHeight = Math.round(fontSize * 1.35);
-  const padding = 16;
-
-  // Wrap text to fit image width
-  function wrapLines(ctx, text, maxWidth) {
-    if (!text) return [];
-    const words = text.replace(/\s+/g, " ").split(" ");
-    const lines = [];
-    let line = "";
-
-    for (const w of words) {
-      const test = line ? `${line} ${w}` : w;
-      if (ctx.measureText(test).width <= maxWidth) {
-        line = test;
-      } else {
-        if (line) lines.push(line);
-        line = w;
-      }
-    }
-    if (line) lines.push(line);
-    return lines;
-  }
+  // We will render formatted summary after we know output dimensions
+  const includeSummary = !!includeSummaryText && summaryDiv && (summaryDiv.innerText || "").trim().length > 0;
 
   // Create output canvas
   const out = document.createElement("canvas");
   const ctx = out.getContext("2d");
 
-  // temp set font for measuring
-  ctx.font = `${fontSize}px system-ui, -apple-system, Segoe UI, sans-serif`;
+  // First, compute text height by rendering to a temporary measurement canvas
+  let summaryHeight = 0;
+  if (includeSummary) {
+    // Use a dummy canvas context with a reasonable width to estimate height
+    const measureCanvas = document.createElement("canvas");
+    measureCanvas.width = Math.max(...widths);
+    measureCanvas.height = 10;
+    const mctx = measureCanvas.getContext("2d");
+    summaryHeight = 1 + padding + 300 + padding; // initial guess
+    // We'll do a second pass below using the actual renderer to compute height precisely.
+  }
 
-  const textMaxWidth = Math.max(200, outWidth - padding * 2);
-  const textLines = wrapLines(ctx, summaryText, textMaxWidth);
-  const textHeight = summaryText ? (padding + textLines.length * lineHeight + padding) : 0;
-
+  // Size the output canvas (charts + optional summary area)
   out.width = outWidth;
-  out.height = chartsHeight + (summaryText ? textHeight : 0);
 
-  // White background
+  // We'll compute actual summary height by doing a dry run with a temporary ctx
+  let actualSummaryHeight = 0;
+  if (includeSummary) {
+    const tmp = document.createElement("canvas");
+    tmp.width = outWidth;
+    tmp.height = 2000; // enough for most summaries
+    const tctx = tmp.getContext("2d");
+    tctx.fillStyle = "#111";
+    const used = renderSummaryToCanvas(tctx, padding, padding, outWidth - padding * 2);
+    actualSummaryHeight = padding + used + padding + 1; // + separator
+  }
+
+  out.height = chartsHeight + (includeSummary ? actualSummaryHeight : 0);
+
+  // Background
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, out.width, out.height);
 
   // Draw charts
   let y = 0;
-  canvases.forEach((c, i) => {
-    // center each canvas if narrower
+  canvases.forEach((c) => {
     const x = Math.round((outWidth - c.width) / 2);
     ctx.drawImage(c, x, y);
     y += c.height;
   });
 
-  // Draw summary text
-  if (summaryText) {
-    // separator line
+  // Draw summary (formatted)
+  if (includeSummary) {
     ctx.fillStyle = "#eef2f6";
     ctx.fillRect(0, y, out.width, 1);
     y += padding;
 
-    ctx.fillStyle = "#111111";
-    ctx.font = `${fontSize}px system-ui, -apple-system, Segoe UI, sans-serif`;
-
-    let ty = y + lineHeight;
-    for (const line of textLines) {
-      ctx.fillText(line, padding, ty);
-      ty += lineHeight;
-    }
+    renderSummaryToCanvas(ctx, padding, y, outWidth - padding * 2);
   }
 
   return out;
+
 }
 
 async function copyCanvasToClipboard(canvas) {
@@ -3086,34 +3168,56 @@ if (downloadBtn) {
 }
 
 // ---- Existing split dropdown button still works ----
+function applySplitFromSidebarSelection() {
+  if (!splitPointSelect) return false;
+
+  const value = splitPointSelect.value;
+  if (value === "") {
+    alert("Please choose a point to split after.");
+    return false;
+  }
+
+  const idx = parseInt(value, 10);
+  if (!Number.isInteger(idx)) return false;
+
+  // Avoid duplicates
+  if (!Array.isArray(splits)) splits = [];
+  if (!splits.includes(idx)) {
+    splits.push(idx);
+    splits.sort((a, b) => a - b);
+  }
+
+  // IMPORTANT: keep behaviour identical to your existing sidebar:
+  // only rebuild the chart immediately if we're on XmR
+  if (getSelectedChartType() === "xmr") {
+    if (generateButton) generateButton.click();
+  } else {
+    // No visual markers requested, so just acknowledge quietly
+    // (optional) alert("Split added. Switch to XmR to see split control limits.");
+  }
+
+  return true;
+}
+
 if (addSplitButton) {
   addSplitButton.addEventListener("click", () => {
-    if (!splitPointSelect) return;
-
-    const value = splitPointSelect.value;
-    if (value === "") {
-      alert("Please choose a point to split after.");
-      return;
-    }
-
-    const idx = parseInt(value, 10);
-    if (!Number.isFinite(idx)) return;
-
-    addSplitAfterIndex(idx);
+    applySplitFromSidebarSelection();
   });
 }
+
 
 // ---- Right-click on chart: show menu ----
 if (chartCanvas) {
   chartCanvas.addEventListener("contextmenu", (evt) => {
-    // Only show our menu when user right-clicks a point
-    const idx = getNearestPointIndexFromEvent(evt);
-    if (idx === null) return; // allow normal browser menu if not on a point
-
+    // Always use our menu on the chart canvas
     evt.preventDefault();
-    showChartContextMenu(evt.clientX, evt.clientY, idx);
+
+    // Try to find a nearby point; if none, menu still shows but split is disabled
+    const idx = getNearestPointIndexFromEvent(evt);
+    showChartContextMenu(evt.clientX, evt.clientY, idx); // idx may be null
   });
 }
+
 
 // Hide menu on click elsewhere / escape / scroll
 document.addEventListener("click", () => hideChartContextMenu());
