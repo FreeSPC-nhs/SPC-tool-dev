@@ -1298,6 +1298,32 @@ if (dataEditorApplyButton) {
   });
 }
 
+function formatDateOnlyLabel(v) {
+  if (v === null || v === undefined) return "";
+
+  // If it's already a Date object
+  if (v instanceof Date && !isNaN(v.getTime())) {
+    return v.toISOString().slice(0, 10); // YYYY-MM-DD
+  }
+
+  const s = String(v).trim();
+  if (!s) return "";
+
+  // Common cases where labels include time
+  if (s.includes("T")) return s.split("T")[0];          // ISO: 2025-01-01T12:00...
+  if (s.includes(",")) return s.split(",")[0].trim();   // Locale: "01/01/2025, 12:00"
+
+  // If it’s "YYYY-MM-DD HH:mm..." or "DD/MM/YYYY HH:mm..."
+  const firstToken = s.split(/\s+/)[0];
+  if (/^\d{4}-\d{2}-\d{2}$/.test(firstToken)) return firstToken;
+  if (/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}$/.test(firstToken)) return firstToken;
+
+  // Fallback: try parsing and formatting
+  const d = new Date(s);
+  if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+
+  return firstToken;
+}
 
 
 // ---- Summary helpers ----
@@ -1329,16 +1355,16 @@ function updateRunSummary(points, medianIgnored, ruleHitsIgnored, baselineCountU
   }
 
   function rangeText(start, end) {
-    // Prefer x values if available; fall back to point numbers
-    const a = points[start]?.x;
-    const b = points[end]?.x;
-    const hasDates = a !== undefined && b !== undefined && a !== null && b !== null;
+  const a = points[start]?.x;
+  const b = points[end]?.x;
+  const hasDates = a !== undefined && b !== undefined && a !== null && b !== null;
 
-    if (hasDates) {
-      return `points ${start + 1}–${end + 1} (${a} to ${b})`;
-    }
-    return `points ${start + 1}–${end + 1}`;
+  if (hasDates) {
+    return `points ${start + 1}–${end + 1} (${formatDateOnlyLabel(a)} to ${formatDateOnlyLabel(b)})`;
   }
+  return `points ${start + 1}–${end + 1}`;
+}
+
 
   function findTrendRanges(values, len) {
     const out = [];
@@ -1606,9 +1632,10 @@ function updateXmRMultiSummary(segments, totalPoints) {
           : `Period ${idx + 1}`;
 
     const rangeText =
-      labelStart !== undefined && labelEnd !== undefined
-        ? `points ${startIndex + 1}–${endIndex + 1} (${labelStart} to ${labelEnd})`
-        : `points ${startIndex + 1}–${endIndex + 1}`;
+  labelStart !== undefined && labelEnd !== undefined
+    ? `points ${startIndex + 1}–${endIndex + 1} (${formatDateOnlyLabel(labelStart)} to ${formatDateOnlyLabel(labelEnd)})`
+    : `points ${startIndex + 1}–${endIndex + 1}`;
+
 
     html += `<h4>${periodLabel}</h4>`;
     html += `<ul>`;
@@ -3558,6 +3585,20 @@ if (chartContextMenu) {
 
         return;
       }
+
+if (action === "clearSplits") {
+  // EXACT same behaviour as the sidebar button:
+  if (clearSplitsButton) {
+    clearSplitsButton.click();
+  } else {
+    // fallback (shouldn’t be needed)
+    splits = [];
+    if (splitPointSelect) splitPointSelect.value = "";
+    if (getSelectedChartType() === "xmr" && generateButton) generateButton.click();
+  }
+  return;
+}
+
 
       if (action === "copyCharts") {
         const composite = buildCompositeCanvas({ includeSummaryText: false });
