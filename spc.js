@@ -2672,20 +2672,19 @@ function answerSpcQuestion(question) {
   }
 
   // Helper to match simple keyword / phrase based FAQs
-  function matchFaq(items, text) {
-    for (const item of items) {
-      if (
-        item.keywords.some(k =>
-          Array.isArray(k)
-            ? k.every(word => text.includes(word))
-            : if (typeof k === "string" && text.includes(k)) return true;
-        )
-      ) {
-        return item.answer;
-      }
-    }
-    return null;
+function matchFaq(items, text) {
+  for (const item of items) {
+    const hit = item.keywords.some(k =>
+      Array.isArray(k)
+        ? k.every(word => text.includes(word))
+        : (typeof k === "string" && text.includes(k))
+    );
+
+    if (hit) return item.answer;
   }
+  return null;
+}
+
 
   // ----- 0. Conceptual SPC knowledge (no chart needed at all) -----
   // (Kept: same topics + same style as your current helper)
