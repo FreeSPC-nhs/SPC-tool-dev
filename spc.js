@@ -2073,7 +2073,7 @@ if (typeof markFirstRunComplete === "function") markFirstRunComplete();
 
 renderHelperState();
 
-
+});
 
 
 // ---- Chart drawing ----
