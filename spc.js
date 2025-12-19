@@ -2964,7 +2964,6 @@ function renderSummaryToCanvas(ctx, x, y, maxWidth) {
 
   const root = summaryDiv.cloneNode(true);
 
-  // Basic styles
   const baseFont = "system-ui, -apple-system, Segoe UI, sans-serif";
   const styles = {
     h3: { size: 18, bold: true, gapTop: 6, gapBottom: 8 },
@@ -2979,30 +2978,36 @@ function renderSummaryToCanvas(ctx, x, y, maxWidth) {
 
   function drawWrappedText(text, startX, startY, size, bold, indent = 0, bullet = false) {
     setFont(size, bold);
-    const words = text.replace(/\s+/g, " ").trim().split(" ").filter(Boolean);
+
+    const clean = String(text || "").replace(/\s+/g, " ").trim();
+    if (!clean) return 0;
+
+    const words = clean.split(" ");
     const lineHeight = Math.round(size * 1.35);
     const bulletText = bullet ? "• " : "";
-    let line = "";
-    let yy = startY;
 
     const usableWidth = Math.max(80, maxWidth - indent);
     const drawX = startX + indent;
 
+    let line = "";
+    let yy = startY;
+
     for (const w of words) {
       const test = line ? `${line} ${w}` : w;
-      const prefix = line === "" ? bulletText : "";
+      const prefix = (line === "") ? bulletText : "";
       const width = ctx.measureText(prefix + test).width;
+
       if (width <= usableWidth) {
         line = test;
       } else {
-        ctx.fillText((line === "" ? bulletText : "") + line, drawX, yy);
+        ctx.fillText(((line === "") ? bulletText : "") + line, drawX, yy);
         yy += lineHeight;
         line = w;
       }
     }
 
     if (line) {
-      ctx.fillText((bulletText) + line, drawX, yy);
+      ctx.fillText(bulletText + line, drawX, yy);
       yy += lineHeight;
     }
 
@@ -3012,41 +3017,45 @@ function renderSummaryToCanvas(ctx, x, y, maxWidth) {
   let cursorY = y;
   ctx.fillStyle = "#111";
 
-  // Walk children in order (simple renderer)
   const children = Array.from(root.children);
 
   for (const node of children) {
     const tag = node.tagName ? node.tagName.toLowerCase() : "";
+    const text = node.innerText || "";
+
     if (tag === "h3" || tag === "h4") {
       const st = styles[tag];
       cursorY += st.gapTop;
-      drawWrappedText(node.innerText || "", x, cursorY, st.size, st.bold, 0, false);
+      cursorY += drawWrappedText(text, x, cursorY, st.size, st.bold, 0, false);
       cursorY += st.gapBottom;
-    } else if (tag === "p") {
+      continue;
+    }
+
+    if (tag === "p") {
       const st = styles.p;
       cursorY += st.gapTop;
-      drawWrappedText(node.innerText || "", x, cursorY, st.size, st.bold, 0, false);
+      cursorY += drawWrappedText(text, x, cursorY, st.size, st.bold, 0, false);
       cursorY += st.gapBottom;
-    } else if (tag === "ul") {
+      continue;
+    }
+
+    if (tag === "ul") {
       const items = Array.from(node.querySelectorAll(":scope > li"));
       for (const li of items) {
         const st = styles.li;
         cursorY += st.gapTop;
-
-        // crude bold support: if li contains <strong>, we render whole line normal but it’s still more readable
-        // If you want true mixed-weight text per line, we can do a more detailed inline-run renderer.
-        drawWrappedText(li.innerText || "", x, cursorY, st.size, false, 18, true);
-
+        cursorY += drawWrappedText(li.innerText || "", x, cursorY, st.size, false, 18, true);
         cursorY += st.gapBottom;
       }
       cursorY += 4;
-    } else {
-      // fallback: treat as paragraph
-      const st = styles.p;
-      cursorY += st.gapTop;
-      drawWrappedText(node.innerText || "", x, cursorY, st.size, st.bold, 0, false);
-      cursorY += st.gapBottom;
+      continue;
     }
+
+    // fallback
+    const st = styles.p;
+    cursorY += st.gapTop;
+    cursorY += drawWrappedText(text, x, cursorY, st.size, st.bold, 0, false);
+    cursorY += st.gapBottom;
   }
 
   return cursorY - y;
@@ -3225,12 +3234,17 @@ document.addEventListener("keydown", (e) => { if (e.key === "Escape") hideChartC
 document.addEventListener("scroll", () => hideChartContextMenu(), true);
 
 // Menu actions
+// Menu actions (right-click menu)
 if (chartContextMenu) {
   chartContextMenu.addEventListener("click", async (e) => {
     const btn = e.target.closest("button[data-action]");
     if (!btn) return;
 
     const action = btn.getAttribute("data-action");
+
+    // IMPORTANT: capture the point index BEFORE hiding the menu
+    const clickedPointIndex = contextMenuPointIndex;
+
     hideChartContextMenu();
 
     if (!currentChart) {
@@ -3240,27 +3254,44 @@ if (chartContextMenu) {
 
     try {
       if (action === "addSplit") {
-        if (contextMenuPointIndex === null) return;
-        addSplitAfterIndex(contextMenuPointIndex);
+        if (clickedPointIndex === null || clickedPointIndex === undefined) {
+          alert("Right-click near a data point to add a split.");
+          return;
+        }
+
+        // Mimic the sidebar workflow: set dropdown value then apply
+        if (splitPointSelect) splitPointSelect.value = String(clickedPointIndex);
+
+        // Use your shared sidebar function if it exists
+        if (typeof applySplitFromSidebarSelection === "function") {
+          applySplitFromSidebarSelection();
+        } else {
+          // Fallback: add directly and redraw
+          addSplitAfterIndex(clickedPointIndex);
+        }
+
+        return;
       }
 
       if (action === "copyCharts") {
         const composite = buildCompositeCanvas({ includeSummaryText: false });
         await copyCanvasToClipboard(composite);
         alert("Chart image copied to clipboard.");
+        return;
       }
 
       if (action === "copyChartsAndAnalysis") {
         const composite = buildCompositeCanvas({ includeSummaryText: true });
         await copyCanvasToClipboard(composite);
         alert("Chart + analysis image copied to clipboard.");
+        return;
       }
 
       if (action === "saveChartsAs") {
-        const name = prompt("Save as file name (PNG):", "spc-charts.png") || "spc-charts.png";
-        const safe = name.toLowerCase().endsWith(".png") ? name : `${name}.png`;
+        // No filename prompt needed — browser Save As dialog supports renaming
         const composite = buildCompositeCanvas({ includeSummaryText: false });
-        downloadCanvasAsPng(composite, safe);
+        downloadCanvasAsPng(composite, "spc-charts.png");
+        return;
       }
     } catch (err) {
       console.error(err);
@@ -3268,6 +3299,7 @@ if (chartContextMenu) {
     }
   });
 }
+
 
 function showHelperAnswer(questionText) {
   if (!spcHelperOutput) return;
