@@ -2678,7 +2678,7 @@ function answerSpcQuestion(question) {
         item.keywords.some(k =>
           Array.isArray(k)
             ? k.every(word => text.includes(word))
-            : text.includes(k)
+            : if (typeof k === "string" && text.includes(k)) return true;
         )
       ) {
         return item.answer;
@@ -2752,13 +2752,13 @@ function answerSpcQuestion(question) {
         "They are not targets and they are not hard performance thresholds. Points outside the limits or unusual patterns inside the limits suggest special-cause variation that may be worth investigating."
     },
     {
-      keywords: ["sigma", "standard deviation", "spread of the data", "variation"],
+      keywords: ["sigma", "standard deviation", "spread of the data"],
       answer:
         "In SPC, sigma is an estimate of the usual spread of the process. On an XmR chart, sigma is estimated from the average moving range between consecutive points. " +
         "Control limits are typically placed at plus or minus three sigma from the mean. A larger sigma means a wider spread of routine variation."
     },
     {
-      keywords: ["common cause", "special cause"],
+      keywords: ["common cause", "special cause", "variation"],
       answer:
         "Common-cause variation is the natural background noise of a stable system. Special-cause variation is a signal that the system may have changed, for example due to a new policy, a change in demand, or a data issue. " +
         "SPC helps you distinguish common-cause from special-cause variation so that you can avoid over-reacting to noise while still spotting real changes."
@@ -2772,7 +2772,7 @@ function answerSpcQuestion(question) {
     {
       keywords: ["capability", "capable process", "process capability"],
       answer:
-        "Capability in this context is about the chance that future points will meet a chosen target, assuming the process stays as it is now. " +
+        "Capability in this context is about the chance that future points will meet a chosen target, assuming the process stays stable and is approximately normally distributed. " +
         "If the process is stable, we can estimate the mean and sigma and then work out the percentage of future points likely to fall above or below a target threshold."
     },
     {
@@ -2821,7 +2821,7 @@ function answerSpcQuestion(question) {
     const signals = [];
     if (a.hasShift) signals.push("a sustained shift (a long run on one side of the median)");
     if (a.hasTrend) signals.push("a sustained trend (values steadily increasing or decreasing)");
-    if (a.hasAstronomical) signals.push("an unusually extreme (astronomical) point");
+    if (a.hasAstronomical) signals.push("an unusually extreme point that stands out from the rest of the data and merits investigation");
 
     if (isMyChartQ) {
       const stableText = a.isStable
