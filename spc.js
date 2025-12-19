@@ -16,6 +16,7 @@ let mrChart = null;        // moving range chart
 let annotations = [];      // { date: 'YYYY-MM-DD', label: 'text' }
 let splits = [];   // indices where a new XmR segment starts (split AFTER index)
 let lastXmRAnalysis = null;
+let lastRunAnalysis = null;
 
 const fileInput         = document.getElementById("fileInput");
 const columnSelectors   = document.getElementById("columnSelectors");
@@ -2196,16 +2197,47 @@ function drawRunChart(points, baselineCount, labels) {
     }
   });
 
-  clearDataModelDirty();
+    clearDataModelDirty();
 
-  // If you have the newer summary that accepts structured ranges, use that:
+  // Update summary (this already handles splits/sections in your newer summary)
+  const ruleHits = {
+    runRanges,
+    trendRanges,
+    astro
+  };
+
   if (typeof updateRunSummary === "function") {
-    // Provide BOTH: a “representative” median and structured hits.
-    // (Run summary can ignore ranges if it doesn’t use them yet.)
-    const firstSegMedian = medianLine.find(v => !Number.isNaN(v)) ?? computeMedian(values);
-    updateRunSummary(points, firstSegMedian, { runRanges: runRangesAll, trendRanges: trendRangesAll }, null);
+    updateRunSummary(points, median, ruleHits, baselineCountUsed);
+  }
+
+  // Store a structured snapshot for the SPC helper (Run chart)
+  lastRunAnalysis = {
+    chartType: "run",
+    n,
+    median,
+    baselineCountUsed,
+    shiftLength,
+    trendLength,
+    runRanges: runRanges || [],
+    trendRanges: trendRanges || [],
+    astro: astro || { indices: [], flags: [] },
+    splits: Array.isArray(splits) ? splits.slice() : [],
+    hasShift: Array.isArray(runRanges) && runRanges.length > 0,
+    hasTrend: Array.isArray(trendRanges) && trendRanges.length > 0,
+    hasAstronomical: !!(astro && astro.indices && astro.indices.length),
+    isStable: !(
+      (runRanges && runRanges.length) ||
+      (trendRanges && trendRanges.length) ||
+      (astro && astro.indices && astro.indices.length)
+    )
+  };
+
+  // If helper is open, refresh chips/intro to match the current chart
+  if (spcHelperPanel && spcHelperPanel.classList.contains("visible")) {
+    if (typeof renderHelperState === "function") renderHelperState();
   }
 }
+
 
 
 function drawXmRChart(points, baselineCount, labels) {
@@ -2656,6 +2688,7 @@ function answerSpcQuestion(question) {
   }
 
   // ----- 0. Conceptual SPC knowledge (no chart needed at all) -----
+  // (Kept: same topics + same style as your current helper)
   const conceptualFaq = [
     {
       keywords: [
@@ -2692,6 +2725,7 @@ function answerSpcQuestion(question) {
   if (conceptualHit) return conceptualHit;
 
   // ----- 1. General SPC FAQs (can be answered without your specific chart) -----
+  // (Kept: includes MR, XmR, limits, sigma, rules/signals, capability, baseline/splits)
   const generalFaq = [
     {
       keywords: [
@@ -2742,7 +2776,7 @@ function answerSpcQuestion(question) {
         "If the process is stable, we can estimate the mean and sigma and then work out the percentage of future points likely to fall above or below a target threshold."
     },
     {
-      keywords: ["baseline", "phase", "segment", "split the chart"],
+      keywords: ["baseline", "phase", "segment", "split the chart", "split"],
       answer:
         "Splitting an SPC chart into phases (baselines) lets you compare the process before and after a known change, such as a new pathway or intervention. " +
         "Each segment gets its own mean and control limits so you can see whether the system has shifted, rather than averaging everything together."
@@ -2752,280 +2786,136 @@ function answerSpcQuestion(question) {
   const generalHit = matchFaq(generalFaq, q);
   if (generalHit) return generalHit;
 
-  // ----- 2. Chart-specific interpretation (XmR only) -----
+  // ----- 2. Chart-specific interpretation (Run + XmR) -----
   const chartType = (typeof getSelectedChartType === "function")
     ? getSelectedChartType()
     : "xmr";
 
-  if (chartType !== "xmr") {
-    return (
-      "I can answer general SPC questions for any chart, but the automatic detailed interpretation currently applies only to XmR charts. " +
-      "Please switch to an XmR chart if you want automated interpretation of stability, signals, limits or capability."
-    );
-  }
-
-  if (!lastXmRAnalysis) {
-    return (
-      "I can only interpret your chart once an XmR chart has been generated. " +
-      "Please create an XmR chart first, then ask me about stability, signals, control limits, target performance or capability."
-    );
-  }
-
-  // ----- Special: “My chart” standard questions -----
   const isMyChartQ =
     q.includes("what is my chart telling") ||
     q.includes("what's my chart telling") ||
     q.includes("what is this chart telling") ||
-    q.includes("what decision should i make") ||
-    q.includes("what should i do") ||
-    (q.includes("decision") && q.includes("make")) ||
-    q.includes("what about my target") ||
-    (q.includes("my target") && q.includes("what about"));
+    q.includes("interpret") ||
+    q.includes("summary") ||
+    q.includes("stable") ||
+    q.includes("stability") ||
+    q.includes("special cause") ||
+    q.includes("signal") ||
+    q.includes("shift") ||
+    q.includes("trend") ||
+    q.includes("astronomical") ||
+    q.includes("outlier") ||
+    q.includes("beyond limits") ||
+    q.includes("outside limits") ||
+    q.includes("target") ||
+    q.includes("capability");
 
-  if (isMyChartQ) {
-    const a = lastXmRAnalysis;
-
-    // If we somehow got here without analysis
-    if (!a) {
-      return "Please generate an XmR chart first, then ask one of the “My chart” questions.";
+  // --- Run chart interpretation ---
+  if (chartType === "run") {
+    if (!lastRunAnalysis) {
+      return "I can interpret your run chart once you generate one. Please create a Run chart first, then ask about stability, shifts, trends, or unusual points.";
     }
 
+    const a = lastRunAnalysis;
+
+    const signals = [];
+    if (a.hasShift) signals.push("a sustained shift (a long run on one side of the median)");
+    if (a.hasTrend) signals.push("a sustained trend (values steadily increasing or decreasing)");
+    if (a.hasAstronomical) signals.push("an unusually extreme (astronomical) point");
+
+    if (isMyChartQ) {
+      const stableText = a.isStable
+        ? "Overall, this run chart looks stable (routine variation)."
+        : "Overall, this run chart suggests special-cause variation (something likely changed).";
+
+      const signalText = (signals.length === 0)
+        ? "No clear special-cause signals were detected."
+        : `Signals detected: ${signals.join("; ")}.`;
+
+      return `${stableText} ${signalText} Use this as a prompt to look for what changed around those time periods (process change, demand, coding/measurement changes, etc.).`;
+    }
+
+    // Targeted questions
+    if (q.includes("shift")) return a.hasShift ? "Yes — a sustained shift is present." : "No — no sustained shift was detected.";
+    if (q.includes("trend")) return a.hasTrend ? "Yes — a sustained trend is present." : "No — no sustained trend was detected.";
+    if (q.includes("astronomical") || q.includes("outlier") || q.includes("unusual")) {
+      return a.hasAstronomical ? "Yes — there is at least one unusually extreme (astronomical) point." : "No — no unusually extreme (astronomical) points were detected.";
+    }
+    if (q.includes("stable")) return a.isStable ? "This run chart looks stable overall." : "This run chart does not look stable overall (special-cause signals are present).";
+
+    return (signals.length === 0)
+      ? "No clear special-cause signals were detected on the run chart."
+      : `Special-cause signals detected on the run chart: ${signals.join("; ")}.`;
+  }
+
+  // --- XmR chart interpretation ---
+  if (chartType === "xmr") {
+    if (!lastXmRAnalysis) {
+      return "I can interpret your XmR chart once you generate one. Please create an XmR chart first, then ask about stability, signals, control limits, target performance or capability.";
+    }
+
+    const a = lastXmRAnalysis;
     const signals = Array.isArray(a.signals) ? a.signals : [];
     const stable = !!a.isStable;
 
-    // Helpful phrasing for signals list
-    const signalsText =
-      signals.length === 0
-        ? "No special-cause signals detected."
+    if (isMyChartQ) {
+      const stableText = stable
+        ? "Overall, this XmR chart looks stable (routine variation)."
+        : "Overall, this XmR chart suggests special-cause variation (something likely changed).";
+
+      const signalText = (signals.length === 0)
+        ? "No special-cause signals were detected."
         : `Signals detected: ${signals.join("; ")}.`;
 
-    // Target summary (if present)
-    let targetText = "No target is set on this chart.";
-    if (a.target != null && a.direction) {
-      const dirText = a.direction === "above" ? "at or above" : "at or below";
-      targetText = `Target is ${a.target} (${dirText} is better).`;
+      // Keep it simple but useful
+      let targetText = "";
+      if (a.target != null && a.direction) {
+        const dirText = a.direction === "above" ? "at or above" : "at or below";
+        targetText = ` A target is set (${dirText} is better).`;
 
-      if (stable && a.capability && typeof a.capability.prob === "number") {
-        targetText += ` If the process stays stable, about ${(a.capability.prob * 100).toFixed(1)}% of future points are expected to meet the target.`;
-      } else if (!stable) {
-        targetText += " Because special-cause signals are present, any capability estimate is unreliable until the process is stable.";
-      }
-    }
-
-    // 1) “What is my chart telling me?”
-    if (q.includes("what is my chart telling") || q.includes("what is this chart telling") || q.includes("what's my chart telling")) {
-      const meanText = (typeof a.mean === "number") ? a.mean.toFixed(2) : "n/a";
-      const uclText  = (typeof a.ucl === "number") ? a.ucl.toFixed(2) : "n/a";
-      const lclText  = (typeof a.lcl === "number") ? a.lcl.toFixed(2) : "n/a";
-
-      return (
-        `Your chart summary: mean ≈ ${meanText}, limits ≈ [${lclText}, ${uclText}]. ` +
-        (stable
-          ? "The process looks stable (common-cause variation). "
-          : "The process does not look stable (special-cause variation). ") +
-        signalsText + " " +
-        targetText
-      );
-    }
-
-    // 2) “What decision should I make?”
-    if (q.includes("what decision should i make") || q.includes("what should i do") || (q.includes("decision") && q.includes("make"))) {
-      if (!stable) {
-        return (
-          "Decision guidance: don’t react to individual points as if they are “performance”. " +
-          "Because special-cause signals are present, treat this as evidence the system may have changed. " +
-          "Investigate the timing of the signals (what changed in the process/data), confirm the change is real, and then re-baseline (use a split) once the new system is established. " +
-          targetText
-        );
-      }
-
-      // Stable process
-      if (a.target == null) {
-        return (
-          "Decision guidance: the process looks stable, so most up-and-down movement is routine variation. " +
-          "If performance is not good enough, the decision is to change the system (not chase individual points), then use the chart to see whether a real shift occurs. " +
-          "If performance is acceptable, the decision is to hold the system steady and continue monitoring."
-        );
-      }
-
-      // Stable + target set
-      if (a.capability && typeof a.capability.prob === "number") {
-        const pct = (a.capability.prob * 100);
-        if (pct >= 90) {
-          return (
-            `Decision guidance: the process is stable and is very likely to meet the target (~${pct.toFixed(1)}%). ` +
-            "Hold the gains, standardise the current approach, and keep monitoring for any new special-cause signals."
-          );
+        if (stable && a.capability && typeof a.capability.prob === "number") {
+          targetText += ` If the process stays stable, about ${(a.capability.prob * 100).toFixed(1)}% of future points are expected to meet the target.`;
+        } else if (!stable) {
+          targetText += " Because special-cause signals are present, any capability estimate is unreliable until the process is stable.";
         }
-        if (pct >= 50) {
-          return (
-            `Decision guidance: the process is stable but only sometimes meets the target (~${pct.toFixed(1)}%). ` +
-            "If the target matters, you’ll need a system change to shift the mean and/or reduce variation. " +
-            "Use improvement cycles and watch for a sustained shift before re-baselining."
-          );
-        }
-        return (
-          `Decision guidance: the process is stable but unlikely to meet the target (~${pct.toFixed(1)}%). ` +
-          "A system redesign is needed (shift the mean and/or reduce variation). Consider stratifying data, reviewing drivers of variation, and testing changes."
-        );
       }
 
-      return (
-        "Decision guidance: the process looks stable. With a target set, the key question is whether the mean is on the right side of the target and whether variation frequently crosses it. " +
-        "If it does, you’ll likely need a system change to make target achievement more reliable."
-      );
+      return `${stableText} ${signalText}${targetText}`;
     }
 
-    // 3) “What about my target?”
-    if (q.includes("what about my target") || (q.includes("my target") && q.includes("what about"))) {
-      return targetText;
+    if (q.includes("stable")) {
+      return stable
+        ? "This XmR chart looks stable overall (no special-cause signals detected)."
+        : `This XmR chart does not look stable overall. ${signals.length ? "Signals: " + signals.join("; ") + "." : ""}`;
     }
-  }
 
-
-
-  const a = lastXmRAnalysis;
-  const lines = [];
-
-  // ----- 2a. Stability / signals -----
-  if (
-    q.includes("stable") || q.includes("stability") ||
-    q.includes("in control") || q.includes("out of control") ||
-    q.includes("special cause") || q.includes("signal") ||
-    q.includes("run rule") || q.includes("rule broken") ||
-    q.includes("any signals")
-  ) {
-    if (a.isStable) {
-      lines.push(
-        "This segment of the XmR chart appears stable: no SPC rules are triggered and the points fluctuate randomly around the mean within the control limits."
-      );
-    } else if (Array.isArray(a.signals) && a.signals.length > 0) {
-      const count = a.signals.length;
-      const labels = a.signals.map(s => s.description || s.type || "signal").join("; ");
-      lines.push(
-        `This XmR chart shows evidence of special-cause variation. I can see ${count} signal${count > 1 ? "s" : ""}: ${labels}. ` +
-        "These patterns are unlikely to arise from common-cause variation alone and suggest that the system may have changed."
-      );
-    } else {
-      lines.push(
-        "The chart does not look completely stable, but no specific SPC signals have been recorded. Check for obvious shifts, trends or outlying points."
-      );
+    if (q.includes("limit") || q.includes("ucl") || q.includes("lcl")) {
+      const meanText = (typeof a.mean === "number") ? a.mean.toFixed(3) : a.mean;
+      const uclText  = (typeof a.ucl === "number") ? a.ucl.toFixed(3) : a.ucl;
+      const lclText  = (typeof a.lcl === "number") ? a.lcl.toFixed(3) : a.lcl;
+      return `On the XmR chart, the average is ${meanText} with control limits LCL ${lclText} and UCL ${uclText}.`;
     }
-  }
 
-  // ----- 2b. Mean and control limits -----
-  if (
-    q.includes("mean") || q.includes("average") ||
-    q.includes("ucl") || q.includes("lcl") ||
-    q.includes("control limit") || q.includes("limits")
-  ) {
-    if (typeof a.mean === "number" && typeof a.sigma === "number") {
-      const meanText = a.mean.toFixed(2);
-      const uclText = (a.ucl != null ? a.ucl.toFixed(2) : "not calculated");
-      const lclText = (a.lcl != null ? a.lcl.toFixed(2) : "not calculated");
-      lines.push(
-        `The current segment has an estimated mean of ${meanText}. The upper control limit (UCL) is ${uclText} and the lower control limit (LCL) is ${lclText}. ` +
-        "These are based on the average moving range and represent the range you would expect from common-cause variation in this period."
-      );
-    } else {
-      lines.push(
-        "Mean and control limits could not be calculated for this chart. Check that there are enough data points and that the values are numeric."
-      );
+    if (q.includes("capability")) {
+      if (a.target == null) return "Capability needs a target to be set. Set a target value and regenerate the chart.";
+      if (!stable) return "Capability is not reliable right now because special-cause signals are present. Stabilise the process (or split into phases) before relying on capability.";
+      if (!a.capability || typeof a.capability.prob !== "number") return "I couldn’t compute a capability estimate from the current chart.";
+      return `If the process stays stable, about ${(a.capability.prob * 100).toFixed(1)}% of future points are expected to meet the target.`;
     }
-  }
 
-  // ----- 2c. Short-term variation / sigma -----
-  if (
-    q.includes("sigma") || q.includes("variation") ||
-    q.includes("spread") || q.includes("variability")
-  ) {
-    if (typeof a.sigma === "number" && typeof a.avgMR === "number") {
-      lines.push(
-        `The estimated sigma (spread) for this segment is approximately ${a.sigma.toFixed(2)}, based on an average moving range of ${a.avgMR.toFixed(2)}. ` +
-        "This captures the usual short-term variation between consecutive points and is used to set the control limits."
-      );
-    } else {
-      lines.push(
-        "An estimate of sigma could not be calculated. This usually happens if there are too few points or no variation in the data."
-      );
-    }
-  }
-
-  // ----- 2d. Target / direction / performance relative to target -----
-  if (
-    q.includes("target") || q.includes("goal") ||
-    q.includes("above target") || q.includes("below target") ||
-    q.includes("better") || q.includes("worse") ||
-    q.includes("improve") || q.includes("improvement")
-  ) {
-    if (a.target == null || !a.direction) {
-      lines.push(
-        "A target has not been set for this chart, or the direction of improvement (above or below the target) is not defined. " +
-        "Set a target value and specify whether higher or lower is better to get a clearer view of performance."
-      );
-    } else if (!a.isStable) {
-      lines.push(
-        "Because the process is not yet stable, performance against the target may change unpredictably. " +
-        "Stabilise the process first, then reassess how reliably the target is being met."
-      );
-    } else if (a.capability && typeof a.capability.prob === "number") {
-      const prob = (a.capability.prob * 100).toFixed(1);
+    if (q.includes("target")) {
+      if (a.target == null) return "No target is set on this chart.";
       const dirText = a.direction === "above" ? "at or above" : "at or below";
-      lines.push(
-        `Given the current stable process and a target of ${a.target}, about ${prob}% of future points are expected to fall ${dirText} the target. ` +
-        "This assumes that the underlying process does not change."
-      );
-    } else {
-      lines.push(
-        "A formal capability estimate against the target could not be calculated, but you can still use the chart to see whether the mean is comfortably on the desired side of the target and how often points cross it."
-      );
+      return `A target is set: ${a.target} (${dirText} is better).`;
     }
+
+    // Fallback: signals headline
+    return (signals.length === 0)
+      ? "No special-cause signals were detected on the XmR chart."
+      : `Signals detected on the XmR chart: ${signals.join("; ")}.`;
   }
 
-  // ----- 2e. Splits / baselines (using the global splits array) -----
-  if (
-    q.includes("split") || q.includes("baseline") ||
-    q.includes("phase") || q.includes("segment")
-  ) {
-    if (!Array.isArray(splits) || splits.length === 0) {
-      lines.push(
-        "No splits have been added, so the whole series is treated as one baseline. " +
-        "If a known system change occurred, you can add a split so that before-and-after periods each get their own mean and control limits."
-      );
-    } else {
-      lines.push(
-        `You have added ${splits.length} split${splits.length > 1 ? "s" : ""} to this chart. ` +
-        "Each split marks a point where a new baseline begins with its own mean and limits, allowing you to compare periods before and after key changes."
-      );
-    }
-  }
-
-  // ----- 2f. Moving range chart questions (chart-specific) -----
-  if (
-    q.includes("moving range") || q.includes("mr chart") || q.includes("m-r chart") ||
-    q.includes("mr line") || q.includes("mr panel")
-  ) {
-    lines.push(
-      "The moving range (MR) chart under the main XmR chart shows the size of the jump between one point and the next. " +
-      "Large spikes in the MR chart indicate abrupt changes between consecutive observations, while a stable band of small ranges suggests consistent short-term behaviour."
-    );
-  }
-
-  // ----- 3. Fallback if nothing matched in chart-specific logic -----
-  if (lines.length === 0) {
-    return (
-      "I could not match that question to a specific SPC topic. " +
-      "Try asking about stability, signals, control limits, sigma (variation), target performance, capability, moving range, or splits/baselines."
-    );
-  }
-
-  // ----- 4. Final reminder -----
-  lines.push(
-    "Always interpret SPC charts alongside clinical or operational context, rather than in isolation. " +
-    "Use the signals as prompts for discussion, not as automatic proof that a change has worked."
-  );
-
-  return lines.join(" ");
+  return "I can answer general SPC questions, and I can interpret your Run or XmR chart after you generate one.";
 }
 
 function renderHelperState() {
