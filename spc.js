@@ -1302,58 +1302,181 @@ if (dataEditorApplyButton) {
 
 // ---- Summary helpers ----
 
-function updateRunSummary(points, median, ruleHits, baselineCountUsed) {
+function updateRunSummary(points, medianIgnored, ruleHitsIgnored, baselineCountUsedIgnored) {
   if (!summaryDiv) return;
 
   const { shiftLength, trendLength } = getRuleSettings();
-  const runRanges = ruleHits?.runRanges || [];
-  const trendRanges = ruleHits?.trendRanges || [];
-  const astro = ruleHits?.astro || { indices: [] };
-
   const n = points.length;
 
+  // Pull baseline setting from the UI (so it works per-period too)
+  const rawBaseline = baselineInput ? parseInt(baselineInput.value, 10) : NaN;
+  const baselineSetting = Number.isFinite(rawBaseline) ? rawBaseline : null;
+
+  // Build segments based on splits (splits are “after index”, 0-based)
+  const splitIdxs = Array.isArray(splits)
+    ? splits
+        .map(v => parseInt(v, 10))
+        .filter(v => Number.isInteger(v) && v >= 0 && v <= n - 2)
+        .sort((a, b) => a - b)
+    : [];
+
+  const boundaries = [-1, ...splitIdxs, n - 1]; // inclusive ends
+  const segments = [];
+  for (let i = 0; i < boundaries.length - 1; i++) {
+    const start = boundaries[i] + 1;
+    const end = boundaries[i + 1];
+    if (start <= end) segments.push({ start, end });
+  }
+
+  function rangeText(start, end) {
+    // Prefer x values if available; fall back to point numbers
+    const a = points[start]?.x;
+    const b = points[end]?.x;
+    const hasDates = a !== undefined && b !== undefined && a !== null && b !== null;
+
+    if (hasDates) {
+      return `points ${start + 1}–${end + 1} (${a} to ${b})`;
+    }
+    return `points ${start + 1}–${end + 1}`;
+  }
+
+  function findTrendRanges(values, len) {
+    const out = [];
+    if (!values || values.length < len) return out;
+
+    let inc = 1, dec = 1;
+    let incStart = 0, decStart = 0;
+
+    for (let i = 1; i < values.length; i++) {
+      if (values[i] > values[i - 1]) {
+        inc++;
+        dec = 1;
+        decStart = i;
+      } else if (values[i] < values[i - 1]) {
+        dec++;
+        inc = 1;
+        incStart = i;
+      } else {
+        inc = 1; dec = 1;
+        incStart = i; decStart = i;
+      }
+
+      if (inc === len) out.push({ start: i - len + 1, end: i, dir: "increasing" });
+      if (dec === len) out.push({ start: i - len + 1, end: i, dir: "decreasing" });
+    }
+
+    // Merge overlaps
+    out.sort((a, b) => a.start - b.start);
+    const merged = [];
+    for (const r of out) {
+      const last = merged[merged.length - 1];
+      if (!last || r.start > last.end + 1 || r.dir !== last.dir) {
+        merged.push({ ...r });
+      } else {
+        last.end = Math.max(last.end, r.end);
+      }
+    }
+    return merged;
+  }
+
+  function flagsToRanges(flags) {
+    const ranges = [];
+    let i = 0;
+    while (i < flags.length) {
+      if (!flags[i]) { i++; continue; }
+      let j = i;
+      while (j < flags.length && flags[j]) j++;
+      ranges.push({ start: i, end: j - 1 });
+      i = j;
+    }
+    return ranges;
+  }
+
   let html = `<h3>Summary (Run chart)</h3>`;
-  html += `<ul>`;
-  html += `<li>Number of points: <strong>${n}</strong></li>`;
-  html += baselineCountUsed && baselineCountUsed < n
-    ? `<li>Baseline: first <strong>${baselineCountUsed}</strong> points used to calculate median.</li>`
-    : `<li>Baseline: all points used to calculate median.</li>`;
-  html += `<li>Median: <strong>${median.toFixed(3)}</strong></li>`;
-  html += `</ul>`;
+  html += `<p>Total number of points: <strong>${n}</strong>. `;
+  html += `The chart is divided into <strong>${segments.length}</strong> period${segments.length !== 1 ? "s" : ""}`;
+  html += segments.length > 1 ? ` (based on your splits).` : `.`;
+  html += `</p>`;
 
-  html += `<h4>Rules identified</h4>`;
-  html += `<ul>`;
+  segments.forEach((seg, idx) => {
+    const segPoints = points.slice(seg.start, seg.end + 1);
+    const values = segPoints.map(p => p.y);
 
-  // Rule 1: Shift
-  if (runRanges.length) {
-    const parts = runRanges.map(r => `points ${r.start + 1}–${r.end + 1} (${r.side}, length ${r.len})`);
-    html += `<li><strong>Rule 1 — Shift:</strong> YES (≥${shiftLength} on one side). ${parts.join("; ")}.</li>`;
-  } else {
-    html += `<li><strong>Rule 1 — Shift:</strong> No (≥${shiftLength} on one side).</li>`;
+    const segLen = values.length;
+
+    // Baseline per period (keep the same user setting, but cap to segment length)
+    let baselineCountUsed = segLen;
+    if (baselineSetting && baselineSetting >= 2) baselineCountUsed = Math.min(baselineSetting, segLen);
+
+    const baselineValues = values.slice(0, baselineCountUsed);
+    const median = computeMedian(baselineValues);
+
+    // Signals for this segment
+    const runFlags = detectLongRuns(values, median, shiftLength);
+    const runRanges = flagsToRanges(runFlags);
+
+    const trendRanges = findTrendRanges(values, trendLength);
+
+    // Astronomical points (use baseline values as reference if possible)
+    const astro = findAstronomicalPoints(values, median, baselineValues, 3.5);
+    const astroIdx = astro?.indices || [];
+
+    const signals = [];
+    if (runRanges.length) signals.push(`a sustained shift (≥ ${shiftLength} points on one side of the median)`);
+    if (trendRanges.length) signals.push(`a sustained trend (≥ ${trendLength} points increasing or decreasing)`);
+    if (astroIdx.length) signals.push(`an unusual outlier ("astronomical" point)`);
+
+    const periodLabel =
+      segments.length === 1
+        ? "Single period"
+        : idx === 0
+          ? "Period 1"
+          : `Period ${idx + 1}`;
+
+    html += `<h4>${periodLabel}</h4>`;
+    html += `<ul>`;
+    html += `<li>Coverage: <strong>${rangeText(seg.start, seg.end)}</strong> – ${segLen} point${segLen !== 1 ? "s" : ""}.</li>`;
+
+    html += (baselineCountUsed < segLen)
+      ? `<li>Baseline for this period: first <strong>${baselineCountUsed}</strong> point${baselineCountUsed !== 1 ? "s" : ""} used to calculate the median.</li>`
+      : `<li>Baseline for this period: all points in this period used to calculate the median.</li>`;
+
+    html += `<li>Median (this period): <strong>${Number.isFinite(median) ? median.toFixed(3) : "—"}</strong>.</li>`;
+
+    if (!signals.length) {
+      html += `<li><strong>Interpretation:</strong> No clear special-cause signals detected in this period (no sustained shift, trend, or unusual outlier). This pattern is consistent with common variation, but always interpret in context.</li>`;
+    } else {
+      html += `<li><strong>Interpretation:</strong> This period shows special-cause signals: ${signals.join("; ")}.</li>`;
+
+      // “Where to look” (simple + practical)
+      const where = [];
+
+      if (runRanges.length) {
+        const r = runRanges[0];
+        where.push(`shift around points ${seg.start + r.start + 1}–${seg.start + r.end + 1}`);
+      }
+
+      if (trendRanges.length) {
+        const t = trendRanges[0];
+        where.push(`trend around points ${seg.start + t.start + 1}–${seg.start + t.end + 1} (${t.dir})`);
+      }
+
+      if (astroIdx.length) {
+        const pts = astroIdx.slice(0, 5).map(i => seg.start + i + 1);
+        where.push(`outlier at point${pts.length !== 1 ? "s" : ""} ${pts.join(", ")}`);
+      }
+
+      if (where.length) {
+        html += `<li><strong>Where to look:</strong> ${where.join("; ")}.</li>`;
+      }
+    }
+
+    html += `</ul>`;
+  });
+
+  if (segments.length > 1) {
+    html += `<p><em>Note:</em> Each period is summarised separately because splits suggest the process may have changed over time.</p>`;
   }
-
-  // Rule 2: Trend
-  if (trendRanges.length) {
-    const parts = trendRanges.map(r => `points ${r.start + 1}–${r.end + 1} (${r.direction}, length ${r.len})`);
-    html += `<li><strong>Rule 2 — Trend:</strong> YES (≥${trendLength} consecutive moves). ${parts.join("; ")}.</li>`;
-  } else {
-    html += `<li><strong>Rule 2 — Trend:</strong> No (≥${trendLength} consecutive moves).</li>`;
-  }
-
-  // Rule 3: Astronomical point
-  if (astro.indices && astro.indices.length) {
-    const pts = astro.indices.map(i => `point ${i + 1}`).join(", ");
-    html += `<li><strong>Rule 3 — Astronomical point:</strong> YES (${pts}).</li>`;
-  } else {
-    html += `<li><strong>Rule 3 — Astronomical point:</strong> No.</li>`;
-  }
-
-  html += `</ul>`;
-
-  const anySignals = runRanges.length || trendRanges.length || (astro.indices && astro.indices.length);
-  html += anySignals
-    ? `<p><strong>Interpretation:</strong> Special-cause signals are present. See the labelled rules above and consider what changed at those times.</p>`
-    : `<p><strong>Interpretation:</strong> No rule breaches detected from shift/trend/astronomical rules. Variation looks consistent with common-cause only (interpret in context).</p>`;
 
   summaryDiv.innerHTML = html;
 }
@@ -3000,102 +3123,115 @@ function getExportCanvases() {
   return canvases;
 }
 
-function renderCapabilityToCanvas(ctx, x, y, maxWidth) {
+function renderCapabilityBadgeToCanvas(ctx, x, y, maxWidth) {
   if (!capabilityDiv) return 0;
 
-  const text = (capabilityDiv.innerText || "").trim();
-  if (!text) return 0;
+  const txt = (capabilityDiv.innerText || "").trim();
+  if (!txt) return 0;
 
   const baseFont = "system-ui, -apple-system, Segoe UI, sans-serif";
-  const pad = 12;
 
-  // Simple styling: “capability” vs “not stable” message
-  const isStableBadge = /PROCESS CAPABILITY/i.test(text);
-  const bg = isStableBadge ? "#fff59d" : "#ffe0b2";
-  const border = "#ccc";
-
-  // Estimate height using a basic wrap
   function setFont(size, bold) {
     ctx.font = `${bold ? "700" : "400"} ${size}px ${baseFont}`;
   }
 
-  function wrapHeight(msg, width, size) {
-    setFont(size, false);
-    const words = msg.replace(/\s+/g, " ").trim().split(" ").filter(Boolean);
+  function drawWrapped(text, startX, startY, maxW, size, bold) {
+    setFont(size, bold);
     const lineHeight = Math.round(size * 1.35);
+    const words = (text || "").split(/\s+/).filter(Boolean);
+
     let line = "";
-    let lines = 0;
+    let yy = startY;
 
     for (const w of words) {
       const test = line ? `${line} ${w}` : w;
-      if (ctx.measureText(test).width <= width) {
+      const width = ctx.measureText(test).width;
+
+      if (width <= maxW) {
         line = test;
       } else {
-        lines++;
+        if (line) {
+          ctx.fillText(line, startX, yy);
+          yy += lineHeight;
+        }
         line = w;
       }
     }
-    if (line) lines++;
-    return lines * lineHeight;
-  }
 
-  const boxWidth = Math.min(maxWidth, 520);
-  const innerWidth = boxWidth - pad * 2;
-
-  // Split into headline-ish first line + rest
-  const lines = text.split("\n").map(s => s.trim()).filter(Boolean);
-  const head = lines[0] || "Process capability";
-  const rest = lines.slice(1).join(" ");
-
-  const headH = wrapHeight(head, innerWidth, 14);
-  const restH = rest ? wrapHeight(rest, innerWidth, 12) : 0;
-
-  const boxH = pad + headH + (rest ? 6 + restH : 0) + pad;
-
-  // Draw box
-  ctx.fillStyle = bg;
-  ctx.fillRect(x, y, boxWidth, boxH);
-  ctx.strokeStyle = border;
-  ctx.strokeRect(x, y, boxWidth, boxH);
-
-  // Draw text
-  let cursorY = y + pad;
-
-  // Head
-  ctx.fillStyle = "#111";
-  setFont(14, true);
-  cursorY += Math.round(14 * 1.35);
-  ctx.fillText(head, x + pad, cursorY);
-
-  // Rest
-  if (rest) {
-    cursorY += 8;
-    setFont(12, false);
-
-    const words = rest.replace(/\s+/g, " ").trim().split(" ").filter(Boolean);
-    const lineHeight = Math.round(12 * 1.35);
-    let line = "";
-    let yy = cursorY;
-
-    for (const w of words) {
-      const test = line ? `${line} ${w}` : w;
-      if (ctx.measureText(test).width <= innerWidth) {
-        line = test;
-      } else {
-        ctx.fillText(line, x + pad, yy);
-        yy += lineHeight;
-        line = w;
-      }
-    }
     if (line) {
-      ctx.fillText(line, x + pad, yy);
+      ctx.fillText(line, startX, yy);
       yy += lineHeight;
     }
+
+    return yy - startY;
   }
 
-  return boxH;
-}
+  // Decide a background colour (match your UI roughly)
+  const isStableBadge = txt.toLowerCase().includes("process capability");
+  const bg = isStableBadge ? "#fff59d" : "#ffe0b2";
 
+  // Box layout
+  const pad = 14;
+  const boxW = Math.min(maxWidth, 520); // keep it readable, like your on-page badge
+  const innerW = boxW - pad * 2;
+
+  // Split into logical parts (header / big number / small note)
+  const lines = txt.split("\n").map(s => s.trim()).filter(Boolean);
+
+  const header = lines[0] || "";
+  // Try to find the big % line (often the 2nd line)
+  const bigLine = (lines.length >= 2 && /%/.test(lines[1])) ? lines[1] : "";
+  const rest = lines.slice(bigLine ? 2 : 1).join(" ");
+
+  // --- Measure height with a dry run on current ctx ---
+  let h = 0;
+  h += pad;
+
+  // Header
+  h += drawWrapped(header, 0, 0, innerW, 14, true);
+  h += 10; // IMPORTANT: extra gap after bold header (fixes “uneven spacing” look)
+
+  // Big value (if present)
+  if (bigLine) {
+    h += drawWrapped(bigLine, 0, 0, innerW, 22, true);
+    h += 8;
+  }
+
+  // Small note
+  if (rest) {
+    h += drawWrapped(rest, 0, 0, innerW, 12, false);
+  }
+
+  h += pad;
+
+  // Draw the box
+  ctx.save();
+  ctx.fillStyle = bg;
+  ctx.strokeStyle = "#cccccc";
+  ctx.lineWidth = 1;
+
+  ctx.fillRect(x, y, boxW, h);
+  ctx.strokeRect(x, y, boxW, h);
+
+  // Draw text inside
+  let yy = y + pad;
+  ctx.fillStyle = "#111";
+
+  yy += drawWrapped(header, x + pad, yy, innerW, 14, true);
+  yy += 10;
+
+  if (bigLine) {
+    yy += drawWrapped(bigLine, x + pad, yy, innerW, 22, true);
+    yy += 8;
+  }
+
+  if (rest) {
+    yy += drawWrapped(rest, x + pad, yy, innerW, 12, false);
+  }
+
+  ctx.restore();
+  return h;
+}
 
 function renderSummaryToCanvas(ctx, x, y, maxWidth) {
   if (!summaryDiv) return 0;
@@ -3212,7 +3348,6 @@ function buildCompositeCanvas({ includeSummaryText }) {
 
   const outWidth = Math.max(...widths);
   const chartsHeight = heights.reduce((a, b) => a + b, 0);
-
   const padding = 16;
 
   const includeSummary =
@@ -3225,35 +3360,33 @@ function buildCompositeCanvas({ includeSummaryText }) {
     capabilityDiv &&
     (capabilityDiv.innerText || "").trim().length > 0;
 
-  // Dry-run to compute analysis height
-  let analysisHeight = 0;
-  if (includeSummary || includeCapability) {
+  // --- Dry-run summary height ---
+  let summaryHeight = 0;
+  if (includeSummary) {
     const tmp = document.createElement("canvas");
     tmp.width = outWidth;
-    tmp.height = 4000;
+    tmp.height = 5000;
     const tctx = tmp.getContext("2d");
     tctx.fillStyle = "#111";
+    const used = renderSummaryToCanvas(tctx, padding, padding, outWidth - padding * 2);
+    summaryHeight = padding + used + padding + 1; // + separator
+  }
 
-    let used = 0;
-
-    if (includeSummary) {
-      used += renderSummaryToCanvas(tctx, padding, padding + used, outWidth - padding * 2);
-      used += padding;
-    }
-
-    if (includeCapability) {
-      used += renderCapabilityToCanvas(tctx, padding, padding + used, outWidth - padding * 2);
-      used += padding;
-    }
-
-    analysisHeight = 1 + padding + used + padding;
+  // --- Dry-run capability height ---
+  let capabilityHeight = 0;
+  if (includeCapability) {
+    const tmp = document.createElement("canvas");
+    tmp.width = outWidth;
+    tmp.height = 2000;
+    const tctx = tmp.getContext("2d");
+    capabilityHeight = padding + renderCapabilityBadgeToCanvas(tctx, padding, padding, outWidth - padding * 2) + padding;
   }
 
   const out = document.createElement("canvas");
   const ctx = out.getContext("2d");
 
   out.width = outWidth;
-  out.height = chartsHeight + ((includeSummary || includeCapability) ? analysisHeight : 0);
+  out.height = chartsHeight + (includeSummary ? summaryHeight : 0) + (includeCapability ? capabilityHeight : 0);
 
   // Background
   ctx.fillStyle = "#ffffff";
@@ -3261,28 +3394,28 @@ function buildCompositeCanvas({ includeSummaryText }) {
 
   // Charts
   let y = 0;
-  canvases.forEach(c => {
+  canvases.forEach((c) => {
     const x = Math.round((outWidth - c.width) / 2);
     ctx.drawImage(c, x, y);
     y += c.height;
   });
 
-  // Analysis separator
-  if (includeSummary || includeCapability) {
+  // Summary
+  if (includeSummary) {
     ctx.fillStyle = "#eef2f6";
     ctx.fillRect(0, y, out.width, 1);
     y += padding;
+    const used = renderSummaryToCanvas(ctx, padding, y, outWidth - padding * 2);
+    y += used + padding;
+  }
 
-    let cursorY = y;
-
-    if (includeSummary) {
-      const used = renderSummaryToCanvas(ctx, padding, cursorY, outWidth - padding * 2);
-      cursorY += used + padding;
-    }
-
-    if (includeCapability) {
-      renderCapabilityToCanvas(ctx, padding, cursorY, outWidth - padding * 2);
-    }
+  // Capability badge (if present)
+  if (includeCapability) {
+    ctx.fillStyle = "#eef2f6";
+    ctx.fillRect(0, y, out.width, 1);
+    y += padding;
+    const used = renderCapabilityBadgeToCanvas(ctx, padding, y, outWidth - padding * 2);
+    y += used + padding;
   }
 
   return out;
