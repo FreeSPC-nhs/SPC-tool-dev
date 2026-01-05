@@ -2829,6 +2829,8 @@ function drawMrChart(allPoints, labels, segments) {
 
 // Helper used by "last period only" mode — uses your existing MR canvas/chart variables
 function renderMrChart(mrLabels, mrValues, avgMR, uclMR) {
+  if (!mrCanvas) return;
+
   if (mrChart) {
     mrChart.destroy();
     mrChart = null;
@@ -2838,15 +2840,22 @@ function renderMrChart(mrLabels, mrValues, avgMR, uclMR) {
     {
       label: "Moving range",
       data: mrValues,
-      borderColor: "#666",
+      borderColor: "#003f87",
+      backgroundColor: "#003f87",
       borderWidth: 2,
-      pointRadius: 0,
+      pointRadius: 3,
+      pointHoverRadius: 4,
+      pointBackgroundColor: "#003f87",
+      pointBorderColor: "#ffffff",
+      pointBorderWidth: 1,
       spanGaps: false,
-      fill: false
+      fill: false,
+      tension: 0
     },
     {
       label: "MR average",
       data: mrValues.map(() => avgMR),
+      borderColor: "#d73027",
       borderDash: [6, 4],
       borderWidth: 2,
       pointRadius: 0,
@@ -2855,7 +2864,8 @@ function renderMrChart(mrLabels, mrValues, avgMR, uclMR) {
     {
       label: "MR UCL",
       data: mrValues.map(() => uclMR),
-      borderDash: [4, 3],
+      borderColor: "#2ca25f",
+      borderDash: [4, 4],
       borderWidth: 2,
       pointRadius: 0,
       fill: false
@@ -2876,8 +2886,13 @@ function renderMrChart(mrLabels, mrValues, avgMR, uclMR) {
         },
         legend: { display: true, position: "bottom" },
         annotation: {
-          annotations: (typeof buildAnnotationConfig === "function") ? buildAnnotationConfig(mrLabels) : {}
+          annotations: (typeof buildAnnotationConfig === "function")
+            ? buildAnnotationConfig(mrLabels)
+            : {}
         }
+      },
+      elements: {
+        point: { radius: 0, hoverRadius: 0 }
       },
       scales: {
         x: { grid: { display: false } },
@@ -2886,6 +2901,7 @@ function renderMrChart(mrLabels, mrValues, avgMR, uclMR) {
     }
   });
 }
+
 
 // ---- AI helper function  -----
 
