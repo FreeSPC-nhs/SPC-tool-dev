@@ -2866,7 +2866,7 @@ if (thirdColumnRow && thirdColumnRow.style.display !== "none") {
     }
     if (mrPanel) mrPanel.style.display = "none";
 
-    // draw the selected chart
+// draw the selected chart
 if (chartType === "run") {
   drawRunChart(points, baselineCount, labels);
 
@@ -2874,40 +2874,20 @@ if (chartType === "run") {
   drawXmRChart(points, baselineCount, labels);
 
 } else if (chartType === "c") {
-  // C uses counts in the Y/value column
   drawCChart(points, baselineCount, labels);
 
 } else if (chartType === "p" || chartType === "u") {
   // P/U require a third column (denominator/opportunities)
-  const thirdSelect = document.getElementById("thirdColumn");
   if (!thirdSelect || !thirdSelect.value) {
     showError("This chart type needs a third column (denominator/opportunities).");
     return;
   }
 
-} else if (chartType === "xbars") {
-  drawXbarSChart(points, baselineCount, labels);
-
-} else if (chartType === "t") {
-  // T chart needs date axis (uses event dates)
-  if (document.querySelector("input[name='axisType']:checked")?.value !== "date") {
-    showError("T chart needs Date / time axis (it uses event dates).");
-    return;
-  }
-  drawTChart(points, baselineCount, labels);
-
-} else if (chartType === "g") {
-  drawGChart(points, baselineCount, labels);
-
-
   const denomCol = thirdSelect.value;
 
-    const denomCol = thirdSelect.value;
-
-  // Build points with denominator using the original row index saved on each point
+  // Build points with denominator using original row index saved on each point
   const pointsWithNOrdered = points.map((p, i) => {
     const row = rawRows[p._rowIndex];
-
     const numerator = toNumericValue(row[valueSelect.value]);
     const denom = toNumericValue(row[denomCol]);
 
@@ -2926,14 +2906,24 @@ if (chartType === "run") {
     drawUChart(pointsWithNOrdered, baselineCount, labels);
   }
 
+} else if (chartType === "xbars") {
+  drawXbarSChart(points, baselineCount, labels);
 
+} else if (chartType === "t") {
+  // T chart needs date axis (uses event dates)
+  if (document.querySelector("input[name='axisType']:checked")?.value !== "date") {
+    showError("T chart needs Date / time axis (it uses event dates).");
+    return;
+  }
+  drawTChart(points, baselineCount, labels);
 
+} else if (chartType === "g") {
+  drawGChart(points, baselineCount, labels);
 
 } else {
   showError(`Chart type "${chartType}" is not implemented yet.`);
   return;
 }
-
 
     // optional: clear dirty flag after successful draw
     if (typeof clearDataModelDirty === "function") clearDataModelDirty();
