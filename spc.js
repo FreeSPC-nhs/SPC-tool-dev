@@ -1473,15 +1473,23 @@ function updateRunSummary(points, medianIgnored, ruleHitsIgnored, baselineCountU
   }
 
   function rangeText(start, end) {
+  const axisType = getAxisType(); // "date" or "sequence"
+
+  // Always show point indices
+  const base = `points ${start + 1}–${end + 1}`;
+
+  // Only add date range if DATE axis is selected
+  if (axisType !== "date") return base;
+
   const a = points[start]?.x;
   const b = points[end]?.x;
   const hasDates = a !== undefined && b !== undefined && a !== null && b !== null;
 
-  if (hasDates) {
-    return `points ${start + 1}–${end + 1} (${formatDateOnlyLabel(a)} to ${formatDateOnlyLabel(b)})`;
-  }
-  return `points ${start + 1}–${end + 1}`;
+  return hasDates
+    ? `${base} (${formatDateOnlyLabel(a)} to ${formatDateOnlyLabel(b)})`
+    : base;
 }
+
 
 
   function findTrendRanges(values, len) {
@@ -1749,10 +1757,11 @@ function updateXmRMultiSummary(segments, totalPoints) {
           ? "Period 1 (initial segment / baseline)"
           : `Period ${idx + 1}`;
 
-    const rangeText =
-  labelStart !== undefined && labelEnd !== undefined
-    ? `points ${startIndex + 1}–${endIndex + 1} (${formatDateOnlyLabel(labelStart)} to ${formatDateOnlyLabel(labelEnd)})`
-    : `points ${startIndex + 1}–${endIndex + 1}`;
+    const base = `points ${startIndex + 1}–${endIndex + 1}`;
+const rangeText =
+  (getAxisType() === "date" && labelStart !== undefined && labelEnd !== undefined)
+    ? `${base} (${formatDateOnlyLabel(labelStart)} to ${formatDateOnlyLabel(labelEnd)})`
+    : base;
 
 
     html += `<h4>${periodLabel}</h4>`;
@@ -3614,7 +3623,7 @@ if (chartContextMenu) {
         if (annotationDateInput) annotationDateInput.value = xLabel;
         if (annotationLabelInput) annotationLabelInput.value = text;
 
-        // Store + redraw
+        // Store + redrawt
         annotations.push({ date: xLabel, label: text });
 
         // Regenerate to show it (your annotations render via buildAnnotationConfig)
