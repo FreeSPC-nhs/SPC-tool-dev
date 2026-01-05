@@ -1448,7 +1448,7 @@ function computeXmR(points, baselineCount, clampLclAtZero = false) {
 // Attribute chart calculations (C / P / U)
 // -----------------------------
 
-function computeC(points, baselineCount = null, clampLclAtZero = false) {
+function computeC(points, baselineCount = null) {
   const n = points.length;
   const baseN = baselineCount && baselineCount >= 1 ? Math.min(baselineCount, n) : n;
 
@@ -1457,13 +1457,12 @@ function computeC(points, baselineCount = null, clampLclAtZero = false) {
 
   const sigma = Math.sqrt(Math.max(cbar, 0));
   const ucl = cbar + 3 * sigma;
-  const rawLcl = cbar - 3 * sigma;
-  const lcl = clampLclAtZero ? Math.max(0, rawLcl) : rawLcl;
+  const lcl = Math.max(0, cbar - 3 * sigma); // ✅ always clamp
 
   const beyond = points.map(p => isFinite(p.y) && (p.y > ucl || p.y < lcl));
-
-  return { cbar, ucl, lcl, rawLcl, beyond };
+  return { cbar, ucl, lcl, beyond };
 }
+
 
 // For P and U we expect points like: {x, y: numerator, n: denominator/opportunities}
 function computeP(points, baselineCount = null, clampLclAtZero = false) {
@@ -1507,7 +1506,7 @@ function computeP(points, baselineCount = null, clampLclAtZero = false) {
   return { pbar, pVals, ucl, lcl, rawLcl, beyond };
 }
 
-function computeU(points, baselineCount = null, clampLclAtZero = false) {
+function computeU(points, baselineCount = null) {
   const nPts = points.length;
   const baseN = baselineCount && baselineCount >= 1 ? Math.min(baselineCount, nPts) : nPts;
 
@@ -1520,7 +1519,6 @@ function computeU(points, baselineCount = null, clampLclAtZero = false) {
   const uVals = new Array(nPts).fill(NaN);
   const ucl = new Array(nPts).fill(NaN);
   const lcl = new Array(nPts).fill(NaN);
-  const rawLcl = new Array(nPts).fill(NaN);
   const beyond = new Array(nPts).fill(false);
 
   for (let i = 0; i < nPts; i++) {
@@ -1534,18 +1532,17 @@ function computeU(points, baselineCount = null, clampLclAtZero = false) {
 
     const sigma = Math.sqrt(Math.max(ubar / ni, 0));
     const u = ubar + 3 * sigma;
-    const lRaw = ubar - 3 * sigma;
-    const l = clampLclAtZero ? Math.max(0, lRaw) : lRaw;
+    const l = Math.max(0, ubar - 3 * sigma); // ✅ always clamp
 
     ucl[i] = u;
-    rawLcl[i] = lRaw;
-    lcl[i] = clampLclAtZero ? Math.max(0, l) : l;
+    lcl[i] = l;
 
     beyond[i] = (ui > ucl[i] || ui < lcl[i]);
   }
 
-  return { ubar, uVals, ucl, lcl, rawLcl, beyond };
+  return { ubar, uVals, ucl, lcl, beyond };
 }
+
 
 // -----------------------------
 // X̄–S chart calculations + drawing
@@ -1717,6 +1714,23 @@ function drawXbarSChart(points, baselineCount, labels) {
   lastRunAnalysis = null;
   lastXmRAnalysis = null;
 
+lastXbarSAnalysis = {
+  xbar: analyzeAttributeChart({ chartType: "xbars", labels: subgroupLabels, values: xbarVals, cl: clX, ucl: uclXArr, lcl: lclXArr }),
+  s:    analyzeAttributeChart({ chartType: "s", labels: subgroupLabels, values: sVals,    cl: clS,  ucl: uclSArr,  lcl: lclSArr })
+};
+
+if (summaryDiv) {
+  const xStable = lastXbarSAnalysis.xbar.isStable;
+  const sStable = lastXbarSAnalysis.s.isStable;
+  summaryDiv.innerHTML =
+    `<h3>X̄–S interpretation</h3>
+     <ul>
+       <li><strong>X̄ chart:</strong> ${xStable ? "no special-cause signals detected." : ("signals: " + lastXbarSAnalysis.xbar.signals.join("; "))}</li>
+       <li><strong>S chart:</strong> ${sStable ? "no special-cause signals detected." : ("signals: " + lastXbarSAnalysis.s.signals.join("; "))}</li>
+     </ul>`;
+}
+
+
   // If subgroup sizes vary, show a gentle warning (you said you’ll fix UX later)
   if (sizes.some(sz => sz !== n)) {
     showError(
@@ -1732,7 +1746,7 @@ function drawXbarSChart(points, baselineCount, labels) {
 // T chart: time between events (Exponential limits via percentiles)
 // -----------------------------
 function drawTChart(points, baselineCount, labels) {
-  // Uses DATE axis: dateSelect is the event date/time. We compute deltas in days.
+  // Sort by time
   const pts = [...points].sort((a, b) => a.x - b.x);
   if (pts.length < 4) {
     showError("T chart needs at least 4 events.");
@@ -1747,33 +1761,26 @@ function drawTChart(points, baselineCount, labels) {
     const days = dtMs / (1000 * 60 * 60 * 24);
     if (isFinite(days) && days >= 0) {
       deltas.push(days);
-      tLabels.push(labels[i]); // label the interval by the later event
+      tLabels.push(labels[i]);
     }
-  }
-
-  if (deltas.length < 3) {
-    showError("Not enough valid time-between-event intervals for a T chart.");
-    return;
   }
 
   const baseN = (baselineCount && baselineCount >= 2)
     ? Math.min(baselineCount, deltas.length)
     : deltas.length;
 
-  const tbar = mean(deltas.slice(0, baseN));
+  const base = deltas.slice(0, baseN);
+  const tbar = base.reduce((a, b) => a + b, 0) / base.length;
 
-  // Equivalent “3-sigma” percentiles
-  const qLow = 0.00135;
+  // Exponential “3-sigma-ish” upper percentile
   const qHigh = 0.99865;
-
-  const lcl = -tbar * Math.log(1 - qLow);
   const ucl = -tbar * Math.log(1 - qHigh);
 
   const cl = new Array(deltas.length).fill(tbar);
   const uclArr = new Array(deltas.length).fill(ucl);
-  const lclArr = new Array(deltas.length).fill(Math.max(0, lcl));
+  const lclArr = new Array(deltas.length).fill(0); // ✅ practical convention
 
-  const pointColours = deltas.map(v => (v > ucl || v < lcl) ? "#d73027" : "#003f87");
+  const pointColours = deltas.map(v => (v > ucl) ? "#d73027" : "#003f87");
 
   drawSimpleSPCChart({
     labels: tLabels,
@@ -1785,54 +1792,57 @@ function drawTChart(points, baselineCount, labels) {
     yAxisSuggestedMin: 0,
     yAxisSuggestedMax: Math.max(...deltas, ucl),
     chartTitleFallback: "T chart",
-    yAxisLabelFallback: "Time between events (days)"
+    yAxisLabelFallback: "Time between events (days)",
+    showUCL: true,
+    showLCL: false // ✅ hide LCL by default
   });
 
-  // Hide MR panel if open
-  if (mrChart) { mrChart.destroy(); mrChart = null; }
-  if (mrPanel) mrPanel.style.display = "none";
-
-  lastRunAnalysis = null;
-  lastXmRAnalysis = null;
+  // Analysis
+  lastRareAnalysis = analyzeRareChart({
+    chartType: "t",
+    labels: tLabels,
+    values: deltas,
+    cl,
+    ucl: uclArr,
+    lcl: lclArr
+  });
+  renderRareChartSummary(lastRareAnalysis);
 }
 
 // -----------------------------
 // G chart: opportunities between events (Geometric limits via percentiles)
 // -----------------------------
 function drawGChart(points, baselineCount, labels) {
-  // Here we interpret the VALUE column as "opportunities between events" (already an interval count)
-  const gVals = points.map(p => p.y).filter(v => isFinite(v) && v >= 0);
-  if (gVals.length < 6) {
+  const values = points.map(p => (isFinite(p.y) ? p.y : NaN));
+  const clean = values.filter(v => isFinite(v) && v >= 1);
+
+  if (clean.length < 6) {
     showError("G chart needs at least 6 values (opportunities between events).");
     return;
   }
-
-  // Keep original order/labels
-  const values = points.map(p => (isFinite(p.y) ? p.y : NaN));
 
   const baseN = (baselineCount && baselineCount >= 2)
     ? Math.min(baselineCount, values.length)
     : values.length;
 
-  const baselineVals = values.slice(0, baseN).filter(v => isFinite(v) && v >= 0);
-  const gbar = mean(baselineVals);
+  const baseVals = values.slice(0, baseN).filter(v => isFinite(v) && v >= 1);
+  const gbar = baseVals.reduce((a, b) => a + b, 0) / baseVals.length;
 
-  // Convert mean to geometric probability (mean ≈ 1/p)
+  // Geometric (support 1,2,3...) mean ≈ 1/p
   const p = gbar > 0 ? (1 / gbar) : NaN;
   if (!isFinite(p) || p <= 0 || p >= 1) {
-    showError("Could not compute G chart probability from your data (check values are positive).");
+    showError("Could not compute G chart probability from your data (check values are >= 1).");
     return;
+  }
+
+  // Quantile for geometric distribution: k = ln(1-q)/ln(1-p)
+  function geomQuantile(q, p) {
+    const k = Math.log(1 - q) / Math.log(1 - p);
+    return Math.max(1, Math.ceil(k));
   }
 
   const qLow = 0.00135;
   const qHigh = 0.99865;
-
-  // Quantile for geometric distribution (support 1,2,3,...)
-  function geomQuantile(q, p) {
-    // P(X <= k) = 1 - (1-p)^k  =>  k = ln(1-q)/ln(1-p)
-    const k = Math.log(1 - q) / Math.log(1 - p);
-    return Math.max(1, Math.ceil(k));
-  }
 
   const lcl = geomQuantile(qLow, p);
   const ucl = geomQuantile(qHigh, p);
@@ -1841,7 +1851,8 @@ function drawGChart(points, baselineCount, labels) {
   const uclArr = new Array(values.length).fill(ucl);
   const lclArr = new Array(values.length).fill(lcl);
 
-  const pointColours = values.map(v => (isFinite(v) && (v > ucl || v < lcl)) ? "#d73027" : "#003f87");
+  // Practical focus: “too soon” (low) is usually the key signal
+  const pointColours = values.map(v => (isFinite(v) && v < lcl) ? "#d73027" : "#003f87");
 
   drawSimpleSPCChart({
     labels,
@@ -1851,17 +1862,23 @@ function drawGChart(points, baselineCount, labels) {
     ucl: uclArr,
     lcl: lclArr,
     yAxisSuggestedMin: 0,
-    yAxisSuggestedMax: Math.max(...values.filter(v => isFinite(v)), ucl),
+    yAxisSuggestedMax: Math.max(...clean, lcl),
     chartTitleFallback: "G chart",
-    yAxisLabelFallback: "Opportunities between events"
+    yAxisLabelFallback: "Opportunities between events",
+    showUCL: false,  // ✅ hide UCL by default (avoids the ‘900’ line dominating)
+    showLCL: true
   });
 
-  // Hide MR panel if open
-  if (mrChart) { mrChart.destroy(); mrChart = null; }
-  if (mrPanel) mrPanel.style.display = "none";
-
-  lastRunAnalysis = null;
-  lastXmRAnalysis = null;
+  // Analysis
+  lastRareAnalysis = analyzeRareChart({
+    chartType: "g",
+    labels,
+    values,
+    cl,
+    ucl: uclArr,
+    lcl: lclArr
+  });
+  renderRareChartSummary(lastRareAnalysis);
 }
 	
 
@@ -2203,6 +2220,144 @@ function formatDateOnlyLabel(v) {
 
 
 // ---- Summary helpers ----
+
+let lastAttributeAnalysis = null;
+let lastXbarSAnalysis = null;
+let lastRareAnalysis = null;
+
+function getRuleSettingsSafe() {
+  const shift = parseInt(shiftRulePointsInput?.value || "8", 10);
+  const trend = parseInt(trendRulePointsInput?.value || "6", 10);
+  return {
+    shiftLength: isFinite(shift) && shift >= 4 ? shift : 8,
+    trendLength: isFinite(trend) && trend >= 4 ? trend : 6
+  };
+}
+
+function findShiftSignals(values, cl, shiftLength) {
+  let bestRun = 0;
+  let currentRun = 0;
+  let currentSide = 0; // -1 below, +1 above, 0 none
+
+  for (const v of values) {
+    if (!isFinite(v) || !isFinite(cl)) { currentRun = 0; currentSide = 0; continue; }
+    const side = v > cl ? 1 : (v < cl ? -1 : 0);
+    if (side === 0) { currentRun = 0; currentSide = 0; continue; }
+    if (side === currentSide) currentRun += 1;
+    else { currentSide = side; currentRun = 1; }
+    bestRun = Math.max(bestRun, currentRun);
+  }
+  return bestRun >= shiftLength ? `Shift: ≥${shiftLength} points on one side of centre line` : null;
+}
+
+function findTrendSignals(values, trendLength) {
+  let inc = 1, dec = 1, bestInc = 1, bestDec = 1;
+
+  for (let i = 1; i < values.length; i++) {
+    const a = values[i - 1], b = values[i];
+    if (!isFinite(a) || !isFinite(b)) { inc = 1; dec = 1; continue; }
+
+    if (b > a) { inc += 1; dec = 1; }
+    else if (b < a) { dec += 1; inc = 1; }
+    else { inc = 1; dec = 1; }
+
+    bestInc = Math.max(bestInc, inc);
+    bestDec = Math.max(bestDec, dec);
+  }
+
+  if (bestInc >= trendLength) return `Trend: ≥${trendLength} increasing points`;
+  if (bestDec >= trendLength) return `Trend: ≥${trendLength} decreasing points`;
+  return null;
+}
+
+function analyzeLimits({ labels, values, cl, ucl, lcl }) {
+  const out = [];
+  for (let i = 0; i < values.length; i++) {
+    const v = values[i];
+    const u = Array.isArray(ucl) ? ucl[i] : ucl;
+    const l = Array.isArray(lcl) ? lcl[i] : lcl;
+
+    if (!isFinite(v)) continue;
+    if (isFinite(u) && v > u) out.push({ i, label: labels[i], type: "aboveUCL", value: v, limit: u });
+    if (isFinite(l) && v < l) out.push({ i, label: labels[i], type: "belowLCL", value: v, limit: l });
+  }
+  return out;
+}
+
+function analyzeAttributeChart({ chartType, labels, values, cl, ucl, lcl }) {
+  const { shiftLength, trendLength } = getRuleSettingsSafe();
+  const signals = [];
+
+  const clScalar = Array.isArray(cl) ? cl[0] : cl;
+
+  const outOfControl = analyzeLimits({ labels, values, cl, ucl, lcl });
+  if (outOfControl.some(o => o.type === "aboveUCL")) signals.push("Point(s) above UCL");
+  if (outOfControl.some(o => o.type === "belowLCL")) signals.push("Point(s) below LCL");
+
+  const shift = findShiftSignals(values, clScalar, shiftLength);
+  if (shift) signals.push(shift);
+
+  const trend = findTrendSignals(values, trendLength);
+  if (trend) signals.push(trend);
+
+  return {
+    chartType,
+    isStable: signals.length === 0,
+    signals,
+    outOfControl
+  };
+}
+
+function analyzeRareChart({ chartType, labels, values, cl, ucl, lcl }) {
+  // Same engine, but we’ll word it differently in the summary
+  const a = analyzeAttributeChart({ chartType, labels, values, cl, ucl, lcl });
+  return a;
+}
+
+function renderAttributeSummary(a) {
+  if (!summaryDiv) return;
+
+  const nameMap = { c: "C chart", p: "P chart", u: "U chart" };
+  const chartName = nameMap[a.chartType] || "Chart";
+
+  let html = `<h3>${chartName} interpretation</h3>`;
+  html += `<ul>`;
+  html += a.isStable
+    ? `<li><strong>Stability:</strong> No clear special-cause signals detected (common variation).</li>`
+    : `<li><strong>Stability:</strong> Special-cause signals detected: ${a.signals.join("; ")}.</li>`;
+
+  if (a.outOfControl.length) {
+    const first = a.outOfControl[0];
+    html += `<li><strong>Example:</strong> ${first.label} is ${first.type === "aboveUCL" ? "above UCL" : "below LCL"}.</li>`;
+  }
+  html += `</ul>`;
+
+  summaryDiv.innerHTML = html;
+}
+
+function renderRareChartSummary(a) {
+  if (!summaryDiv) return;
+
+  const chartName = a.chartType === "t" ? "T chart" : "G chart";
+
+  let html = `<h3>${chartName} interpretation</h3>`;
+  html += `<ul>`;
+  html += `<li><strong>Note:</strong> Rare-event charts are skewed — limits won’t look symmetric like XmR.</li>`;
+  html += a.isStable
+    ? `<li><strong>Signals:</strong> No clear special-cause signals detected.</li>`
+    : `<li><strong>Signals:</strong> ${a.signals.join("; ")}.</li>`;
+
+  if (a.outOfControl.length) {
+    const lows = a.outOfControl.filter(o => o.type === "belowLCL").length;
+    const highs = a.outOfControl.filter(o => o.type === "aboveUCL").length;
+    if (lows) html += `<li><strong>Low intervals:</strong> ${lows} point(s) below LCL (events happening “too soon”).</li>`;
+    if (highs) html += `<li><strong>High intervals:</strong> ${highs} point(s) above UCL (longer time/opportunities between events).</li>`;
+  }
+  html += `</ul>`;
+
+  summaryDiv.innerHTML = html;
+}
+
 
 function updateRunSummary(points, medianIgnored, ruleHitsIgnored, baselineCountUsedIgnored) {
   if (!summaryDiv) return;
@@ -3212,6 +3367,10 @@ function drawCChart(points, baselineCount, labels) {
 
   lastRunAnalysis = null;
   lastXmRAnalysis = null;
+
+lastAttributeAnalysis = analyzeAttributeChart({ chartType: "c", labels, values, cl, ucl, lcl });
+renderAttributeSummary(lastAttributeAnalysis);
+
 }
 
 function drawPChart(pointsWithN, baselineCount, labels) {
@@ -3245,6 +3404,12 @@ function drawPChart(pointsWithN, baselineCount, labels) {
 
   lastRunAnalysis = null;
   lastXmRAnalysis = null;
+
+lastAttributeAnalysis = analyzeAttributeChart({ chartType: "p", labels, values, cl, ucl, lcl });
+renderAttributeSummary(lastAttributeAnalysis);
+
+
+
 }
 
 function drawUChart(pointsWithN, baselineCount, labels) {
@@ -3276,12 +3441,12 @@ function drawUChart(pointsWithN, baselineCount, labels) {
 
   lastRunAnalysis = null;
   lastXmRAnalysis = null;
+
+lastAttributeAnalysis = analyzeAttributeChart({ chartType: "u", labels, values, cl, ucl, lcl });
+renderAttributeSummary(lastAttributeAnalysis);
+
 }
 
-/**
- * Minimal reusable SPC chart renderer for C/P/U.
- * Uses a similar style to your existing charts (line + points + CL/UCL/LCL).
- */
 function drawSimpleSPCChart({
   labels,
   values,
@@ -3292,7 +3457,16 @@ function drawSimpleSPCChart({
   yAxisSuggestedMin,
   yAxisSuggestedMax,
   chartTitleFallback,
-  yAxisLabelFallback
+  yAxisLabelFallback,
+
+populateAnnotationDateOptions(labels);
+
+
+  // NEW options:
+  showUCL = true,
+  showLCL = true,
+  uclLabel = "UCL",
+  lclLabel = "LCL",
 }) {
   // Destroy existing main chart if present
   if (currentChart) {
@@ -3320,22 +3494,29 @@ function drawSimpleSPCChart({
       borderDash: [6, 4],
       borderWidth: 2,
       pointRadius: 0
-    },
-    {
-      label: "UCL",
+    }
+  ];
+
+  // Add UCL/LCL datasets only when requested (prevents misleading rare-event charts)
+  if (showUCL && Array.isArray(ucl)) {
+    datasets.push({
+      label: uclLabel,
       data: ucl,
       borderDash: [3, 3],
       borderWidth: 2,
       pointRadius: 0
-    },
-    {
-      label: "LCL",
+    });
+  }
+
+  if (showLCL && Array.isArray(lcl)) {
+    datasets.push({
+      label: lclLabel,
       data: lcl,
       borderDash: [3, 3],
       borderWidth: 2,
       pointRadius: 0
-    }
-  ];
+    });
+  }
 
   currentChart = new Chart(chartCanvas.getContext("2d"), {
     type: "line",
@@ -3343,9 +3524,8 @@ function drawSimpleSPCChart({
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: {
-        title: { display: true, text: title }
-      },
+      plugins: { title: { display: true, text: title } },
+  annotation: { annotations: buildAnnotationConfig(labels) }
       scales: {
         x: { title: { display: true, text: xLabel } },
         y: {
