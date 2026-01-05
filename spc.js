@@ -676,9 +676,14 @@ function resetAll() {
   if (dataEditorTextarea) dataEditorTextarea.value = "";
   if (dataEditorOverlay) dataEditorOverlay.style.display = "none";
 
-  // --- Hide Help section (first-load behaviour) ---
-  const help = document.getElementById("helpSection");
-  if (help) help.style.display = "none";
+  // Close help modal if open (don’t hide the section itself)
+const helpModal = document.getElementById("helpModal");
+if (helpModal) {
+  helpModal.classList.remove("visible");
+  helpModal.setAttribute("aria-hidden", "true");
+}
+document.body.classList.remove("modal-open");
+
 
   // --- Reset SPC helper (first-load behaviour) ---
   if (aiQuestionInput) aiQuestionInput.value = "";
