@@ -765,46 +765,33 @@ body.modal-open {
 	</div>
 	<div id="mrToggleRow" style="margin-top:0.75rem;">
   <div style="
-    display:grid;
-    grid-template-columns: 1fr;
-    gap:0.5rem;
+    display:block;
     padding:0.6rem 0.75rem;
     border:1px solid #ddd;
     border-radius:0.5rem;
     background:#fafafa;
+    text-align:left;
   ">
-    <label style="display:flex; align-items:center; gap:0.5rem; font-weight:600;">
-      <input type="checkbox" id="showMRCheckbox" checked />
-      Show Moving Range (MR) chart
+    <label style="display:flex; align-items:flex-start; justify-content:flex-start; gap:0.6rem; font-weight:600;">
+      <input type="checkbox" id="showMRCheckbox" checked style="margin-top:0.15rem;" />
+      <span>Show Moving Range (MR) chart</span>
     </label>
 
-    <div id="mrDisplayOptions" style="
-      display:grid;
-      grid-template-columns: 6rem 1fr;
-      align-items:start;
-      gap:0.5rem 0.75rem;
-      padding-left:1.75rem;
-    ">
-      <div style="font-weight:700;">MR display:</div>
+    <div id="mrDisplayOptions" style="margin-left:1.85rem; margin-top:0.6rem;">
+      <div style="font-weight:700; margin-bottom:0.35rem;">MR display:</div>
 
-      <div style="display:flex; flex-direction:column; gap:0.35rem;">
-        <label style="display:flex; align-items:center; gap:0.5rem;">
-          <input type="radio" name="mrDisplayMode" value="last" checked />
-          Current period only
-        </label>
+      <label style="display:flex; align-items:flex-start; justify-content:flex-start; gap:0.6rem; margin-bottom:0.35rem;">
+        <input type="radio" name="mrDisplayMode" value="last" checked style="margin-top:0.15rem;" />
+        <span>Current period only</span>
+      </label>
 
-        <label style="display:flex; align-items:center; gap:0.5rem;">
-          <input type="radio" name="mrDisplayMode" value="all" />
-          All periods (with splits)
-        </label>
-      </div>
+      <label style="display:flex; align-items:flex-start; justify-content:flex-start; gap:0.6rem;">
+        <input type="radio" name="mrDisplayMode" value="all" style="margin-top:0.15rem;" />
+        <span>All periods (with splits)</span>
+      </label>
     </div>
   </div>
 </div>
-
-
-
-
 
 
       	</details>

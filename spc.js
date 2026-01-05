@@ -149,6 +149,7 @@ function hideMrPanelNow() {
 
 if (showMRCheckbox) {
   showMRCheckbox.addEventListener("change", () => {
+    updateMrToggleVisibility();
     const chartType = getSelectedChartType ? getSelectedChartType() : "run";
 
     // If you're not on XmR, MR chart isn't relevant anyway
@@ -169,6 +170,7 @@ if (showMRCheckbox) {
 // Redraw MR chart when MR display mode changes
 document.querySelectorAll("input[name='mrDisplayMode']").forEach(r => {
   r.addEventListener("change", () => {
+    updateMrToggleVisibility();
     const chartType = getSelectedChartType ? getSelectedChartType() : "run";
 
     // Only relevant for XmR charts
@@ -778,6 +780,7 @@ function validateBeforeGenerate() {
 // ---- Helpers ----
 
 function getSelectedChartType() {
+    updateMrToggleVisibility();
   const radios = document.querySelectorAll("input[name='chartType']");
   for (const r of radios) {
     if (r.checked) return r.value;
@@ -3285,25 +3288,27 @@ function renderHelperState() {
 const mrToggleRow = document.getElementById("mrToggleRow");
 
 function updateMrToggleVisibility() {
+    updateMrToggleVisibility();
   const chartType = getSelectedChartType ? getSelectedChartType() : "run";
   const mrDisplayOptions = document.getElementById("mrDisplayOptions");
+  const showMR = !!(showMRCheckbox && showMRCheckbox.checked);
 
-  // Only show MR controls for XmR charts
+  // MR controls only relevant to XmR
   if (mrToggleRow) {
     mrToggleRow.style.display = (chartType === "xmr") ? "block" : "none";
   }
 
-  // Only show the "MR display" radios when MR is enabled
+  // MR display radios only shown when XmR + MR enabled
   if (mrDisplayOptions) {
-    const showMR = !!(showMRCheckbox && showMRCheckbox.checked);
     mrDisplayOptions.style.display = (chartType === "xmr" && showMR) ? "block" : "none";
   }
 
-  // If leaving XmR mode, hide/destroy the MR chart
+  // If leaving XmR, hide/destroy MR chart
   if (chartType !== "xmr") {
     hideMrPanelNow();
   }
 }
+
 
 
 
@@ -4063,7 +4068,7 @@ function countValidNumericPoints() {
 
 function enforceChartTypeSuitabilityAndRegen() {
   if (!rawRows || !rawRows.length) return;
-
+    updateMrToggleVisibility();
   const chartType = getSelectedChartType();
   const valueCol = valueSelect?.value;
 
