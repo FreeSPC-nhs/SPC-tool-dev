@@ -731,6 +731,53 @@ body.modal-open {
       <label>Value / Y-axis column:
         <select id="valueColumn"></select>
       </label>
+<!-- Extra columns needed for some chart types (hidden unless required) -->
+<div id="extraColumns" style="display:none; margin-top:0.75rem;">
+  <strong class="field-label">Extra columns for this chart:</strong>
+
+  <div id="extraColumns_PU" style="display:none; margin-top:0.5rem;">
+    <label>Numerator (e.g. defects / defectives):
+      <select id="numeratorColumn"></select>
+    </label>
+
+    <label>Denominator / opportunities (e.g. total cases):
+      <select id="denominatorColumn"></select>
+    </label>
+
+    <div class="hint small-hint">
+      P and U charts need a numerator and a denominator/opportunity column.
+    </div>
+  </div>
+
+  <div id="extraColumns_XbarS" style="display:none; margin-top:0.5rem;">
+    <label>Subgroup ID (e.g. day / week / sample ID):
+      <select id="subgroupColumn"></select>
+    </label>
+    <div class="hint small-hint">
+      X̄–S needs multiple measurements per subgroup (e.g. several observations per day).
+    </div>
+  </div>
+
+  <div id="extraColumns_T" style="display:none; margin-top:0.5rem;">
+    <label>Event date/time column:
+      <select id="eventDateColumn"></select>
+    </label>
+    <div class="hint small-hint">
+      T charts use time between events (rare events).
+    </div>
+  </div>
+
+  <div id="extraColumns_G" style="display:none; margin-top:0.5rem;">
+    <label>Opportunities between events:
+      <select id="oppBetweenColumn"></select>
+    </label>
+    <div class="hint small-hint">
+      G charts use number of opportunities between events.
+    </div>
+  </div>
+</div>
+
+
 	<hr />
 	<strong class="field-label">X-axis type:</strong>
 	<div class="radio-row">
@@ -749,49 +796,94 @@ body.modal-open {
   	(e.g. individual patients).
 	</div>
 	<hr />
-      	<strong class="field-label">Chart type:</strong>
-	<div class="radio-row">
-  	<label class="radio-pill">
-    	<input type="radio" name="chartType" value="run" checked />
-    	Run chart
-  	</label>
-  	<label class="radio-pill">
-    	<input type="radio" name="chartType" value="xmr" />
-    	XmR chart
-  	</label>
-	</div>
-	<div class="hint small-hint">
-  	Run chart uses the median only. XmR chart adds mean, control limits and sigma lines.
-	</div>
-	<div id="mrToggleRow" style="margin-top:0.75rem;">
-  <div style="
-    display:block;
-    padding:0.6rem 0.75rem;
-    border:1px solid #ddd;
-    border-radius:0.5rem;
-    background:#fafafa;
-    text-align:left;
-  ">
-    <label style="display:flex; align-items:flex-start; justify-content:flex-start; gap:0.6rem; font-weight:600;">
-      <input type="checkbox" id="showMRCheckbox" checked style="margin-top:0.15rem;" />
-      <span>Show Moving Range (MR) chart</span>
-    </label>
+      	
+	<strong class="field-label">Chart type:</strong>
 
-    <div id="mrDisplayOptions" style="margin-left:1.85rem; margin-top:0.6rem;">
-      <div style="font-weight:700; margin-bottom:0.35rem;">MR display:</div>
+<div class="radio-row" style="align-items:center; gap:0.5rem; flex-wrap:wrap;">
+  <!-- Keep the two main options visible -->
+  <label class="radio-pill">
+    <input type="radio" name="chartType" value="run" checked />
+    Run chart
+  </label>
+  <label class="radio-pill">
+    <input type="radio" name="chartType" value="xmr" />
+    XmR chart
+  </label>
 
-      <label style="display:flex; align-items:flex-start; justify-content:flex-start; gap:0.6rem; margin-bottom:0.35rem;">
-        <input type="radio" name="mrDisplayMode" value="last" checked style="margin-top:0.15rem;" />
-        <span>Current period only</span>
-      </label>
-
-      <label style="display:flex; align-items:flex-start; justify-content:flex-start; gap:0.6rem;">
-        <input type="radio" name="mrDisplayMode" value="all" style="margin-top:0.15rem;" />
-        <span>All periods (with splits)</span>
-      </label>
-    </div>
-  </div>
+  <!-- Help button (wizard) -->
+  <button id="helpChooseChartBtn" type="button" style="margin-left:0.25rem;">
+    Help me choose
+  </button>
 </div>
+
+<details id="moreChartTypesDetails" style="margin-top:0.5rem;">
+  <summary style="cursor:pointer;">More chart types</summary>
+  <div class="radio-row" style="margin-top:0.5rem; flex-wrap:wrap;">
+    <label class="radio-pill">
+      <input type="radio" name="chartType" value="c" />
+      C
+    </label>
+    <label class="radio-pill">
+      <input type="radio" name="chartType" value="p" />
+      P
+    </label>
+    <label class="radio-pill">
+      <input type="radio" name="chartType" value="u" />
+      U
+    </label>
+    <label class="radio-pill">
+      <input type="radio" name="chartType" value="xbars" />
+      X̄–S
+    </label>
+    <label class="radio-pill">
+      <input type="radio" name="chartType" value="t" />
+      T
+    </label>
+    <label class="radio-pill">
+      <input type="radio" name="chartType" value="g" />
+      G
+    </label>
+  </div>
+
+  <div class="hint small-hint" style="margin-top:0.35rem;">
+    If you’re not sure, use <strong>Help me choose</strong>. The tool will ask a few questions and select the best chart.
+  </div>
+</details>
+
+<div class="hint small-hint" style="margin-top:0.5rem;">
+  Run chart uses the median only. XmR chart adds mean, control limits and sigma lines.
+</div>
+
+
+	<div id="mrToggleRow" style="margin-top:0.75rem;">
+  	<div style="
+	    display:block;
+	    padding:0.6rem 0.75rem;
+	    border:1px solid #ddd;
+	    border-radius:0.5rem;
+	    background:#fafafa;
+	    text-align:left;
+	  ">
+	    <label style="display:flex; align-items:flex-start; justify-content:flex-start; gap:0.6rem; font-weight:600;">
+	      <input type="checkbox" id="showMRCheckbox" checked style="margin-top:0.15rem;" />
+	      <span>Show Moving Range (MR) chart</span>
+	    </label>
+
+	    <div id="mrDisplayOptions" style="margin-left:1.85rem; margin-top:0.6rem;">
+	      <div style="font-weight:700; margin-bottom:0.35rem;">MR display:</div>
+
+	      <label style="display:flex; align-items:flex-start; justify-content:flex-start; gap:0.6rem; margin-bottom:0.35rem;">
+	        <input type="radio" name="mrDisplayMode" value="last" checked style="margin-top:0.15rem;" />
+	        <span>Current period only</span>
+	      </label>
+	
+	      <label style="display:flex; align-items:flex-start; justify-content:flex-start; gap:0.6rem;">
+	        <input type="radio" name="mrDisplayMode" value="all" style="margin-top:0.15rem;" />
+	        <span>All periods (with splits)</span>
+	      </label>
+	    </div>
+	  </div>
+	</div>
 
 
       	</details>
@@ -1183,6 +1275,31 @@ body.modal-open {
     </details>
 
    </section>
+  </div>
+</div>
+
+<!-- CHART CHOOSER WIZARD MODAL -->
+<div id="chartWizardModal" class="modal" aria-hidden="true">
+  <div class="modal-backdrop" aria-hidden="true"></div>
+
+  <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="chartWizardTitle">
+    <button type="button" class="modal-close" aria-label="Close chart wizard" onclick="toggleChartWizard(false)">×</button>
+
+    <section class="panel" style="display:block; margin:0;">
+      <h2 id="chartWizardTitle">Help me choose a chart</h2>
+      <p class="sub">
+        Answer a couple of questions and the tool will pick a chart type and show the extra columns (if needed).
+      </p>
+
+      <div id="chartWizardBody">
+        <!-- Step content inserted by JS in Step 2 -->
+        <p><strong>Step 1 (coming next):</strong> We’ll add the questions here.</p>
+      </div>
+
+      <div style="display:flex; gap:0.5rem; justify-content:flex-end; margin-top:1rem;">
+        <button type="button" onclick="toggleChartWizard(false)">Close</button>
+      </div>
+    </section>
   </div>
 </div>
 

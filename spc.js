@@ -22,6 +22,23 @@ const fileInput         = document.getElementById("fileInput");
 const columnSelectors   = document.getElementById("columnSelectors");
 const dateSelect        = document.getElementById("dateColumn");
 const valueSelect       = document.getElementById("valueColumn");
+
+// Chart chooser / extra columns
+const helpChooseChartBtn   = document.getElementById("helpChooseChartBtn");
+const extraColumnsWrap     = document.getElementById("extraColumns");
+const extraColumns_PU      = document.getElementById("extraColumns_PU");
+const extraColumns_XbarS   = document.getElementById("extraColumns_XbarS");
+const extraColumns_T       = document.getElementById("extraColumns_T");
+const extraColumns_G       = document.getElementById("extraColumns_G");
+
+const numeratorSelect      = document.getElementById("numeratorColumn");
+const denominatorSelect    = document.getElementById("denominatorColumn");
+const subgroupSelect       = document.getElementById("subgroupColumn");
+const eventDateSelect      = document.getElementById("eventDateColumn");
+const oppBetweenSelect     = document.getElementById("oppBetweenColumn");
+
+
+
 const baselineInput     = document.getElementById("baselinePoints");
 const chartTitleInput   = document.getElementById("chartTitle");
 const xAxisLabelInput   = document.getElementById("xAxisLabel");
@@ -70,6 +87,8 @@ const clampLclAtZeroCheckbox = document.getElementById("clampLclAtZero");
 const mrPanel           = document.getElementById("mrPanel");
 const mrChartCanvas     = document.getElementById("mrChartCanvas");
 const mrCanvas = mrChartCanvas;
+
+updateMrToggleVisibility();
 
 
 function guessColumns(rows) {
@@ -137,6 +156,29 @@ function guessColumns(rows) {
 }
 
 
+function updateMrToggleVisibility() {
+  const chartType = getSelectedChartType_NoSideEffects();
+  const mrDisplayOptions = document.getElementById("mrDisplayOptions");
+
+  // Show MR controls only for XmR
+  if (mrToggleRow) {
+    mrToggleRow.style.display = (chartType === "xmr") ? "block" : "none";
+  }
+
+  // Show MR display radios only when MR is checked
+  if (mrDisplayOptions && showMRCheckbox) {
+    mrDisplayOptions.style.display =
+      (chartType === "xmr" && showMRCheckbox.checked) ? "block" : "none";
+  }
+
+  // If leaving XmR, fully hide MR chart
+  if (chartType !== "xmr") {
+    hideMrPanelNow();
+  }
+}
+
+
+
 function hideMrPanelNow() {
   if (mrChart) {
     mrChart.destroy();
@@ -150,7 +192,7 @@ function hideMrPanelNow() {
 if (showMRCheckbox) {
   showMRCheckbox.addEventListener("change", () => {
     updateMrToggleVisibility();
-    const chartType = getSelectedChartType ? getSelectedChartType() : "run";
+    const chartType = getSelectedChartType ? getSelectedChartType_NoSideEffects() : "run";
 
     // If you're not on XmR, MR chart isn't relevant anyway
     if (chartType !== "xmr") {
@@ -171,7 +213,7 @@ if (showMRCheckbox) {
 document.querySelectorAll("input[name='mrDisplayMode']").forEach(r => {
   r.addEventListener("change", () => {
     updateMrToggleVisibility();
-    const chartType = getSelectedChartType ? getSelectedChartType() : "run";
+    const chartType = getSelectedChartType ? getSelectedChartType_NoSideEffects() : "run";
 
     // Only relevant for XmR charts
     if (chartType !== "xmr") return;
@@ -287,7 +329,15 @@ function loadRows(rows) {
   }
 
   dateSelect.innerHTML = "";
-  valueSelect.innerHTML = "";
+valueSelect.innerHTML = "";
+
+// Extra selects (may be null if HTML not loaded yet)
+if (numeratorSelect) numeratorSelect.innerHTML = "";
+if (denominatorSelect) denominatorSelect.innerHTML = "";
+if (subgroupSelect) subgroupSelect.innerHTML = "";
+if (eventDateSelect) eventDateSelect.innerHTML = "";
+if (oppBetweenSelect) oppBetweenSelect.innerHTML = "";
+
 
   columns.forEach(col => {
     const opt1 = document.createElement("option");
@@ -299,6 +349,43 @@ function loadRows(rows) {
     opt2.value = col;
     opt2.textContent = col;
     valueSelect.appendChild(opt2);
+
+    if (numeratorSelect) {
+      const optN = document.createElement("option");
+      optN.value = col;
+      optN.textContent = col;
+      numeratorSelect.appendChild(optN);
+    }
+
+    if (denominatorSelect) {
+      const optD = document.createElement("option");
+      optD.value = col;
+      optD.textContent = col;
+      denominatorSelect.appendChild(optD);
+    }
+
+    if (subgroupSelect) {
+      const optSg = document.createElement("option");
+      optSg.value = col;
+      optSg.textContent = col;
+      subgroupSelect.appendChild(optSg);
+    }
+
+    if (eventDateSelect) {
+      const optEv = document.createElement("option");
+      optEv.value = col;
+      optEv.textContent = col;
+      eventDateSelect.appendChild(optEv);
+    }
+
+    if (oppBetweenSelect) {
+      const optOb = document.createElement("option");
+      optOb.value = col;
+      optOb.textContent = col;
+      oppBetweenSelect.appendChild(optOb);
+    }
+
+
   });
 
 // --- NEW: auto-guess defaults ---
@@ -779,14 +866,14 @@ function validateBeforeGenerate() {
 
 // ---- Helpers ----
 
-function getSelectedChartType() {
-    updateMrToggleVisibility();
+function getSelectedChartType_NoSideEffects() {
   const radios = document.querySelectorAll("input[name='chartType']");
   for (const r of radios) {
     if (r.checked) return r.value;
   }
   return "run";
 }
+
 
 function escapeHtml(str) {
   return String(str)
@@ -887,6 +974,32 @@ function findTrendRanges(values, length) {
   }
 
   return ranges;
+}
+
+function updateUIForChartType(chartType) {
+  // Hide all extra sections by default
+  if (!extraColumnsWrap) return;
+
+  extraColumnsWrap.style.display = "none";
+  if (extraColumns_PU) extraColumns_PU.style.display = "none";
+  if (extraColumns_XbarS) extraColumns_XbarS.style.display = "none";
+  if (extraColumns_T) extraColumns_T.style.display = "none";
+  if (extraColumns_G) extraColumns_G.style.display = "none";
+
+  // Show only what’s needed
+  if (chartType === "p" || chartType === "u") {
+    extraColumnsWrap.style.display = "block";
+    if (extraColumns_PU) extraColumns_PU.style.display = "block";
+  } else if (chartType === "xbars") {
+    extraColumnsWrap.style.display = "block";
+    if (extraColumns_XbarS) extraColumns_XbarS.style.display = "block";
+  } else if (chartType === "t") {
+    extraColumnsWrap.style.display = "block";
+    if (extraColumns_T) extraColumns_T.style.display = "block";
+  } else if (chartType === "g") {
+    extraColumnsWrap.style.display = "block";
+    if (extraColumns_G) extraColumns_G.style.display = "block";
+  }
 }
 
 
@@ -2086,7 +2199,8 @@ generateButton.addEventListener("click", () => {
       if (!isNaN(n) && n >= 2) baselineCount = Math.min(n, points.length);
     }
 
-    const chartType = getSelectedChartType();
+    const chartType = getSelectedChartType_NoSideEffects()
+;
 
     // clear existing charts
     if (currentChart) {
@@ -3103,7 +3217,8 @@ function matchFaq(items, text) {
 
   // ----- 2. Chart-specific interpretation (Run + XmR) -----
   const chartType = (typeof getSelectedChartType === "function")
-    ? getSelectedChartType()
+    ? getSelectedChartType_NoSideEffects()
+
     : "xmr";
 
   const isMyChartQ =
@@ -3289,7 +3404,7 @@ const mrToggleRow = document.getElementById("mrToggleRow");
 
 function updateMrToggleVisibility() {
     updateMrToggleVisibility();
-  const chartType = getSelectedChartType ? getSelectedChartType() : "run";
+  const chartType = getSelectedChartType ? getSelectedChartType_NoSideEffects() : "run";
   const mrDisplayOptions = document.getElementById("mrDisplayOptions");
   const showMR = !!(showMRCheckbox && showMRCheckbox.checked);
 
@@ -3749,6 +3864,30 @@ if (downloadBtn) {
   });
 }
 
+
+function toggleChartWizard(forceOpen) {
+  const modal = document.getElementById("chartWizardModal");
+  if (!modal) return;
+
+  const isOpen = modal.classList.contains("visible");
+  const shouldOpen = typeof forceOpen === "boolean" ? forceOpen : !isOpen;
+
+  modal.classList.toggle("visible", shouldOpen);
+  modal.setAttribute("aria-hidden", shouldOpen ? "false" : "true");
+  document.body.classList.toggle("modal-open", shouldOpen);
+
+  if (shouldOpen) {
+    const closeBtn = modal.querySelector(".modal-close");
+    if (closeBtn) closeBtn.focus();
+  }
+}
+
+if (helpChooseChartBtn) {
+  helpChooseChartBtn.addEventListener("click", () => toggleChartWizard(true));
+}
+
+
+
 // ---- Existing split dropdown button still works ----
 function applySplitFromSidebarSelection() {
   if (!splitPointSelect) return false;
@@ -3982,7 +4121,7 @@ if (clearSplitsButton) {
       splitPointSelect.value = "";
     }
 
-    if (getSelectedChartType() === "xmr") {
+    if (getSelectedChartType_NoSideEffects() === "xmr") {
       generateButton.click();
     }
   });
@@ -4069,7 +4208,7 @@ function countValidNumericPoints() {
 function enforceChartTypeSuitabilityAndRegen() {
   if (!rawRows || !rawRows.length) return;
     updateMrToggleVisibility();
-  const chartType = getSelectedChartType();
+  const chartType = getSelectedChartType_NoSideEffects();
   const valueCol = valueSelect?.value;
 
   let validPoints = 0;
@@ -4157,6 +4296,16 @@ function wireAutoRedrawControls() {
   });
 })();
 
+
+document.querySelectorAll('input[name="chartType"]').forEach(r => {
+  r.addEventListener("change", () => {
+    updateUIForChartType(r.value);
+  });
+});
+
+// Initialize UI once on load (in case default is run)
+const checked = document.querySelector('input[name="chartType"]:checked');
+if (checked) updateUIForChartType(checked.value);
 
 
 // Call after the DOM is available (safe even if script is at bottom, but robust)
