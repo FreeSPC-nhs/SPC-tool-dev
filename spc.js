@@ -17,6 +17,8 @@ let annotations = [];      // { date: 'YYYY-MM-DD', label: 'text' }
 let splits = [];   // indices where a new XmR segment starts (split AFTER index)
 let lastXmRAnalysis = null;
 let lastRunAnalysis = null;
+let dataModelDirty = false;
+
 
 const fileInput         = document.getElementById("fileInput");
 const columnSelectors   = document.getElementById("columnSelectors");
@@ -189,7 +191,7 @@ function hideMrPanelNow() {
 if (showMRCheckbox) {
   showMRCheckbox.addEventListener("change", () => {
     updateMrToggleVisibility();
-    const chartType = getSelectedChartType ? getSelectedChartType_NoSideEffects() : "run";
+    const chartType = getSelectedChartType_NoSideEffects();
 
     // If you're not on XmR, MR chart isn't relevant anyway
     if (chartType !== "xmr") {
@@ -3396,8 +3398,6 @@ function renderHelperState() {
     else spcHelperChipsChart.classList.remove("is-disabled");
   }
 }
-
-const mrToggleRow = document.getElementById("mrToggleRow");
 
 function updateMrToggleVisibility() {
     updateMrToggleVisibility();
