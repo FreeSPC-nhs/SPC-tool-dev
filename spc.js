@@ -3995,6 +3995,235 @@ if (helpChooseChartBtn) {
   helpChooseChartBtn.addEventListener("click", () => toggleChartWizard(true));
 }
 
+// -----------------------------
+// Chart chooser wizard (Help me choose)
+// -----------------------------
+
+const chartWizardBody = document.getElementById("chartWizardBody");
+
+const chartWizardState = {
+  step: 0,
+  answers: {},
+  recommendation: null
+};
+
+function setChartType(chartType) {
+  const radio = document.querySelector(`input[name="chartType"][value="${chartType}"]`);
+  if (radio) {
+    radio.checked = true;
+    // If chart type is in the "More chart types" details, open it so the selection is visible
+    const details = document.getElementById("moreChartTypesDetails");
+    if (details && ["c", "p", "u", "xbars", "t", "g"].includes(chartType)) {
+      details.open = true;
+    }
+    updateUIForChartType(chartType);
+  }
+}
+
+function startChartWizard() {
+  chartWizardState.step = 0;
+  chartWizardState.answers = {};
+  chartWizardState.recommendation = null;
+  renderChartWizard();
+}
+
+function closeChartWizard() {
+  toggleChartWizard(false);
+}
+
+function wizardBack() {
+  if (chartWizardState.step > 0) chartWizardState.step -= 1;
+  renderChartWizard();
+}
+
+function wizardNext(answerKey, answerValue) {
+  chartWizardState.answers[answerKey] = answerValue;
+  chartWizardState.step += 1;
+  renderChartWizard();
+}
+
+function finishWizard(recommendation) {
+  chartWizardState.recommendation = recommendation;
+  chartWizardState.step = 99; // results screen
+  renderChartWizard();
+}
+
+// Core decision logic: minimal questions, plain language
+function computeRecommendation(answers) {
+  // answers.kind: measurement | count | proportion | rare | unsure
+  // answers.measurementShape: single | subgroups | unsure
+  // answers.countOpportunity: constant | varies | unsure
+  // answers.proportionHasDenom: yes | no | unsure
+  // answers.rareType: time | opportunities | unsure
+
+  switch (answers.kind) {
+    case "measurement": {
+      if (answers.measurementShape === "subgroups") return { chartType: "xbars", label: "X̄–S", reason: "You have multiple measurements per time point (subgroups)." };
+      return { chartType: "xmr", label: "XmR", reason: "You have one measurement per time point." };
+    }
+
+    case "count": {
+      if (answers.countOpportunity === "varies") return { chartType: "u", label: "U", reason: "The opportunity/volume varies across time points." };
+      return { chartType: "c", label: "C", reason: "You have counts with a roughly constant opportunity/volume each time." };
+    }
+
+    case "proportion": {
+      if (answers.proportionHasDenom === "yes") return { chartType: "p", label: "P", reason: "You have defectives out of a total (a proportion)." };
+      // If no denominator, P isn't really possible. Give a safe novice fallback:
+      return { chartType: "xmr", label: "XmR", reason: "Without a denominator column, the safest option is to chart the percentage as a measurement (XmR)." };
+    }
+
+    case "rare": {
+      if (answers.rareType === "opportunities") return { chartType: "g", label: "G", reason: "You have opportunities between rare events." };
+      return { chartType: "t", label: "T", reason: "You have time between rare events." };
+    }
+
+    case "unsure":
+    default:
+      return { chartType: "xmr", label: "XmR", reason: "When unsure, XmR is a safe default for a single value over time." };
+  }
+}
+
+function renderChartWizard() {
+  if (!chartWizardBody) return;
+
+  const s = chartWizardState;
+  const a = s.answers;
+
+  // Helper to render button list
+  const optionButton = (text, onClick) =>
+    `<button type="button" style="margin:0.25rem 0; width:100%; text-align:left;" onclick="${onClick}">${text}</button>`;
+
+  // Step screens
+  if (s.step === 0) {
+    chartWizardBody.innerHTML = `
+      <p><strong>What are you charting?</strong></p>
+      ${optionButton("A measurement (e.g. time, score, weight, waiting time)", `wizardNext('kind','measurement')`)}
+      ${optionButton("A count (e.g. number of falls, infections, incidents)", `wizardNext('kind','count')`)}
+      ${optionButton("A percentage / proportion (e.g. x out of n, % compliant)", `wizardNext('kind','proportion')`)}
+      ${optionButton("Rare events (time/opportunities between events)", `wizardNext('kind','rare')`)}
+      ${optionButton("Not sure", `finishWizard(computeRecommendation({kind:'unsure'}))`)}
+    `;
+    return;
+  }
+
+  // Measurement follow-up
+  if (s.step === 1 && a.kind === "measurement") {
+    chartWizardBody.innerHTML = `
+      <p><strong>Do you have one value per time point, or multiple values per time point?</strong></p>
+      ${optionButton("One value each time point", `wizardNext('measurementShape','single')`)}
+      ${optionButton("Multiple values per time point (subgroups/samples)", `wizardNext('measurementShape','subgroups')`)}
+      ${optionButton("Not sure", `wizardNext('measurementShape','unsure')`)}
+      <div style="display:flex; gap:0.5rem; justify-content:space-between; margin-top:0.75rem;">
+        <button type="button" onclick="wizardBack()">Back</button>
+        <button type="button" onclick="finishWizard(computeRecommendation(chartWizardState.answers))">Skip</button>
+      </div>
+    `;
+    return;
+  }
+
+  // Count follow-up
+  if (s.step === 1 && a.kind === "count") {
+    chartWizardBody.innerHTML = `
+      <p><strong>Does the amount of work/opportunity vary each time point?</strong></p>
+      ${optionButton("No / roughly constant each time", `wizardNext('countOpportunity','constant')`)}
+      ${optionButton("Yes, it varies (or I have an opportunities/denominator column)", `wizardNext('countOpportunity','varies')`)}
+      ${optionButton("Not sure", `wizardNext('countOpportunity','unsure')`)}
+      <div style="display:flex; gap:0.5rem; justify-content:space-between; margin-top:0.75rem;">
+        <button type="button" onclick="wizardBack()">Back</button>
+        <button type="button" onclick="finishWizard(computeRecommendation(chartWizardState.answers))">Skip</button>
+      </div>
+    `;
+    return;
+  }
+
+  // Proportion follow-up
+  if (s.step === 1 && a.kind === "proportion") {
+    chartWizardBody.innerHTML = `
+      <p><strong>Do you have both parts of the proportion?</strong></p>
+      <p class="hint small-hint" style="margin-top:-0.25rem;">
+        For a P chart you need a numerator (e.g. defectives) and a denominator (e.g. total cases) each time point.
+      </p>
+      ${optionButton("Yes — I have numerator and denominator columns", `wizardNext('proportionHasDenom','yes')`)}
+      ${optionButton("No — I only have the percentage/proportion value", `wizardNext('proportionHasDenom','no')`)}
+      ${optionButton("Not sure", `wizardNext('proportionHasDenom','unsure')`)}
+      <div style="display:flex; gap:0.5rem; justify-content:space-between; margin-top:0.75rem;">
+        <button type="button" onclick="wizardBack()">Back</button>
+        <button type="button" onclick="finishWizard(computeRecommendation(chartWizardState.answers))">Skip</button>
+      </div>
+    `;
+    return;
+  }
+
+  // Rare events follow-up
+  if (s.step === 1 && a.kind === "rare") {
+    chartWizardBody.innerHTML = `
+      <p><strong>Which do you have?</strong></p>
+      ${optionButton("Time between events (e.g. days between incidents)", `wizardNext('rareType','time')`)}
+      ${optionButton("Opportunities between events (e.g. procedures between harms)", `wizardNext('rareType','opportunities')`)}
+      ${optionButton("Not sure", `wizardNext('rareType','unsure')`)}
+      <div style="display:flex; gap:0.5rem; justify-content:space-between; margin-top:0.75rem;">
+        <button type="button" onclick="wizardBack()">Back</button>
+        <button type="button" onclick="finishWizard(computeRecommendation(chartWizardState.answers))">Skip</button>
+      </div>
+    `;
+    return;
+  }
+
+  // After step 1 follow-ups, we can compute and show results
+  if (s.step >= 2 && s.step !== 99) {
+    finishWizard(computeRecommendation(s.answers));
+    return;
+  }
+
+  // Results screen
+  if (s.step === 99 && s.recommendation) {
+    const rec = s.recommendation;
+    chartWizardBody.innerHTML = `
+      <p><strong>Recommended chart:</strong> ${rec.label}</p>
+      <p class="hint small-hint">${rec.reason}</p>
+
+      <div style="display:flex; gap:0.5rem; justify-content:flex-end; margin-top:1rem;">
+        <button type="button" onclick="wizardBack()">Back</button>
+        <button type="button" onclick="setChartType('${rec.chartType}'); closeChartWizard();">Use this chart</button>
+      </div>
+
+      <hr style="margin:1rem 0;" />
+
+      <p class="hint small-hint">
+        You can still pick a different chart type manually if you prefer.
+      </p>
+    `;
+    return;
+  }
+}
+
+// Make wizard functions callable from inline onclick in the HTML strings
+window.wizardNext = wizardNext;
+window.wizardBack = wizardBack;
+window.finishWizard = finishWizard;
+window.computeRecommendation = computeRecommendation;
+window.setChartType = setChartType;
+window.closeChartWizard = closeChartWizard;
+
+// Hook wizard start into the existing button/modal
+if (helpChooseChartBtn) {
+  helpChooseChartBtn.addEventListener("click", () => {
+    toggleChartWizard(true);
+    startChartWizard();
+  });
+}
+
+// Optional: close wizard when clicking the backdrop
+(function wireWizardBackdropClose() {
+  const modal = document.getElementById("chartWizardModal");
+  if (!modal) return;
+  const backdrop = modal.querySelector(".modal-backdrop");
+  if (backdrop) {
+    backdrop.addEventListener("click", () => toggleChartWizard(false));
+  }
+})();
+
 
 
 // ---- Existing split dropdown button still works ----
