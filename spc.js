@@ -24,6 +24,8 @@ const fileInput         = document.getElementById("fileInput");
 const columnSelectors   = document.getElementById("columnSelectors");
 const dateSelect        = document.getElementById("dateColumn");
 const valueSelect       = document.getElementById("valueColumn");
+const IMPLEMENTED_CHARTS = new Set(["run", "xmr"]);
+
 
 // Dynamic column labels + optional 3rd selector
 const xLabelEl = document.getElementById("xLabel");
@@ -535,6 +537,12 @@ function clearFirstRunFlag() {
   updateFirstRunGuideVisibility();
 }
 
+function getSelectedChartType() {
+  const el = document.querySelector('input[name="chartType"]:checked');
+  return el ? el.value : "run";
+}
+
+
 // On initial load
 updateFirstRunGuideVisibility();
 
@@ -995,66 +1003,91 @@ function findTrendRanges(values, length) {
 }
 
 function updateUIForChartType(chartType) {
-  // Default labels
-  if (xLabelEl) xLabelEl.textContent = "Date / X-axis column";
-  if (yLabelEl) yLabelEl.textContent = "Value / Y-axis column";
+  if (!xLabelEl || !yLabelEl || !thirdColumnRow) return;
 
-  // Hide third selector by default
-  if (thirdColumnRow) thirdColumnRow.style.display = "none";
-  if (thirdHintEl) thirdHintEl.textContent = "";
-  if (thirdLabelEl) thirdLabelEl.textContent = "";
+  // ---- Default UI state (safe baseline) ----
+  xLabelEl.textContent = "Date / X-axis column";
+  yLabelEl.textContent = "Value / Y-axis column";
 
-  // Chart-specific wording + whether we need a 3rd column
-  switch (chartType) {
-    case "run":
-      // simplest
-      break;
+  thirdColumnRow.style.display = "none";
+  thirdLabelEl.textContent = "";
+  thirdHintEl.textContent = "";
 
-    case "xmr":
-      if (yLabelEl) yLabelEl.textContent = "Measure (used for XmR limits)";
-      break;
+  // ---- Chart-specific UI definitions ----
+  const chartUI = {
+    run: {
+      // defaults are fine
+    },
 
-    case "c":
-      if (yLabelEl) yLabelEl.textContent = "Count (c) per time period";
-      break;
+    xmr: {
+      yLabel: "Measure (used for XmR limits)"
+    },
 
-    case "p":
-      if (yLabelEl) yLabelEl.textContent = "Numerator: defectives (d)";
-      if (thirdLabelEl) thirdLabelEl.textContent = "Denominator: total (n)";
-      if (thirdHintEl) thirdHintEl.textContent = "P chart plots a proportion: d out of n.";
-      if (thirdColumnRow) thirdColumnRow.style.display = "block";
-      break;
+    c: {
+      yLabel: "Count (c) per time period"
+    },
 
-    case "u":
-      if (yLabelEl) yLabelEl.textContent = "Numerator: defects (c)";
-      if (thirdLabelEl) thirdLabelEl.textContent = "Denominator: opportunities (n)";
-      if (thirdHintEl) thirdHintEl.textContent = "U chart plots defects per opportunity: c per n.";
-      if (thirdColumnRow) thirdColumnRow.style.display = "block";
-      break;
+    p: {
+      yLabel: "Numerator: defectives (d)",
+      thirdLabel: "Denominator: total (n)",
+      thirdHint: "P chart plots a proportion: d out of n.",
+      needsThird: true
+    },
 
-    case "xbars":
-      if (yLabelEl) yLabelEl.textContent = "Measurement value";
-      if (thirdLabelEl) thirdLabelEl.textContent = "Subgroup ID (e.g. day/week/sample)";
-      if (thirdHintEl) thirdHintEl.textContent = "X̄–S needs multiple measurements per subgroup.";
-      if (thirdColumnRow) thirdColumnRow.style.display = "block";
-      break;
+    u: {
+      yLabel: "Numerator: defects (c)",
+      thirdLabel: "Denominator: opportunities (n)",
+      thirdHint: "U chart plots defects per opportunity: c per n.",
+      needsThird: true
+    },
 
-    case "t":
-      if (yLabelEl) yLabelEl.textContent = "Event date/time";
-      // (You might later not need dateSelect at all for T; for now keep consistent)
-      if (thirdLabelEl) thirdLabelEl.textContent = "Optional: subgroup/label (if needed)";
-      if (thirdHintEl) thirdHintEl.textContent = "T chart plots time between events (rare events).";
-      // You may or may not want a 3rd column; for now keep hidden:
-      // thirdColumnRow.style.display = "block";
-      break;
+    xbars: {
+      yLabel: "Measurement value",
+      thirdLabel: "Subgroup ID (e.g. day / week / sample)",
+      thirdHint: "X̄–S needs multiple measurements per subgroup.",
+      needsThird: true
+    },
 
-    case "g":
-      if (yLabelEl) yLabelEl.textContent = "Opportunities between events";
-      if (thirdHintEl) thirdHintEl.textContent = "G chart plots opportunities between rare events.";
-      break;
+    t: {
+      yLabel: "Event date / time",
+      thirdHint: "T chart plots time between rare events."
+      // no third column required yet
+    },
 
-    default:
-      break;
+    g: {
+      yLabel: "Opportunities between events",
+      thirdHint: "G chart plots opportunities between rare events."
+    }
+  };
+
+  // ---- Apply config (if defined) ----
+  const cfg = chartUI[chartType];
+  if (!cfg) return;
+
+  if (cfg.yLabel) {
+    yLabelEl.textContent = cfg.yLabel;
+  }
+
+  if (cfg.needsThird) {
+    thirdColumnRow.style.display = "block";
+  }
+
+  if (cfg.thirdLabel) {
+    thirdLabelEl.textContent = cfg.thirdLabel;
+  }
+
+  if (cfg.thirdHint) {
+    thirdHintEl.textContent = cfg.thirdHint;
+  }
+
+  // ---- Optional UX polish: avoid third == y by default ----
+  if (cfg.needsThird && thirdSelect && valueSelect) {
+    if (thirdSelect.value === valueSelect.value) {
+      const alt = Array.from(thirdSelect.options)
+        .map(o => o.value)
+        .find(v => v !== valueSelect.value);
+      if (alt) thirdSelect.value = alt;
+    }
   }
 }
 
@@ -2256,8 +2289,29 @@ generateButton.addEventListener("click", () => {
       if (!isNaN(n) && n >= 2) baselineCount = Math.min(n, points.length);
     }
 
-    const chartType = getSelectedChartType_NoSideEffects()
-;
+    const chartType = getSelectedChartType_NoSideEffects();
+
+// Guard: chart not implemented yet
+if (!IMPLEMENTED_CHARTS.has(chartType)) {
+  showChartMessage(`"${chartType.toUpperCase()}" charts are not available yet. Please use Run or XmR for now.`);
+  return;
+}
+
+// If the 3rd column row is visible, ensure it’s selected sensibly
+if (thirdColumnRow && thirdColumnRow.style.display !== "none") {
+  const yCol = valueSelect.value;
+  const thirdCol = thirdSelect ? thirdSelect.value : "";
+
+  if (!thirdCol) {
+    showChartMessage("Please choose the required third column for this chart type.");
+    return;
+  }
+  if (thirdCol === yCol) {
+    showChartMessage("The third column should be different from the main value column.");
+    return;
+  }
+}
+
 
     // clear existing charts
     if (currentChart) {
