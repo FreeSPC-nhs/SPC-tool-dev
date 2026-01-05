@@ -18,9 +18,6 @@ let splits = [];   // indices where a new XmR segment starts (split AFTER index)
 let lastXmRAnalysis = null;
 let lastRunAnalysis = null;
 let dataModelDirty = false;
-let lastAttributeAnalysis = null;
-
-
 
 const fileInput         = document.getElementById("fileInput");
 const columnSelectors   = document.getElementById("columnSelectors");
@@ -3449,6 +3446,7 @@ renderAttributeSummary(lastAttributeAnalysis);
 
 }
 
+
 function drawSimpleSPCChart({
   labels,
   values,
@@ -3460,16 +3458,15 @@ function drawSimpleSPCChart({
   yAxisSuggestedMax,
   chartTitleFallback,
   yAxisLabelFallback,
-
-
-  // NEW options:
   showUCL = true,
-  showLCL = true,
-  uclLabel = "UCL",
-  lclLabel = "LCL",
+  showLCL = true
 }) {
+  if (!chartCanvas) return;
 
-populateAnnotationDateOptions(labels);
+  // Keep annotation dropdown aligned to the current chart’s x-axis labels
+  if (typeof populateAnnotationDateOptions === "function") {
+    populateAnnotationDateOptions(labels);
+  }
 
   // Destroy existing main chart if present
   if (currentChart) {
@@ -3489,35 +3486,38 @@ populateAnnotationDateOptions(labels);
       pointRadius: 4,
       pointBackgroundColor: pointColours,
       pointBorderColor: pointColours,
-      tension: 0.1
+      tension: 0.1,
+      fill: false
     },
     {
       label: "Centre line",
       data: cl,
       borderDash: [6, 4],
       borderWidth: 2,
-      pointRadius: 0
+      pointRadius: 0,
+      fill: false
     }
   ];
 
-  // Add UCL/LCL datasets only when requested (prevents misleading rare-event charts)
-  if (showUCL && Array.isArray(ucl)) {
+  if (showUCL) {
     datasets.push({
-      label: uclLabel,
+      label: "UCL",
       data: ucl,
       borderDash: [3, 3],
       borderWidth: 2,
-      pointRadius: 0
+      pointRadius: 0,
+      fill: false
     });
   }
 
-  if (showLCL && Array.isArray(lcl)) {
+  if (showLCL) {
     datasets.push({
-      label: lclLabel,
+      label: "LCL",
       data: lcl,
       borderDash: [3, 3],
       borderWidth: 2,
-      pointRadius: 0
+      pointRadius: 0,
+      fill: false
     });
   }
 
@@ -3527,8 +3527,17 @@ populateAnnotationDateOptions(labels);
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { title: { display: true, text: title } },
-  annotation: { annotations: buildAnnotationConfig(labels) }
+      plugins: {
+        title: { display: true, text: title },
+        legend: { display: true, position: "bottom", align: "center" },
+        // ✅ This is the missing piece in your C/P/U charts
+        annotation: {
+          annotations:
+            (typeof buildAnnotationConfig === "function")
+              ? buildAnnotationConfig(labels)
+              : {}
+        }
+      },
       scales: {
         x: { title: { display: true, text: xLabel } },
         y: {
