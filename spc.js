@@ -2635,7 +2635,8 @@ function drawXmRChart(points, baselineCount, labels) {
       : globalResult;
 
   if (showMR && lastSegmentResult) {
-    drawMRChart(lastSegmentResult, labels);
+  drawMrChart(result.pointsAll || pointsAll || points, labels, segments);
+
   } else {
     if (mrChart) {
       mrChart.destroy();
@@ -2649,109 +2650,208 @@ function drawXmRChart(points, baselineCount, labels) {
 
 
 // MR chart: average MR as centre, UCL = 3.268 * avgMR, LCL = 0
-function drawMRChart(result, labels) {
-  if (!mrPanel || !mrChartCanvas) return;
+function drawMrChart(allPoints, labels, segments) {
+  // allPoints: full list of points for the current XmR chart (all periods)
+  // labels: full x labels used on the X chart
+  // segments: [{ startIndex, endIndex, result }, ...] (same segments you use for X chart)
 
-  const mrValues = result.mrValues;
-  const mrLabels = labels.slice(1);
+  if (!mrCanvas) return;
 
-  if (!mrValues || mrValues.length === 0) {
-    mrPanel.style.display = "none";
+  const showAll = (getMrDisplayMode() === "all");
+
+  // Helper to compute MR values for a slice
+  function mrForValues(values) {
+    const mr = Array(values.length).fill(null); // MR undefined at first point
+    for (let i = 1; i < values.length; i++) {
+      mr[i] = Math.abs(values[i] - values[i - 1]);
+    }
+    return mr;
+  }
+
+  // If you only want the last period, keep current behavior:
+  if (!showAll) {
+    const lastSeg = segments && segments.length ? segments[segments.length - 1] : null;
+    if (!lastSeg) return;
+
+    const pts = lastSeg.result.points || [];
+    const values = pts.map(p => p.y);
+    const mr = mrForValues(values);
+
+    // Use last segment MR stats if present; otherwise compute
+    const avgMR = (typeof lastSeg.result.avgMR === "number")
+      ? lastSeg.result.avgMR
+      : (() => {
+          const vals = mr.filter(v => typeof v === "number" && isFinite(v));
+          return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : 0;
+        })();
+
+    const uclMR = 3.268 * avgMR; // standard XmR MR UCL
+    const mrLabels = labels.slice(lastSeg.startIndex, lastSeg.endIndex + 1);
+
+    renderMrChart(mrLabels, mr, avgMR, uclMR);
     return;
   }
 
-  const avgMR = result.avgMR;
-  const centre = avgMR;
-  const uclMR = avgMR * 3.268; // D4 for n=2
-  const lclMR = 0;
+  // ---- Show ALL periods with splits ----
+  // Build one MR series across full chart, but break MR at split boundaries
+  const valuesAll = allPoints.map(p => p.y);
+  const mrAll = mrForValues(valuesAll);
 
-  mrPanel.style.display = "block";
+  // Break MR at the first point of each new segment (no MR across phases)
+  if (segments && segments.length > 1) {
+    for (let i = 1; i < segments.length; i++) {
+      const start = segments[i].startIndex;
+      if (start >= 0 && start < mrAll.length) mrAll[start] = null;
+    }
+  }
 
-  mrChart = new Chart(mrChartCanvas, {
+  // Create “per period” average + UCL lines as separate datasets
+  const datasets = [];
+
+  // MR line (all periods)
+  datasets.push({
+    label: "Moving range",
+    data: mrAll,
+    borderColor: "#666",
+    borderWidth: 2,
+    pointRadius: 0,
+    spanGaps: false,
+    fill: false
+  });
+
+  // Add one pair of horizontal lines per period: MR̄ and UCL(MR)
+  (segments || []).forEach((seg, idx) => {
+    const pts = seg.result.points || [];
+    const values = pts.map(p => p.y);
+    const mr = mrForValues(values);
+    const avgMR = (typeof seg.result.avgMR === "number")
+      ? seg.result.avgMR
+      : (() => {
+          const vals = mr.filter(v => typeof v === "number" && isFinite(v));
+          return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : 0;
+        })();
+    const uclMR = 3.268 * avgMR;
+
+    // Build arrays aligned to the full chart length with null outside the segment
+    const mrBarLine = Array(labels.length).fill(null);
+    const uclLine = Array(labels.length).fill(null);
+
+    for (let i = seg.startIndex; i <= seg.endIndex; i++) {
+      // Only draw where MR exists (skip very first point of each segment)
+      mrBarLine[i] = avgMR;
+      uclLine[i] = uclMR;
+    }
+    // First point has no MR so we can null these too for neatness
+    mrBarLine[seg.startIndex] = null;
+    uclLine[seg.startIndex] = null;
+
+    datasets.push({
+      label: `MR average (Period ${idx + 1})`,
+      data: mrBarLine,
+      borderDash: [6, 4],
+      borderWidth: 2,
+      pointRadius: 0,
+      fill: false
+    });
+
+    datasets.push({
+      label: `MR UCL (Period ${idx + 1})`,
+      data: uclLine,
+      borderDash: [4, 3],
+      borderWidth: 2,
+      pointRadius: 0,
+      fill: false
+    });
+  });
+
+  // Render with Chart.js
+  if (mrChart) {
+    mrChart.destroy();
+    mrChart = null;
+  }
+
+  mrChart = new Chart(mrCanvas, {
     type: "line",
-    data: {
-      labels: mrLabels,
-      datasets: [
-        {
-          label: "Moving range",
-          data: mrValues,
-          pointRadius: 4,
-          pointBackgroundColor: "#003f87",
-          borderColor: "#003f87",
-          borderWidth: 2,
-          fill: false
-        },
-        {
-          label: "Average MR",
-          data: mrValues.map(() => centre),
-          borderDash: [6, 4],
-          borderWidth: 2,
-          borderColor: "#e41a1c",
-          pointRadius: 0,
-          pointHoverRadius: 0,
-          fill: false
-        },
-        {
-          label: "UCL (MR)",
-          data: mrValues.map(() => uclMR),
-          borderDash: [4, 4],
-          borderWidth: 2,
-          borderColor: "#1a9850",
-          pointRadius: 0,
-          pointHoverRadius: 0,
-          fill: false
-        },
-        {
-          label: "LCL (MR)",
-          data: mrValues.map(() => lclMR),
-          borderDash: [4, 4],
-          borderWidth: 2,
-          borderColor: "#1a9850",
-          pointRadius: 0,
-          pointHoverRadius: 0,
-          fill: false
-        }
-      ]
-    },
+    data: { labels, datasets },
     options: {
       responsive: true,
-	maintainAspectRatio: false,
+      maintainAspectRatio: false,
       plugins: {
         title: {
           display: true,
-          text: "Moving Range chart",
-          font: {
-            size: 14,
-            weight: "bold"
-          }
+          text: "Moving Range (MR)",
+          font: { size: 14, weight: "bold" }
         },
-        legend: {
-          display: true,
-          position: "bottom",
-          align: "center"
-        }
-      },
-      elements: {
-        point: {
-          radius: 0,
-          hoverRadius: 0
+        legend: { display: true, position: "bottom" },
+        annotation: {
+          // reuse your split/annotation config if you already have it
+          annotations: (typeof buildAnnotationConfig === "function") ? buildAnnotationConfig(labels) : {}
         }
       },
       scales: {
-        x: {
-          grid: { display: false },
-          title: {
-            display: true,
-            text: "Date (second and subsequent points)"
-          }
+        x: { grid: { display: false } },
+        y: { grid: { display: false }, beginAtZero: true }
+      }
+    }
+  });
+}
+
+
+// Helper used by "last period only" mode — uses your existing MR canvas/chart variables
+function renderMrChart(mrLabels, mrValues, avgMR, uclMR) {
+  if (mrChart) {
+    mrChart.destroy();
+    mrChart = null;
+  }
+
+  const datasets = [
+    {
+      label: "Moving range",
+      data: mrValues,
+      borderColor: "#666",
+      borderWidth: 2,
+      pointRadius: 0,
+      spanGaps: false,
+      fill: false
+    },
+    {
+      label: "MR average",
+      data: mrValues.map(() => avgMR),
+      borderDash: [6, 4],
+      borderWidth: 2,
+      pointRadius: 0,
+      fill: false
+    },
+    {
+      label: "MR UCL",
+      data: mrValues.map(() => uclMR),
+      borderDash: [4, 3],
+      borderWidth: 2,
+      pointRadius: 0,
+      fill: false
+    }
+  ];
+
+  mrChart = new Chart(mrCanvas, {
+    type: "line",
+    data: { labels: mrLabels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        title: {
+          display: true,
+          text: "Moving Range (MR)",
+          font: { size: 14, weight: "bold" }
         },
-        y: {
-          grid: { display: false },
-          title: {
-            display: true,
-            text: "Moving range"
-          }
+        legend: { display: true, position: "bottom" },
+        annotation: {
+          annotations: (typeof buildAnnotationConfig === "function") ? buildAnnotationConfig(mrLabels) : {}
         }
+      },
+      scales: {
+        x: { grid: { display: false } },
+        y: { grid: { display: false }, beginAtZero: true }
       }
     }
   });
