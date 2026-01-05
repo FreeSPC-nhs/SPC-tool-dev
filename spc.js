@@ -24,7 +24,10 @@ const fileInput         = document.getElementById("fileInput");
 const columnSelectors   = document.getElementById("columnSelectors");
 const dateSelect        = document.getElementById("dateColumn");
 const valueSelect       = document.getElementById("valueColumn");
-const IMPLEMENTED_CHARTS = new Set(["run", "xmr"]);
+
+
+const IMPLEMENTED_CHARTS = new Set(["run", "xmr", "c", "p", "u"]);
+
 
 
 // Dynamic column labels + optional 3rd selector
@@ -1332,6 +1335,110 @@ function computeXmR(points, baselineCount, clampLclAtZero = false) {
     mrValues
   };
 }
+
+// -----------------------------
+// Attribute chart calculations (C / P / U)
+// -----------------------------
+
+function computeC(points, baselineCount = null, clampLclAtZero = false) {
+  const n = points.length;
+  const baseN = baselineCount && baselineCount >= 1 ? Math.min(baselineCount, n) : n;
+
+  const baseVals = points.slice(0, baseN).map(p => p.y).filter(v => isFinite(v));
+  const cbar = baseVals.reduce((a, b) => a + b, 0) / baseVals.length;
+
+  const sigma = Math.sqrt(Math.max(cbar, 0));
+  const ucl = cbar + 3 * sigma;
+  const rawLcl = cbar - 3 * sigma;
+  const lcl = clampLclAtZero ? Math.max(0, rawLcl) : rawLcl;
+
+  const beyond = points.map(p => isFinite(p.y) && (p.y > ucl || p.y < lcl));
+
+  return { cbar, ucl, lcl, rawLcl, beyond };
+}
+
+// For P and U we expect points like: {x, y: numerator, n: denominator/opportunities}
+function computeP(points, baselineCount = null, clampLclAtZero = false) {
+  const nPts = points.length;
+  const baseN = baselineCount && baselineCount >= 1 ? Math.min(baselineCount, nPts) : nPts;
+
+  const base = points.slice(0, baseN).filter(p => isFinite(p.y) && isFinite(p.n) && p.n > 0);
+  const sumD = base.reduce((acc, p) => acc + p.y, 0);
+  const sumN = base.reduce((acc, p) => acc + p.n, 0);
+
+  const pbar = sumN > 0 ? (sumD / sumN) : NaN;
+
+  const pVals = new Array(nPts).fill(NaN);
+  const ucl = new Array(nPts).fill(NaN);
+  const lcl = new Array(nPts).fill(NaN);
+  const rawLcl = new Array(nPts).fill(NaN);
+  const beyond = new Array(nPts).fill(false);
+
+  for (let i = 0; i < nPts; i++) {
+    const d = points[i].y;
+    const ni = points[i].n;
+
+    if (!isFinite(d) || !isFinite(ni) || ni <= 0 || !isFinite(pbar)) continue;
+
+    const pi = d / ni;
+    pVals[i] = pi;
+
+    const sigma = Math.sqrt(Math.max(pbar * (1 - pbar) / ni, 0));
+    const u = pbar + 3 * sigma;
+    const lRaw = pbar - 3 * sigma;
+    const l = clampLclAtZero ? Math.max(0, lRaw) : lRaw;
+
+    // P chart limits should not exceed [0,1]
+    ucl[i] = Math.min(1, u);
+    rawLcl[i] = lRaw;
+    lcl[i] = Math.max(0, Math.min(1, l));
+
+    beyond[i] = (pi > ucl[i] || pi < lcl[i]);
+  }
+
+  return { pbar, pVals, ucl, lcl, rawLcl, beyond };
+}
+
+function computeU(points, baselineCount = null, clampLclAtZero = false) {
+  const nPts = points.length;
+  const baseN = baselineCount && baselineCount >= 1 ? Math.min(baselineCount, nPts) : nPts;
+
+  const base = points.slice(0, baseN).filter(p => isFinite(p.y) && isFinite(p.n) && p.n > 0);
+  const sumC = base.reduce((acc, p) => acc + p.y, 0);
+  const sumN = base.reduce((acc, p) => acc + p.n, 0);
+
+  const ubar = sumN > 0 ? (sumC / sumN) : NaN;
+
+  const uVals = new Array(nPts).fill(NaN);
+  const ucl = new Array(nPts).fill(NaN);
+  const lcl = new Array(nPts).fill(NaN);
+  const rawLcl = new Array(nPts).fill(NaN);
+  const beyond = new Array(nPts).fill(false);
+
+  for (let i = 0; i < nPts; i++) {
+    const c = points[i].y;
+    const ni = points[i].n;
+
+    if (!isFinite(c) || !isFinite(ni) || ni <= 0 || !isFinite(ubar)) continue;
+
+    const ui = c / ni;
+    uVals[i] = ui;
+
+    const sigma = Math.sqrt(Math.max(ubar / ni, 0));
+    const u = ubar + 3 * sigma;
+    const lRaw = ubar - 3 * sigma;
+    const l = clampLclAtZero ? Math.max(0, lRaw) : lRaw;
+
+    ucl[i] = u;
+    rawLcl[i] = lRaw;
+    lcl[i] = clampLclAtZero ? Math.max(0, l) : l;
+
+    beyond[i] = (ui > ucl[i] || ui < lcl[i]);
+  }
+
+  return { ubar, uVals, ucl, lcl, rawLcl, beyond };
+}
+
 	
 
 // Get title / axis labels with fallbacks
@@ -1862,6 +1969,17 @@ function updateRunSummary(points, medianIgnored, ruleHitsIgnored, baselineCountU
 
 
 
+function showStatusMessage(msg) {
+  if (typeof chartSummaryEl !== "undefined" && chartSummaryEl) {
+    chartSummaryEl.textContent = msg;
+  } else {
+    alert(msg);
+  }
+}
+
+
+
+
 // ---- Summary helpers ----
 
 // Multi-period XmR summary (handles baseline + splits) — lay-user interpretation + astronomical points
@@ -2325,11 +2443,67 @@ if (thirdColumnRow && thirdColumnRow.style.display !== "none") {
     if (mrPanel) mrPanel.style.display = "none";
 
     // draw the selected chart
-    if (chartType === "run") {
-      drawRunChart(points, baselineCount, labels);
-    } else {
-      drawXmRChart(points, baselineCount, labels);
-    }
+if (chartType === "run") {
+  drawRunChart(points, baselineCount, labels);
+
+} else if (chartType === "xmr") {
+  drawXmRChart(points, baselineCount, labels);
+
+} else if (chartType === "c") {
+  // C uses counts in the Y/value column
+  drawCChart(points, baselineCount, labels);
+
+} else if (chartType === "p" || chartType === "u") {
+  // P/U require a third column (denominator/opportunities)
+  const thirdSelect = document.getElementById("thirdColumn");
+  if (!thirdSelect || !thirdSelect.value) {
+    showError("This chart type needs a third column (denominator/opportunities).");
+    return;
+  }
+
+  const denomCol = thirdSelect.value;
+
+  // Build points with denominator: {x, y: numerator, n: denominator}
+  const pointsWithN = points.map((p, idx) => {
+    const row = rawRows[idx]; // assumes rows correspond to points order
+    // If you sorted by date, the row index won’t match. In that case we need a better mapping.
+    // For now: safest is to rebuild pointsWithN from rawRows in the same order as 'points'.
+    return p;
+  });
+
+  // Safer rebuild that follows the same order you built 'points'
+  // (we reconstruct from the already-chosen labels order)
+  const pointsByLabel = new Map();
+  points.forEach((p, i) => pointsByLabel.set(labels[i], p));
+
+  const pointsWithNOrdered = labels.map((lab, i) => {
+    // Find the matching point; then find matching row by label
+    // If you're using date axis, lab is yyyy-mm-dd; if category axis, lab is label text
+    // We'll search rawRows for the first matching label in dateCol.
+    const dateCol = dateSelect.value;
+    const valueCol = valueSelect.value;
+
+    // best-effort row lookup
+    const row = rawRows.find(r => String(r[dateCol]) === String(lab)) || rawRows[i];
+
+    const numerator = toNumericValue(row[valueCol]);
+    const denom = toNumericValue(row[denomCol]);
+
+    // x is already derived; just reuse i for stable ordering
+    return { x: i, y: numerator, n: denom };
+  });
+
+  if (chartType === "p") {
+    drawPChart(pointsWithNOrdered, baselineCount, labels);
+  } else {
+    drawUChart(pointsWithNOrdered, baselineCount, labels);
+  }
+
+} else {
+  showError(`Chart type "${chartType}" is not implemented yet.`);
+  return;
+}
+
 
     // optional: clear dirty flag after successful draw
     if (typeof clearDataModelDirty === "function") clearDataModelDirty();
@@ -2580,6 +2754,188 @@ function drawRunChart(points, baselineCount, labels) {
   if (spcHelperPanel && spcHelperPanel.classList.contains("visible")) {
     if (typeof renderHelperState === "function") renderHelperState();
   }
+}
+
+// -----------------------------
+// Draw C / P / U charts
+// -----------------------------
+
+function drawCChart(points, baselineCount, labels) {
+  if (!chartCanvas) return;
+
+  const clampLcl =
+    (typeof shouldClampLclAtZero === "function")
+      ? shouldClampLclAtZero()
+      : false;
+
+  const res = computeC(points, baselineCount, clampLcl);
+
+  const values = points.map(p => p.y);
+  const cl = new Array(points.length).fill(res.cbar);
+  const ucl = new Array(points.length).fill(res.ucl);
+  const lcl = new Array(points.length).fill(res.lcl);
+
+  const pointColours = values.map((v, i) => (res.beyond[i] ? "#d73027" : "#003f87"));
+
+  drawSimpleSPCChart({
+    labels,
+    values,
+    pointColours,
+    cl,
+    ucl,
+    lcl,
+    yAxisSuggestedMin: Math.min(...values.filter(v => isFinite(v)), res.lcl),
+    yAxisSuggestedMax: Math.max(...values.filter(v => isFinite(v)), res.ucl),
+    chartTitleFallback: "C chart",
+    yAxisLabelFallback: "Count (c)"
+  });
+
+  lastRunAnalysis = null;
+  lastXmRAnalysis = null;
+}
+
+function drawPChart(pointsWithN, baselineCount, labels) {
+  if (!chartCanvas) return;
+
+  const clampLcl =
+    (typeof shouldClampLclAtZero === "function")
+      ? shouldClampLclAtZero()
+      : true; // P charts almost always clamp at 0
+
+  const res = computeP(pointsWithN, baselineCount, clampLcl);
+
+  const values = res.pVals;
+  const pointColours = values.map((v, i) => (res.beyond[i] ? "#d73027" : "#003f87"));
+
+  // Variable limits per point
+  const cl = new Array(values.length).fill(res.pbar);
+
+  drawSimpleSPCChart({
+    labels,
+    values,
+    pointColours,
+    cl,
+    ucl: res.ucl,
+    lcl: res.lcl,
+    yAxisSuggestedMin: 0,
+    yAxisSuggestedMax: 1,
+    chartTitleFallback: "P chart",
+    yAxisLabelFallback: "Proportion (d / n)"
+  });
+
+  lastRunAnalysis = null;
+  lastXmRAnalysis = null;
+}
+
+function drawUChart(pointsWithN, baselineCount, labels) {
+  if (!chartCanvas) return;
+
+  const clampLcl =
+    (typeof shouldClampLclAtZero === "function")
+      ? shouldClampLclAtZero()
+      : true;
+
+  const res = computeU(pointsWithN, baselineCount, clampLcl);
+
+  const values = res.uVals;
+  const pointColours = values.map((v, i) => (res.beyond[i] ? "#d73027" : "#003f87"));
+  const cl = new Array(values.length).fill(res.ubar);
+
+  drawSimpleSPCChart({
+    labels,
+    values,
+    pointColours,
+    cl,
+    ucl: res.ucl,
+    lcl: res.lcl,
+    yAxisSuggestedMin: Math.min(...values.filter(v => isFinite(v)), ...res.lcl.filter(v => isFinite(v))),
+    yAxisSuggestedMax: Math.max(...values.filter(v => isFinite(v)), ...res.ucl.filter(v => isFinite(v))),
+    chartTitleFallback: "U chart",
+    yAxisLabelFallback: "Rate (c / n)"
+  });
+
+  lastRunAnalysis = null;
+  lastXmRAnalysis = null;
+}
+
+/**
+ * Minimal reusable SPC chart renderer for C/P/U.
+ * Uses a similar style to your existing charts (line + points + CL/UCL/LCL).
+ */
+function drawSimpleSPCChart({
+  labels,
+  values,
+  pointColours,
+  cl,
+  ucl,
+  lcl,
+  yAxisSuggestedMin,
+  yAxisSuggestedMax,
+  chartTitleFallback,
+  yAxisLabelFallback
+}) {
+  // Destroy existing main chart if present
+  if (currentChart) {
+    currentChart.destroy();
+    currentChart = null;
+  }
+
+  const title = (chartTitleInput?.value || "").trim() || chartTitleFallback;
+  const xLabel = (xAxisLabelInput?.value || "").trim() || "Time";
+  const yLabel = (yAxisLabelInput?.value || "").trim() || yAxisLabelFallback;
+
+  const datasets = [
+    {
+      label: "Values",
+      data: values,
+      borderWidth: 2,
+      pointRadius: 4,
+      pointBackgroundColor: pointColours,
+      pointBorderColor: pointColours,
+      tension: 0.1
+    },
+    {
+      label: "Centre line",
+      data: cl,
+      borderDash: [6, 4],
+      borderWidth: 2,
+      pointRadius: 0
+    },
+    {
+      label: "UCL",
+      data: ucl,
+      borderDash: [3, 3],
+      borderWidth: 2,
+      pointRadius: 0
+    },
+    {
+      label: "LCL",
+      data: lcl,
+      borderDash: [3, 3],
+      borderWidth: 2,
+      pointRadius: 0
+    }
+  ];
+
+  currentChart = new Chart(chartCanvas.getContext("2d"), {
+    type: "line",
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        title: { display: true, text: title }
+      },
+      scales: {
+        x: { title: { display: true, text: xLabel } },
+        y: {
+          title: { display: true, text: yLabel },
+          suggestedMin: isFinite(yAxisSuggestedMin) ? yAxisSuggestedMin : undefined,
+          suggestedMax: isFinite(yAxisSuggestedMax) ? yAxisSuggestedMax : undefined
+        }
+      }
+    }
+  });
 }
 
 
