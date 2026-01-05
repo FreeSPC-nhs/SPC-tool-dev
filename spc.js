@@ -26,8 +26,7 @@ const dateSelect        = document.getElementById("dateColumn");
 const valueSelect       = document.getElementById("valueColumn");
 
 
-const IMPLEMENTED_CHARTS = new Set(["run", "xmr", "c", "p", "u"]);
-
+const IMPLEMENTED_CHARTS = new Set(["run", "xmr", "c", "p", "u", "xbars", "t", "g"]);
 
 
 // Dynamic column labels + optional 3rd selector
@@ -729,6 +728,115 @@ function getMrDisplayMode() {
   const el = document.querySelector("input[name='mrDisplayMode']:checked");
   return el ? el.value : "last";
 }
+
+
+// -----------------------------
+// Math helpers for X̄–S constants
+// -----------------------------
+
+function gammaLanczos(z) {
+  // Lanczos approximation for Gamma(z)
+  // Good enough for SPC constants.
+  const p = [
+    676.5203681218851,
+    -1259.1392167224028,
+    771.32342877765313,
+    -176.61502916214059,
+    12.507343278686905,
+    -0.13857109526572012,
+    0.0000099843695780195716,
+    0.00000015056327351493116
+  ];
+  const g = 7;
+
+  if (z < 0.5) {
+    return Math.PI / (Math.sin(Math.PI * z) * gammaLanczos(1 - z));
+  }
+
+  z -= 1;
+  let x = 0.99999999999980993;
+  for (let i = 0; i < p.length; i++) {
+    x += p[i] / (z + i + 1);
+  }
+  const t = z + g + 0.5;
+  return Math.sqrt(2 * Math.PI) * Math.pow(t, z + 0.5) * Math.exp(-t) * x;
+}
+
+function c4Constant(n) {
+  if (!Number.isFinite(n) || n < 2) return NaN;
+  // c4 = sqrt(2/(n-1)) * Gamma(n/2) / Gamma((n-1)/2)
+  return Math.sqrt(2 / (n - 1)) * (gammaLanczos(n / 2) / gammaLanczos((n - 1) / 2));
+}
+
+function xbarSConstants(n) {
+  const c4 = c4Constant(n);
+  if (!isFinite(c4) || c4 <= 0) return null;
+
+  const term = Math.sqrt(Math.max(1 - c4 * c4, 0)) / c4;
+
+  const A3 = 3 / (c4 * Math.sqrt(n));
+  const B3 = Math.max(0, 1 - 3 * term);
+  const B4 = 1 + 3 * term;
+
+  return { c4, A3, B3, B4 };
+}
+
+// -----------------------------
+// Draw a second chart in the MR panel (re-uses the existing mrPanel UI)
+// -----------------------------
+function drawSecondarySPCChart({
+  canvas,
+  labels,
+  values,
+  pointColours,
+  cl,
+  ucl,
+  lcl,
+  title,
+  xLabel,
+  yLabel,
+  suggestedMin,
+  suggestedMax
+}) {
+  if (!canvas) return null;
+
+  const datasets = [
+    {
+      label: "Values",
+      data: values,
+      borderWidth: 2,
+      pointRadius: 4,
+      pointBackgroundColor: pointColours,
+      pointBorderColor: pointColours,
+      tension: 0.1
+    },
+    { label: "Centre line", data: cl, borderDash: [6, 4], borderWidth: 2, pointRadius: 0 },
+    { label: "UCL", data: ucl, borderDash: [3, 3], borderWidth: 2, pointRadius: 0 },
+    { label: "LCL", data: lcl, borderDash: [3, 3], borderWidth: 2, pointRadius: 0 }
+  ];
+
+  return new Chart(canvas.getContext("2d"), {
+    type: "line",
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        title: { display: true, text: title }
+      },
+      scales: {
+        x: { title: { display: true, text: xLabel } },
+        y: {
+          title: { display: true, text: yLabel },
+          suggestedMin: isFinite(suggestedMin) ? suggestedMin : undefined,
+          suggestedMax: isFinite(suggestedMax) ? suggestedMax : undefined
+        }
+      }
+    }
+  });
+}
+
+
 
 
 function resetAll() {
@@ -1439,6 +1547,322 @@ function computeU(points, baselineCount = null, clampLclAtZero = false) {
   return { ubar, uVals, ucl, lcl, rawLcl, beyond };
 }
 
+// -----------------------------
+// X̄–S chart calculations + drawing
+// -----------------------------
+
+function computeXbarS(points, baselineCount = null) {
+  // points: array of { x, y, label, _rowIndex }, where y is the raw measurement
+  // subgroup id is read later from rawRows via _rowIndex
+
+  // Placeholder — this function just returns computed subgroup summaries
+  // Actual grouping done in drawXbarSChart where we know which column is subgroup.
+  return null;
+}
+
+function groupBySubgroup(points, subgroupCol) {
+  const map = new Map();
+  for (const p of points) {
+    const row = rawRows[p._rowIndex];
+    const sgRaw = row ? row[subgroupCol] : null;
+    const sg = (sgRaw === null || sgRaw === undefined || String(sgRaw).trim() === "")
+      ? "(missing subgroup)"
+      : String(sgRaw);
+
+    if (!map.has(sg)) map.set(sg, []);
+    map.get(sg).push(p);
+  }
+  return map;
+}
+
+function mean(arr) {
+  return arr.reduce((a,b) => a + b, 0) / arr.length;
+}
+
+function sampleStdDev(arr) {
+  if (arr.length < 2) return NaN;
+  const m = mean(arr);
+  const v = arr.reduce((acc, x) => acc + (x - m) * (x - m), 0) / (arr.length - 1);
+  return Math.sqrt(v);
+}
+
+function drawXbarSChart(points, baselineCount, labels) {
+  // Requires third column to be subgroup ID
+  if (!thirdSelect || !thirdSelect.value) {
+    showError("X̄–S chart needs a third column: Subgroup ID.");
+    return;
+  }
+  const subgroupCol = thirdSelect.value;
+
+  // Group measurements by subgroup
+  const groups = groupBySubgroup(points, subgroupCol);
+
+  // Build subgroup summaries in the order they appear in the data (stable)
+  const subgroupKeys = Array.from(groups.keys());
+
+  const xbarVals = [];
+  const sVals = [];
+  const subgroupLabels = [];
+
+  // Determine subgroup size (we assume constant n for correct constants)
+  const sizes = subgroupKeys.map(k => groups.get(k).length);
+  const mostCommonSize = (() => {
+    const count = new Map();
+    sizes.forEach(n => count.set(n, (count.get(n) || 0) + 1));
+    let bestN = sizes[0] || 0, bestC = 0;
+    for (const [n, c] of count.entries()) {
+      if (c > bestC) { bestC = c; bestN = n; }
+    }
+    return bestN;
+  })();
+
+  const n = mostCommonSize;
+
+  if (!n || n < 2) {
+    showError("X̄–S needs at least 2 measurements per subgroup.");
+    return;
+  }
+
+  const consts = xbarSConstants(n);
+  if (!consts) {
+    showError("Could not compute X̄–S constants for subgroup size " + n);
+    return;
+  }
+
+  // Compute subgroup mean and S
+  for (const k of subgroupKeys) {
+    const pts = groups.get(k).filter(p => isFinite(p.y));
+    const vals = pts.map(p => p.y);
+
+    if (vals.length < 2) continue; // skip tiny subgroups
+
+    const xb = mean(vals);
+    const s = sampleStdDev(vals);
+
+    subgroupLabels.push(k);
+    xbarVals.push(xb);
+    sVals.push(s);
+  }
+
+  if (xbarVals.length < 3) {
+    showError("Not enough valid subgroups to draw X̄–S (need at least 3 subgroups).");
+    return;
+  }
+
+  // Baseline over first N subgroups
+  const baseN = (baselineCount && baselineCount >= 2)
+    ? Math.min(baselineCount, xbarVals.length)
+    : xbarVals.length;
+
+  const xbarbar = mean(xbarVals.slice(0, baseN));
+  const sbar = mean(sVals.slice(0, baseN));
+
+  const uclX = xbarbar + consts.A3 * sbar;
+  const lclX = xbarbar - consts.A3 * sbar;
+
+  const uclS = consts.B4 * sbar;
+  const lclS = consts.B3 * sbar;
+
+  const clX = new Array(xbarVals.length).fill(xbarbar);
+  const uclXArr = new Array(xbarVals.length).fill(uclX);
+  const lclXArr = new Array(xbarVals.length).fill(lclX);
+
+  const clS = new Array(sVals.length).fill(sbar);
+  const uclSArr = new Array(sVals.length).fill(uclS);
+  const lclSArr = new Array(sVals.length).fill(lclS);
+
+  const pointColoursX = xbarVals.map(v => (v > uclX || v < lclX) ? "#d73027" : "#003f87");
+  const pointColoursS = sVals.map(v => (v > uclS || v < lclS) ? "#d73027" : "#003f87");
+
+  // Main chart = X̄ chart
+  drawSimpleSPCChart({
+    labels: subgroupLabels,
+    values: xbarVals,
+    pointColours: pointColoursX,
+    cl: clX,
+    ucl: uclXArr,
+    lcl: lclXArr,
+    yAxisSuggestedMin: Math.min(...xbarVals, lclX),
+    yAxisSuggestedMax: Math.max(...xbarVals, uclX),
+    chartTitleFallback: "X̄ chart",
+    yAxisLabelFallback: "Subgroup mean"
+  });
+
+  // Secondary chart = S chart in MR panel area
+  if (mrChart) { mrChart.destroy(); mrChart = null; }
+  if (mrPanel) mrPanel.style.display = "block";
+
+  // Hide MR-specific toggles (optional) — you can refine UI later
+  if (mrToggleRow) mrToggleRow.style.display = "none";
+
+  const secTitle = "S chart";
+  const xLabel = (xAxisLabelInput?.value || "").trim() || "Subgroup";
+  const yLabel = "Subgroup standard deviation (S)";
+
+  mrChart = drawSecondarySPCChart({
+    canvas: mrCanvas,
+    labels: subgroupLabels,
+    values: sVals,
+    pointColours: pointColoursS,
+    cl: clS,
+    ucl: uclSArr,
+    lcl: lclSArr,
+    title: secTitle,
+    xLabel,
+    yLabel,
+    suggestedMin: Math.min(...sVals, lclS),
+    suggestedMax: Math.max(...sVals, uclS)
+  });
+
+  lastRunAnalysis = null;
+  lastXmRAnalysis = null;
+
+  // If subgroup sizes vary, show a gentle warning (you said you’ll fix UX later)
+  if (sizes.some(sz => sz !== n)) {
+    showError(
+      "Note: subgroup sizes vary. I used the most common subgroup size (" + n +
+      ") to calculate limits. You may want to standardise subgroup sizes for correct X̄–S limits."
+    );
+  } else {
+    clearError();
+  }
+}
+
+// -----------------------------
+// T chart: time between events (Exponential limits via percentiles)
+// -----------------------------
+function drawTChart(points, baselineCount, labels) {
+  // Uses DATE axis: dateSelect is the event date/time. We compute deltas in days.
+  const pts = [...points].sort((a, b) => a.x - b.x);
+  if (pts.length < 4) {
+    showError("T chart needs at least 4 events.");
+    return;
+  }
+
+  const deltas = [];
+  const tLabels = [];
+
+  for (let i = 1; i < pts.length; i++) {
+    const dtMs = pts[i].x - pts[i - 1].x;
+    const days = dtMs / (1000 * 60 * 60 * 24);
+    if (isFinite(days) && days >= 0) {
+      deltas.push(days);
+      tLabels.push(labels[i]); // label the interval by the later event
+    }
+  }
+
+  if (deltas.length < 3) {
+    showError("Not enough valid time-between-event intervals for a T chart.");
+    return;
+  }
+
+  const baseN = (baselineCount && baselineCount >= 2)
+    ? Math.min(baselineCount, deltas.length)
+    : deltas.length;
+
+  const tbar = mean(deltas.slice(0, baseN));
+
+  // Equivalent “3-sigma” percentiles
+  const qLow = 0.00135;
+  const qHigh = 0.99865;
+
+  const lcl = -tbar * Math.log(1 - qLow);
+  const ucl = -tbar * Math.log(1 - qHigh);
+
+  const cl = new Array(deltas.length).fill(tbar);
+  const uclArr = new Array(deltas.length).fill(ucl);
+  const lclArr = new Array(deltas.length).fill(Math.max(0, lcl));
+
+  const pointColours = deltas.map(v => (v > ucl || v < lcl) ? "#d73027" : "#003f87");
+
+  drawSimpleSPCChart({
+    labels: tLabels,
+    values: deltas,
+    pointColours,
+    cl,
+    ucl: uclArr,
+    lcl: lclArr,
+    yAxisSuggestedMin: 0,
+    yAxisSuggestedMax: Math.max(...deltas, ucl),
+    chartTitleFallback: "T chart",
+    yAxisLabelFallback: "Time between events (days)"
+  });
+
+  // Hide MR panel if open
+  if (mrChart) { mrChart.destroy(); mrChart = null; }
+  if (mrPanel) mrPanel.style.display = "none";
+
+  lastRunAnalysis = null;
+  lastXmRAnalysis = null;
+}
+
+// -----------------------------
+// G chart: opportunities between events (Geometric limits via percentiles)
+// -----------------------------
+function drawGChart(points, baselineCount, labels) {
+  // Here we interpret the VALUE column as "opportunities between events" (already an interval count)
+  const gVals = points.map(p => p.y).filter(v => isFinite(v) && v >= 0);
+  if (gVals.length < 6) {
+    showError("G chart needs at least 6 values (opportunities between events).");
+    return;
+  }
+
+  // Keep original order/labels
+  const values = points.map(p => (isFinite(p.y) ? p.y : NaN));
+
+  const baseN = (baselineCount && baselineCount >= 2)
+    ? Math.min(baselineCount, values.length)
+    : values.length;
+
+  const baselineVals = values.slice(0, baseN).filter(v => isFinite(v) && v >= 0);
+  const gbar = mean(baselineVals);
+
+  // Convert mean to geometric probability (mean ≈ 1/p)
+  const p = gbar > 0 ? (1 / gbar) : NaN;
+  if (!isFinite(p) || p <= 0 || p >= 1) {
+    showError("Could not compute G chart probability from your data (check values are positive).");
+    return;
+  }
+
+  const qLow = 0.00135;
+  const qHigh = 0.99865;
+
+  // Quantile for geometric distribution (support 1,2,3,...)
+  function geomQuantile(q, p) {
+    // P(X <= k) = 1 - (1-p)^k  =>  k = ln(1-q)/ln(1-p)
+    const k = Math.log(1 - q) / Math.log(1 - p);
+    return Math.max(1, Math.ceil(k));
+  }
+
+  const lcl = geomQuantile(qLow, p);
+  const ucl = geomQuantile(qHigh, p);
+
+  const cl = new Array(values.length).fill(gbar);
+  const uclArr = new Array(values.length).fill(ucl);
+  const lclArr = new Array(values.length).fill(lcl);
+
+  const pointColours = values.map(v => (isFinite(v) && (v > ucl || v < lcl)) ? "#d73027" : "#003f87");
+
+  drawSimpleSPCChart({
+    labels,
+    values,
+    pointColours,
+    cl,
+    ucl: uclArr,
+    lcl: lclArr,
+    yAxisSuggestedMin: 0,
+    yAxisSuggestedMax: Math.max(...values.filter(v => isFinite(v)), ucl),
+    chartTitleFallback: "G chart",
+    yAxisLabelFallback: "Opportunities between events"
+  });
+
+  // Hide MR panel if open
+  if (mrChart) { mrChart.destroy(); mrChart = null; }
+  if (mrPanel) mrPanel.style.display = "none";
+
+  lastRunAnalysis = null;
+  lastXmRAnalysis = null;
+}
 	
 
 // Get title / axis labels with fallbacks
@@ -2461,6 +2885,21 @@ if (chartType === "run") {
     return;
   }
 
+} else if (chartType === "xbars") {
+  drawXbarSChart(points, baselineCount, labels);
+
+} else if (chartType === "t") {
+  // T chart needs date axis (uses event dates)
+  if (document.querySelector("input[name='axisType']:checked")?.value !== "date") {
+    showError("T chart needs Date / time axis (it uses event dates).");
+    return;
+  }
+  drawTChart(points, baselineCount, labels);
+
+} else if (chartType === "g") {
+  drawGChart(points, baselineCount, labels);
+
+
   const denomCol = thirdSelect.value;
 
     const denomCol = thirdSelect.value;
@@ -2486,6 +2925,8 @@ if (chartType === "run") {
   } else {
     drawUChart(pointsWithNOrdered, baselineCount, labels);
   }
+
+
 
 
 } else {
