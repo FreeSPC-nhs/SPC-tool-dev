@@ -3593,6 +3593,37 @@ if (chartContextMenu) {
     }
 
     try {
+      if (action === "addAnnotation") {
+        if (clickedPointIndex === null || clickedPointIndex === undefined) {
+          alert("Right-click near a data point to add an annotation.");
+          return;
+        }
+
+        const labels = currentChart?.data?.labels || [];
+        const xLabel = labels[clickedPointIndex];
+
+        if (!xLabel) {
+          alert("Could not identify the X value for that point.");
+          return;
+        }
+
+        const text = prompt(`Annotation for ${xLabel}:`, "");
+        if (!text) return;
+
+        // Optional: populate sidebar controls (nice UX)
+        if (annotationDateInput) annotationDateInput.value = xLabel;
+        if (annotationLabelInput) annotationLabelInput.value = text;
+
+        // Store + redraw
+        annotations.push({ date: xLabel, label: text });
+
+        // Regenerate to show it (your annotations render via buildAnnotationConfig)
+        if (generateButton) generateButton.click();
+        return;
+      }
+
+
+
       if (action === "addSplit") {
         if (clickedPointIndex === null || clickedPointIndex === undefined) {
           alert("Right-click near a data point to add a split.");
