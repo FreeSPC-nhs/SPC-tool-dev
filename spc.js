@@ -2317,7 +2317,7 @@ function drawRunChart(points, baselineCount, labels) {
   if (spcHelperPanel && spcHelperPanel.classList.contains("visible")) {
     if (typeof renderHelperState === "function") renderHelperState();
   }
-
+}
 
 
 function drawXmRChart(points, baselineCount, labels) {
