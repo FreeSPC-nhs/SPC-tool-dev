@@ -69,6 +69,7 @@ const clampLclAtZeroCheckbox = document.getElementById("clampLclAtZero");
 
 const mrPanel           = document.getElementById("mrPanel");
 const mrChartCanvas     = document.getElementById("mrChartCanvas");
+const mrCanvas = mrChartCanvas;
 
 
 function guessColumns(rows) {
@@ -164,6 +165,20 @@ if (showMRCheckbox) {
     }
   });
 }
+
+// Redraw MR chart when MR display mode changes
+document.querySelectorAll("input[name='mrDisplayMode']").forEach(r => {
+  r.addEventListener("change", () => {
+    const chartType = getSelectedChartType ? getSelectedChartType() : "run";
+
+    // Only relevant for XmR charts
+    if (chartType !== "xmr") return;
+
+    if (rawRows && rawRows.length && currentChart) {
+      generateButton.click();
+    }
+  });
+});
 
 
 const targetToggleBtn = document.getElementById("targetToggleBtn");
@@ -590,6 +605,12 @@ fileInput.addEventListener("change", async () => {
     showError("Unexpected error reading the CSV file.");
   }
 });
+
+
+function getMrDisplayMode() {
+  const el = document.querySelector("input[name='mrDisplayMode']:checked");
+  return el ? el.value : "last";
+}
 
 
 function resetAll() {
@@ -2655,7 +2676,8 @@ function drawMrChart(allPoints, labels, segments) {
   // labels: full x labels used on the X chart
   // segments: [{ startIndex, endIndex, result }, ...] (same segments you use for X chart)
 
-  if (!mrCanvas) return;
+ if (!mrCanvas || !mrPanel) return;
+ mrPanel.style.display = "block";
 
   const showAll = (getMrDisplayMode() === "all");
 
