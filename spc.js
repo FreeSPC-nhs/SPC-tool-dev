@@ -55,6 +55,10 @@ const splitPointSelect  = document.getElementById("splitPointSelect");
 const addSplitButton    = document.getElementById("addSplitButton");
 const clearSplitsButton = document.getElementById("clearSplitsButton");
 const showMRCheckbox   = document.getElementById("showMRCheckbox");
+const mrPanel           = document.getElementById("mrPanel");
+const mrChartCanvas     = document.getElementById("mrChartCanvas");
+const mrCanvas = mrChartCanvas;
+const mrToggleRow = document.getElementById("mrToggleRow");
 
 
 const generateButton    = document.getElementById("generateButton");
@@ -82,13 +86,6 @@ const trendRulePointsInput = document.getElementById("trendRulePoints");
 const flagSpecialCauseOnChartCheckbox = document.getElementById("flagSpecialCauseOnChart");
 const lclClampRow = document.getElementById("lclClampRow");
 const clampLclAtZeroCheckbox = document.getElementById("clampLclAtZero");
-
-
-const mrPanel           = document.getElementById("mrPanel");
-const mrChartCanvas     = document.getElementById("mrChartCanvas");
-const mrCanvas = mrChartCanvas;
-
-updateMrToggleVisibility();
 
 
 function guessColumns(rows) {
@@ -157,25 +154,25 @@ function guessColumns(rows) {
 
 
 function updateMrToggleVisibility() {
+  if (!showMRCheckbox || !mrPanel) return;
+
   const chartType = getSelectedChartType_NoSideEffects();
   const mrDisplayOptions = document.getElementById("mrDisplayOptions");
 
-  // Show MR controls only for XmR
   if (mrToggleRow) {
     mrToggleRow.style.display = (chartType === "xmr") ? "block" : "none";
   }
 
-  // Show MR display radios only when MR is checked
-  if (mrDisplayOptions && showMRCheckbox) {
+  if (mrDisplayOptions) {
     mrDisplayOptions.style.display =
       (chartType === "xmr" && showMRCheckbox.checked) ? "block" : "none";
   }
 
-  // If leaving XmR, fully hide MR chart
   if (chartType !== "xmr") {
     hideMrPanelNow();
   }
 }
+
 
 
 
