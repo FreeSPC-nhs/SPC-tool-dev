@@ -3991,9 +3991,6 @@ function toggleChartWizard(forceOpen) {
   }
 }
 
-if (helpChooseChartBtn) {
-  helpChooseChartBtn.addEventListener("click", () => toggleChartWizard(true));
-}
 
 // -----------------------------
 // Chart chooser wizard (Help me choose)
