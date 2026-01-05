@@ -2780,7 +2780,7 @@ generateButton.addEventListener("click", () => {
 
     if (axisType === "date") {
       parsedPoints = rawRows
-        .map((row) => {
+        .map((row,idx) => {
           const d = parseDateValue(row[dateCol]);
           const y = toNumericValue(row[valueCol]);
           if (!d || !isFinite(d.getTime()) || !isFinite(y)) return null;
@@ -4288,7 +4288,6 @@ function renderHelperState() {
 }
 
 function updateMrToggleVisibility() {
-    updateMrToggleVisibility();
   const chartType = getSelectedChartType ? getSelectedChartType_NoSideEffects() : "run";
   const mrDisplayOptions = document.getElementById("mrDisplayOptions");
   const showMR = !!(showMRCheckbox && showMRCheckbox.checked);
