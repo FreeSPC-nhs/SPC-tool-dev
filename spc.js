@@ -18,6 +18,8 @@ let splits = [];   // indices where a new XmR segment starts (split AFTER index)
 let lastXmRAnalysis = null;
 let lastRunAnalysis = null;
 let dataModelDirty = false;
+let lastAttributeAnalysis = null;
+
 
 
 const fileInput         = document.getElementById("fileInput");
@@ -3459,8 +3461,6 @@ function drawSimpleSPCChart({
   chartTitleFallback,
   yAxisLabelFallback,
 
-populateAnnotationDateOptions(labels);
-
 
   // NEW options:
   showUCL = true,
@@ -3468,6 +3468,9 @@ populateAnnotationDateOptions(labels);
   uclLabel = "UCL",
   lclLabel = "LCL",
 }) {
+
+populateAnnotationDateOptions(labels);
+
   // Destroy existing main chart if present
   if (currentChart) {
     currentChart.destroy();
