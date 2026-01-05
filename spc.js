@@ -3622,6 +3622,21 @@ if (chartContextMenu) {
         return;
       }
 
+if (action === "clearAnnotations") {
+  if (!annotations || annotations.length === 0) return;
+
+  const ok = confirm("Clear all annotations?");
+  if (!ok) return;
+
+  annotations.length = 0; // preserves the array reference
+
+  // Optional: clear the sidebar inputs too
+  if (annotationDateInput) annotationDateInput.value = "";
+  if (annotationLabelInput) annotationLabelInput.value = "";
+
+  if (generateButton) generateButton.click();
+  return;
+}
 
 
       if (action === "addSplit") {
