@@ -2360,7 +2360,7 @@ generateButton.addEventListener("click", () => {
           const d = parseDateValue(row[dateCol]);
           const y = toNumericValue(row[valueCol]);
           if (!d || !isFinite(d.getTime()) || !isFinite(y)) return null;
-          return { x: d, y };
+          return { x: d, y, _rowIndex: idx  };
         })
         .filter(Boolean);
     } else {
@@ -2378,7 +2378,7 @@ generateButton.addEventListener("click", () => {
               ? String(rawLabel)
               : `Point ${idx + 1}`;
 
-          return { x: idx, y, label };
+          return { x: idx, y, label,  _rowIndex: idx };
         })
         .filter(Boolean);
     }
@@ -2463,34 +2463,22 @@ if (chartType === "run") {
 
   const denomCol = thirdSelect.value;
 
-  // Build points with denominator: {x, y: numerator, n: denominator}
-  const pointsWithN = points.map((p, idx) => {
-    const row = rawRows[idx]; // assumes rows correspond to points order
-    // If you sorted by date, the row index won’t match. In that case we need a better mapping.
-    // For now: safest is to rebuild pointsWithN from rawRows in the same order as 'points'.
-    return p;
-  });
+    const denomCol = thirdSelect.value;
 
-  // Safer rebuild that follows the same order you built 'points'
-  // (we reconstruct from the already-chosen labels order)
-  const pointsByLabel = new Map();
-  points.forEach((p, i) => pointsByLabel.set(labels[i], p));
+  // Build points with denominator using the original row index saved on each point
+  const pointsWithNOrdered = points.map((p, i) => {
+    const row = rawRows[p._rowIndex];
 
-  const pointsWithNOrdered = labels.map((lab, i) => {
-    // Find the matching point; then find matching row by label
-    // If you're using date axis, lab is yyyy-mm-dd; if category axis, lab is label text
-    // We'll search rawRows for the first matching label in dateCol.
-    const dateCol = dateSelect.value;
-    const valueCol = valueSelect.value;
-
-    // best-effort row lookup
-    const row = rawRows.find(r => String(r[dateCol]) === String(lab)) || rawRows[i];
-
-    const numerator = toNumericValue(row[valueCol]);
+    const numerator = toNumericValue(row[valueSelect.value]);
     const denom = toNumericValue(row[denomCol]);
 
-    // x is already derived; just reuse i for stable ordering
-    return { x: i, y: numerator, n: denom };
+    return {
+      x: p.x,
+      y: numerator,
+      n: denom,
+      label: labels[i],
+      _rowIndex: p._rowIndex
+    };
   });
 
   if (chartType === "p") {
@@ -2498,6 +2486,7 @@ if (chartType === "run") {
   } else {
     drawUChart(pointsWithNOrdered, baselineCount, labels);
   }
+
 
 } else {
   showError(`Chart type "${chartType}" is not implemented yet.`);
