@@ -3704,19 +3704,23 @@ if (clearSplitsButton) {
 // -----------------------------
 // Help section toggle
 // -----------------------------
-function toggleHelpSection() {
-  const help = document.getElementById("helpSection");
-  if (!help) return;
+function toggleHelpSection(forceOpen) {
+  const modal = document.getElementById("helpModal");
+  if (!modal) return;
 
-  const isHidden = help.style.display === "none" || help.style.display === "";
+  const isOpen = modal.classList.contains("visible");
+  const shouldOpen = typeof forceOpen === "boolean" ? forceOpen : !isOpen;
 
-  if (isHidden) {
-    help.style.display = "block";
-    help.scrollIntoView({ behavior: "smooth" });
-  } else {
-    help.style.display = "none";
+  modal.classList.toggle("visible", shouldOpen);
+  modal.setAttribute("aria-hidden", shouldOpen ? "false" : "true");
+  document.body.classList.toggle("modal-open", shouldOpen);
+
+  if (shouldOpen) {
+    const closeBtn = modal.querySelector(".modal-close");
+    if (closeBtn) closeBtn.focus();
   }
 }
+
 
 let spcHelperHasBeenOpened = false;
 
@@ -3846,6 +3850,27 @@ function wireAutoRedrawControls() {
     updateMrToggleVisibility();
   }
 }
+
+(function initHelpModal() {
+  const modal = document.getElementById("helpModal");
+  if (!modal) return;
+
+  // Click outside (backdrop) closes
+  modal.addEventListener("click", (e) => {
+    if (e.target && e.target.classList.contains("modal-backdrop")) {
+      toggleHelpSection(false);
+    }
+  });
+
+  // Escape closes
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && modal.classList.contains("visible")) {
+      toggleHelpSection(false);
+    }
+  });
+})();
+
+
 
 // Call after the DOM is available (safe even if script is at bottom, but robust)
 if (document.readyState === "loading") {

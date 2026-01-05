@@ -615,6 +615,52 @@ body.sidebar-collapsed .main {
   filter: brightness(0.95);
 }
 
+/* Modal (Help & guidance) */
+.modal {
+  position: fixed;
+  inset: 0;
+  display: none;
+  z-index: 9999;
+}
+
+.modal.visible {
+  display: block;
+}
+
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+}
+
+.modal-dialog {
+  position: relative;
+  background: #fff;
+  margin: 5vh auto;
+  width: min(980px, calc(100% - 2rem));
+  max-height: 90vh;
+  overflow: auto;
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+}
+
+.modal-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.75rem;
+  font-size: 1.75rem;
+  line-height: 1;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+body.modal-open {
+  overflow: hidden;
+}
+
+
 
   </style>
 </head>
@@ -942,8 +988,14 @@ body.sidebar-collapsed .main {
   </div> <!-- end .layout -->
 
   <!-- HELP SECTION -->
-  <section id="helpSection" class="panel" style="display:none;">
-    <h2>Help &amp; guidance</h2>
+  <div id="helpModal" class="modal" aria-hidden="true">
+  <div class="modal-backdrop" aria-hidden="true"></div>
+
+  <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="helpModalTitle">
+    <button type="button" class="modal-close" aria-label="Close help" onclick="toggleHelpSection(false)">×</button>
+
+    <section id="helpSection" class="panel" style="display:block; margin:0;"
+    <h2 id="helpModalTitle">Help &amp; guidance</h2>
     <p class="sub">
       This section explains how to use the Simple SPC Web Tool and how to interpret the charts.
     </p>
@@ -1107,7 +1159,9 @@ body.sidebar-collapsed .main {
       </p>
     </details>
 
-  </section>
+   </section>
+  <div>
+</div>
 
 
 <div id="dataEditorOverlay">
