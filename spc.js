@@ -2646,17 +2646,24 @@ function drawXmRChart(points, baselineCount, labels) {
     );
   }
 
-  // ----- Show / hide MR chart depending on checkbox -----
+    // ----- Show / hide MR chart depending on checkbox -----
   const showMR = showMRCheckbox ? showMRCheckbox.checked : true;
 
-  // Use the last period for the MR chart (as a simple, focused view)
-  const lastSegmentResult =
-    segmentSummaries.length > 0
-      ? segmentSummaries[segmentSummaries.length - 1].result
-      : globalResult;
+  if (showMR) {
+    // If we have splits, pass the same segment structure used by the summary.
+    // If no splits, fall back to a single “whole-chart” segment.
+    const mrSegments = (segmentSummaries && segmentSummaries.length)
+      ? segmentSummaries
+      : [{
+          startIndex: 0,
+          endIndex: n - 1,
+          labelStart: labels[0],
+          labelEnd: labels[n - 1],
+          result: globalResult
+        }];
 
-  if (showMR && lastSegmentResult) {
-  drawMrChart(result.pointsAll || pointsAll || points, labels, segments);
+    // IMPORTANT: pass the full points + full labels + the segments array
+    drawMrChart(points, labels, mrSegments);
 
   } else {
     if (mrChart) {
@@ -2667,6 +2674,7 @@ function drawXmRChart(points, baselineCount, labels) {
       mrPanel.style.display = "none";
     }
   }
+
 }
 
 
@@ -3188,23 +3196,26 @@ function renderHelperState() {
 const mrToggleRow = document.getElementById("mrToggleRow");
 
 function updateMrToggleVisibility() {
-  const chartType = getSelectedChartType();
+  const chartType = getSelectedChartType ? getSelectedChartType() : "run";
+  const mrDisplayOptions = document.getElementById("mrDisplayOptions");
 
+  // Only show MR controls for XmR charts
   if (mrToggleRow) {
-    mrToggleRow.style.display = (chartType === "xmr") ? "flex" : "none";
+    mrToggleRow.style.display = (chartType === "xmr") ? "block" : "none";
   }
 
-  // If we're not in XmR mode, ensure MR panel is hidden (and chart destroyed)
+  // Only show the "MR display" radios when MR is enabled
+  if (mrDisplayOptions) {
+    const showMR = !!(showMRCheckbox && showMRCheckbox.checked);
+    mrDisplayOptions.style.display = (chartType === "xmr" && showMR) ? "block" : "none";
+  }
+
+  // If leaving XmR mode, hide/destroy the MR chart
   if (chartType !== "xmr") {
     hideMrPanelNow();
-  } else {
-    // On first load into XmR, default ON if checkbox exists
-    if (showMRCheckbox && showMRCheckbox.checked !== true) {
-      // don’t force it on if user explicitly turned it off later;
-      // this line only matters for initial state where it should be checked in HTML anyway
-    }
   }
 }
+
 
 
 

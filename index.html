@@ -764,29 +764,26 @@ body.modal-open {
   	Run chart uses the median only. XmR chart adds mean, control limits and sigma lines.
 	</div>
 	<div id="mrToggleRow" style="margin-top:0.75rem;">
-  <div class="radio-row" style="display:flex; flex-direction:column; gap:0.35rem;">
-    <label class="radio-pill" style="display:flex; align-items:center; gap:0.5rem; width:100%;">
-      <input type="checkbox" id="showMRCheckbox" checked />
-      Show Moving Range (MR) chart
-    </label>
-  </div>
+  <label style="display:flex; align-items:center; gap:0.5rem;">
+    <input type="checkbox" id="showMRCheckbox" checked />
+    Show Moving Range (MR) chart
+  </label>
 
   <div id="mrDisplayOptions" style="margin-left:1.75rem; margin-top:0.5rem;">
-    <div class="field-label" style="font-weight:600; margin-bottom:0.25rem;">
-      MR display:
-    </div>
+    <div style="font-weight:600; margin-bottom:0.25rem;">MR display:</div>
 
-    <label class="radio-pill" style="display:flex; align-items:center; gap:0.5rem; width:100%; margin-bottom:0.25rem;">
+    <label style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.25rem;">
       <input type="radio" name="mrDisplayMode" value="last" checked />
       Current period only
     </label>
 
-    <label class="radio-pill" style="display:flex; align-items:center; gap:0.5rem; width:100%;">
+    <label style="display:flex; align-items:center; gap:0.5rem;">
       <input type="radio" name="mrDisplayMode" value="all" />
       All periods (with splits)
     </label>
   </div>
 </div>
+
 
 
 
