@@ -731,52 +731,13 @@ body.modal-open {
       <label>Value / Y-axis column:
         <select id="valueColumn"></select>
       </label>
-<!-- Extra columns needed for some chart types (hidden unless required) -->
-<div id="extraColumns" style="display:none; margin-top:0.75rem;">
-  <strong class="field-label">Extra columns for this chart:</strong>
 
-  <div id="extraColumns_PU" style="display:none; margin-top:0.5rem;">
-    <label>Numerator (e.g. defects / defectives):
-      <select id="numeratorColumn"></select>
-    </label>
-
-    <label>Denominator / opportunities (e.g. total cases):
-      <select id="denominatorColumn"></select>
-    </label>
-
-    <div class="hint small-hint">
-      P and U charts need a numerator and a denominator/opportunity column.
-    </div>
-  </div>
-
-  <div id="extraColumns_XbarS" style="display:none; margin-top:0.5rem;">
-    <label>Subgroup ID (e.g. day / week / sample ID):
-      <select id="subgroupColumn"></select>
-    </label>
-    <div class="hint small-hint">
-      X̄–S needs multiple measurements per subgroup (e.g. several observations per day).
-    </div>
-  </div>
-
-  <div id="extraColumns_T" style="display:none; margin-top:0.5rem;">
-    <label>Event date/time column:
-      <select id="eventDateColumn"></select>
-    </label>
-    <div class="hint small-hint">
-      T charts use time between events (rare events).
-    </div>
-  </div>
-
-  <div id="extraColumns_G" style="display:none; margin-top:0.5rem;">
-    <label>Opportunities between events:
-      <select id="oppBetweenColumn"></select>
-    </label>
-    <div class="hint small-hint">
-      G charts use number of opportunities between events.
-    </div>
-  </div>
+<div id="thirdColumnRow" style="display:none; margin-top:0.5rem;">
+  <label><span id="thirdLabel">Denominator / opportunities</span>:
+    <select id="thirdColumn"></select>
+  </label>
+  <div id="thirdHint" class="hint small-hint" style="margin-top:0.25rem;"></div>
 </div>
-
 
 	<hr />
 	<strong class="field-label">X-axis type:</strong>

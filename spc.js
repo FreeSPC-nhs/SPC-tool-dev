@@ -25,6 +25,16 @@ const columnSelectors   = document.getElementById("columnSelectors");
 const dateSelect        = document.getElementById("dateColumn");
 const valueSelect       = document.getElementById("valueColumn");
 
+// Dynamic column labels + optional 3rd selector
+const xLabelEl = document.getElementById("xLabel");
+const yLabelEl = document.getElementById("yLabel");
+
+const thirdColumnRow = document.getElementById("thirdColumnRow");
+const thirdLabelEl = document.getElementById("thirdLabel");
+const thirdHintEl = document.getElementById("thirdHint");
+const thirdSelect = document.getElementById("thirdColumn");
+
+
 // Chart chooser / extra columns
 const helpChooseChartBtn   = document.getElementById("helpChooseChartBtn");
 const extraColumnsWrap     = document.getElementById("extraColumns");
@@ -329,6 +339,7 @@ function loadRows(rows) {
 
   dateSelect.innerHTML = "";
 valueSelect.innerHTML = "";
+if (thirdSelect) thirdSelect.innerHTML = "";
 
 // Extra selects (may be null if HTML not loaded yet)
 if (numeratorSelect) numeratorSelect.innerHTML = "";
@@ -348,6 +359,14 @@ if (oppBetweenSelect) oppBetweenSelect.innerHTML = "";
     opt2.value = col;
     opt2.textContent = col;
     valueSelect.appendChild(opt2);
+
+	if (thirdSelect) {
+	  const opt3 = document.createElement("option");
+	  opt3.value = col;
+	  opt3.textContent = col;
+	  thirdSelect.appendChild(opt3);
+	}
+
 
     if (numeratorSelect) {
       const optN = document.createElement("option");
@@ -976,30 +995,69 @@ function findTrendRanges(values, length) {
 }
 
 function updateUIForChartType(chartType) {
-  // Hide all extra sections by default
-  if (!extraColumnsWrap) return;
+  // Default labels
+  if (xLabelEl) xLabelEl.textContent = "Date / X-axis column";
+  if (yLabelEl) yLabelEl.textContent = "Value / Y-axis column";
 
-  extraColumnsWrap.style.display = "none";
-  if (extraColumns_PU) extraColumns_PU.style.display = "none";
-  if (extraColumns_XbarS) extraColumns_XbarS.style.display = "none";
-  if (extraColumns_T) extraColumns_T.style.display = "none";
-  if (extraColumns_G) extraColumns_G.style.display = "none";
+  // Hide third selector by default
+  if (thirdColumnRow) thirdColumnRow.style.display = "none";
+  if (thirdHintEl) thirdHintEl.textContent = "";
+  if (thirdLabelEl) thirdLabelEl.textContent = "";
 
-  // Show only what’s needed
-  if (chartType === "p" || chartType === "u") {
-    extraColumnsWrap.style.display = "block";
-    if (extraColumns_PU) extraColumns_PU.style.display = "block";
-  } else if (chartType === "xbars") {
-    extraColumnsWrap.style.display = "block";
-    if (extraColumns_XbarS) extraColumns_XbarS.style.display = "block";
-  } else if (chartType === "t") {
-    extraColumnsWrap.style.display = "block";
-    if (extraColumns_T) extraColumns_T.style.display = "block";
-  } else if (chartType === "g") {
-    extraColumnsWrap.style.display = "block";
-    if (extraColumns_G) extraColumns_G.style.display = "block";
+  // Chart-specific wording + whether we need a 3rd column
+  switch (chartType) {
+    case "run":
+      // simplest
+      break;
+
+    case "xmr":
+      if (yLabelEl) yLabelEl.textContent = "Measure (used for XmR limits)";
+      break;
+
+    case "c":
+      if (yLabelEl) yLabelEl.textContent = "Count (c) per time period";
+      break;
+
+    case "p":
+      if (yLabelEl) yLabelEl.textContent = "Numerator: defectives (d)";
+      if (thirdLabelEl) thirdLabelEl.textContent = "Denominator: total (n)";
+      if (thirdHintEl) thirdHintEl.textContent = "P chart plots a proportion: d out of n.";
+      if (thirdColumnRow) thirdColumnRow.style.display = "block";
+      break;
+
+    case "u":
+      if (yLabelEl) yLabelEl.textContent = "Numerator: defects (c)";
+      if (thirdLabelEl) thirdLabelEl.textContent = "Denominator: opportunities (n)";
+      if (thirdHintEl) thirdHintEl.textContent = "U chart plots defects per opportunity: c per n.";
+      if (thirdColumnRow) thirdColumnRow.style.display = "block";
+      break;
+
+    case "xbars":
+      if (yLabelEl) yLabelEl.textContent = "Measurement value";
+      if (thirdLabelEl) thirdLabelEl.textContent = "Subgroup ID (e.g. day/week/sample)";
+      if (thirdHintEl) thirdHintEl.textContent = "X̄–S needs multiple measurements per subgroup.";
+      if (thirdColumnRow) thirdColumnRow.style.display = "block";
+      break;
+
+    case "t":
+      if (yLabelEl) yLabelEl.textContent = "Event date/time";
+      // (You might later not need dateSelect at all for T; for now keep consistent)
+      if (thirdLabelEl) thirdLabelEl.textContent = "Optional: subgroup/label (if needed)";
+      if (thirdHintEl) thirdHintEl.textContent = "T chart plots time between events (rare events).";
+      // You may or may not want a 3rd column; for now keep hidden:
+      // thirdColumnRow.style.display = "block";
+      break;
+
+    case "g":
+      if (yLabelEl) yLabelEl.textContent = "Opportunities between events";
+      if (thirdHintEl) thirdHintEl.textContent = "G chart plots opportunities between rare events.";
+      break;
+
+    default:
+      break;
   }
 }
+
 
 
 function parseTabularTextWithHeaderDetection(text) {
