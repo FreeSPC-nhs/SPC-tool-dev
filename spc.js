@@ -27,6 +27,34 @@ const valueSelect       = document.getElementById("valueColumn");
 
 const IMPLEMENTED_CHARTS = new Set(["run", "xmr", "c", "p", "u", "xbars", "t", "g"]);
 
+// -----------------------------
+// Shared chart styling (keep charts consistent)
+// -----------------------------
+const SPC_STYLE = {
+  // main series + “normal” points
+  seriesBlue: "#003f87",     // matches Run/XmR main line :contentReference[oaicite:1]{index=1}
+  pointNormal: "#003f87",
+
+  // special-cause points (Run uses orange)
+  pointSpecial: "#ff8c00",   // matches your Run chart special cause colour :contentReference[oaicite:2]{index=2}
+
+  // centre line (Run median uses red)
+  centreRed: "#e41a1c",      // matches Run chart median colour :contentReference[oaicite:3]{index=3}
+
+  // limits (XmR uses green for UCL/LCL)
+  limitGreen: "#2ca25f",     // matches XmR limit colour :contentReference[oaicite:4]{index=4}
+
+  // target (Run/XmR use this orange)
+  targetOrange: "#fdae61"    // matches Run target line 
+};
+
+// Helper: build point colours from a boolean “flag” array
+function makePointColoursFromFlags(flags) {
+  if (!Array.isArray(flags)) return [];
+  return flags.map(f => (f ? SPC_STYLE.pointSpecial : SPC_STYLE.pointNormal));
+}
+
+
 
 // Dynamic column labels + optional 3rd selector
 const xLabelEl = document.getElementById("xLabel");
@@ -801,17 +829,43 @@ function drawSecondarySPCChart({
 
   const datasets = [
     {
-      label: "Values",
+      label: "Value",
       data: values,
+      borderColor: SPC_STYLE.seriesBlue,
       borderWidth: 2,
+      fill: false,
       pointRadius: 4,
       pointBackgroundColor: pointColours,
       pointBorderColor: pointColours,
       tension: 0.1
     },
-    { label: "Centre line", data: cl, borderDash: [6, 4], borderWidth: 2, pointRadius: 0 },
-    { label: "UCL", data: ucl, borderDash: [3, 3], borderWidth: 2, pointRadius: 0 },
-    { label: "LCL", data: lcl, borderDash: [3, 3], borderWidth: 2, pointRadius: 0 }
+    {
+      label: "Centre line",
+      data: cl,
+      borderColor: SPC_STYLE.centreRed,
+      borderDash: [6, 4],
+      borderWidth: 2,
+      pointRadius: 0,
+      pointHoverRadius: 0
+    },
+    {
+      label: "UCL",
+      data: ucl,
+      borderColor: SPC_STYLE.limitGreen,
+      borderDash: [4, 4],
+      borderWidth: 2,
+      pointRadius: 0,
+      pointHoverRadius: 0
+    },
+    {
+      label: "LCL",
+      data: lcl,
+      borderColor: SPC_STYLE.limitGreen,
+      borderDash: [4, 4],
+      borderWidth: 2,
+      pointRadius: 0,
+      pointHoverRadius: 0
+    }
   ];
 
   return new Chart(canvas.getContext("2d"), {
@@ -821,12 +875,27 @@ function drawSecondarySPCChart({
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        title: { display: true, text: title }
+        title: {
+          display: true,
+          text: title,
+          font: { size: 16, weight: "bold" }
+        },
+        legend: { display: true, position: "bottom", align: "center" },
+        annotation: {
+          annotations: (typeof buildAnnotationConfig === "function")
+            ? buildAnnotationConfig(labels)
+            : {}
+        }
       },
+      elements: { point: { radius: 0, hoverRadius: 0 } },
       scales: {
-        x: { title: { display: true, text: xLabel } },
+        x: {
+          grid: { display: false },
+          title: { display: !!xLabel, text: xLabel }
+        },
         y: {
-          title: { display: true, text: yLabel },
+          grid: { display: false },
+          title: { display: !!yLabel, text: yLabel },
           suggestedMin: isFinite(suggestedMin) ? suggestedMin : undefined,
           suggestedMax: isFinite(suggestedMax) ? suggestedMax : undefined
         }
@@ -3447,6 +3516,10 @@ renderAttributeSummary(lastAttributeAnalysis);
 }
 
 
+/**
+ * Reusable SPC chart renderer for C/P/U/T/G/etc
+ * Styled to match Run + XmR charts (title/legend/grid/colours).
+ */
 function drawSimpleSPCChart({
   labels,
   values,
@@ -3458,14 +3531,18 @@ function drawSimpleSPCChart({
   yAxisSuggestedMax,
   chartTitleFallback,
   yAxisLabelFallback,
+  // optional toggles (handy for future)
   showUCL = true,
   showLCL = true
 }) {
   if (!chartCanvas) return;
 
-  // Keep annotation dropdown aligned to the current chart’s x-axis labels
+  // Keep dropdowns in sync (same behaviour as Run/XmR)
   if (typeof populateAnnotationDateOptions === "function") {
     populateAnnotationDateOptions(labels);
+  }
+  if (typeof populateSplitOptions === "function") {
+    populateSplitOptions(labels);
   }
 
   // Destroy existing main chart if present
@@ -3475,26 +3552,29 @@ function drawSimpleSPCChart({
   }
 
   const title = (chartTitleInput?.value || "").trim() || chartTitleFallback;
-  const xLabel = (xAxisLabelInput?.value || "").trim() || "Time";
+  const xLabel = (xAxisLabelInput?.value || "").trim() || "Date";
   const yLabel = (yAxisLabelInput?.value || "").trim() || yAxisLabelFallback;
 
   const datasets = [
     {
-      label: "Values",
+      label: "Value",
       data: values,
+      borderColor: SPC_STYLE.seriesBlue,
       borderWidth: 2,
+      fill: false,
       pointRadius: 4,
       pointBackgroundColor: pointColours,
       pointBorderColor: pointColours,
-      tension: 0.1,
-      fill: false
+      tension: 0.1
     },
     {
       label: "Centre line",
       data: cl,
+      borderColor: SPC_STYLE.centreRed,
       borderDash: [6, 4],
       borderWidth: 2,
       pointRadius: 0,
+      pointHoverRadius: 0,
       fill: false
     }
   ];
@@ -3503,9 +3583,11 @@ function drawSimpleSPCChart({
     datasets.push({
       label: "UCL",
       data: ucl,
-      borderDash: [3, 3],
+      borderColor: SPC_STYLE.limitGreen,
+      borderDash: [4, 4],
       borderWidth: 2,
       pointRadius: 0,
+      pointHoverRadius: 0,
       fill: false
     });
   }
@@ -3514,9 +3596,26 @@ function drawSimpleSPCChart({
     datasets.push({
       label: "LCL",
       data: lcl,
-      borderDash: [3, 3],
+      borderColor: SPC_STYLE.limitGreen,
+      borderDash: [4, 4],
       borderWidth: 2,
       pointRadius: 0,
+      pointHoverRadius: 0,
+      fill: false
+    });
+  }
+
+  // Optional target line – consistent with Run/XmR
+  const target = getTargetValue();
+  if (target !== null) {
+    datasets.push({
+      label: "Target",
+      data: values.map(() => target),
+      borderColor: SPC_STYLE.targetOrange,
+      borderDash: [4, 2],
+      borderWidth: 2,
+      pointRadius: 0,
+      pointHoverRadius: 0,
       fill: false
     });
   }
@@ -3528,20 +3627,27 @@ function drawSimpleSPCChart({
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        title: { display: true, text: title },
+        title: {
+          display: true,
+          text: title,
+          font: { size: 16, weight: "bold" }
+        },
         legend: { display: true, position: "bottom", align: "center" },
-        // ✅ This is the missing piece in your C/P/U charts
         annotation: {
-          annotations:
-            (typeof buildAnnotationConfig === "function")
-              ? buildAnnotationConfig(labels)
-              : {}
+          annotations: (typeof buildAnnotationConfig === "function")
+            ? buildAnnotationConfig(labels)
+            : {}
         }
       },
+      elements: { point: { radius: 0, hoverRadius: 0 } },
       scales: {
-        x: { title: { display: true, text: xLabel } },
+        x: {
+          grid: { display: false },
+          title: { display: !!xLabel, text: xLabel }
+        },
         y: {
-          title: { display: true, text: yLabel },
+          grid: { display: false },
+          title: { display: !!yLabel, text: yLabel },
           suggestedMin: isFinite(yAxisSuggestedMin) ? yAxisSuggestedMin : undefined,
           suggestedMax: isFinite(yAxisSuggestedMax) ? yAxisSuggestedMax : undefined
         }
@@ -3549,6 +3655,7 @@ function drawSimpleSPCChart({
     }
   });
 }
+
 
 
 function drawXmRChart(points, baselineCount, labels) {
