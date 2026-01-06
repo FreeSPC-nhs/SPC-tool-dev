@@ -661,10 +661,11 @@ body.modal-open {
 }
 
 .mr-compact {
-  padding: 0.5rem 0.6rem;
-  border: 1px solid #e6eaed;
-  border-radius: 0.5rem;
-  background: #fafafa;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.35rem;
+  margin-top: 0.4rem;
+  padding: 0; /* no box */
 }
 
 .mr-compact-row {
@@ -682,7 +683,8 @@ body.modal-open {
 .mr-radio {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.25rem;
+  white-space: nowrap;
 }
 
 /* Make chart row & help button compact */
@@ -723,9 +725,36 @@ body.modal-open {
   white-space: nowrap;
 }
 
+.mr-subhint {
+  font-size: 0.85em;
+  opacity: 0.8;
+  white-space: nowrap;
+}
+
 /* Tighten radio pill spacing a bit */
 .radio-pill {
   padding: 0.1rem 0.1rem;   /* was probably larger */
+}
+
+.mr-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.mr-mode {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap; /* allows wrap instead of overflow */
+}
+
+.mr-mode-label {
+  font-weight: 700;
+  margin-right: 0.2rem;
+  white-space: nowrap;
 }
 
 
@@ -833,17 +862,17 @@ body.modal-open {
   <div class="hint" style="margin-top:0.1rem;">
     If you’re not sure, use <strong>Help me choose</strong>.
   </div>
-</details>
+
 
 <!-- MR options (only relevant to XmR; JS can hide/show mrToggleRow) -->
-<div id="mrToggleRow" class="mr-inline" style="margin-top:0.5rem;">
-  <label class="mr-inline-row">
+<div id="mrToggleRow" class="mr-compact">
+  <label class="mr-check">
     <input type="checkbox" id="showMRCheckbox" checked />
-    <span><strong>Show MR</strong></span>
+    <span>Show MR</span>
   </label>
 
-  <div id="mrDisplayOptions" class="mr-inline-row">
-    <span class="mr-label">MR display:</span>
+  <div id="mrDisplayOptions" class="mr-mode">
+    <span class="mr-mode-label">MR display</span>
 
     <label class="mr-radio">
       <input type="radio" name="mrDisplayMode" value="last" checked />
@@ -852,10 +881,13 @@ body.modal-open {
 
     <label class="mr-radio">
       <input type="radio" name="mrDisplayMode" value="all" />
-      <span>All (with splits)</span>
+      <span>All</span>
     </label>
+
+    <span class="mr-subhint">(includes splits)</span>
   </div>
 </div>
+</details>
 
 <hr />
 
