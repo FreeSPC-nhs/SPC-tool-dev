@@ -2160,6 +2160,8 @@ if (dataEditorApplyButton) {
       return;
     }
 
+    let loadedOk = false;
+
     try {
       // Preview without headers
       const preview = Papa.parse(text, {
@@ -2176,27 +2178,17 @@ if (dataEditorApplyButton) {
 
       const rows2D = preview.data;
       if (!rows2D || rows2D.length < 2) {
-        showError("Please paste at least 2 rows.");
+        showError("Paste at least a header row and one data row.");
         return;
       }
 
-      const r0 = rows2D[0];
-      const r1 = rows2D[1];
+      const hasHeader = detectHasHeaderRow(rows2D);
 
-      const score0 = rowDataLikenessScore(r0);
-      const score1 = rowDataLikenessScore(r1);
-
-      // Header if row0 looks much LESS like data than row1
-      // (e.g., "Date,Value" vs "2024-01-01,12")
-      const duplicateHeaderRow = rowsEqualNormalized(r0, r1) && score0 <= 0.2;
-
-	const looksLikeHeader =  (score1 - score0) >= 0.35 ||  duplicateHeaderRow;
-
-      if (looksLikeHeader) {
-        // Parse with header row
+      if (hasHeader) {
+        // Parse with headers
         const results = Papa.parse(text, {
           header: true,
-          dynamicTyping: true,
+          dynamicTyping: false,
           skipEmptyLines: true
         });
 
@@ -2207,12 +2199,11 @@ if (dataEditorApplyButton) {
         }
 
         let rows = results.data || [];
-        // Strip accidental duplicate header row if present
         const headers = results.meta && results.meta.fields ? results.meta.fields : null;
         rows = stripDuplicateHeaderRow(rows, headers);
 
         if (!loadRows(rows)) return;
-
+        loadedOk = true;
 
       } else {
         // No headers -> ask user
@@ -2227,19 +2218,13 @@ if (dataEditorApplyButton) {
           return;
         }
 
-        // Convert 2D array into objects Column1/Column2...
-        const data2D = rows2D;
-        const colCount = Math.max(...data2D.map(r => r.length));
-        const headers = Array.from({ length: colCount }, (_, i) => `Column${i + 1}`);
-
-        const objRows = data2D.map(r => {
-          const o = {};
-          headers.forEach((h, i) => (o[h] = r[i]));
-          return o;
-        });
-
-        if (!loadRows(objRows)) return;
+        const rows = rows2DToObjects(rows2D);
+        if (!loadRows(rows)) return;
+        loadedOk = true;
       }
+
+      // If we got here, data loaded successfully — clear scary messages
+      clearError();
 
       // Reset annotations/splits because the data changed
       annotations = [];
@@ -2248,19 +2233,30 @@ if (dataEditorApplyButton) {
       splits = [];
       if (splitPointSelect) splitPointSelect.innerHTML = "";
 
-      	closeDataEditor();
-	clearError();
+      // Close editor (non-critical UI step)
+      try { closeDataEditor(); } catch (uiErr) { console.warn("closeDataEditor failed:", uiErr); }
 
-	// Auto-generate after applying data so it never feels like "nothing happened"
-	if (generateButton) generateButton.click();
+      // Hide "Load data..." hint if you added it
+      const hint = document.getElementById("noDataYetHint");
+      if (hint) hint.style.display = "none";
 
+      // Auto-generate (also non-critical)
+      try { if (generateButton) generateButton.click(); }
+      catch (genErr) { console.warn("Auto-generate failed:", genErr); }
 
     } catch (e) {
+      // Only show a scary error if we never successfully loaded data
       console.error(e);
-      showError("Unexpected error parsing pasted data.");
+      if (!loadedOk) {
+        showError("Unexpected error parsing pasted data.");
+      } else {
+        // Data is OK; don't confuse users with a false parsing error
+        clearError();
+      }
     }
   });
 }
+
 
 function formatDateOnlyLabel(v) {
   if (v === null || v === undefined) return "";
