@@ -355,129 +355,128 @@ if (yAxisLabelInput) yAxisLabelInput.addEventListener("input", applyPresentation
 
 function loadRows(rows) {
   if (!rows || rows.length === 0) {
-    errorMessage.textContent = "No rows found in the data.";
+    showError("No rows found in the data.");
     return false;
   }
 
   rawRows = rows;
+
   const firstRow = rows[0];
-  const columns = Object.keys(firstRow);
+  const columns = firstRow ? Object.keys(firstRow) : [];
 
   if (!columns || columns.length === 0) {
-    errorMessage.textContent = "Could not detect any columns in the data.";
+    showError("Could not detect any columns in the data.");
     return false;
   }
 
-  dateSelect.innerHTML = "";
-valueSelect.innerHTML = "";
-if (thirdSelect) thirdSelect.innerHTML = "";
+  // Clear dropdowns safely
+  if (dateSelect) dateSelect.innerHTML = "";
+  if (valueSelect) valueSelect.innerHTML = "";
+  if (thirdSelect) thirdSelect.innerHTML = "";
 
-// Extra selects (may be null if HTML not loaded yet)
-if (numeratorSelect) numeratorSelect.innerHTML = "";
-if (denominatorSelect) denominatorSelect.innerHTML = "";
-if (subgroupSelect) subgroupSelect.innerHTML = "";
-if (eventDateSelect) eventDateSelect.innerHTML = "";
-if (oppBetweenSelect) oppBetweenSelect.innerHTML = "";
+  // (Optional extra selects - keep safe)
+  if (typeof numeratorSelect !== "undefined" && numeratorSelect) numeratorSelect.innerHTML = "";
+  if (typeof denominatorSelect !== "undefined" && denominatorSelect) denominatorSelect.innerHTML = "";
+  if (typeof subgroupSelect !== "undefined" && subgroupSelect) subgroupSelect.innerHTML = "";
+  if (typeof eventDateSelect !== "undefined" && eventDateSelect) eventDateSelect.innerHTML = "";
+  if (typeof oppBetweenSelect !== "undefined" && oppBetweenSelect) oppBetweenSelect.innerHTML = "";
 
+  // Populate dropdowns
+  columns.forEach((col) => {
+    if (dateSelect) {
+      const opt1 = document.createElement("option");
+      opt1.value = col;
+      opt1.textContent = col;
+      dateSelect.appendChild(opt1);
+    }
 
-  columns.forEach(col => {
-    const opt1 = document.createElement("option");
-    opt1.value = col;
-    opt1.textContent = col;
-    dateSelect.appendChild(opt1);
+    if (valueSelect) {
+      const opt2 = document.createElement("option");
+      opt2.value = col;
+      opt2.textContent = col;
+      valueSelect.appendChild(opt2);
+    }
 
-    const opt2 = document.createElement("option");
-    opt2.value = col;
-    opt2.textContent = col;
-    valueSelect.appendChild(opt2);
+    if (thirdSelect) {
+      const opt3 = document.createElement("option");
+      opt3.value = col;
+      opt3.textContent = col;
+      thirdSelect.appendChild(opt3);
+    }
 
-	if (thirdSelect) {
-	  const opt3 = document.createElement("option");
-	  opt3.value = col;
-	  opt3.textContent = col;
-	  thirdSelect.appendChild(opt3);
-	}
-
-
-    if (numeratorSelect) {
+    if (typeof numeratorSelect !== "undefined" && numeratorSelect) {
       const optN = document.createElement("option");
       optN.value = col;
       optN.textContent = col;
       numeratorSelect.appendChild(optN);
     }
 
-    if (denominatorSelect) {
+    if (typeof denominatorSelect !== "undefined" && denominatorSelect) {
       const optD = document.createElement("option");
       optD.value = col;
       optD.textContent = col;
       denominatorSelect.appendChild(optD);
     }
 
-    if (subgroupSelect) {
+    if (typeof subgroupSelect !== "undefined" && subgroupSelect) {
       const optSg = document.createElement("option");
       optSg.value = col;
       optSg.textContent = col;
       subgroupSelect.appendChild(optSg);
     }
 
-    if (eventDateSelect) {
+    if (typeof eventDateSelect !== "undefined" && eventDateSelect) {
       const optEv = document.createElement("option");
       optEv.value = col;
       optEv.textContent = col;
       eventDateSelect.appendChild(optEv);
     }
 
-    if (oppBetweenSelect) {
+    if (typeof oppBetweenSelect !== "undefined" && oppBetweenSelect) {
       const optOb = document.createElement("option");
       optOb.value = col;
       optOb.textContent = col;
       oppBetweenSelect.appendChild(optOb);
     }
-
-
   });
 
-// --- NEW: auto-guess defaults ---
-const guessed = guessColumns(rows);
+  // --- Auto-guess defaults (if you have this function) ---
+  if (typeof guessColumns === "function") {
+    const guessed = guessColumns(rows);
 
-// Choose X column (date/sequence)
-if (guessed.dateCol) {
-  dateSelect.value = guessed.dateCol;
-} else {
-  // No date column detected: fall back to first column and switch axis to sequence
-  dateSelect.selectedIndex = 0;
+    // Guess X
+    if (guessed && guessed.dateCol && dateSelect) {
+      dateSelect.value = guessed.dateCol;
+    } else if (dateSelect) {
+      dateSelect.selectedIndex = 0;
+      if (typeof setAxisType === "function") setAxisType("sequence");
+      showError("Tip: No date column detected. I’ll treat the data as a simple sequence (run chart by order).");
+    }
 
-  // If your UI has axisType radios (date/sequence), ensure it is set to sequence
-  if (typeof setAxisType === "function") {
-    setAxisType("sequence");
+    // Guess Y
+    if (guessed && guessed.valueCol && valueSelect) {
+      valueSelect.value = guessed.valueCol;
+    } else if (valueSelect) {
+      valueSelect.selectedIndex = Math.min(1, valueSelect.options.length - 1);
+      if (errorMessage && !errorMessage.textContent) {
+        showError("Tip: I couldn’t confidently detect a numeric value column. Please check the Value dropdown.");
+      }
+    }
   }
 
-  showError("Tip: No date column detected. I’ll treat the data as a simple sequence (run chart by order).");
-}
-
-// Choose Y (value) column
-if (guessed.valueCol) {
-  valueSelect.value = guessed.valueCol;
-} else {
-  // Fall back to second column if available, otherwise first
-  valueSelect.selectedIndex = Math.min(1, valueSelect.options.length - 1);
-
-  // Only show this hint if we haven't already shown the "no date" hint above
-  // (do not clear errors here)
-  if (errorMessage && !errorMessage.textContent) {
-    showError("Tip: I couldn’t confidently detect a numeric value column. Please check the Value dropdown before generating a chart.");
+  // Show selectors safely
+  if (columnSelectors) {
+    columnSelectors.style.display = "block";
   }
-}
 
-// Do NOT call clearError() here — we want hints to remain visible
+  // Hide "load data first" hint safely (if present)
+  const hint = document.getElementById("noDataYetHint");
+  if (hint) hint.style.display = "none";
 
-
-  columnSelectors.style.display = "block";
   return true;
 }
 
-const hint = document.getElementById("noDataYetHint");
-  if (hint) hint.style.display = "none";
+
 
 function showError(msg) {
   if (errorMessage) errorMessage.textContent = msg;
