@@ -473,6 +473,8 @@ if (guessed.valueCol) {
 
 
   columnSelectors.style.display = "block";
+  const hint = document.getElementById("noDataYetHint");
+  if (hint) hint.style.display = "none";
   return true;
 }
 
