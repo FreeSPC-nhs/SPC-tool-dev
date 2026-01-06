@@ -124,7 +124,7 @@ button:disabled {
 }
 
 .radio-group {
-  margin: 0.25rem 0 0.6rem 0;
+  margin: 0.2rem 0 0.2rem 0;
 }
 
 .radio-inline {
@@ -142,8 +142,8 @@ button:disabled {
 .radio-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
-  margin: 0 0.2rem 0 0;
+  gap: 0.2rem;
+  margin: 0 0 0 0;
 }
 
 /* Make each radio+label a small inline chip, not a big bar */
@@ -688,7 +688,7 @@ body.modal-open {
 /* Make chart row & help button compact */
 .chart-row {
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.2rem;
 }
 
 .help-btn {
@@ -821,7 +821,7 @@ body.modal-open {
 
 <details id="moreChartTypesDetails" class="more-types">
   <summary>More chart types</summary>
-  <div class="radio-row chart-row" style="margin-top:0.4rem; flex-wrap:wrap;">
+  <div class="radio-row chart-row" style="margin-top:0.1rem; flex-wrap:wrap;">
     <label class="radio-pill"><input type="radio" name="chartType" value="c" /> C</label>
     <label class="radio-pill"><input type="radio" name="chartType" value="p" /> P</label>
     <label class="radio-pill"><input type="radio" name="chartType" value="u" /> U</label>
@@ -863,24 +863,6 @@ body.modal-open {
 
 <hr />
 
-<strong class="field-label">X-axis type:</strong>
-<div class="radio-row">
-  <label class="radio-pill">
-    <input type="radio" name="axisType" value="date" checked />
-    Date / time
-  </label>
-  <label class="radio-pill">
-    <input type="radio" name="axisType" value="sequence" />
-    Sequence / category
-  </label>
-</div>
-
-<div class="hint small-hint" style="margin-top:0.25rem;">
-  Use <em>Date / time</em> for time-series SPC, or <em>Sequence / category</em> to plot rows in their original order.
-</div>
-
-<hr />
-
 <strong>Choose columns:</strong><br />
 
 <label><span id="xLabel">Date / X-axis column</span>:
@@ -898,14 +880,33 @@ body.modal-open {
   <div id="thirdHint" class="hint small-hint" style="margin-top:0.25rem;"></div>
 </div>
 
+<hr />
+
+
+<strong class="field-label">X-axis type:</strong>
+<div class="radio-row">
+  <label class="radio-pill">
+    <input type="radio" name="axisType" value="date" checked />
+    Date / time
+  </label>
+  <label class="radio-pill">
+    <input type="radio" name="axisType" value="sequence" />
+    Sequence / category
+  </label>
+</div>
+
+<div class="hint small-hint" style="margin-top:0.25rem;">
+  Use <em>Date / time</em> for time-series SPC, or <em>Sequence / category</em> to plot rows in their original order.
+</div>
+
  
       </div>
 </details>
 
 
-	<!-- Section 2: Titles & labels -->
+	<!-- Section 3: Titles & labels -->
         <details>
-        <summary>2. Titles & labels</summary>
+        <summary>3. Titles & labels</summary>
         <div class="panel">
 	<div>
   	<label>
@@ -928,9 +929,9 @@ body.modal-open {
 	</div>
       </details>
 
-	<!-- Section 3: Target & capability -->
+	<!-- Section 4: Target & capability -->
       <details>
-        <summary>3. Target & capability</summary>
+        <summary>4. Target & capability</summary>
         <div class="panel">
 	<div>
 	  <label>
@@ -959,9 +960,9 @@ body.modal-open {
  	</div>
       </details>
 
-	<!-- Section 4: Annotations -->
+	<!-- Section 5: Annotations -->
       	<details>
-        <summary>4. Annotations</summary>
+        <summary>5. Annotations</summary>
         <div class="panel">
 	<div>
   	<label>
@@ -987,9 +988,9 @@ body.modal-open {
 	 </div>
       </details>
 
-      <!-- Section 5: Baseline & splits -->
+      <!-- Section 6: Baseline & splits -->
       <details>
-        <summary>5. Baseline & split</summary>
+        <summary>6. Baseline & split</summary>
         <div class="panel">
 	<label>
       Use first
@@ -1019,9 +1020,9 @@ body.modal-open {
 	</div>
         </div>
       	</details>
-<!-- Section 6: Rules & interpretation -->
+<!-- Section 7: Rules & interpretation -->
 <details>
-  <summary>6. Rules &amp; interpretation</summary>
+  <summary>7. Rules &amp; interpretation</summary>
   <div class="panel">
 
     <div class="hint">
