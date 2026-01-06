@@ -685,6 +685,49 @@ body.modal-open {
   gap: 0.35rem;
 }
 
+/* Make chart row & help button compact */
+.chart-row {
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.help-btn {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.9em;
+  white-space: nowrap;
+}
+
+/* Compact MR controls (no big grey box) */
+.mr-inline {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.mr-inline-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.mr-label {
+  font-weight: 700;
+  margin-right: 0.1rem;
+}
+
+.mr-radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  white-space: nowrap;
+}
+
+/* Tighten radio pill spacing a bit */
+.radio-pill {
+  padding: 0.2rem 0.45rem;   /* was probably larger */
+}
+
 
   </style>
 </head>
@@ -758,92 +801,52 @@ body.modal-open {
 </div>
 
     <!-- Columns -->
-    <div id="columnSelectors" style="display: none;">
-      <strong>Choose columns:</strong><br />
+<strong class="field-label">Chart type:</strong>
 
-      <label><span id="xLabel">Date / X-axis column</span>:
-        <select id="dateColumn"></select>
-      </label>
-
-      <label><span id="yLabel">Value / Y-axis column</span>:
-        <select id="valueColumn"></select>
-      </label>
-
-      <div id="thirdColumnRow" style="display:none; margin-top:0.5rem;">
-        <label><span id="thirdLabel">Denominator / opportunities</span>:
-          <select id="thirdColumn"></select>
-        </label>
-        <div id="thirdHint" class="hint small-hint" style="margin-top:0.25rem;"></div>
-      </div>
-
-      <hr />
-
-      <!-- Axis type -->
-      <strong class="field-label">X-axis type:</strong>
-      <div class="radio-row">
-        <label class="radio-pill">
-          <input type="radio" name="axisType" value="date" checked />
-          Date / time (sort by date)
-        </label>
-        <label class="radio-pill">
-          <input type="radio" name="axisType" value="sequence" />
-          Sequence / category (row order)
-        </label>
-      </div>
-
-      <div class="hint small-hint">
-        Use <em>Date / time</em> for time-series SPC, or <em>Sequence / category</em> to plot each row in the order it appears.
-      </div>
-
-      <hr />
-
-      <!-- Chart type -->
-      <strong class="field-label">Chart type:</strong>
-
-      <div class="radio-row" style="align-items:center; gap:0.5rem; flex-wrap:wrap;">
-        <label class="radio-pill">
-          <input type="radio" name="chartType" value="run" checked />
-          Run chart
-        </label>
-        <label class="radio-pill">
-          <input type="radio" name="chartType" value="xmr" />
-          XmR chart
-        </label>
-
-        <button id="helpChooseChartBtn" type="button" style="margin-left:0.25rem;">
-          Help me choose
-        </button>
-      </div>
-
-      <details id="moreChartTypesDetails" style="margin-top:0.5rem;">
-        <summary style="cursor:pointer;">More chart types</summary>
-        <div class="radio-row" style="margin-top:0.5rem; flex-wrap:wrap;">
-          <label class="radio-pill"><input type="radio" name="chartType" value="c" /> C</label>
-          <label class="radio-pill"><input type="radio" name="chartType" value="p" /> P</label>
-          <label class="radio-pill"><input type="radio" name="chartType" value="u" /> U</label>
-          <label class="radio-pill"><input type="radio" name="chartType" value="xbars" /> X̄–S</label>
-          <label class="radio-pill"><input type="radio" name="chartType" value="t" /> T</label>
-          <label class="radio-pill"><input type="radio" name="chartType" value="g" /> G</label>
-        </div>
-
-        <div class="hint small-hint" style="margin-top:0.35rem;">
-          If you’re not sure, use <strong>Help me choose</strong>.
-        </div>
-      </details>
-
-      <div class="hint small-hint" style="margin-top:0.5rem;">
-        Run chart uses the median only. XmR adds mean, limits and sigma lines.
-      </div>
-
-      <!-- MR options (still inside chart selection, but we’ll compact it below) -->
-      <div id="mrToggleRow" style="margin-top:0.75rem;">
-       <div class="mr-compact">
-  <label class="mr-compact-row">
-    <input type="checkbox" id="showMRCheckbox" checked />
-    <span><strong>Show MR chart</strong></span>
+<div class="radio-row chart-row">
+  <label class="radio-pill">
+    <input type="radio" name="chartType" value="run" checked />
+    Run chart
   </label>
 
-  <div id="mrDisplayOptions" class="mr-compact-row" style="margin-top:0.35rem;">
+  <label class="radio-pill">
+    <input type="radio" name="chartType" value="xmr" />
+    XmR chart
+  </label>
+
+  <button id="helpChooseChartBtn" type="button" class="help-btn">
+    Help me choose
+  </button>
+</div>
+
+<details id="moreChartTypesDetails" class="more-types">
+  <summary>More chart types</summary>
+  <div class="radio-row chart-row" style="margin-top:0.4rem; flex-wrap:wrap;">
+    <label class="radio-pill"><input type="radio" name="chartType" value="c" /> C</label>
+    <label class="radio-pill"><input type="radio" name="chartType" value="p" /> P</label>
+    <label class="radio-pill"><input type="radio" name="chartType" value="u" /> U</label>
+    <label class="radio-pill"><input type="radio" name="chartType" value="xbars" /> X̄–S</label>
+    <label class="radio-pill"><input type="radio" name="chartType" value="t" /> T</label>
+    <label class="radio-pill"><input type="radio" name="chartType" value="g" /> G</label>
+  </div>
+
+  <div class="hint small-hint" style="margin-top:0.25rem;">
+    If you’re not sure, use <strong>Help me choose</strong>.
+  </div>
+</details>
+
+<div class="hint small-hint" style="margin-top:0.35rem;">
+  Run chart uses the median only. XmR adds mean, limits and sigma lines.
+</div>
+
+<!-- MR options (only relevant to XmR; JS can hide/show mrToggleRow) -->
+<div id="mrToggleRow" class="mr-inline" style="margin-top:0.5rem;">
+  <label class="mr-inline-row">
+    <input type="checkbox" id="showMRCheckbox" checked />
+    <span><strong>Show MR</strong></span>
+  </label>
+
+  <div id="mrDisplayOptions" class="mr-inline-row">
     <span class="mr-label">MR display:</span>
 
     <label class="mr-radio">
@@ -857,12 +860,46 @@ body.modal-open {
     </label>
   </div>
 </div>
+
+<hr />
+
+<strong class="field-label">X-axis type:</strong>
+<div class="radio-row">
+  <label class="radio-pill">
+    <input type="radio" name="axisType" value="date" checked />
+    Date / time
+  </label>
+  <label class="radio-pill">
+    <input type="radio" name="axisType" value="sequence" />
+    Sequence / category
+  </label>
+</div>
+
+<div class="hint small-hint" style="margin-top:0.25rem;">
+  Use <em>Date / time</em> for time-series SPC, or <em>Sequence / category</em> to plot rows in their original order.
+</div>
+
+<hr />
+
+<strong>Choose columns:</strong><br />
+
+<label><span id="xLabel">Date / X-axis column</span>:
+  <select id="dateColumn"></select>
+</label>
+
+<label><span id="yLabel">Value / Y-axis column</span>:
+  <select id="valueColumn"></select>
+</label>
+
+<div id="thirdColumnRow" style="display:none; margin-top:0.5rem;">
+  <label><span id="thirdLabel">Denominator / opportunities</span>:
+    <select id="thirdColumn"></select>
+  </label>
+  <div id="thirdHint" class="hint small-hint" style="margin-top:0.25rem;"></div>
+</div>
+
  
       </div>
-
-    </div><!-- /#columnSelectors -->
-
-  </div>
 </details>
 
 
