@@ -699,20 +699,6 @@ body.modal-open {
   white-space: nowrap;
 }
 
-/* Compact MR controls (no big grey box) */
-.mr-inline {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.mr-inline-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
 .mr-label {
   font-weight: 700;
   margin-right: 0.1rem;
@@ -733,7 +719,7 @@ body.modal-open {
 
 /* Tighten radio pill spacing a bit */
 .radio-pill {
-  padding: 0.1rem 0.1rem;   /* was probably larger */
+  padding: 0.2rem 0.2rem;   /* was probably larger */
 }
 
 .mr-check {
@@ -757,6 +743,29 @@ body.modal-open {
   white-space: nowrap;
 }
 
+/* --- Fix MR alignment inside sidebar: override .sidebar label { display:block } --- */
+.sidebar label.mr-check,
+.sidebar label.mr-radio {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 0.25rem;
+  margin-bottom: 0;          /* prevent extra vertical spacing */
+  width: auto;               /* avoid full-width label blocks */
+}
+
+/* Keep the MR display row compact and wrapping nicely */
+#mrDisplayOptions.mr-mode {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* Optional: ensure the MR section itself doesn't look like a big panel */
+#mrToggleRow.mr-compact {
+  padding: 0.25rem 0;
+  margin-top: 0.35rem;
+}
 
   </style>
 </head>
