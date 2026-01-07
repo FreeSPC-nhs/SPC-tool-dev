@@ -2309,15 +2309,24 @@ function findShiftSignals(values, cl, shiftLength) {
     if (!isFinite(v) || !isFinite(cl)) { currentRun = 0; currentSide = 0; continue; }
     const side = v > cl ? 1 : (v < cl ? -1 : 0);
     if (side === 0) { currentRun = 0; currentSide = 0; continue; }
+
     if (side === currentSide) currentRun += 1;
     else { currentSide = side; currentRun = 1; }
+
     bestRun = Math.max(bestRun, currentRun);
   }
-  return bestRun >= shiftLength ? `Shift: ≥${shiftLength} points on one side of centre line` : null;
+
+  // Plain English wording (expert-safe)
+  if (bestRun >= shiftLength) {
+    return `Shift: ${shiftLength} or more points in a row on the same side of the centre line`;
+  }
+  return null;
 }
 
+
 function findTrendSignals(values, trendLength) {
-  let inc = 1, dec = 1, bestInc = 1, bestDec = 1;
+  let inc = 1, dec = 1;
+  let bestInc = 1, bestDec = 1;
 
   for (let i = 1; i < values.length; i++) {
     const a = values[i - 1], b = values[i];
@@ -2331,10 +2340,12 @@ function findTrendSignals(values, trendLength) {
     bestDec = Math.max(bestDec, dec);
   }
 
-  if (bestInc >= trendLength) return `Trend: ≥${trendLength} increasing points`;
-  if (bestDec >= trendLength) return `Trend: ≥${trendLength} decreasing points`;
+  // Plain English wording (expert-safe)
+  if (bestInc >= trendLength) return `Trend: ${trendLength} or more points in a row steadily increasing`;
+  if (bestDec >= trendLength) return `Trend: ${trendLength} or more points in a row steadily decreasing`;
   return null;
 }
+
 
 function analyzeLimits({ labels, values, cl, ucl, lcl }) {
   const out = [];
@@ -2356,23 +2367,86 @@ function analyzeAttributeChart({ chartType, labels, values, cl, ucl, lcl }) {
 
   const clScalar = Array.isArray(cl) ? cl[0] : cl;
 
+  // 1) Points beyond limits (already supported)
   const outOfControl = analyzeLimits({ labels, values, cl, ucl, lcl });
-  if (outOfControl.some(o => o.type === "aboveUCL")) signals.push("Point(s) above UCL");
-  if (outOfControl.some(o => o.type === "belowLCL")) signals.push("Point(s) below LCL");
+  const hasAbove = outOfControl.some(o => o.type === "aboveUCL");
+  const hasBelow = outOfControl.some(o => o.type === "belowLCL");
+  if (hasAbove) signals.push("One or more points above the upper limit");
+  if (hasBelow) signals.push("One or more points below the lower limit");
 
-  const shift = findShiftSignals(values, clScalar, shiftLength);
-  if (shift) signals.push(shift);
+  // 2) Shift + Trend (now with “where to look”)
+  function findShiftWindow(values, cl, shiftLength) {
+    let run = 0;
+    let side = 0;
+    for (let i = 0; i < values.length; i++) {
+      const v = values[i];
+      if (!isFinite(v) || !isFinite(cl)) { run = 0; side = 0; continue; }
+      const s = v > cl ? 1 : (v < cl ? -1 : 0);
+      if (s === 0) { run = 0; side = 0; continue; }
 
-  const trend = findTrendSignals(values, trendLength);
-  if (trend) signals.push(trend);
+      if (s === side) run += 1;
+      else { side = s; run = 1; }
+
+      if (run >= shiftLength) {
+        const start = i - shiftLength + 1;
+        const end = i;
+        return { start, end, side };
+      }
+    }
+    return null;
+  }
+
+  function findTrendWindow(values, trendLength) {
+    let inc = 1, dec = 1;
+    for (let i = 1; i < values.length; i++) {
+      const a = values[i - 1], b = values[i];
+      if (!isFinite(a) || !isFinite(b)) { inc = 1; dec = 1; continue; }
+
+      if (b > a) { inc += 1; dec = 1; }
+      else if (b < a) { dec += 1; inc = 1; }
+      else { inc = 1; dec = 1; }
+
+      if (inc >= trendLength) return { start: i - trendLength + 1, end: i, direction: "up" };
+      if (dec >= trendLength) return { start: i - trendLength + 1, end: i, direction: "down" };
+    }
+    return null;
+  }
+
+  const shiftWindow = findShiftWindow(values, clScalar, shiftLength);
+  if (shiftWindow) {
+    const sideText = shiftWindow.side > 0 ? "above" : "below";
+    const aLab = labels?.[shiftWindow.start] ?? `point ${shiftWindow.start + 1}`;
+    const bLab = labels?.[shiftWindow.end] ?? `point ${shiftWindow.end + 1}`;
+    signals.push(`Shift: ${shiftLength}+ points in a row ${sideText} the centre line (from ${aLab} to ${bLab})`);
+  } else {
+    // Keep existing (short) signal as fallback (rarely used now)
+    const shift = findShiftSignals(values, clScalar, shiftLength);
+    if (shift) signals.push(shift);
+  }
+
+  const trendWindow = findTrendWindow(values, trendLength);
+  if (trendWindow) {
+    const dirText = trendWindow.direction === "up" ? "increasing" : "decreasing";
+    const aLab = labels?.[trendWindow.start] ?? `point ${trendWindow.start + 1}`;
+    const bLab = labels?.[trendWindow.end] ?? `point ${trendWindow.end + 1}`;
+    signals.push(`Trend: ${trendLength}+ points steadily ${dirText} (from ${aLab} to ${bLab})`);
+  } else {
+    const trend = findTrendSignals(values, trendLength);
+    if (trend) signals.push(trend);
+  }
 
   return {
     chartType,
     isStable: signals.length === 0,
     signals,
-    outOfControl
+    outOfControl,
+    // Handy to display in summaries / helper if you want
+    shiftLength,
+    trendLength,
+    firstOutOfControl: outOfControl.length ? outOfControl[0] : null
   };
 }
+
 
 function analyzeRareChart({ chartType, labels, values, cl, ucl, lcl }) {
   // Same engine, but we’ll word it differently in the summary
@@ -2386,43 +2460,84 @@ function renderAttributeSummary(a) {
   const nameMap = { c: "C chart", p: "P chart", u: "U chart" };
   const chartName = nameMap[a.chartType] || "Chart";
 
-  let html = `<h3>${chartName} interpretation</h3>`;
+  const stableLine = a.isStable
+    ? "No clear signal of change (routine ups and downs)."
+    : "A signal of change is present (worth investigating).";
+
+  let html = `<h3>${chartName} summary</h3>`;
   html += `<ul>`;
-  html += a.isStable
-    ? `<li><strong>Stability:</strong> No clear special-cause signals detected (common variation).</li>`
-    : `<li><strong>Stability:</strong> Special-cause signals detected: ${a.signals.join("; ")}.</li>`;
+  html += `<li><strong>What this suggests:</strong> ${stableLine}</li>`;
 
-  if (a.outOfControl.length) {
-    const first = a.outOfControl[0];
-    html += `<li><strong>Example:</strong> ${first.label} is ${first.type === "aboveUCL" ? "above UCL" : "below LCL"}.</li>`;
+  if (!a.isStable && Array.isArray(a.signals) && a.signals.length) {
+    html += `<li><strong>What I can see:</strong> ${a.signals.join("; ")}.</li>`;
   }
-  html += `</ul>`;
 
+  if (a.firstOutOfControl) {
+    const ex = a.firstOutOfControl;
+    const exText = ex.type === "aboveUCL"
+      ? "above the upper limit"
+      : "below the lower limit";
+    html += `<li><strong>Example to check:</strong> ${ex.label} is ${exText}.</li>`;
+  }
+
+  // Very short “what to do next” guidance (plain English)
+  html += a.isStable
+    ? `<li><strong>What to do next:</strong> If performance isn’t good enough, focus on changing the process (the system) rather than reacting to individual points.</li>`
+    : `<li><strong>What to do next:</strong> Look for a real-world explanation (process change, staffing, demand, definition/coding). If it was a planned change, you may want a new baseline after it settles.</li>`;
+
+  // Gentle chart-type hint (reduces misuse)
+  if (a.chartType === "c") {
+    html += `<li><strong>Best used when:</strong> Each time period is broadly comparable (similar time window / similar-sized service).</li>`;
+  } else if (a.chartType === "p") {
+    html += `<li><strong>Best used when:</strong> You have a number out of a total each time (a proportion or %).</li>`;
+  } else if (a.chartType === "u") {
+    html += `<li><strong>Best used when:</strong> You have a rate where the “out of how many” changes (e.g., per 1,000 bed days).</li>`;
+  }
+
+  html += `</ul>`;
   summaryDiv.innerHTML = html;
 }
+
 
 function renderRareChartSummary(a) {
   if (!summaryDiv) return;
 
   const chartName = a.chartType === "t" ? "T chart" : "G chart";
+  const stableLine = a.isStable
+    ? "No clear signal of change (routine variation)."
+    : "A signal of change is present (worth investigating).";
 
-  let html = `<h3>${chartName} interpretation</h3>`;
+  let html = `<h3>${chartName} summary</h3>`;
   html += `<ul>`;
-  html += `<li><strong>Note:</strong> Rare-event charts are skewed — limits won’t look symmetric like XmR.</li>`;
-  html += a.isStable
-    ? `<li><strong>Signals:</strong> No clear special-cause signals detected.</li>`
-    : `<li><strong>Signals:</strong> ${a.signals.join("; ")}.</li>`;
+  html += `<li><strong>What this suggests:</strong> ${stableLine}</li>`;
+  html += `<li><strong>Note:</strong> Rare-event charts are skewed, so the limits won’t look symmetrical like an XmR chart.</li>`;
 
-  if (a.outOfControl.length) {
-    const lows = a.outOfControl.filter(o => o.type === "belowLCL").length;
-    const highs = a.outOfControl.filter(o => o.type === "aboveUCL").length;
-    if (lows) html += `<li><strong>Low intervals:</strong> ${lows} point(s) below LCL (events happening “too soon”).</li>`;
-    if (highs) html += `<li><strong>High intervals:</strong> ${highs} point(s) above UCL (longer time/opportunities between events).</li>`;
+  if (!a.isStable && Array.isArray(a.signals) && a.signals.length) {
+    html += `<li><strong>What I can see:</strong> ${a.signals.join("; ")}.</li>`;
   }
-  html += `</ul>`;
 
+  if (a.firstOutOfControl) {
+    const ex = a.firstOutOfControl;
+    const exText = ex.type === "aboveUCL"
+      ? "above the upper limit"
+      : "below the lower limit";
+    html += `<li><strong>Example to check:</strong> ${ex.label} is ${exText}.</li>`;
+  }
+
+  html += `<li><strong>Interpreting “better”:</strong> If the event is something you want to avoid, longer gaps are usually better. If it’s something you want more often, shorter gaps are better.</li>`;
+
+  html += a.isStable
+    ? `<li><strong>What to do next:</strong> If you need improvement, focus on changing the system rather than reacting to individual points.</li>`
+    : `<li><strong>What to do next:</strong> Look for a real-world explanation (process change, staffing, detection/definition changes). If it was planned, consider a new baseline after it settles.</li>`;
+
+  html += a.chartType === "t"
+    ? `<li><strong>Data reminder:</strong> This chart uses the time between events (e.g., days between incidents).</li>`
+    : `<li><strong>Data reminder:</strong> This chart uses the number of opportunities between events (values should be 1 or more).</li>`;
+
+  html += `</ul>`;
   summaryDiv.innerHTML = html;
 }
+
 
 
 function updateRunSummary(points, medianIgnored, ruleHitsIgnored, baselineCountUsedIgnored) {
