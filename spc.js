@@ -2837,7 +2837,13 @@ const rangeText =
         isStable: signals.length === 0,
         // thresholds used (handy for helper explanations)
         shiftLength,
-        trendLength
+        trendLength,
+	periodIndex: idx + 1,
+ 	 	  periodCount: segments.length,
+  		  startIndex,
+  		  endIndex,
+  		  labelStart,
+  	  	  labelEnd
       };
     }
   });
@@ -4521,6 +4527,33 @@ function answerSpcQuestion(question) {
     }
 
     const a = lastXmRAnalysis;
+// If the chart has been split, talk explicitly about the latest period
+let latestPeriodPrefix = "";
+if (a && typeof a.periodCount === "number" && a.periodCount > 1) {
+  const ptsText = (typeof a.startIndex === "number" && typeof a.endIndex === "number")
+    ? `points ${a.startIndex + 1}–${a.endIndex + 1}`
+    : "";
+
+  // If x-axis is dates and labels are present, include date range too
+  let dateText = "";
+  if (typeof getAxisType === "function" && getAxisType() === "date" && a.labelStart != null && a.labelEnd != null) {
+    if (typeof formatDateOnlyLabel === "function") {
+      dateText = `${formatDateOnlyLabel(a.labelStart)} to ${formatDateOnlyLabel(a.labelEnd)}`;
+    } else {
+      dateText = `${a.labelStart} to ${a.labelEnd}`;
+    }
+  }
+
+  const bits = [];
+  bits.push(`latest period (Period ${a.periodIndex} of ${a.periodCount})`);
+  if (ptsText) bits.push(ptsText);
+  if (dateText) bits.push(dateText);
+
+  latestPeriodPrefix = `Looking at the ${bits.join(", ")}: `;
+}
+
+
+
     const stable = !!a.isStable;
 
     const signalText = stable
@@ -4537,7 +4570,7 @@ function answerSpcQuestion(question) {
     // Changed-only
     if (wantsChanged) {
       return stable
-        ? "Based on SPC rules, there isn’t a clear signal that the system has changed."
+        ? `${latestPeriodPrefix}Based on SPC rules, there isn’t a clear signal that the system has changed.`
         : `Yes — there is a signal that something may have changed. ${signalText}`;
     }
 
@@ -4582,7 +4615,7 @@ function answerSpcQuestion(question) {
       ? "Overall, this XmR chart looks stable (routine variation)."
       : "Overall, this XmR chart suggests something has changed (a signal is present).";
 
-    return `${stableText} ${signalText}`;
+    return `${latestPeriodPrefix}${stableText} ${signalText}`;
   }
 
   // ---------- C / P / U ----------
