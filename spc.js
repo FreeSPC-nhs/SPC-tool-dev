@@ -3892,7 +3892,7 @@ function drawXmRChart(points, baselineCount, labels) {
   // ----- Create chart -----
   if (currentChart) currentChart.destroy();
 
-  const { title, xLabel, yLabel } = getChartLabels("I-MR Chart", "Date", "Value");
+  const { title, xLabel, yLabel } = getChartLabels("X Chart", "Date", "Value");
 
   currentChart = new Chart(chartCanvas, {
     type: "line",
@@ -4280,20 +4280,20 @@ function renderMrChart(mrLabels, mrValues, avgMR, uclMR) {
 // ---- AI helper function  -----
 
 function answerSpcQuestion(question) {
-  const q = (question || "").trim().toLowerCase();
+  const qRaw = (question || "").trim();
+  const q = qRaw.toLowerCase();
+
   if (!q) {
     return "Please type a question about SPC or your chart (for example: “Is my process stable?”, “What is a run chart?”, or “How do control limits work?”).";
   }
 
   // --- Safe chart type detection ---
-  // (Fixes the old bug where we checked the wrong function name and could silently default.)
   const chartType =
     (typeof getSelectedChartType_NoSideEffects === "function")
       ? (getSelectedChartType_NoSideEffects() || "run")
       : ((typeof getSelectedChartType === "function") ? (getSelectedChartType() || "run") : "run");
 
   // --- Keyword matching helper (simple + predictable) ---
-  // Note: we deliberately keep this simple (no "AI guessing") for safety.
   function matchFaq(items, text) {
     for (const item of items) {
       const hit = item.keywords.some(k =>
@@ -4316,196 +4316,8 @@ function answerSpcQuestion(question) {
     });
   }
 
-  // --- Decide if this is a “My chart” interpretation request ---
-  // Keep this deliberately broad but plain-English.
-  const isMyChartQ =
-    q.includes("what is my chart telling") ||
-    q.includes("what's my chart telling") ||
-    q.includes("what is this chart telling") ||
-    q.includes("interpret") ||
-    q.includes("summary") ||
-    q.includes("stable") ||
-    q.includes("stability") ||
-    q.includes("special cause") ||
-    q.includes("signal") ||
-    q.includes("shift") ||
-    q.includes("trend") ||
-    q.includes("astronomical") ||
-    q.includes("outlier") ||
-    q.includes("beyond limits") ||
-    q.includes("outside limits") ||
-    q.includes("target") ||
-    q.includes("capability") ||
-    q.includes("improv") ||              // covers improve / improving / improvement
-    q.includes("getting better") ||
-    q.includes("better or worse") ||
-    q.includes("worse") ||
-    q.includes("has it changed") ||
-    q.includes("has something changed") ||
-    q.includes("changed") ||
-    q.includes("what decision");
-
   // ============================================================
-  // 1) Tailored “My chart” interpretation (only if asked)
-  // ============================================================
-  if (isMyChartQ) {
-    // ---------- RUN ----------
-    if (chartType === "run") {
-      if (!lastRunAnalysis) {
-        return "I can interpret your run chart once you generate one. Please create a Run chart first, then ask me about stability, shifts, trends, or unusual points.";
-      }
-
-      const a = lastRunAnalysis;
-      const signals = [];
-      if (a.hasShift) signals.push("a sustained shift (a long run on one side of the median)");
-      if (a.hasTrend) signals.push("a sustained trend (values steadily increasing or decreasing)");
-      if (a.hasAstronomical) signals.push("an unusually extreme point (something that stands out and is worth checking)");
-
-      const stableText = a.isStable
-        ? "Overall, this run chart looks stable (routine variation)."
-        : "Overall, this run chart suggests something has changed (a signal is present).";
-
-      const signalText = (signals.length === 0)
-        ? "I can’t see a clear signal of change using the standard run chart rules."
-        : `Signals I can see: ${signals.join("; ")}.`;
-
-      return `${stableText} ${signalText}`;
-    }
-
-    // ---------- XMR ----------
-    if (chartType === "xmr") {
-      if (!lastXmRAnalysis) {
-        return "I can interpret your XmR chart once you generate one. Please create an XmR chart first, then ask me about stability, signals, control limits, targets, or capability.";
-      }
-
-      const a = lastXmRAnalysis;
-      const stable = (Array.isArray(a.signals) ? a.signals.length : 0) === 0;
-
-      const stableText = stable
-        ? "Overall, this XmR chart looks stable (routine variation)."
-        : "Overall, this XmR chart suggests something has changed (a signal is present).";
-
-      const signalText = stable
-        ? "I can’t see a clear signal of change using the standard SPC rules."
-        : `Signals I can see: ${(a.signals || []).join("; ")}.`;
-
-      // Target wording: keep plain English and avoid implying targets are always appropriate
-      let targetText = "";
-      if (a.target != null && a.direction) {
-        const dirText = a.direction === "above" ? "at or above" : "at or below";
-        targetText = ` A target is set (${dirText} is better).`;
-      }
-
-      // Capability wording: keep simple + add “rough estimate” safety rail
-      let capText = "";
-      if (q.includes("capability")) {
-        if (a.capability && typeof a.capability === "object") {
-          capText =
-            " Capability is a rough check of how often the system is likely to meet your target if it stays stable. " +
-            "It works best when the chart is stable and the day-to-day variation is fairly consistent.";
-        } else {
-          capText =
-            " I can estimate capability when a target is set. Add a target (and whether higher or lower is better), then ask again.";
-        }
-      }
-
-      return `${stableText} ${signalText}${targetText}${capText}`;
-    }
-
-    // ---------- C / P / U (attribute charts) ----------
-    if (chartType === "c" || chartType === "p" || chartType === "u") {
-      if (!lastAttributeAnalysis) {
-        return "I can interpret your chart once you generate it. Please create the chart first, then ask me what it’s telling you.";
-      }
-
-      const a = lastAttributeAnalysis;
-      const stableText = a.isStable
-        ? "Overall, this chart looks stable (routine ups and downs)."
-        : "Overall, this chart suggests something has changed (a signal is present).";
-
-      const humanSignals = humaniseSignals(a.signals);
-      const signalText = (humanSignals.length === 0)
-        ? "I can’t see any points outside the expected limits."
-        : `What I can see: ${humanSignals.join("; ")}.`;
-
-      // Gentle “data requirement” hints (non-technical)
-      let hint = "";
-      if (chartType === "c") {
-        hint = " This chart is best when each time period is broadly comparable (like similar time windows or similar-sized services).";
-      } else if (chartType === "p") {
-        hint = " This chart is for percentages/proportions (it needs a number out of a total each time).";
-      } else if (chartType === "u") {
-        hint = " This chart is for rates when the ‘out of how many’ changes (for example per 1,000 bed days).";
-      }
-
-      return `${stableText} ${signalText}${hint}`;
-    }
-
-    // ---------- X̄–S ----------
-    if (chartType === "xbars") {
-      if (!lastXbarSAnalysis || !lastXbarSAnalysis.xbar || !lastXbarSAnalysis.s) {
-        return "I can interpret your X̄–S chart once you generate it. Please create the chart first, then ask me what it’s telling you.";
-      }
-
-      const xbar = lastXbarSAnalysis.xbar;
-      const s = lastXbarSAnalysis.s;
-
-      const xSignals = humaniseSignals(xbar.signals);
-      const sSignals = humaniseSignals(s.signals);
-
-      const anySignals = (xSignals.length + sSignals.length) > 0;
-
-      const stableText = anySignals
-        ? "Overall, this X̄–S chart suggests something may have changed (a signal is present)."
-        : "Overall, this X̄–S chart looks stable (routine variation).";
-
-      const xText = (xSignals.length === 0)
-        ? "X̄ chart: no points outside the expected limits."
-        : `X̄ chart: ${xSignals.join("; ")}.`;
-
-      const sText = (sSignals.length === 0)
-        ? "S chart: no points outside the expected limits."
-        : `S chart: ${sSignals.join("; ")}.`;
-
-      const hint =
-        " A quick tip: the X̄ chart shows changes in the average, and the S chart shows changes in how spread-out the data are.";
-
-      return `${stableText} ${xText} ${sText}${hint}`;
-    }
-
-    // ---------- T / G (rare event charts) ----------
-    if (chartType === "t" || chartType === "g") {
-      if (!lastRareAnalysis) {
-        return "I can interpret your chart once you generate it. Please create the chart first, then ask me what it’s telling you.";
-      }
-
-      const a = lastRareAnalysis;
-      const stableText = a.isStable
-        ? "Overall, this chart looks stable (routine variation)."
-        : "Overall, this chart suggests something has changed (a signal is present).";
-
-      const humanSignals = humaniseSignals(a.signals);
-      const signalText = (humanSignals.length === 0)
-        ? "I can’t see any points outside the expected limits."
-        : `What I can see: ${humanSignals.join("; ")}.`;
-
-      const directionCaveat =
-        " A note on “better”: if the event is something you want to avoid, longer gaps are usually good. If it’s something you want to happen more often, then shorter gaps are good.";
-
-      const dataHint =
-        (chartType === "t")
-          ? " This chart works from the time between events (for example, days between incidents)."
-          : " This chart works from the number of opportunities between events (the values should be 1 or more).";
-
-      return `${stableText} ${signalText}${directionCaveat}${dataHint}`;
-    }
-
-    // If we get here, we didn’t recognise the chart type
-    return "I can interpret your chart, but I’m not sure which chart type is selected. Try generating the chart again, then ask “What is my chart telling me?”";
-  }
-
-  // ============================================================
-  // 2) General SPC FAQ responses (only when NOT “My chart”)
+  // 1) General SPC FAQ responses FIRST (prevents mis-routing)
   // ============================================================
 
   const generalFaq = [
@@ -4522,6 +4334,19 @@ function answerSpcQuestion(question) {
         "Common cause variation is the normal, everyday ups and downs you expect from a system that hasn’t changed. " +
         "Special cause variation is a signal that something different may be happening (for example, a change in process, staffing, demand, or measurement). " +
         "SPC helps you avoid over-reacting to normal noise, and helps you spot genuine change earlier."
+    },
+    {
+      keywords: ["what does stable mean", "what is stable", ["stable", "mean"]],
+      answer:
+        "Stable means the chart shows only routine ups and downs — no clear signal that the system has changed. " +
+        "If a chart is stable, the best way to improve results is usually to change the system, not chase individual high/low points."
+    },
+    {
+      keywords: ["control limits", "how do control limits work", ["control", "limits"]],
+      answer:
+        "Control limits are calculated from your data to show the range you would normally expect from routine variation. " +
+        "They are not targets, and they are not the same as a ‘good’ or ‘bad’ threshold. " +
+        "A point outside the limits is a strong signal that something may have changed."
     },
     {
       keywords: ["how do i choose the right chart", "choose chart", ["choose", "chart"], ["which", "chart"]],
@@ -4548,24 +4373,23 @@ function answerSpcQuestion(question) {
         "The chart then draws control limits so you can spot signals of real change."
     },
 
-    // --- Chart type explainers (tight keywords to avoid false matches) ---
-
+    // Chart type explainers (keywords tightened to reduce false matches)
     {
       keywords: ["c chart", "c-chart", ["count", "chart"], ["counts", "chart"]],
       answer:
         "A C chart is for counting how many times something happened in each time period (for example, incidents per week). " +
         "It works best when each time period is broadly comparable (like similar time windows or similar-sized services). " +
-        "If you see points outside the limits, that suggests the system may have changed."
+        "Points outside the limits suggest something may have changed."
     },
     {
-      keywords: ["p chart", "p-chart", ["percentage", "chart"], ["proportion", "chart"], ["rate", "out of"], ["out of", "total"]],
+      keywords: ["p chart", "p-chart", ["percentage", "chart"], ["proportion", "chart"], ["out of", "total"]],
       answer:
         "A P chart is for percentages or proportions — a number out of a total each time (for example, % of patients seen within 4 hours). " +
         "It takes the changing total into account, so weeks with smaller or larger totals are handled fairly. " +
         "Points outside the limits suggest something may have changed."
     },
     {
-      keywords: ["u chart", "u-chart", ["per", "bed day"], ["per", "1000"], ["rate", "chart"]],
+      keywords: ["u chart", "u-chart", ["rate", "chart"], ["per", "1000"], ["per", "bed day"]],
       answer:
         "A U chart is for rates when the ‘out of how many’ changes over time (for example, falls per 1,000 bed days). " +
         "It uses both the count and the size of the opportunity each time. " +
@@ -4592,19 +4416,6 @@ function answerSpcQuestion(question) {
     },
 
     {
-      keywords: ["what does stable mean", "what is stable", ["stable", "mean"]],
-      answer:
-        "Stable means the chart shows only routine ups and downs — no clear signal that the system has changed. " +
-        "If a chart is stable, the best way to improve results is usually to change the system, not chase individual high/low points."
-    },
-    {
-      keywords: ["control limits", "how do control limits work", ["control", "limits"]],
-      answer:
-        "Control limits are calculated from your data to show the range you would normally expect from routine variation. " +
-        "They are not targets, and they are not the same as a ‘good’ or ‘bad’ threshold. " +
-        "A point outside the limits is a strong signal that something may have changed."
-    },
-    {
       keywords: ["target", "what is a target", ["use", "target"]],
       answer:
         "A target is the performance level you are aiming for. In SPC, targets are most useful when they help decision-making (for example, “are we reliably meeting the standard?”). " +
@@ -4618,12 +4429,270 @@ function answerSpcQuestion(question) {
     }
   ];
 
+  // IMPORTANT: FAQs get first refusal. This fixes your screenshots.
   const generalHit = matchFaq(generalFaq, q);
   if (generalHit) return generalHit;
 
-  // Fallback
-  return "I can help with general SPC questions (like “What is SPC?”) or with interpreting your chart (try “What is my chart telling me?”).";
+  // ============================================================
+  // 2) “My chart” interpretation (only after FAQ did NOT match)
+  // ============================================================
+
+  const hasAnyChartAnalysis =
+    !!lastRunAnalysis ||
+    !!lastXmRAnalysis ||
+    !!lastAttributeAnalysis ||
+    !!lastRareAnalysis ||
+    !!lastXbarSAnalysis;
+
+  // If there is no chart yet, don't try to interpret
+  if (!hasAnyChartAnalysis) {
+    return "I can answer general SPC questions now. If you want an interpretation of your chart, generate a chart first, then ask: “What is my chart telling me?”";
+  }
+
+  // Intent detection for My-chart questions
+  const wantsStable = q.includes("stable") || q.includes("stability");
+  const wantsChanged = q.includes("changed") || q.includes("has it changed") || q.includes("has something changed");
+  const wantsDecision = q.includes("what decision") || q.includes("what should i do") || q.includes("what should we do") || q.includes("what action");
+  const wantsTarget = q.includes("target");
+  const wantsCapability = q.includes("capability");
+  const wantsBetterWorse = q.includes("getting better") || q.includes("better or worse") || q.includes("improv") || q.includes("worse");
+  const wantsOverview =
+    q.includes("what is my chart telling") ||
+    q.includes("what's my chart telling") ||
+    q.includes("interpret") ||
+    q.includes("summary") ||
+    q.includes("signal") ||
+    q.includes("special cause") ||   // NOTE: Now safe because FAQs already matched before this point
+    q.includes("shift") ||
+    q.includes("trend") ||
+    q.includes("astronomical") ||
+    q.includes("outlier") ||
+    q.includes("outside limits") ||
+    q.includes("beyond limits");
+
+  const isMyChartQ = wantsStable || wantsChanged || wantsDecision || wantsTarget || wantsCapability || wantsBetterWorse || wantsOverview;
+
+  if (!isMyChartQ) {
+    return "I can help with general SPC questions or with interpreting your chart. Try: “What is my chart telling me?”";
+  }
+
+  // ---------- RUN ----------
+  if (chartType === "run") {
+    if (!lastRunAnalysis) {
+      return "I can interpret your run chart once you generate one. Please create a Run chart first, then ask me about stability, shifts, trends, or unusual points.";
+    }
+
+    const a = lastRunAnalysis;
+    const signals = [];
+    if (a.hasShift) signals.push("a sustained shift (a long run on one side of the median)");
+    if (a.hasTrend) signals.push("a sustained trend (values steadily increasing or decreasing)");
+    if (a.hasAstronomical) signals.push("an unusually extreme point (something that stands out and is worth checking)");
+
+    const stable = !!a.isStable;
+
+    if (wantsStable) {
+      return stable
+        ? "Your run chart looks stable — it shows routine ups and downs with no clear signal of change."
+        : "Your run chart does not look stable — there is at least one signal that something may have changed.";
+    }
+
+    if (wantsDecision) {
+      return stable
+        ? "Because the run chart looks stable, avoid reacting to individual high/low points. If results aren’t good enough, focus on changing the system (process changes) rather than firefighting."
+        : "Because there is a signal of change, the next step is to look for a real-world explanation (a change in process, demand, staffing, measurement, etc.). If the change was planned, consider re-baselining after the change has settled.";
+    }
+
+    // Default overview
+    const stableText = stable
+      ? "Overall, this run chart looks stable (routine variation)."
+      : "Overall, this run chart suggests something has changed (a signal is present).";
+
+    const signalText = (signals.length === 0)
+      ? "I can’t see a clear signal of change using the standard run chart rules."
+      : `Signals I can see: ${signals.join("; ")}.`;
+
+    return `${stableText} ${signalText}`;
+  }
+
+  // ---------- XMR ----------
+  if (chartType === "xmr") {
+    if (!lastXmRAnalysis) {
+      return "I can interpret your XmR chart once you generate one. Please create an XmR chart first, then ask me about stability, signals, control limits, targets, or capability.";
+    }
+
+    const a = lastXmRAnalysis;
+    const stable = !!a.isStable;
+
+    const signalText = stable
+      ? "I can’t see a clear signal of change using the standard SPC rules."
+      : `Signals I can see: ${(a.signals || []).join("; ")}.`;
+
+    // Stable-only
+    if (wantsStable) {
+      return stable
+        ? "Your XmR chart looks stable — it shows routine variation with no clear signal of change."
+        : `Your XmR chart does not look stable — there is at least one signal that something may have changed. ${signalText}`;
+    }
+
+    // Changed-only
+    if (wantsChanged) {
+      return stable
+        ? "Based on SPC rules, there isn’t a clear signal that the system has changed."
+        : `Yes — there is a signal that something may have changed. ${signalText}`;
+    }
+
+    // Decision / what to do
+    if (wantsDecision) {
+      return stable
+        ? "Because the chart looks stable, avoid reacting to individual high/low points. If performance isn’t good enough, focus on changing the process (the system), then look for a new stable level."
+        : "Because there is a signal, look for a real-world reason (process change, staffing, demand, coding/definition changes). If it was a planned change, you may want to set a new baseline after it settles.";
+    }
+
+    // Better/worse (plain language, cautious)
+    if (wantsBetterWorse) {
+      if (!a.direction) {
+        return "To judge “better or worse” you need to decide which direction is better (for example, lower waiting time is better; higher % compliance is better). Once that’s set, a sustained shift/trend in the right direction suggests improvement.";
+      }
+      const dirText = a.direction === "above" ? "higher is better" : "lower is better";
+      return `To judge improvement, use your chosen direction (${dirText}). If the chart shows a sustained shift or trend in the “better” direction, that suggests improvement. ${signalText}`;
+    }
+
+    // Target / capability
+    if (wantsTarget || wantsCapability) {
+      if (a.target == null || !a.direction) {
+        return "I can comment on a target once a target is set (and whether higher or lower is better). Add a target, then ask again.";
+      }
+
+      const dirText = a.direction === "above" ? "at or above" : "at or below";
+      let cap = "";
+      if (a.capability && typeof a.capability.prob === "number" && isFinite(a.capability.prob)) {
+        const pct = Math.round(a.capability.prob * 100);
+        cap =
+          ` If the system stays stable, a rough estimate is that you would meet the target about ${pct}% of the time. ` +
+          "This is most meaningful when the chart is stable and the usual variation is fairly consistent.";
+      } else {
+        cap = " Capability can’t be estimated right now (usually because there isn’t enough information or the variation estimate isn’t valid).";
+      }
+
+      return `Your target is set to ${dirText} ${a.target}. ${cap}`;
+    }
+
+    // Default overview (for “what is my chart telling me?”)
+    const stableText = stable
+      ? "Overall, this XmR chart looks stable (routine variation)."
+      : "Overall, this XmR chart suggests something has changed (a signal is present).";
+
+    return `${stableText} ${signalText}`;
+  }
+
+  // ---------- C / P / U ----------
+  if (chartType === "c" || chartType === "p" || chartType === "u") {
+    if (!lastAttributeAnalysis) {
+      return "I can interpret your chart once you generate it. Please create the chart first, then ask me what it’s telling you.";
+    }
+
+    const a = lastAttributeAnalysis;
+    const stable = !!a.isStable;
+    const humanSignals = humaniseSignals(a.signals);
+
+    if (wantsStable || wantsChanged) {
+      return stable
+        ? "Your chart looks stable — routine ups and downs with no points outside the expected limits."
+        : `Your chart does not look stable — there is at least one point outside the expected limits (${humanSignals.join("; ")}).`;
+    }
+
+    if (wantsDecision) {
+      return stable
+        ? "Because the chart looks stable, avoid reacting to individual high/low points. If you need better performance, focus on changing the system."
+        : "Because there is a signal, look for a real-world explanation (process, demand, measurement/definition changes). If it was planned, consider a new baseline after it settles.";
+    }
+
+    const stableText = stable
+      ? "Overall, this chart looks stable (routine ups and downs)."
+      : "Overall, this chart suggests something has changed (a signal is present).";
+
+    const signalText = (humanSignals.length === 0)
+      ? "I can’t see any points outside the expected limits."
+      : `What I can see: ${humanSignals.join("; ")}.`;
+
+    return `${stableText} ${signalText}`;
+  }
+
+  // ---------- X̄–S ----------
+  if (chartType === "xbars") {
+    if (!lastXbarSAnalysis || !lastXbarSAnalysis.xbar || !lastXbarSAnalysis.s) {
+      return "I can interpret your X̄–S chart once you generate it. Please create the chart first, then ask me what it’s telling you.";
+    }
+
+    const xbar = lastXbarSAnalysis.xbar;
+    const s = lastXbarSAnalysis.s;
+
+    const xSignals = humaniseSignals(xbar.signals);
+    const sSignals = humaniseSignals(s.signals);
+
+    const anySignals = (xSignals.length + sSignals.length) > 0;
+
+    if (wantsStable || wantsChanged) {
+      return anySignals
+        ? "Your X̄–S chart does not look stable — there is at least one signal on the X̄ chart and/or the S chart."
+        : "Your X̄–S chart looks stable — no points outside expected limits on either chart.";
+    }
+
+    const stableText = anySignals
+      ? "Overall, this X̄–S chart suggests something may have changed (a signal is present)."
+      : "Overall, this X̄–S chart looks stable (routine variation).";
+
+    const xText = (xSignals.length === 0)
+      ? "X̄ chart: no points outside the expected limits."
+      : `X̄ chart: ${xSignals.join("; ")}.`;
+
+    const sText = (sSignals.length === 0)
+      ? "S chart: no points outside the expected limits."
+      : `S chart: ${sSignals.join("; ")}.`;
+
+    return `${stableText} ${xText} ${sText} A quick tip: the X̄ chart shows changes in the average, and the S chart shows changes in how spread-out the data are.`;
+  }
+
+  // ---------- T / G ----------
+  if (chartType === "t" || chartType === "g") {
+    if (!lastRareAnalysis) {
+      return "I can interpret your chart once you generate it. Please create the chart first, then ask me what it’s telling you.";
+    }
+
+    const a = lastRareAnalysis;
+    const stable = !!a.isStable;
+    const humanSignals = humaniseSignals(a.signals);
+
+    if (wantsStable || wantsChanged) {
+      return stable
+        ? "Your chart looks stable — routine variation with no points outside expected limits."
+        : `Your chart does not look stable — there is at least one point outside expected limits (${humanSignals.join("; ")}).`;
+    }
+
+    if (wantsDecision) {
+      return stable
+        ? "Because the chart looks stable, avoid reacting to individual points. If you want better performance, focus on changing the system."
+        : "Because there is a signal, look for a real-world explanation (process change, staffing, measurement changes). If it was planned, consider a new baseline after it settles.";
+    }
+
+    const stableText = stable
+      ? "Overall, this chart looks stable (routine variation)."
+      : "Overall, this chart suggests something has changed (a signal is present).";
+
+    const signalText = (humanSignals.length === 0)
+      ? "I can’t see any points outside the expected limits."
+      : `What I can see: ${humanSignals.join("; ")}.`;
+
+    const directionCaveat =
+      " A note on “better”: if the event is something you want to avoid, longer gaps are usually good. If it’s something you want to happen more often, then shorter gaps are good.";
+
+    return `${stableText} ${signalText}${directionCaveat}`;
+  }
+
+  return "I can interpret your chart, but I’m not sure which chart type is selected. Try generating the chart again, then ask: “What is my chart telling me?”";
 }
+
+
 
 function renderHelperState() {
   if (!spcHelperIntro) return;
