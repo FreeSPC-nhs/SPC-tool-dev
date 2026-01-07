@@ -4282,129 +4282,42 @@ function renderMrChart(mrLabels, mrValues, avgMR, uclMR) {
 function answerSpcQuestion(question) {
   const q = (question || "").trim().toLowerCase();
   if (!q) {
-    return "Please type a question about SPC or your chart (for example: \"Is the process stable?\" or \"What is a moving range chart?\").";
+    return "Please type a question about SPC or your chart (for example: “Is my process stable?”, “What is a run chart?”, or “How do control limits work?”).";
   }
 
-  // Helper to match simple keyword / phrase based FAQs
-function matchFaq(items, text) {
-  for (const item of items) {
-    const hit = item.keywords.some(k =>
-      Array.isArray(k)
-        ? k.every(word => text.includes(word))
-        : (typeof k === "string" && text.includes(k))
-    );
+  // --- Safe chart type detection ---
+  // (Fixes the old bug where we checked the wrong function name and could silently default.)
+  const chartType =
+    (typeof getSelectedChartType_NoSideEffects === "function")
+      ? (getSelectedChartType_NoSideEffects() || "run")
+      : ((typeof getSelectedChartType === "function") ? (getSelectedChartType() || "run") : "run");
 
-    if (hit) return item.answer;
+  // --- Keyword matching helper (simple + predictable) ---
+  // Note: we deliberately keep this simple (no "AI guessing") for safety.
+  function matchFaq(items, text) {
+    for (const item of items) {
+      const hit = item.keywords.some(k =>
+        Array.isArray(k)
+          ? k.every(word => text.includes(word))
+          : (typeof k === "string" && text.includes(k))
+      );
+      if (hit) return item.answer;
+    }
+    return null;
   }
-  return null;
-}
 
+  // Convert internal signal labels into plain English
+  function humaniseSignals(signals) {
+    if (!Array.isArray(signals) || signals.length === 0) return [];
+    return signals.map(s => {
+      if (s === "Point(s) above UCL") return "one or more points above the upper limit";
+      if (s === "Point(s) below LCL") return "one or more points below the lower limit";
+      return s;
+    });
+  }
 
-  // ----- 0. Conceptual SPC knowledge (no chart needed at all) -----
-  // (Kept: same topics + same style as your current helper)
-  const conceptualFaq = [
-    {
-      keywords: [
-        "what is spc",
-        "what is an spc",
-        "what is a spc",
-        "what is an spc chart",
-        "what is a spc chart",
-        "what are spc charts",
-        "what is statistical process control",
-        "spc chart",
-        "control chart",
-        ["statistical", "process", "control"]
-      ],
-      answer:
-        "Statistical Process Control (SPC) is a way of using time-series charts to separate routine \"common-cause\" variation from unusual \"special-cause\" variation. " +
-        "An SPC or control chart plots your measure over time, shows a typical average, and adds upper and lower control limits that represent the range you would expect if the system is stable. " +
-        "When the pattern of points breaks simple rules (for example a point outside the limits or a long run of points on one side of the average), this is treated as a signal that the system may have changed."
-    },
-    {
-      keywords: [
-        "what is a run chart",
-        "what is run chart",
-        "run chart",
-        ["what", "run chart"]
-      ],
-      answer:
-        "A run chart is a simple time-series chart that shows your data in order with a median line. " +
-        "It uses basic run and trend rules (such as long runs of points on one side of the median or steady upward or downward trends) to highlight possible special-cause variation even without formal control limits."
-    }
-  ];
-
-  const conceptualHit = matchFaq(conceptualFaq, q);
-  if (conceptualHit) return conceptualHit;
-
-  // ----- 1. General SPC FAQs (can be answered without your specific chart) -----
-  // (Kept: includes MR, XmR, limits, sigma, rules/signals, capability, baseline/splits)
-  const generalFaq = [
-    {
-      keywords: [
-        "moving range", "mr chart", "m-r chart",
-        "use the moving range", "interpret the moving range",
-        ["moving", "range"]
-      ],
-      answer:
-        "A moving range (MR) chart shows how much each value changes from one point to the next. " +
-        "On an XmR chart, the X chart shows the individual values over time and the MR chart shows the absolute difference between consecutive values. " +
-        "If the moving ranges are mostly small and within their limits, the short-term variation looks stable. Large spikes in the moving range can indicate a one-off shock or a change in how the process behaves."
-    },
-    {
-      keywords: ["xmr", "xm r", "i-mr", "individuals chart", "individual chart"],
-      answer:
-        "An XmR chart (also called an Individuals and Moving Range chart, or I-MR) is used when you have one value per time period, such as daily admissions, length of stay per day, or time for a single patient. " +
-        "The X chart shows the individual values with a centre line and control limits. The MR chart shows the size of the step between each pair of consecutive points. " +
-        "The average moving range is used to estimate the underlying variation (sigma), which then gives the control limits on the X chart."
-    },
-    {
-      keywords: ["control limit", "control limits", "ucl", "lcl"],
-      answer:
-        "Control limits show the range of values you would expect to see from a stable process just due to routine variation. " +
-        "They are not targets and they are not hard performance thresholds. Points outside the limits or unusual patterns inside the limits suggest special-cause variation that may be worth investigating."
-    },
-    {
-      keywords: ["sigma", "standard deviation", "spread of the data"],
-      answer:
-        "In SPC, sigma is an estimate of the usual spread of the process. On an XmR chart, sigma is estimated from the average moving range between consecutive points. " +
-        "Control limits are typically placed at plus or minus three sigma from the mean. A larger sigma means a wider spread of routine variation."
-    },
-    {
-      keywords: ["common cause", "special cause", "variation"],
-      answer:
-        "Common-cause variation is the natural background noise of a stable system. Special-cause variation is a signal that the system may have changed, for example due to a new policy, a change in demand, or a data issue. " +
-        "SPC helps you distinguish common-cause from special-cause variation so that you can avoid over-reacting to noise while still spotting real changes."
-    },
-    {
-      keywords: ["run rule", "run rules", "spc rule", "spc rules", "signal", "signals"],
-      answer:
-        "SPC rules are simple patterns that are unlikely to occur if the process is stable. Examples include a point outside the control limits, a long run of points on one side of the mean, or a long trend of points steadily increasing or decreasing. " +
-        "When one of these patterns appears, it is treated as a potential special-cause signal that may be worth investigating."
-    },
-    {
-      keywords: ["capability", "capable process", "process capability"],
-      answer:
-        "Capability in this context is about the chance that future points will meet a chosen target, assuming the process stays stable and is approximately normally distributed. " +
-        "If the process is stable, we can estimate the mean and sigma and then work out the percentage of future points likely to fall above or below a target threshold."
-    },
-    {
-      keywords: ["baseline", "phase", "segment", "split the chart", "split"],
-      answer:
-        "Splitting an SPC chart into phases (baselines) lets you compare the process before and after a known change, such as a new pathway or intervention. " +
-        "Each segment gets its own mean and control limits so you can see whether the system has shifted, rather than averaging everything together."
-    }
-  ];
-
-  const generalHit = matchFaq(generalFaq, q);
-  if (generalHit) return generalHit;
-
-  // ----- 2. Chart-specific interpretation (Run + XmR) -----
-  const chartType = (typeof getSelectedChartType === "function")
-    ? getSelectedChartType_NoSideEffects()
-
-    : "xmr";
-
+  // --- Decide if this is a “My chart” interpretation request ---
+  // Keep this deliberately broad but plain-English.
   const isMyChartQ =
     q.includes("what is my chart telling") ||
     q.includes("what's my chart telling") ||
@@ -4422,120 +4335,306 @@ function matchFaq(items, text) {
     q.includes("beyond limits") ||
     q.includes("outside limits") ||
     q.includes("target") ||
-    q.includes("capability");
+    q.includes("capability") ||
+    q.includes("improv") ||              // covers improve / improving / improvement
+    q.includes("getting better") ||
+    q.includes("better or worse") ||
+    q.includes("worse") ||
+    q.includes("has it changed") ||
+    q.includes("has something changed") ||
+    q.includes("changed") ||
+    q.includes("what decision");
 
-  // --- Run chart interpretation ---
-  if (chartType === "run") {
-    if (!lastRunAnalysis) {
-      return "I can interpret your run chart once you generate one. Please create a Run chart first, then ask about stability, shifts, trends, or unusual points.";
-    }
+  // ============================================================
+  // 1) Tailored “My chart” interpretation (only if asked)
+  // ============================================================
+  if (isMyChartQ) {
+    // ---------- RUN ----------
+    if (chartType === "run") {
+      if (!lastRunAnalysis) {
+        return "I can interpret your run chart once you generate one. Please create a Run chart first, then ask me about stability, shifts, trends, or unusual points.";
+      }
 
-    const a = lastRunAnalysis;
+      const a = lastRunAnalysis;
+      const signals = [];
+      if (a.hasShift) signals.push("a sustained shift (a long run on one side of the median)");
+      if (a.hasTrend) signals.push("a sustained trend (values steadily increasing or decreasing)");
+      if (a.hasAstronomical) signals.push("an unusually extreme point (something that stands out and is worth checking)");
 
-    const signals = [];
-    if (a.hasShift) signals.push("a sustained shift (a long run on one side of the median)");
-    if (a.hasTrend) signals.push("a sustained trend (values steadily increasing or decreasing)");
-    if (a.hasAstronomical) signals.push("an unusually extreme point that stands out from the rest of the data and merits investigation");
-
-    if (isMyChartQ) {
       const stableText = a.isStable
         ? "Overall, this run chart looks stable (routine variation)."
-        : "Overall, this run chart suggests special-cause variation (something likely changed).";
+        : "Overall, this run chart suggests something has changed (a signal is present).";
 
       const signalText = (signals.length === 0)
-        ? "No clear special-cause signals were detected."
-        : `Signals detected: ${signals.join("; ")}.`;
+        ? "I can’t see a clear signal of change using the standard run chart rules."
+        : `Signals I can see: ${signals.join("; ")}.`;
 
-      return `${stableText} ${signalText} Use this as a prompt to look for what changed around those time periods (process change, demand, coding/measurement changes, etc.).`;
+      return `${stableText} ${signalText}`;
     }
 
-    // Targeted questions
-    if (q.includes("shift")) return a.hasShift ? "Yes — a sustained shift is present." : "No — no sustained shift was detected.";
-    if (q.includes("trend")) return a.hasTrend ? "Yes — a sustained trend is present." : "No — no sustained trend was detected.";
-    if (q.includes("astronomical") || q.includes("outlier") || q.includes("unusual")) {
-      return a.hasAstronomical ? "Yes — there is at least one unusually extreme (astronomical) point." : "No — no unusually extreme (astronomical) points were detected.";
-    }
-    if (q.includes("stable")) return a.isStable ? "This run chart looks stable overall." : "This run chart does not look stable overall (special-cause signals are present).";
+    // ---------- XMR ----------
+    if (chartType === "xmr") {
+      if (!lastXmRAnalysis) {
+        return "I can interpret your XmR chart once you generate one. Please create an XmR chart first, then ask me about stability, signals, control limits, targets, or capability.";
+      }
 
-    return (signals.length === 0)
-      ? "No clear special-cause signals were detected on the run chart."
-      : `Special-cause signals detected on the run chart: ${signals.join("; ")}.`;
-  }
+      const a = lastXmRAnalysis;
+      const stable = (Array.isArray(a.signals) ? a.signals.length : 0) === 0;
 
-  // --- XmR chart interpretation ---
-  if (chartType === "xmr") {
-    if (!lastXmRAnalysis) {
-      return "I can interpret your XmR chart once you generate one. Please create an XmR chart first, then ask about stability, signals, control limits, target performance or capability.";
-    }
-
-    const a = lastXmRAnalysis;
-    const signals = Array.isArray(a.signals) ? a.signals : [];
-    const stable = !!a.isStable;
-
-    if (isMyChartQ) {
       const stableText = stable
         ? "Overall, this XmR chart looks stable (routine variation)."
-        : "Overall, this XmR chart suggests special-cause variation (something likely changed).";
+        : "Overall, this XmR chart suggests something has changed (a signal is present).";
 
-      const signalText = (signals.length === 0)
-        ? "No special-cause signals were detected."
-        : `Signals detected: ${signals.join("; ")}.`;
+      const signalText = stable
+        ? "I can’t see a clear signal of change using the standard SPC rules."
+        : `Signals I can see: ${(a.signals || []).join("; ")}.`;
 
-      // Keep it simple but useful
+      // Target wording: keep plain English and avoid implying targets are always appropriate
       let targetText = "";
       if (a.target != null && a.direction) {
         const dirText = a.direction === "above" ? "at or above" : "at or below";
         targetText = ` A target is set (${dirText} is better).`;
+      }
 
-        if (stable && a.capability && typeof a.capability.prob === "number") {
-          targetText += ` If the process stays stable, about ${(a.capability.prob * 100).toFixed(1)}% of future points are expected to meet the target.`;
-        } else if (!stable) {
-          targetText += " Because special-cause signals are present, any capability estimate is unreliable until the process is stable.";
+      // Capability wording: keep simple + add “rough estimate” safety rail
+      let capText = "";
+      if (q.includes("capability")) {
+        if (a.capability && typeof a.capability === "object") {
+          capText =
+            " Capability is a rough check of how often the system is likely to meet your target if it stays stable. " +
+            "It works best when the chart is stable and the day-to-day variation is fairly consistent.";
+        } else {
+          capText =
+            " I can estimate capability when a target is set. Add a target (and whether higher or lower is better), then ask again.";
         }
       }
 
-      return `${stableText} ${signalText}${targetText}`;
+      return `${stableText} ${signalText}${targetText}${capText}`;
     }
 
-    if (q.includes("stable")) {
-      return stable
-        ? "This XmR chart looks stable overall (no special-cause signals detected)."
-        : `This XmR chart does not look stable overall. ${signals.length ? "Signals: " + signals.join("; ") + "." : ""}`;
+    // ---------- C / P / U (attribute charts) ----------
+    if (chartType === "c" || chartType === "p" || chartType === "u") {
+      if (!lastAttributeAnalysis) {
+        return "I can interpret your chart once you generate it. Please create the chart first, then ask me what it’s telling you.";
+      }
+
+      const a = lastAttributeAnalysis;
+      const stableText = a.isStable
+        ? "Overall, this chart looks stable (routine ups and downs)."
+        : "Overall, this chart suggests something has changed (a signal is present).";
+
+      const humanSignals = humaniseSignals(a.signals);
+      const signalText = (humanSignals.length === 0)
+        ? "I can’t see any points outside the expected limits."
+        : `What I can see: ${humanSignals.join("; ")}.`;
+
+      // Gentle “data requirement” hints (non-technical)
+      let hint = "";
+      if (chartType === "c") {
+        hint = " This chart is best when each time period is broadly comparable (like similar time windows or similar-sized services).";
+      } else if (chartType === "p") {
+        hint = " This chart is for percentages/proportions (it needs a number out of a total each time).";
+      } else if (chartType === "u") {
+        hint = " This chart is for rates when the ‘out of how many’ changes (for example per 1,000 bed days).";
+      }
+
+      return `${stableText} ${signalText}${hint}`;
     }
 
-    if (q.includes("limit") || q.includes("ucl") || q.includes("lcl")) {
-      const meanText = (typeof a.mean === "number") ? a.mean.toFixed(3) : a.mean;
-      const uclText  = (typeof a.ucl === "number") ? a.ucl.toFixed(3) : a.ucl;
-      const lclText  = (typeof a.lcl === "number") ? a.lcl.toFixed(3) : a.lcl;
-      return `On the XmR chart, the average is ${meanText} with control limits LCL ${lclText} and UCL ${uclText}.`;
+    // ---------- X̄–S ----------
+    if (chartType === "xbars") {
+      if (!lastXbarSAnalysis || !lastXbarSAnalysis.xbar || !lastXbarSAnalysis.s) {
+        return "I can interpret your X̄–S chart once you generate it. Please create the chart first, then ask me what it’s telling you.";
+      }
+
+      const xbar = lastXbarSAnalysis.xbar;
+      const s = lastXbarSAnalysis.s;
+
+      const xSignals = humaniseSignals(xbar.signals);
+      const sSignals = humaniseSignals(s.signals);
+
+      const anySignals = (xSignals.length + sSignals.length) > 0;
+
+      const stableText = anySignals
+        ? "Overall, this X̄–S chart suggests something may have changed (a signal is present)."
+        : "Overall, this X̄–S chart looks stable (routine variation).";
+
+      const xText = (xSignals.length === 0)
+        ? "X̄ chart: no points outside the expected limits."
+        : `X̄ chart: ${xSignals.join("; ")}.`;
+
+      const sText = (sSignals.length === 0)
+        ? "S chart: no points outside the expected limits."
+        : `S chart: ${sSignals.join("; ")}.`;
+
+      const hint =
+        " A quick tip: the X̄ chart shows changes in the average, and the S chart shows changes in how spread-out the data are.";
+
+      return `${stableText} ${xText} ${sText}${hint}`;
     }
 
-    if (q.includes("capability")) {
-      if (a.target == null) return "Capability needs a target to be set. Set a target value and regenerate the chart.";
-      if (!stable) return "Capability is not reliable right now because special-cause signals are present. Stabilise the process (or split into phases) before relying on capability.";
-      if (!a.capability || typeof a.capability.prob !== "number") return "I couldn’t compute a capability estimate from the current chart.";
-      return `If the process stays stable, about ${(a.capability.prob * 100).toFixed(1)}% of future points are expected to meet the target.`;
+    // ---------- T / G (rare event charts) ----------
+    if (chartType === "t" || chartType === "g") {
+      if (!lastRareAnalysis) {
+        return "I can interpret your chart once you generate it. Please create the chart first, then ask me what it’s telling you.";
+      }
+
+      const a = lastRareAnalysis;
+      const stableText = a.isStable
+        ? "Overall, this chart looks stable (routine variation)."
+        : "Overall, this chart suggests something has changed (a signal is present).";
+
+      const humanSignals = humaniseSignals(a.signals);
+      const signalText = (humanSignals.length === 0)
+        ? "I can’t see any points outside the expected limits."
+        : `What I can see: ${humanSignals.join("; ")}.`;
+
+      const directionCaveat =
+        " A note on “better”: if the event is something you want to avoid, longer gaps are usually good. If it’s something you want to happen more often, then shorter gaps are good.";
+
+      const dataHint =
+        (chartType === "t")
+          ? " This chart works from the time between events (for example, days between incidents)."
+          : " This chart works from the number of opportunities between events (the values should be 1 or more).";
+
+      return `${stableText} ${signalText}${directionCaveat}${dataHint}`;
     }
 
-    if (q.includes("target")) {
-      if (a.target == null) return "No target is set on this chart.";
-      const dirText = a.direction === "above" ? "at or above" : "at or below";
-      return `A target is set: ${a.target} (${dirText} is better).`;
-    }
-
-    // Fallback: signals headline
-    return (signals.length === 0)
-      ? "No special-cause signals were detected on the XmR chart."
-      : `Signals detected on the XmR chart: ${signals.join("; ")}.`;
+    // If we get here, we didn’t recognise the chart type
+    return "I can interpret your chart, but I’m not sure which chart type is selected. Try generating the chart again, then ask “What is my chart telling me?”";
   }
 
-  return "I can answer general SPC questions, and I can interpret your Run or XmR chart after you generate one.";
+  // ============================================================
+  // 2) General SPC FAQ responses (only when NOT “My chart”)
+  // ============================================================
+
+  const generalFaq = [
+    {
+      keywords: ["what is spc", "define spc", ["what", "spc"]],
+      answer:
+        "Statistical Process Control (SPC) is a way of using time-ordered data to decide whether a system is behaving as expected or whether something has changed. " +
+        "A control chart shows your measure over time with a centre line (the usual average) and control limits (the range you’d expect from routine ups and downs). " +
+        "If the pattern breaks simple rules (for example, points outside the limits), that’s treated as a signal that something may have changed."
+    },
+    {
+      keywords: ["common cause", "special cause", ["common", "special"]],
+      answer:
+        "Common cause variation is the normal, everyday ups and downs you expect from a system that hasn’t changed. " +
+        "Special cause variation is a signal that something different may be happening (for example, a change in process, staffing, demand, or measurement). " +
+        "SPC helps you avoid over-reacting to normal noise, and helps you spot genuine change earlier."
+    },
+    {
+      keywords: ["how do i choose the right chart", "choose chart", ["choose", "chart"], ["which", "chart"]],
+      answer:
+        "Pick the chart based on what you’re measuring:\n" +
+        "• A single number each time (like average waiting time): usually XmR.\n" +
+        "• A count of events each time (and time periods are comparable): C chart.\n" +
+        "• A percentage/proportion (a number out of a total): P chart.\n" +
+        "• A rate where the ‘out of how many’ changes (per 1,000 bed days etc.): U chart.\n" +
+        "• Measurements collected in small groups at each time point: X̄–S.\n" +
+        "• Rare events where you care about time/opportunities between events: T or G chart."
+    },
+    {
+      keywords: ["what is a run chart", "what is run chart", "run chart", ["what", "run chart"]],
+      answer:
+        "A run chart shows your data over time with a median line. It’s a simple way to look for non-random patterns like a sustained shift or a sustained trend. " +
+        "It’s often a good starting point when you’re early in an improvement project."
+    },
+    {
+      keywords: ["what is an xmr chart", "xmr chart", "moving range chart", ["what", "xmr"]],
+      answer:
+        "An XmR chart is used when you have one number each time (for example, a weekly average). " +
+        "The X chart shows the values over time, and the moving range helps estimate how much routine variation you normally have. " +
+        "The chart then draws control limits so you can spot signals of real change."
+    },
+
+    // --- Chart type explainers (tight keywords to avoid false matches) ---
+
+    {
+      keywords: ["c chart", "c-chart", ["count", "chart"], ["counts", "chart"]],
+      answer:
+        "A C chart is for counting how many times something happened in each time period (for example, incidents per week). " +
+        "It works best when each time period is broadly comparable (like similar time windows or similar-sized services). " +
+        "If you see points outside the limits, that suggests the system may have changed."
+    },
+    {
+      keywords: ["p chart", "p-chart", ["percentage", "chart"], ["proportion", "chart"], ["rate", "out of"], ["out of", "total"]],
+      answer:
+        "A P chart is for percentages or proportions — a number out of a total each time (for example, % of patients seen within 4 hours). " +
+        "It takes the changing total into account, so weeks with smaller or larger totals are handled fairly. " +
+        "Points outside the limits suggest something may have changed."
+    },
+    {
+      keywords: ["u chart", "u-chart", ["per", "bed day"], ["per", "1000"], ["rate", "chart"]],
+      answer:
+        "A U chart is for rates when the ‘out of how many’ changes over time (for example, falls per 1,000 bed days). " +
+        "It uses both the count and the size of the opportunity each time. " +
+        "Points outside the limits suggest something may have changed."
+    },
+    {
+      keywords: ["xbar s", "x̄–s", "xbars", "xbar-s", ["xbar", "s"]],
+      answer:
+        "An X̄–S chart is used when you collect several measurements at each time point (for example, a small sample each week). " +
+        "The X̄ chart looks for changes in the average, and the S chart looks for changes in how spread-out the data are. " +
+        "You usually look at both charts together."
+    },
+    {
+      keywords: ["t chart", "t-chart", ["time", "between"], ["days", "between"]],
+      answer:
+        "A T chart is for rare events and looks at the time between events (for example, days between incidents). " +
+        "If your aim is to avoid the event, longer gaps are usually better. If your aim is to increase the event, shorter gaps are better."
+    },
+    {
+      keywords: ["g chart", "g-chart", ["opportunit", "between"], ["cases", "between"]],
+      answer:
+        "A G chart is for rare events and looks at the number of opportunities between events (for example, number of patients between pressure ulcers). " +
+        "If your aim is to avoid the event, larger numbers are usually better. If your aim is to increase the event, smaller numbers are better."
+    },
+
+    {
+      keywords: ["what does stable mean", "what is stable", ["stable", "mean"]],
+      answer:
+        "Stable means the chart shows only routine ups and downs — no clear signal that the system has changed. " +
+        "If a chart is stable, the best way to improve results is usually to change the system, not chase individual high/low points."
+    },
+    {
+      keywords: ["control limits", "how do control limits work", ["control", "limits"]],
+      answer:
+        "Control limits are calculated from your data to show the range you would normally expect from routine variation. " +
+        "They are not targets, and they are not the same as a ‘good’ or ‘bad’ threshold. " +
+        "A point outside the limits is a strong signal that something may have changed."
+    },
+    {
+      keywords: ["target", "what is a target", ["use", "target"]],
+      answer:
+        "A target is the performance level you are aiming for. In SPC, targets are most useful when they help decision-making (for example, “are we reliably meeting the standard?”). " +
+        "Be careful not to treat every week above/below target as ‘good’ or ‘bad’ — first check whether the system is stable."
+    },
+    {
+      keywords: ["capability", ["meet", "target"]],
+      answer:
+        "Capability is a rough check of how often a stable system is likely to meet your target, given the usual variation you see. " +
+        "It works best when the chart is stable and the day-to-day variation is fairly consistent."
+    }
+  ];
+
+  const generalHit = matchFaq(generalFaq, q);
+  if (generalHit) return generalHit;
+
+  // Fallback
+  return "I can help with general SPC questions (like “What is SPC?”) or with interpreting your chart (try “What is my chart telling me?”).";
 }
 
 function renderHelperState() {
   if (!spcHelperIntro) return;
 
-  const hasChart = !!lastXmRAnalysis;
+  // Treat "has chart" as "we have any analysis object", not just XmR.
+  const hasChart =
+    !!lastRunAnalysis ||
+    !!lastXmRAnalysis ||
+    !!lastAttributeAnalysis ||
+    !!lastRareAnalysis ||
+    !!lastXbarSAnalysis;
 
   // 1) Intro text
   if (!hasChart) {
@@ -4552,10 +4651,13 @@ function renderHelperState() {
 
   // 2) General chips (always available)
   const generalQs = [
-    "What is an SPC chart?",
+    "What is SPC?",
+    "What is the difference between common and special cause variation?",
+    "How do I choose the right chart?",
     "What is a run chart?",
     "What is an XmR chart?",
-    "What is common cause vs special cause variation?",
+    "What does stable mean?",
+    "What is a target and how should I use it?",
     "How do control limits work?"
   ];
 
@@ -4569,6 +4671,9 @@ function renderHelperState() {
   // 3) My chart chips (available only when a chart exists)
   const chartQs = [
     "What is my chart telling me?",
+    "Is my process stable?",
+    "Has something changed?",
+    "Is it getting better or worse?",
     "What decision should I make?",
     "What about my target?"
   ];
@@ -4578,11 +4683,11 @@ function renderHelperState() {
       .map(q => `<button type="button" class="spc-chip" data-q="${escapeHtml(q)}">${escapeHtml(q)}</button>`)
       .join("");
 
-    // Optional: disable interaction until a chart exists
     if (!hasChart) spcHelperChipsChart.classList.add("is-disabled");
     else spcHelperChipsChart.classList.remove("is-disabled");
   }
 }
+
 
 function updateMrToggleVisibility() {
   const chartType = getSelectedChartType ? getSelectedChartType_NoSideEffects() : "run";
