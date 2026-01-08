@@ -1,14 +1,4 @@
-// Simple SPC logic + wiring for Run chart and XmR chart + MR chart
-// Features:
-//  - CSV upload + column selection
-//  - Run chart with run rule (>=8 points on one side of median)
-//  - XmR chart with mean, UCL, LCL, +/-1σ, +/-2σ
-//  - MR chart paired with XmR
-//  - Baseline: use first N points for centre line & limits (optional)
-//  - Target line (goal value) optional
-//  - Summary panel with basic NHS-style interpretation
-//  - Download main chart as PNG	
-//  - Custom chart title and axis labels
+// Simple SPC logic + wiring for SPC charts
 
 let rawRows = [];
 let currentChart = null;   // main I / run chart
@@ -589,34 +579,32 @@ if (clampLclAtZeroCheckbox) {
 
 const recalcPrompt = document.getElementById("recalcPrompt");
 const firstRunGuide = document.getElementById("firstRunGuide");
-const FIRST_RUN_KEY = "spc_first_run_done_v1";
 
-// Safe storage wrappers (localStorage can throw in some browser/privacy modes)
-function safeGetItem(key) {
-  try { return localStorage.getItem(key); } catch (e) { return null; }
-}
-function safeSetItem(key, value) {
-  try { localStorage.setItem(key, value); } catch (e) {}
-}
-function safeRemoveItem(key) {
-  try { localStorage.removeItem(key); } catch (e) {}
-}
+// In-memory flag (NOT persisted) — resets on refresh
+let firstRunGuideHidden = false;
 
 function updateFirstRunGuideVisibility() {
   if (!firstRunGuide) return;
-  const done = safeGetItem(FIRST_RUN_KEY) === "1";
-  firstRunGuide.style.display = done ? "none" : "block";
+  firstRunGuide.style.display = firstRunGuideHidden ? "none" : "block";
 }
 
 function markFirstRunComplete() {
-  safeSetItem(FIRST_RUN_KEY, "1");
+  firstRunGuideHidden = true;
   updateFirstRunGuideVisibility();
 }
 
 function clearFirstRunFlag() {
-  safeRemoveItem(FIRST_RUN_KEY);
+  firstRunGuideHidden = false;
   updateFirstRunGuideVisibility();
 }
+
+// Show it on every page load
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", clearFirstRunFlag);
+} else {
+  clearFirstRunFlag();
+}
+
 
 function getSelectedChartType() {
   const el = document.querySelector('input[name="chartType"]:checked');
@@ -2836,8 +2824,9 @@ function analyzeAttributeChart({ chartType, labels, values, cl, ucl, lcl }) {
     if (trend) signals.push(trend);
   }
 
-  return {
+   return {
     chartType,
+    nPoints: Array.isArray(values) ? values.length : 0,
     isStable: signals.length === 0,
     signals,
     outOfControl,
@@ -2846,6 +2835,7 @@ function analyzeAttributeChart({ chartType, labels, values, cl, ucl, lcl }) {
     trendLength,
     firstOutOfControl: outOfControl.length ? outOfControl[0] : null
   };
+
 }
 
 
@@ -2854,6 +2844,30 @@ function analyzeRareChart({ chartType, labels, values, cl, ucl, lcl }) {
   const a = analyzeAttributeChart({ chartType, labels, values, cl, ucl, lcl });
   return a;
 }
+
+// -----------------------------
+// Small sample-size warning (shared by all summaries)
+// -----------------------------
+function smallSampleWarningHtml(nPoints, chartLabel = "this chart") {
+  const n = Number.isFinite(nPoints) ? nPoints : null;
+  if (!n) return "";
+
+  // Only show a warning when data are plausibly too few to trust limits/rules
+  if (n >= 30) return "";
+
+  // Stronger wording for very small samples
+  if (n < 12) {
+    return `<li><strong>Small sample warning:</strong> Only <strong>${n}</strong> points are being used for ${chartLabel}. With very small samples, medians/means and control limits can be unstable and rule signals are less reliable. If possible, aim for <strong>20+</strong> points (ideally <strong>30+</strong>).</li>`;
+  }
+
+  if (n < 20) {
+    return `<li><strong>Small sample warning:</strong> Only <strong>${n}</strong> points are being used for ${chartLabel}. Signals and limits are less reliable than they would be with larger datasets. If possible, aim for <strong>30+</strong> points.</li>`;
+  }
+
+  // 20–29
+  return `<li><strong>Note:</strong> This summary is based on <strong>${n}</strong> points. It will be more reliable with <strong>30+</strong> points.</li>`;
+}
+
 
 function renderAttributeSummary(a) {
   if (!summaryDiv) return;
@@ -2865,9 +2879,19 @@ function renderAttributeSummary(a) {
     ? "No clear signal of change (routine ups and downs)."
     : "A signal of change is present (worth investigating).";
 
-  let html = `<h3>${chartName} summary</h3>`;
+  // Period context (if splits are used, you currently summarise the latest period)
+  const periodText =
+    (a.periodIndex && a.periodCount && a.periodCount > 1)
+      ? ` (showing the latest period: ${a.periodIndex} of ${a.periodCount})`
+      : "";
+
+  let html = `<h3>${chartName} summary${periodText}</h3>`;
   html += `<ul>`;
+
   html += `<li><strong>What this suggests:</strong> ${stableLine}</li>`;
+
+  // Small sample warning (only appears if needed)
+  html += smallSampleWarningHtml(a.nPoints, `${chartName.toLowerCase()} analysis`);
 
   if (!a.isStable && Array.isArray(a.signals) && a.signals.length) {
     html += `<li><strong>What I can see:</strong> ${a.signals.join("; ")}.</li>`;
@@ -2881,7 +2905,7 @@ function renderAttributeSummary(a) {
     html += `<li><strong>Example to check:</strong> ${ex.label} is ${exText}.</li>`;
   }
 
-  // Very short “what to do next” guidance (plain English)
+  // “What to do next” guidance (keep your tone/style)
   html += a.isStable
     ? `<li><strong>What to do next:</strong> If performance isn’t good enough, focus on changing the process (the system) rather than reacting to individual points.</li>`
     : `<li><strong>What to do next:</strong> Look for a real-world explanation (process change, staffing, demand, definition/coding). If it was a planned change, you may want a new baseline after it settles.</li>`;
@@ -2892,12 +2916,13 @@ function renderAttributeSummary(a) {
   } else if (a.chartType === "p") {
     html += `<li><strong>Best used when:</strong> You have a number out of a total each time (a proportion or %).</li>`;
   } else if (a.chartType === "u") {
-    html += `<li><strong>Best used when:</strong> You have a rate where the “out of how many” changes (e.g., per 1,000 bed days).</li>`;
+    html += `<li><strong>Best used when:</strong> You have a rate where the “out of how many” changes (e.g. per 1,000 bed days).</li>`;
   }
 
   html += `</ul>`;
   summaryDiv.innerHTML = html;
 }
+
 
 
 function renderRareChartSummary(a) {
@@ -2908,10 +2933,19 @@ function renderRareChartSummary(a) {
     ? "No clear signal of change (routine variation)."
     : "A signal of change is present (worth investigating).";
 
-  let html = `<h3>${chartName} summary</h3>`;
+  const periodText =
+    (a.periodIndex && a.periodCount && a.periodCount > 1)
+      ? ` (showing the latest period: ${a.periodIndex} of ${a.periodCount})`
+      : "";
+
+  let html = `<h3>${chartName} summary${periodText}</h3>`;
   html += `<ul>`;
+
   html += `<li><strong>What this suggests:</strong> ${stableLine}</li>`;
   html += `<li><strong>Note:</strong> Rare-event charts are skewed, so the limits won’t look symmetrical like an XmR chart.</li>`;
+
+  // Small sample warning (only appears if needed)
+  html += smallSampleWarningHtml(a.nPoints, `${chartName.toLowerCase()} analysis`);
 
   if (!a.isStable && Array.isArray(a.signals) && a.signals.length) {
     html += `<li><strong>What I can see:</strong> ${a.signals.join("; ")}.</li>`;
@@ -2944,14 +2978,20 @@ function renderRareChartSummary(a) {
 function updateRunSummary(points, medianIgnored, ruleHitsIgnored, baselineCountUsedIgnored) {
   if (!summaryDiv) return;
 
-  const { shiftLength, trendLength } = getRuleSettings();
-  const n = points.length;
+  const { shiftLength, trendLength } =
+    (typeof getRuleSettings === "function") ? getRuleSettings() : { shiftLength: 8, trendLength: 6 };
 
-  // Pull baseline setting from the UI (so it works per-period too)
+  const n = Array.isArray(points) ? points.length : 0;
+  if (n < 2) {
+    summaryDiv.innerHTML = `<h3>Run chart summary</h3><p class="hint">Add more data points to generate a useful summary.</p>`;
+    return;
+  }
+
+  // Pull baseline setting from UI (works even if caller passes something else)
   const rawBaseline = baselineInput ? parseInt(baselineInput.value, 10) : NaN;
   const baselineSetting = Number.isFinite(rawBaseline) ? rawBaseline : null;
 
-  // Build segments based on splits (splits are “after index”, 0-based)
+  // Split indices are “after index”, 0-based
   const splitIdxs = Array.isArray(splits)
     ? splits
         .map(v => parseInt(v, 10))
@@ -2959,7 +2999,8 @@ function updateRunSummary(points, medianIgnored, ruleHitsIgnored, baselineCountU
         .sort((a, b) => a - b)
     : [];
 
-  const boundaries = [-1, ...splitIdxs, n - 1]; // inclusive ends
+  // Build segments as [start,end] inclusive
+  const boundaries = [-1, ...splitIdxs, n - 1];
   const segments = [];
   for (let i = 0; i < boundaries.length - 1; i++) {
     const start = boundaries[i] + 1;
@@ -2967,164 +3008,93 @@ function updateRunSummary(points, medianIgnored, ruleHitsIgnored, baselineCountU
     if (start <= end) segments.push({ start, end });
   }
 
+  // Human-friendly segment range
   function rangeText(start, end) {
-  const axisType = getAxisType(); // "date" or "sequence"
+    const axisType = (typeof getAxisType === "function") ? getAxisType() : "sequence";
+    const base = `points ${start + 1}–${end + 1}`;
 
-  // Always show point indices
-  const base = `points ${start + 1}–${end + 1}`;
-
-  // Only add date range if DATE axis is selected
-  if (axisType !== "date") return base;
-
-  const a = points[start]?.x;
-  const b = points[end]?.x;
-  const hasDates = a !== undefined && b !== undefined && a !== null && b !== null;
-
-  return hasDates
-    ? `${base} (${formatDateOnlyLabel(a)} to ${formatDateOnlyLabel(b)})`
-    : base;
-}
-
-
-
-  function findTrendRanges(values, len) {
-    const out = [];
-    if (!values || values.length < len) return out;
-
-    let inc = 1, dec = 1;
-    let incStart = 0, decStart = 0;
-
-    for (let i = 1; i < values.length; i++) {
-      if (values[i] > values[i - 1]) {
-        inc++;
-        dec = 1;
-        decStart = i;
-      } else if (values[i] < values[i - 1]) {
-        dec++;
-        inc = 1;
-        incStart = i;
-      } else {
-        inc = 1; dec = 1;
-        incStart = i; decStart = i;
-      }
-
-      if (inc === len) out.push({ start: i - len + 1, end: i, dir: "increasing" });
-      if (dec === len) out.push({ start: i - len + 1, end: i, dir: "decreasing" });
+    // If date axis, try to show the first/last label too (if we can)
+    if (axisType === "date" && currentChart?.data?.labels?.length) {
+      const labels = currentChart.data.labels;
+      const a = labels[start];
+      const b = labels[end];
+      if (a && b) return `${base} (${a} to ${b})`;
     }
-
-    // Merge overlaps
-    out.sort((a, b) => a.start - b.start);
-    const merged = [];
-    for (const r of out) {
-      const last = merged[merged.length - 1];
-      if (!last || r.start > last.end + 1 || r.dir !== last.dir) {
-        merged.push({ ...r });
-      } else {
-        last.end = Math.max(last.end, r.end);
-      }
-    }
-    return merged;
+    return base;
   }
 
-  function flagsToRanges(flags) {
-    const ranges = [];
-    let i = 0;
-    while (i < flags.length) {
-      if (!flags[i]) { i++; continue; }
-      let j = i;
-      while (j < flags.length && flags[j]) j++;
-      ranges.push({ start: i, end: j - 1 });
-      i = j;
-    }
-    return ranges;
+  // Median helper
+  function safeMedian(arr) {
+    if (typeof computeMedian === "function") return computeMedian(arr);
+    // fallback minimal
+    const s = arr.slice().sort((a,b)=>a-b);
+    const m = Math.floor(s.length/2);
+    return s.length % 2 ? s[m] : (s[m-1] + s[m]) / 2;
   }
 
-  let html = `<h3>Summary (Run chart)</h3>`;
-  html += `<p>Total number of points: <strong>${n}</strong>. `;
-  html += `The chart is divided into <strong>${segments.length}</strong> period${segments.length !== 1 ? "s" : ""}`;
-  html += segments.length > 1 ? ` (based on your splits).` : `.`;
-  html += `</p>`;
+  // Range finders (use existing if present)
+  const findRuns = (segValues, segMedian) =>
+    (typeof findLongRunRanges === "function") ? findLongRunRanges(segValues, segMedian, shiftLength) : [];
+
+  const findTrends = (segValues) =>
+    (typeof findTrendRanges === "function") ? findTrendRanges(segValues, trendLength) : [];
+
+  // Build summary
+  let html = `<h3>Run chart summary</h3>`;
+
+  if (segments.length > 1) {
+    html += `<p class="hint">Splits are applied, so the summary is shown <strong>per period</strong> (each period has its own median).</p>`;
+  }
+
+  html += `<ul>`;
 
   segments.forEach((seg, idx) => {
     const segPoints = points.slice(seg.start, seg.end + 1);
-    const values = segPoints.map(p => p.y);
+    const segValues = segPoints.map(p => p.y).filter(v => Number.isFinite(v));
 
-    const segLen = values.length;
-
-    // Baseline per period (keep the same user setting, but cap to segment length)
-    let baselineCountUsed = segLen;
-    if (baselineSetting && baselineSetting >= 2) baselineCountUsed = Math.min(baselineSetting, segLen);
-
-    const baselineValues = values.slice(0, baselineCountUsed);
-    const median = computeMedian(baselineValues);
-
-    // Signals for this segment
-    const runFlags = detectLongRuns(values, median, shiftLength);
-    const runRanges = flagsToRanges(runFlags);
-
-    const trendRanges = findTrendRanges(values, trendLength);
-
-    // Astronomical points (use baseline values as reference if possible)
-    const astro = findAstronomicalPoints(values, median, baselineValues, 3.5);
-    const astroIdx = astro?.indices || [];
-
-    const signals = [];
-    if (runRanges.length) signals.push(`a sustained shift (≥ ${shiftLength} points on one side of the median)`);
-    if (trendRanges.length) signals.push(`a sustained trend (≥ ${trendLength} points increasing or decreasing)`);
-    if (astroIdx.length) signals.push(`an unusual outlier ("astronomical" point)`);
-
-    const periodLabel =
-      segments.length === 1
-        ? "Single period"
-        : idx === 0
-          ? "Period 1"
-          : `Period ${idx + 1}`;
-
-    html += `<h4>${periodLabel}</h4>`;
-    html += `<ul>`;
-    html += `<li>Coverage: <strong>${rangeText(seg.start, seg.end)}</strong> – ${segLen} point${segLen !== 1 ? "s" : ""}.</li>`;
-
-    html += (baselineCountUsed < segLen)
-      ? `<li>Baseline for this period: first <strong>${baselineCountUsed}</strong> point${baselineCountUsed !== 1 ? "s" : ""} used to calculate the median.</li>`
-      : `<li>Baseline for this period: all points in this period used to calculate the median.</li>`;
-
-    html += `<li>Median (this period): <strong>${Number.isFinite(median) ? median.toFixed(3) : "—"}</strong>.</li>`;
-
-    if (!signals.length) {
-      html += `<li><strong>Interpretation:</strong> No clear special-cause signals detected in this period (no sustained shift, trend, or unusual outlier). This pattern is consistent with common variation, but always interpret in context.</li>`;
-    } else {
-      html += `<li><strong>Interpretation:</strong> This period shows special-cause signals: ${signals.join("; ")}.</li>`;
-
-      // “Where to look” (simple + practical)
-      const where = [];
-
-      if (runRanges.length) {
-        const r = runRanges[0];
-        where.push(`shift around points ${seg.start + r.start + 1}–${seg.start + r.end + 1}`);
-      }
-
-      if (trendRanges.length) {
-        const t = trendRanges[0];
-        where.push(`trend around points ${seg.start + t.start + 1}–${seg.start + t.end + 1} (${t.dir})`);
-      }
-
-      if (astroIdx.length) {
-        const pts = astroIdx.slice(0, 5).map(i => seg.start + i + 1);
-        where.push(`outlier at point${pts.length !== 1 ? "s" : ""} ${pts.join(", ")}`);
-      }
-
-      if (where.length) {
-        html += `<li><strong>Where to look:</strong> ${where.join("; ")}.</li>`;
-      }
+    if (segValues.length < 2) {
+      html += `<li><strong>Period ${idx + 1} (${rangeText(seg.start, seg.end)}):</strong> Not enough valid values to analyse.</li>`;
+      return;
     }
 
-    html += `</ul>`;
+    // Baseline only applies to the first segment; later segments use the whole segment
+    const baselineUsed =
+      (idx === 0 && baselineSetting && baselineSetting >= 2)
+        ? Math.min(baselineSetting, segValues.length)
+        : segValues.length;
+
+    const segMedian = safeMedian(segValues.slice(0, baselineUsed));
+    const runRanges = findRuns(segValues, segMedian);
+    const trendRanges = findTrends(segValues);
+
+    const hasShift = Array.isArray(runRanges) && runRanges.length > 0;
+    const hasTrend = Array.isArray(trendRanges) && trendRanges.length > 0;
+
+    const stableLine = (!hasShift && !hasTrend)
+      ? "No clear signal of change (routine variation)."
+      : "A signal of change is present (worth investigating).";
+
+    html += `<li><strong>Period ${idx + 1} (${rangeText(seg.start, seg.end)}):</strong> ${stableLine}</li>`;
+
+    // Small sample warning for THIS period (based on points used in this segment)
+    html += smallSampleWarningHtml(segValues.length, `this run chart period`);
+
+    html += `<li><strong>Centre line (median):</strong> ${Number.isFinite(segMedian) ? segMedian.toFixed(2) : "—"}${(idx === 0 && baselineSetting) ? ` (based on first ${baselineUsed} points)` : ""}</li>`;
+
+    if (hasShift) {
+      // runRanges format depends on your implementation; keep it simple
+      html += `<li><strong>What I can see:</strong> A long run (≥${shiftLength}) is present.</li>`;
+    }
+    if (hasTrend) {
+      html += `<li><strong>What I can see:</strong> A trend (≥${trendLength}) is present.</li>`;
+    }
+
+    html += (!hasShift && !hasTrend)
+      ? `<li><strong>What to do next:</strong> If performance isn’t good enough, focus on changing the process (the system) rather than reacting to individual points.</li>`
+      : `<li><strong>What to do next:</strong> Look for a real-world explanation (process change, staffing, demand, definition/coding). If it was a planned change, you may want a new baseline after it settles.</li>`;
   });
 
-  if (segments.length > 1) {
-    html += `<p><em>Note:</em> Each period is summarised separately because splits suggest the process may have changed over time.</p>`;
-  }
-
+  html += `</ul>`;
   summaryDiv.innerHTML = html;
 }
 
@@ -6615,42 +6585,67 @@ function enforceChartTypeSuitabilityAndRegen() {
   generateButton.click();
 }
 
-// ---- Auto-regenerate when chart type or axis type changes ----
+// ---- Auto-regenerate when chart type, axis type, or selected columns change ----
 function wireAutoRedrawControls() {
   // Chart type radios (run / xmr)
   document.querySelectorAll("input[name='chartType']").forEach(radio => {
-    radio.addEventListener("change", () => {
-      // show/hide MR toggle row + MR panel
-      if (typeof updateMrToggleVisibility === "function") {
-        updateMrToggleVisibility();
-      }
+  radio.addEventListener("change", () => {
+    if (typeof updateUIForChartType === "function") {
+      updateUIForChartType(radio.value);
+    }
 
-      // only regenerate if data exists
+    if (typeof updateMrToggleVisibility === "function") {
+      updateMrToggleVisibility();
+    }
+
+    if (rawRows && rawRows.length) {
+      if (typeof enforceChartTypeSuitabilityAndRegen === "function") {
+        enforceChartTypeSuitabilityAndRegen();
+      } else if (generateButton) {
+        generateButton.click();
+      }
+    }
+  });
+});
+
+  // Axis type radios (date / sequence)
+  document.querySelectorAll("input[name='axisType']").forEach(radio => {
+    radio.addEventListener("change", () => {
       if (rawRows && rawRows.length) {
-        // Enforce minimum points for XmR + regen
         if (typeof enforceChartTypeSuitabilityAndRegen === "function") {
           enforceChartTypeSuitabilityAndRegen();
-        } else {
+        } else if (generateButton) {
           generateButton.click();
         }
       }
     });
   });
 
-  // Axis type radios (date / sequence)
-  document.querySelectorAll("input[name='axisType']").forEach(radio => {
-    radio.addEventListener("change", () => {
-      if (rawRows && rawRows.length) {
-        generateButton.click();
-      }
-    });
-  });
+  // NEW: X / Y / third column dropdowns
+  const dateSelect  = document.getElementById("dateColumn");
+  const valueSelect = document.getElementById("valueColumn");
+  const thirdSelect = document.getElementById("thirdColumn");
+
+  const onColumnChange = () => {
+    if (!rawRows || !rawRows.length) return;
+
+    if (typeof enforceChartTypeSuitabilityAndRegen === "function") {
+      enforceChartTypeSuitabilityAndRegen();
+    } else if (generateButton) {
+      generateButton.click();
+    }
+  };
+
+  if (dateSelect)  dateSelect.addEventListener("change", onColumnChange);
+  if (valueSelect) valueSelect.addEventListener("change", onColumnChange);
+  if (thirdSelect) thirdSelect.addEventListener("change", onColumnChange);
 
   // Run once on load so MR toggle visibility matches initial selection
   if (typeof updateMrToggleVisibility === "function") {
     updateMrToggleVisibility();
   }
 }
+
 
 (function initHelpModal() {
   const modal = document.getElementById("helpModal");
@@ -6671,12 +6666,6 @@ function wireAutoRedrawControls() {
   });
 })();
 
-
-document.querySelectorAll('input[name="chartType"]').forEach(r => {
-  r.addEventListener("change", () => {
-    updateUIForChartType(r.value);
-  });
-});
 
 // Initialize UI once on load (in case default is run)
 const checked = document.querySelector('input[name="chartType"]:checked');
