@@ -800,8 +800,15 @@ body.modal-open {
   border: 1px solid #d0d7de;
   border-radius: 0.25rem;
   margin-top: 0.25rem;
-  overflow: hidden;
+  overflow: auto;
 }
+
+.data-editor-status{
+  font-size: 0.8rem;
+  color: #555;
+  margin: 0.15rem 0 0.35rem;
+}
+.data-editor-status strong{ color:#003087; }
 
 
   </style>
@@ -1457,6 +1464,8 @@ body.modal-open {
         Auto-detect
       </button>
     </div>
+    
+    <div id="dataEditorHeaderStatus" class="data-editor-status" aria-live="polite"></div>
 
     <div id="dataEditorGrid" class="data-editor-grid"></div>
 

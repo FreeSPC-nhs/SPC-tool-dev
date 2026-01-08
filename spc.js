@@ -135,6 +135,10 @@ const clampLclAtZeroCheckbox = document.getElementById("clampLclAtZero");
 
 const dataEditorGridEl = document.getElementById("dataEditorGrid");
 let dataEditorGrid = null; // jspreadsheet instance
+const dataEditorHasHeaders = document.getElementById("dataEditorHasHeaders");
+const dataEditorDetectHeadersButton = document.getElementById("dataEditorDetectHeadersButton");
+const dataEditorHeaderStatus = document.getElementById("dataEditorHeaderStatus");
+
 
 
 function guessColumns(rows) {
@@ -222,6 +226,46 @@ function updateMrToggleVisibility() {
   }
 }
 
+function isProbablyHeaderRow(row) {
+  // Heuristic: headers tend to be non-numeric strings; data tends to be numeric/date-ish.
+  // We’ll score each cell and decide.
+  let headerish = 0;
+  let datish = 0;
+
+  for (const cell of row) {
+    const s = String(cell ?? "").trim();
+    if (!s) continue;
+
+    const looksNumeric = /^-?\d+(\.\d+)?%?$/.test(s.replace(/,/g, ""));
+    const looksDate = /^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(s) || /^\d{4}-\d{2}-\d{2}/.test(s);
+
+    if (looksNumeric || looksDate) datish++;
+    else headerish++;
+  }
+
+  // If mostly text labels => header row
+  return headerish >= datish && headerish > 0;
+}
+
+function getNonBlankGridRows() {
+  if (!dataEditorGrid) return [];
+  const data2D = dataEditorGrid.getData();
+  return data2D.filter(row => row.some(cell => String(cell ?? "").trim() !== ""));
+}
+
+function detectHeadersFromGrid() {
+  const rows = getNonBlankGridRows();
+  if (rows.length < 2) return true; // default to “has headers” for empty/small
+  return isProbablyHeaderRow(rows[0]);
+}
+
+function renderHeaderStatus() {
+  if (!dataEditorHeaderStatus || !dataEditorHasHeaders) return;
+
+  const mode = dataEditorHasHeaders.checked ? "headings" : "data";
+  dataEditorHeaderStatus.innerHTML =
+    `Apply will treat the <strong>first row</strong> as <strong>${mode}</strong>.`;
+}
 
 
 
@@ -2350,7 +2394,7 @@ function openDataEditor() {
     // Clear container to avoid duplicated UI remnants
     dataEditorGridEl.innerHTML = "";
 
- dataEditorGrid = jspreadsheet(dataEditorGridEl, {
+dataEditorGrid = jspreadsheet(dataEditorGridEl, {
   data,
   columns: headers.map(h => ({ title: h, width: 180 })),
   minDimensions: [Math.max(headers.length, 10), Math.max(20, data.length + 10)],
@@ -2361,38 +2405,44 @@ function openDataEditor() {
   allowDeleteColumn: true,
 
   onpaste: function(instance, pasteData, startCol, startRow) {
-    // pasteData is usually a tab/newline-delimited string in CE v4
     if (!pasteData || typeof pasteData !== "string") return;
 
     const rows = pasteData.split(/\r?\n/).filter(r => r.length > 0);
     const colCount = rows.reduce((m, r) => Math.max(m, r.split("\t").length), 0);
     const rowCount = rows.length;
 
-    // Current grid size
     const currentCols = instance.options.columns.length;
     const currentRows = instance.getData().length;
 
     const neededCols = startCol + colCount;
     const neededRows = startRow + rowCount;
 
-    // Add columns if needed
     if (neededCols > currentCols) {
       const addN = neededCols - currentCols;
-      // Insert at end
       instance.insertColumn(addN, currentCols);
-      // Give new columns default titles
       for (let i = currentCols; i < neededCols; i++) {
         instance.setHeader(i, `Column${i + 1}`);
       }
     }
 
-    // Add rows if needed
     if (neededRows > currentRows) {
       const addN = neededRows - currentRows;
       instance.insertRow(addN);
     }
+
+    // After paste completes, re-run auto-detect + update the status line
+    setTimeout(() => {
+      if (dataEditorHasHeaders) dataEditorHasHeaders.checked = detectHeadersFromGrid();
+      renderHeaderStatus();
+    }, 0);
   }
 });
+
+if (dataEditorHasHeaders) {
+  dataEditorHasHeaders.checked = detectHeadersFromGrid();
+}
+renderHeaderStatus();
+
 
 
     lastGridHeadersKey = headersKey;
@@ -2530,6 +2580,21 @@ if (dataEditorApplyButton) {
 
       // Decide if first row is headers (checkbox)
       const useHeaders = !!(dataEditorHasHeaders && dataEditorHasHeaders.checked);
+
+// Safety: warn if checkbox disagrees with auto-detect
+const autoGuess = detectHeadersFromGrid();
+if (useHeaders !== autoGuess) {
+  const msg = useHeaders
+    ? "You have 'First row contains headers' ticked, but the first row looks like DATA.\n\nApply anyway?"
+    : "You have 'First row contains headers' unticked, but the first row looks like HEADERS.\n\nApply anyway?";
+
+  if (!confirm(msg)) {
+    // Keep modal open; let them correct the checkbox
+    renderHeaderStatus();
+    return;
+  }
+}
+
 
       let headers;
       let body;
@@ -6613,6 +6678,24 @@ if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", wireAutoRedrawControls);
 } else {
   wireAutoRedrawControls();
+}
+
+if (dataEditorHasHeaders) {
+  dataEditorHasHeaders.addEventListener("change", renderHeaderStatus);
+}
+
+if (dataEditorDetectHeadersButton) {
+  dataEditorDetectHeadersButton.addEventListener("click", () => {
+    const guess = detectHeadersFromGrid();
+    if (dataEditorHasHeaders) dataEditorHasHeaders.checked = guess;
+
+    // Give immediate, obvious feedback
+    if (dataEditorHeaderStatus) {
+      dataEditorHeaderStatus.innerHTML = guess
+        ? `Auto-detect: first row looks like <strong>headings</strong>.`
+        : `Auto-detect: first row looks like <strong>data</strong>.`;
+    }
+  });
 }
 
 
