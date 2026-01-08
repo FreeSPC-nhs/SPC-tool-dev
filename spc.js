@@ -6279,6 +6279,12 @@ if (action === "clearAnnotations") {
         downloadCanvasAsPng(composite, "spc-charts.png");
         return;
       }
+
+	if (action === "downloadPdf") {
+	  exportPdfReport();
+	  return;
+	}
+
     } catch (err) {
       console.error(err);
       alert("Sorry — that action failed in this browser. Try 'Save chart(s) as…' instead.");
@@ -6534,30 +6540,32 @@ if (document.readyState === "loading") {
 }
 
 
+function exportPdfReport() {
+  const reportElement = document.getElementById("reportContent");
+  if (!reportElement) {
+    alert("Report content not found.");
+    return;
+  }
+  if (!currentChart) {
+    alert("Please generate a chart first.");
+    return;
+  }
+
+  // Basic options – you can tweak orientation/format later
+  const opt = {
+    margin:       10,
+    filename:     "spc-report.pdf",
+    image:        { type: "jpeg", quality: 0.98 },
+    html2canvas:  { scale: 2, scrollY: -window.scrollY },
+    jsPDF:        { unit: "mm", format: "a4", orientation: "landscape" }
+  };
+
+  html2pdf().set(opt).from(reportElement).save();
+}
+
+// Optional: keep this in case you ever add the top button back
 if (downloadPdfBtn) {
-  downloadPdfBtn.addEventListener("click", () => {
-    const reportElement = document.getElementById("reportContent");
-    if (!reportElement) {
-      alert("Report content not found.");
-      return;
-    }
-    if (!currentChart) {
-      alert("Please generate a chart first.");
-      return;
-    }
-
-    // Basic options – you can tweak orientation/format later
-    const opt = {
-      margin:       10,
-      filename:     "spc-report.pdf",
-      image:        { type: "jpeg", quality: 0.98 },
-      html2canvas:  { scale: 2, scrollY: -window.scrollY },
-      jsPDF:        { unit: "mm", format: "a4", orientation: "landscape" }
-    };
-
-
-    html2pdf().set(opt).from(reportElement).save();
-  });
+  downloadPdfBtn.addEventListener("click", exportPdfReport);
 }
 
 renderHelperState();
