@@ -266,6 +266,74 @@ function renderHeaderStatus() {
     `Apply will treat the <strong>first row</strong> as <strong>${mode}</strong>.`;
 }
 
+// ------------------------------------
+// SAFE live formatting updater
+// ------------------------------------
+function applyFormattingLive() {
+  if (!currentChart) return;
+
+  const chart = currentChart;
+
+  // ----- Chart title -----
+  if (chart.options.plugins?.title) {
+    const title = chartTitleInput?.value?.trim();
+    if (typeof title === "string") {
+      chart.options.plugins.title.text = title || chart.options.plugins.title.text;
+    }
+  }
+
+  // ----- X-axis label -----
+  if (chart.options.scales?.x?.title) {
+    const x = xAxisLabelInput?.value?.trim();
+    if (typeof x === "string") chart.options.scales.x.title.text = x;
+  }
+
+  // ----- Y-axis label + units -----
+  if (chart.options.scales?.y?.title) {
+    let y = yAxisLabelInput?.value?.trim() || "";
+    const units = yAxisUnitsInput?.value?.trim();
+    if (units) y += ` (${units})`;
+    chart.options.scales.y.title.text = y;
+  }
+
+  // ----- Fonts -----
+  const fontSize = Number(chartFontSizeInput?.value);
+  const fontFamily = chartFontFamilyInput?.value;
+  const size = Number.isFinite(fontSize) ? fontSize : 12;
+
+  chart.options.plugins.title.font.size = size + 4;
+  chart.options.plugins.legend.labels.font.size = size;
+
+  if (fontFamily) {
+    chart.options.plugins.title.font.family = fontFamily;
+    chart.options.plugins.legend.labels.font.family = fontFamily;
+  }
+
+  ["x", "y"].forEach(axis => {
+    const ax = chart.options.scales?.[axis];
+    if (!ax) return;
+    ax.title.font.size = size;
+    ax.ticks.font.size = size;
+    if (fontFamily) {
+      ax.title.font.family = fontFamily;
+      ax.ticks.font.family = fontFamily;
+    }
+  });
+
+  // ----- Y-axis min / max / step -----
+  const min = Number(yAxisMinInput?.value);
+  const max = Number(yAxisMaxInput?.value);
+  const step = Number(yAxisStepInput?.value);
+
+  const yScale = chart.options.scales.y;
+
+  if (Number.isFinite(min)) yScale.min = min; else delete yScale.min;
+  if (Number.isFinite(max)) yScale.max = max; else delete yScale.max;
+  if (Number.isFinite(step)) yScale.ticks.stepSize = step; else delete yScale.ticks.stepSize;
+
+  // IMPORTANT: prevents infinite loops
+  chart.update("none");
+}
 
 
 function hideMrPanelNow() {
@@ -322,33 +390,6 @@ function updateTargetToggleBtn() {
   targetToggleBtn.textContent = targetEnabled ? "Hide target line" : "Show target line";
 }
 
-function applyPresentationEditsLive() {
-  if (!currentChart) return;
-
-  const title = (chartTitleInput?.value || "").trim();
-  const xLabel = (xAxisLabelInput?.value || "").trim();
-  const yLabel = (yAxisLabelInput?.value || "").trim();
-
-  // Title
-  if (currentChart.options?.plugins?.title) {
-    currentChart.options.plugins.title.display = !!title;
-    currentChart.options.plugins.title.text = title;
-  }
-
-  // Axes
-  if (currentChart.options?.scales?.x?.title) {
-    currentChart.options.scales.x.title.display = !!xLabel;
-    currentChart.options.scales.x.title.text = xLabel;
-  }
-  if (currentChart.options?.scales?.y?.title) {
-    currentChart.options.scales.y.title.display = !!yLabel;
-    currentChart.options.scales.y.title.text = yLabel;
-  }
-
-  // Update without animation for a crisp “as you type” feel
-  currentChart.update("none");
-}
-
 function hasValidTargetInput() {
   if (!targetInput) return false;
   const v = targetInput.value.trim();
@@ -386,13 +427,7 @@ if (targetInput) {
 updateTargetToggleVisibility();
 	
 
-function debounce(fn, ms = 80) {
-  let t;
-  return (...args) => {
-    clearTimeout(t);
-    t = setTimeout(() => fn(...args), ms);
-  };
-}
+
 
 function loadRows(rows) {
   if (!rows || rows.length === 0) {
@@ -549,22 +584,23 @@ if (targetToggleBtn) {
   });
 }
 
-const debouncedRegen = debounce(() => {
+function triggerRegen() {
   if (rawRows && rawRows.length) generateButton.click();
-}, 250);
+}
+
 
 if (baselineInput) {
-  baselineInput.addEventListener("input", debouncedRegen);
-  baselineInput.addEventListener("change", debouncedRegen);
+  baselineInput.addEventListener("input", triggerRegen);
+  baselineInput.addEventListener("change", triggerRegen);
 }
 
 if (shiftRulePointsInput) {
-  shiftRulePointsInput.addEventListener("input", debouncedRegen);
-  shiftRulePointsInput.addEventListener("change", debouncedRegen);
+  shiftRulePointsInput.addEventListener("input", triggerRegen);
+  shiftRulePointsInput.addEventListener("change", triggerRegen);
 }
 if (trendRulePointsInput) {
-  trendRulePointsInput.addEventListener("input", debouncedRegen);
-  trendRulePointsInput.addEventListener("change", debouncedRegen);
+  trendRulePointsInput.addEventListener("input", triggerRegen);
+  trendRulePointsInput.addEventListener("change", triggerRegen);
 }
 if (flagSpecialCauseOnChartCheckbox) {
   flagSpecialCauseOnChartCheckbox.addEventListener("change", () => {
@@ -2406,44 +2442,6 @@ function applyPresentationToChart(chart, { suggestedMin, suggestedMax } = {}) {
   chart.update();
 }
 
-// -----------------------------
-// Instant Y-axis units updater (no recalculation)
-// -----------------------------
-function applyYAxisUnitsInstantly() {
-  const units = (yAxisUnitsInput && yAxisUnitsInput.value.trim())
-    ? yAxisUnitsInput.value.trim()
-    : "";
-
-  function updateChartYAxis(chart) {
-    if (!chart || !chart.options || !chart.options.scales || !chart.options.scales.y) return;
-
-    const yScale = chart.options.scales.y;
-    yScale.title = yScale.title || {};
-
-    // Base label: use current input if present, otherwise existing text
-    let baseLabel = "";
-
-if (yAxisLabelInput && typeof yAxisLabelInput.value === "string" && yAxisLabelInput.value.trim()) {
-  baseLabel = yAxisLabelInput.value.trim();
-} else if (typeof yScale.title.text === "string") {
-  baseLabel = yScale.title.text;
-}
-
-
-    // Remove any existing "(...)" suffix
-    baseLabel = baseLabel.replace(/\s*\(.*?\)\s*$/, "");
-
-    // Append units if provided
-    const finalLabel = units ? `${baseLabel} (${units})` : baseLabel;
-
-    yScale.title.text = finalLabel;
-    chart.update();
-  }
-
-  updateChartYAxis(currentChart);
-  updateChartYAxis(mrChart);
-}
-
 
 // When users change these controls, show the “recalc” prompt (your tool already uses this idea)
 function markNeedsRecalcFromPresentationControls() {
@@ -2453,51 +2451,6 @@ function markNeedsRecalcFromPresentationControls() {
     // fallback: do nothing
   }
 }
-
-// Hook up change listeners (safe if elements not present)
-(function wirePresentationControlListeners() {
-  const instantInputs = [
-    yAxisMinInput, yAxisMaxInput, yAxisStepInput,
-    chartFontFamilyInput, chartFontSizeInput,
-    chartTitleInput, xAxisLabelInput, yAxisLabelInput
-  ].filter(Boolean);
-
-  const applyNow = debounce(() => {
-    if (typeof applyPresentationEditsLive === "function") {
-      applyPresentationEditsLive();
-    }
-
-    if (currentChart) applyPresentationToChart(currentChart);
-    if (mrChart) applyPresentationToChart(mrChart);
-  }, 60);
-
-  instantInputs.forEach(el => {
-    el.addEventListener("input", applyNow);
-    el.addEventListener("change", applyNow);
-  });
-
-  // 👇 Units update instantly (separate on purpose)
-  if (yAxisUnitsInput) {
-    yAxisUnitsInput.addEventListener("input", applyYAxisUnitsInstantly);
-    yAxisUnitsInput.addEventListener("change", applyYAxisUnitsInstantly);
-  }
-
-  // Summary visibility
-  if (showSummaryCheckbox) {
-    showSummaryCheckbox.addEventListener("change", () => {
-      syncSummaryVisibility();
-      if (!shouldShowSummary()) {
-        if (summaryDiv) summaryDiv.innerHTML = "";
-        if (capabilityDiv) capabilityDiv.innerHTML = "";
-      }
-    });
-  }
-
-  // Initial state
-  syncSummaryVisibility();
-})();
-
-
 
 
 function populateAnnotationDateOptions(labels) {
@@ -6971,3 +6924,19 @@ if (downloadPdfBtn) {
 }
 
 renderHelperState();
+
+[
+  chartTitleInput,
+  xAxisLabelInput,
+  yAxisLabelInput,
+  yAxisUnitsInput,
+  yAxisMinInput,
+  yAxisMaxInput,
+  yAxisStepInput,
+  chartFontFamilyInput,
+  chartFontSizeInput
+].filter(Boolean).forEach(el => {
+  el.addEventListener("input", applyFormattingLive);
+  el.addEventListener("change", applyFormattingLive);
+});
+
