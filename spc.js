@@ -4484,7 +4484,7 @@ function drawSimpleSPCChart({
       }
     }
   });
-}
+
 
  applyPresentationToChart(currentChart, {
     suggestedMin: isFinite(yAxisSuggestedMin) ? yAxisSuggestedMin : undefined,
