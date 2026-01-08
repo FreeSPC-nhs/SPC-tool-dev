@@ -267,29 +267,41 @@ function renderHeaderStatus() {
 }
 
 // ------------------------------------
-// SAFE live formatting updater
+// SAFE live formatting updater (fixed)
 // ------------------------------------
 function applyFormattingLive() {
   if (!currentChart) return;
 
   const chart = currentChart;
 
-  // ----- Chart title -----
-  if (chart.options.plugins?.title) {
+  // ----- Title -----
+  if (chart.options.plugins && chart.options.plugins.title) {
     const title = chartTitleInput?.value?.trim();
     if (typeof title === "string") {
-      chart.options.plugins.title.text = title || chart.options.plugins.title.text;
+      chart.options.plugins.title.text =
+        title || chart.options.plugins.title.text;
+
+      chart.options.plugins.title.font =
+        chart.options.plugins.title.font || {};
     }
   }
 
   // ----- X-axis label -----
-  if (chart.options.scales?.x?.title) {
+  if (chart.options.scales && chart.options.scales.x && chart.options.scales.x.title) {
+    chart.options.scales.x.title.font =
+      chart.options.scales.x.title.font || {};
+
     const x = xAxisLabelInput?.value?.trim();
-    if (typeof x === "string") chart.options.scales.x.title.text = x;
+    if (typeof x === "string") {
+      chart.options.scales.x.title.text = x;
+    }
   }
 
   // ----- Y-axis label + units -----
-  if (chart.options.scales?.y?.title) {
+  if (chart.options.scales && chart.options.scales.y && chart.options.scales.y.title) {
+    chart.options.scales.y.title.font =
+      chart.options.scales.y.title.font || {};
+
     let y = yAxisLabelInput?.value?.trim() || "";
     const units = yAxisUnitsInput?.value?.trim();
     if (units) y += ` (${units})`;
@@ -297,42 +309,48 @@ function applyFormattingLive() {
   }
 
   // ----- Fonts -----
-  const fontSize = Number(chartFontSizeInput?.value);
-  const fontFamily = chartFontFamilyInput?.value;
-  const size = Number.isFinite(fontSize) ? fontSize : 12;
+  const size = Number(chartFontSizeInput?.value) || 12;
+  const family = chartFontFamilyInput?.value;
 
-  chart.options.plugins.title.font.size = size + 4;
-  chart.options.plugins.legend.labels.font.size = size;
-
-  if (fontFamily) {
-    chart.options.plugins.title.font.family = fontFamily;
-    chart.options.plugins.legend.labels.font.family = fontFamily;
+  // Title font
+  if (chart.options.plugins && chart.options.plugins.title) {
+    chart.options.plugins.title.font =
+      chart.options.plugins.title.font || {};
+    chart.options.plugins.title.font.size = size + 4;
+    if (family) chart.options.plugins.title.font.family = family;
   }
 
+  // Legend font
+  if (chart.options.plugins && chart.options.plugins.legend) {
+    chart.options.plugins.legend.labels =
+      chart.options.plugins.legend.labels || {};
+    chart.options.plugins.legend.labels.font =
+      chart.options.plugins.legend.labels.font || {};
+    chart.options.plugins.legend.labels.font.size = size;
+    if (family) chart.options.plugins.legend.labels.font.family = family;
+  }
+
+  // Axis fonts
   ["x", "y"].forEach(axis => {
     const ax = chart.options.scales?.[axis];
     if (!ax) return;
+
+    ax.title = ax.title || {};
+    ax.title.font = ax.title.font || {};
+    ax.ticks = ax.ticks || {};
+    ax.ticks.font = ax.ticks.font || {};
+
     ax.title.font.size = size;
     ax.ticks.font.size = size;
-    if (fontFamily) {
-      ax.title.font.family = fontFamily;
-      ax.ticks.font.family = fontFamily;
+
+    if (family) {
+      ax.title.font.family = family;
+      ax.ticks.font.family = family;
     }
   });
 
-  // ----- Y-axis min / max / step -----
-  const min = Number(yAxisMinInput?.value);
-  const max = Number(yAxisMaxInput?.value);
-  const step = Number(yAxisStepInput?.value);
-
-  const yScale = chart.options.scales.y;
-
-  if (Number.isFinite(min)) yScale.min = min; else delete yScale.min;
-  if (Number.isFinite(max)) yScale.max = max; else delete yScale.max;
-  if (Number.isFinite(step)) yScale.ticks.stepSize = step; else delete yScale.ticks.stepSize;
-
-  // IMPORTANT: prevents infinite loops
-  chart.update("none");
+  // ----- IMPORTANT -----
+  chart.update("none"); // prevents recursion / stack overflow
 }
 
 
