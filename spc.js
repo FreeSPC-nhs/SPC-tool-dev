@@ -18,6 +18,9 @@ let splits = [];   // indices where a new XmR segment starts (split AFTER index)
 let lastXmRAnalysis = null;
 let lastRunAnalysis = null;
 let dataModelDirty = false;
+let gridHeaders = ["Date", "Value"];
+let lastGridHeadersKey = ""; // track changes
+
 
 const fileInput         = document.getElementById("fileInput");
 const columnSelectors   = document.getElementById("columnSelectors");
@@ -129,6 +132,11 @@ const trendRulePointsInput = document.getElementById("trendRulePoints");
 const flagSpecialCauseOnChartCheckbox = document.getElementById("flagSpecialCauseOnChart");
 const lclClampRow = document.getElementById("lclClampRow");
 const clampLclAtZeroCheckbox = document.getElementById("clampLclAtZero");
+
+const dataEditorGridEl = document.getElementById("dataEditorGrid");
+let dataEditorGrid = null; // jspreadsheet instance
+let gridHeaders = ["Date", "Value"];
+
 
 
 function guessColumns(rows) {
@@ -2324,22 +2332,45 @@ function buildAnnotationConfig(labels) {
 }
 
 function openDataEditor() {
-  if (!dataEditorOverlay || !dataEditorTextarea) return;
+  if (!dataEditorOverlay || !dataEditorGridEl) return;
 
-  // If we already have data, show it as CSV; otherwise, give a skeleton
-  if (rawRows && rawRows.length > 0) {
-    try {
-      dataEditorTextarea.value = Papa.unparse(rawRows);
-    } catch (e) {
-      // Fallback to blank if unparse fails for any reason
-      dataEditorTextarea.value = "";
+  const { headers, data } = objectsToSheet(rawRows);
+  gridHeaders = headers;
+
+  const headersKey = JSON.stringify(headers);
+
+  // If headers changed (name or count), rebuild the grid
+  const mustRebuild = !dataEditorGrid || headersKey !== lastGridHeadersKey;
+
+  if (mustRebuild) {
+    // If one already exists, destroy it cleanly
+    if (dataEditorGrid) {
+      try { dataEditorGrid.destroy(); } catch (e) { console.warn("Grid destroy failed:", e); }
+      dataEditorGrid = null;
     }
+
+    // Clear container to avoid duplicated UI remnants
+    dataEditorGridEl.innerHTML = "";
+
+    dataEditorGrid = jspreadsheet(dataEditorGridEl, {
+      data,
+      columns: headers.map(h => ({ title: h, width: 180 })),
+      minDimensions: [headers.length, Math.max(10, data.length + 1)],
+      allowInsertRow: true,
+      allowDeleteRow: true,
+      allowInsertColumn: true,
+      allowDeleteColumn: true,
+    });
+
+    lastGridHeadersKey = headersKey;
   } else {
-    dataEditorTextarea.value = "Date,Value\n";
+    // Headers unchanged: just update data
+    dataEditorGrid.setData(data);
   }
 
   dataEditorOverlay.style.display = "flex";
 }
+
 
 function closeDataEditor() {
   if (dataEditorOverlay) {
@@ -2358,6 +2389,25 @@ if (dataEditorCancelButton) {
     closeDataEditor();
   });
 }
+
+function objectsToSheet(rawRows) {
+  if (!rawRows || rawRows.length === 0) return { headers: ["Date", "Value"], data: [] };
+
+  const headers = Object.keys(rawRows[0]);
+  const data = rawRows.map(r => headers.map(h => r[h] ?? ""));
+  return { headers, data };
+}
+
+function sheetToObjects(headers, data) {
+  return data
+    .filter(row => row.some(cell => String(cell ?? "").trim() !== "")) // drop blank rows
+    .map(row => {
+      const o = {};
+      headers.forEach((h, i) => (o[h] = row[i]));
+      return o;
+    });
+}
+
 
 function rowsEqualNormalized(a, b) {
   if (!Array.isArray(a) || !Array.isArray(b)) return false;
@@ -2425,76 +2475,25 @@ function stripDuplicateHeaderRow(rows, headers) {
 
 if (dataEditorApplyButton) {
   dataEditorApplyButton.addEventListener("click", () => {
-    if (!dataEditorTextarea) return;
-
-    const text = dataEditorTextarea.value.trim();
-    if (!text) {
-      alert("Please paste or type some data first.");
-      return;
-    }
-
     let loadedOk = false;
 
     try {
-      // Preview without headers
-      const preview = Papa.parse(text, {
-        header: false,
-        dynamicTyping: false,
-        skipEmptyLines: true
-      });
-
-      if (preview.errors && preview.errors.length > 0) {
-        console.error(preview.errors);
-        showError("Error parsing pasted data: " + preview.errors[0].message);
+      // NEW: read from spreadsheet grid instead of textarea CSV
+      if (!dataEditorGrid) {
+        showError("Spreadsheet editor not initialised. Try reopening the editor.");
         return;
       }
 
-      const rows2D = preview.data;
-      if (!rows2D || rows2D.length < 2) {
-        showError("Paste at least a header row and one data row.");
+      const data2D = dataEditorGrid.getData(); // array of rows
+      const rows = sheetToObjects(gridHeaders, data2D);
+
+      if (!rows || rows.length === 0) {
+        showError("Please enter at least one data row.");
         return;
       }
 
-      const hasHeader = detectHasHeaderRow(rows2D);
-
-      if (hasHeader) {
-        // Parse with headers
-        const results = Papa.parse(text, {
-          header: true,
-          dynamicTyping: false,
-          skipEmptyLines: true
-        });
-
-        if (results.errors && results.errors.length > 0) {
-          console.error(results.errors);
-          showError("Error parsing pasted data: " + results.errors[0].message);
-          return;
-        }
-
-        let rows = results.data || [];
-        const headers = results.meta && results.meta.fields ? results.meta.fields : null;
-        rows = stripDuplicateHeaderRow(rows, headers);
-
-        if (!loadRows(rows)) return;
-        loadedOk = true;
-
-      } else {
-        // No headers -> ask user
-        const ok = confirm(
-          "It looks like your pasted data does not include column headings.\n\n" +
-          "Click OK to treat the first row as DATA (I will create Column1, Column2...).\n" +
-          "Click Cancel if the first row IS a header row (then please add headings and try again)."
-        );
-
-        if (!ok) {
-          showError("Please include a header row (e.g. Date,Value) then click Apply again.");
-          return;
-        }
-
-        const rows = rows2DToObjects(rows2D);
-        if (!loadRows(rows)) return;
-        loadedOk = true;
-      }
+      if (!loadRows(rows)) return;
+      loadedOk = true;
 
       // If we got here, data loaded successfully — clear scary messages
       clearError();
@@ -2518,12 +2517,10 @@ if (dataEditorApplyButton) {
       catch (genErr) { console.warn("Auto-generate failed:", genErr); }
 
     } catch (e) {
-      // Only show a scary error if we never successfully loaded data
       console.error(e);
       if (!loadedOk) {
-        showError("Unexpected error parsing pasted data.");
+        showError("Unexpected error reading spreadsheet data.");
       } else {
-        // Data is OK; don't confuse users with a false parsing error
         clearError();
       }
     }
@@ -5409,10 +5406,6 @@ function showChartContextMenu(clientX, clientY, pointIndex) {
   // Enable/disable the split buttons based on chart type and whether a point was clicked
   const addSplitBtn = chartContextMenu.querySelector('button[data-action="addSplit"]');
   const clearSplitsBtn = chartContextMenu.querySelector('button[data-action="clearSplits"]');
-
-  // Enable/disable the split buttons based on chart type and whether a point was clicked
-const addSplitBtn = chartContextMenu.querySelector('button[data-action="addSplit"]');
-const clearSplitsBtn = chartContextMenu.querySelector('button[data-action="clearSplits"]');
 
 if (addSplitBtn) {
   // Remember the original tooltip from HTML once

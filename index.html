@@ -16,6 +16,9 @@
   <!-- Excel export script -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.19.3/xlsx.full.min.js"></script>
 
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jspreadsheet-ce@4.15.0/dist/jspreadsheet.css" />
+<script src="https://cdn.jsdelivr.net/npm/jspreadsheet-ce@4.15.0/dist/jspreadsheet.js"></script>
+
 
   <style>
     body {
@@ -767,6 +770,16 @@ body.modal-open {
   margin-top: 0.35rem;
 }
 
+.data-editor-grid{
+  flex: 1;
+  min-height: 360px;
+  border: 1px solid #d0d7de;
+  border-radius: 0.25rem;
+  margin-top: 0.5rem;
+  overflow: hidden;
+}
+
+
   </style>
 </head>
 
@@ -874,7 +887,7 @@ body.modal-open {
 <div id="mrToggleRow" class="mr-compact">
   <label class="mr-check">
     <input type="checkbox" id="showMRCheckbox" checked />
-    <span>Show Moving Range (MR) chart</span>
+    <span>Show MR</span>
   </label>
 
   <div id="mrDisplayOptions" class="mr-mode">
@@ -1406,7 +1419,7 @@ body.modal-open {
       Paste data from Excel or type it directly. The first row can be headers (e.g. <code>Date,Value</code>).
       When you click <strong>Apply data</strong>, the chart options will update to use this data.
     </p>
-    <textarea id="dataEditorTextarea" spellcheck="false"></textarea>
+    <div id="dataEditorGrid" class="data-editor-grid"></div>
     <div class="data-editor-buttons">
       <button id="dataEditorApplyButton" type="button">Apply data</button>
       <button id="dataEditorCancelButton" type="button">Cancel</button>
