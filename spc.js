@@ -2606,10 +2606,20 @@ if (useHeaders !== autoGuess) {
         });
         body = nonBlank.slice(1); // remove header row from data
       } else {
-        const maxCols = nonBlank.reduce((m, r) => Math.max(m, r.length), 0);
-        headers = Array.from({ length: maxCols }, (_, i) => `Column${i + 1}`);
-        body = nonBlank;
-      }
+  // No header row: keep the existing column titles from the grid
+  const maxCols = nonBlank.reduce((m, r) => Math.max(m, r.length), 0);
+
+  const cols = (dataEditorGrid && dataEditorGrid.options && Array.isArray(dataEditorGrid.options.columns))
+    ? dataEditorGrid.options.columns
+    : [];
+
+  headers = Array.from({ length: maxCols }, (_, i) => {
+    const t = (cols[i] && cols[i].title) ? String(cols[i].title).trim() : "";
+    return t || `Column${i + 1}`;
+  });
+
+  body = nonBlank;
+}
 
       const rows = sheetToObjects(headers, body);
 
