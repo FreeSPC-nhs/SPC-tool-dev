@@ -917,7 +917,7 @@ function drawSecondarySPCChart({
     }
   ];
 
-  return new Chart(canvas.getContext("2d"), {
+  const ch = new Chart(canvas.getContext("2d"), {
     type: "line",
     data: { labels, datasets },
     options: {
@@ -951,7 +951,15 @@ function drawSecondarySPCChart({
       }
     }
   });
+
+  applyPresentationToChart(ch, {
+    suggestedMin: isFinite(suggestedMin) ? suggestedMin : undefined,
+    suggestedMax: isFinite(suggestedMax) ? suggestedMax : undefined
+  });
+
+  return ch;
 }
+
 
 // -----------------------------
 // X̄–S combined chart renderer
@@ -1083,6 +1091,7 @@ function drawXbarSCombinedChart({
       }
     }
   });
+  applyPresentationToChart(currentChart);
 
   // -------------------------
   // 2) Secondary chart: S chart (in MR panel)
@@ -2405,6 +2414,41 @@ function applyPresentationToChart(chart, { suggestedMin, suggestedMax } = {}) {
   chart.update();
 }
 
+// -----------------------------
+// Instant Y-axis units updater (no recalculation)
+// -----------------------------
+function applyYAxisUnitsInstantly() {
+  const units = (yAxisUnitsInput && yAxisUnitsInput.value.trim())
+    ? yAxisUnitsInput.value.trim()
+    : "";
+
+  function updateChartYAxis(chart) {
+    if (!chart || !chart.options || !chart.options.scales || !chart.options.scales.y) return;
+
+    const yScale = chart.options.scales.y;
+    yScale.title = yScale.title || {};
+
+    // Base label: use current input if present, otherwise existing text
+    let baseLabel =
+      (yAxisLabelInput && yAxisLabelInput.value.trim())
+        ? yAxisLabelInput.value.trim()
+        : (typeof yScale.title.text === "string" ? yScale.title.text : "");
+
+    // Remove any existing "(...)" suffix
+    baseLabel = baseLabel.replace(/\s*\(.*?\)\s*$/, "");
+
+    // Append units if provided
+    const finalLabel = units ? `${baseLabel} (${units})` : baseLabel;
+
+    yScale.title.text = finalLabel;
+    chart.update();
+  }
+
+  updateChartYAxis(currentChart);
+  updateChartYAxis(mrChart);
+}
+
+
 // When users change these controls, show the “recalc” prompt (your tool already uses this idea)
 function markNeedsRecalcFromPresentationControls() {
   if (typeof markDataModelDirty === "function") {
@@ -2416,20 +2460,36 @@ function markNeedsRecalcFromPresentationControls() {
 
 // Hook up change listeners (safe if elements not present)
 (function wirePresentationControlListeners() {
-  const inputs = [
-    yAxisMinInput, yAxisMaxInput, yAxisStepInput, yAxisUnitsInput,
-    chartFontFamilyInput, chartFontSizeInput
+  const instantInputs = [
+    yAxisMinInput, yAxisMaxInput, yAxisStepInput,
+    chartFontFamilyInput, chartFontSizeInput,
+    chartTitleInput, xAxisLabelInput, yAxisLabelInput
   ].filter(Boolean);
 
-  inputs.forEach(el => {
-    el.addEventListener("change", () => markNeedsRecalcFromPresentationControls());
-    el.addEventListener("input",  () => markNeedsRecalcFromPresentationControls());
+  const applyNow = debounce(() => {
+    if (typeof applyPresentationEditsLive === "function") {
+      applyPresentationEditsLive();
+    }
+
+    if (currentChart) applyPresentationToChart(currentChart);
+    if (mrChart) applyPresentationToChart(mrChart);
+  }, 60);
+
+  instantInputs.forEach(el => {
+    el.addEventListener("input", applyNow);
+    el.addEventListener("change", applyNow);
   });
 
+  // 👇 Units update instantly (separate on purpose)
+  if (yAxisUnitsInput) {
+    yAxisUnitsInput.addEventListener("input", applyYAxisUnitsInstantly);
+    yAxisUnitsInput.addEventListener("change", applyYAxisUnitsInstantly);
+  }
+
+  // Summary visibility
   if (showSummaryCheckbox) {
     showSummaryCheckbox.addEventListener("change", () => {
       syncSummaryVisibility();
-      // also clear summary content when hiding (so exports look clean)
       if (!shouldShowSummary()) {
         if (summaryDiv) summaryDiv.innerHTML = "";
         if (capabilityDiv) capabilityDiv.innerHTML = "";
@@ -2437,9 +2497,11 @@ function markNeedsRecalcFromPresentationControls() {
     });
   }
 
-  // set initial state on load
+  // Initial state
   syncSummaryVisibility();
 })();
+
+
 
 
 function populateAnnotationDateOptions(labels) {
