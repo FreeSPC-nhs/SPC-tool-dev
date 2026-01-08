@@ -4907,6 +4907,13 @@ function answerSpcQuestion(question) {
         "They are not targets, and they are not the same as a ‘good’ or ‘bad’ threshold. " +
         "A point outside the limits is a strong signal that something may have changed."
     },
+	{
+	  keywords: ["split", "splits", ["when", "split"], ["should", "split"], ["control", "limit", "split"], ["new", "normal"]],
+	  answer:
+	    "A split tells the tool to recalculate the centre line and control limits from a chosen point onward, so you can compare the *latest* performance to a new baseline. " 	+
+	    "Use splits only when you have good evidence of a real process change (for example, a redesigned pathway/ policy change/change in circumstances) and you want to show the new normal. " +
+	    "Avoid splitting just to ‘make the chart look stable’ — if the process is unstable, the right response is usually to investigate and understand the local context first. Then, once the cause has been understood, if it represents an ongoing change to the normal performance of that system, then the limits should be recalculated so that they represent what can be expected in the future."
+	},
     {
       keywords: ["how do i choose the right chart", "choose chart", ["choose", "chart"], ["which", "chart"]],
       answer:
