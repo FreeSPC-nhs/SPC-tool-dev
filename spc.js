@@ -5410,20 +5410,48 @@ function showChartContextMenu(clientX, clientY, pointIndex) {
   const addSplitBtn = chartContextMenu.querySelector('button[data-action="addSplit"]');
   const clearSplitsBtn = chartContextMenu.querySelector('button[data-action="clearSplits"]');
 
-  if (addSplitBtn) {
-    addSplitBtn.disabled = !supportsSplits || pointIndex === null || pointIndex === undefined;
-    addSplitBtn.title = !supportsSplits
-      ? "Splits are not available for this chart type."
-      : (pointIndex === null || pointIndex === undefined ? "Right-click near a data point to add a split." : "");
+  // Enable/disable the split buttons based on chart type and whether a point was clicked
+const addSplitBtn = chartContextMenu.querySelector('button[data-action="addSplit"]');
+const clearSplitsBtn = chartContextMenu.querySelector('button[data-action="clearSplits"]');
+
+if (addSplitBtn) {
+  // Remember the original tooltip from HTML once
+  if (!addSplitBtn.dataset.defaultTitle) {
+    addSplitBtn.dataset.defaultTitle = addSplitBtn.getAttribute("title") || "";
   }
 
-  if (clearSplitsBtn) {
-    const hasSplits = Array.isArray(splits) && splits.length > 0;
-    clearSplitsBtn.disabled = !supportsSplits || !hasSplits;
-    clearSplitsBtn.title = !supportsSplits
-      ? "Splits are not available for this chart type."
-      : (!hasSplits ? "No splits to clear." : "");
+  const noPoint = (pointIndex === null || pointIndex === undefined);
+  addSplitBtn.disabled = !supportsSplits || noPoint;
+
+  // Only override tooltip when disabled; otherwise restore the HTML tooltip
+  if (!supportsSplits) {
+    addSplitBtn.title = "Splits are not available for this chart type.";
+  } else if (noPoint) {
+    addSplitBtn.title = "Right-click near a data point to add a split.";
+  } else {
+    addSplitBtn.title = addSplitBtn.dataset.defaultTitle;
   }
+}
+
+if (clearSplitsBtn) {
+  // Remember the original tooltip from HTML once
+  if (!clearSplitsBtn.dataset.defaultTitle) {
+    clearSplitsBtn.dataset.defaultTitle = clearSplitsBtn.getAttribute("title") || "";
+  }
+
+  const hasSplits = Array.isArray(splits) && splits.length > 0;
+  clearSplitsBtn.disabled = !supportsSplits || !hasSplits;
+
+  // Only override tooltip when disabled; otherwise restore the HTML tooltip
+  if (!supportsSplits) {
+    clearSplitsBtn.title = "Splits are not available for this chart type.";
+  } else if (!hasSplits) {
+    clearSplitsBtn.title = "No splits to clear.";
+  } else {
+    clearSplitsBtn.title = clearSplitsBtn.dataset.defaultTitle;
+  }
+}
+
 
   chartContextMenu.style.display = "block";
   chartContextMenu.style.left = "0px";
