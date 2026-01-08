@@ -323,18 +323,38 @@ body.sidebar-collapsed .main {
   flex-direction: column;
 }
 
-#dataEditorTextarea {
-  width: 100%;
-  flex: 1;
-  min-height: 240px;
-  resize: vertical;
-  margin-top: 0.5rem;
-  font-family: "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  font-size: 0.85rem;
-  padding: 0.5rem;
-  border-radius: 0.25rem;
-  border: 1px solid #d0d7de;
+/* Data editor controls row (header checkbox + optional detect button) */
+.data-editor-controls{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0.5rem 0 0.25rem 0;
 }
+
+/* Make this label not full-width (overrides global label display) */
+.data-editor-checkbox{
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 0.85rem;
+  color: #333;
+  user-select: none;
+}
+
+/* Optional "secondary" button style that overrides global button styling */
+.data-editor-secondary{
+  background: #f6f8fa !important;
+  border: 1px solid #d0d7de !important;
+  color: #003087 !important;
+}
+
+.data-editor-secondary:hover:not(:disabled){
+  background: #eef2f6 !important;
+  border-color: #c9d1d9 !important;
+}
+
 
 .data-editor-buttons {
   margin-top: 0.75rem;
@@ -779,7 +799,7 @@ body.modal-open {
   min-height: 360px;
   border: 1px solid #d0d7de;
   border-radius: 0.25rem;
-  margin-top: 0.5rem;
+  margin-top: 0.25rem;
   overflow: hidden;
 }
 
@@ -1419,17 +1439,34 @@ body.modal-open {
 <div id="dataEditorOverlay">
   <div class="data-editor-dialog">
     <h2>Data editor</h2>
+
     <p class="hint">
-      Paste data from Excel or type it directly. The first row can be headers (e.g. <code>Date,Value</code>).
-      When you click <strong>Apply data</strong>, the chart options will update to use this data.
+      Paste data from Excel directly into the grid (you can paste many columns at once).
+      Choose whether the first row contains column headings. When you click
+      <strong>Apply data</strong>, the chart options will update to use this data.
     </p>
+
+    <div class="data-editor-controls">
+      <label class="data-editor-checkbox">
+        <input type="checkbox" id="dataEditorHasHeaders" checked>
+        First row contains headers
+      </label>
+
+      <!-- Optional: only keep this if you implement auto-detect in JS -->
+      <button id="dataEditorDetectHeadersButton" type="button" class="data-editor-secondary">
+        Auto-detect
+      </button>
+    </div>
+
     <div id="dataEditorGrid" class="data-editor-grid"></div>
+
     <div class="data-editor-buttons">
       <button id="dataEditorApplyButton" type="button">Apply data</button>
       <button id="dataEditorCancelButton" type="button">Cancel</button>
     </div>
   </div>
 </div>
+
 
 <!-- SPC Helper (rule-based "AI") -->
 <div id="spcHelperPanel">

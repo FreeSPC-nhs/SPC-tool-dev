@@ -2350,15 +2350,50 @@ function openDataEditor() {
     // Clear container to avoid duplicated UI remnants
     dataEditorGridEl.innerHTML = "";
 
-    dataEditorGrid = jspreadsheet(dataEditorGridEl, {
-      data,
-      columns: headers.map(h => ({ title: h, width: 180 })),
-      minDimensions: [headers.length, Math.max(10, data.length + 1)],
-      allowInsertRow: true,
-      allowDeleteRow: true,
-      allowInsertColumn: true,
-      allowDeleteColumn: true,
-    });
+ dataEditorGrid = jspreadsheet(dataEditorGridEl, {
+  data,
+  columns: headers.map(h => ({ title: h, width: 180 })),
+  minDimensions: [Math.max(headers.length, 10), Math.max(20, data.length + 10)],
+
+  allowInsertRow: true,
+  allowDeleteRow: true,
+  allowInsertColumn: true,
+  allowDeleteColumn: true,
+
+  onpaste: function(instance, pasteData, startCol, startRow) {
+    // pasteData is usually a tab/newline-delimited string in CE v4
+    if (!pasteData || typeof pasteData !== "string") return;
+
+    const rows = pasteData.split(/\r?\n/).filter(r => r.length > 0);
+    const colCount = rows.reduce((m, r) => Math.max(m, r.split("\t").length), 0);
+    const rowCount = rows.length;
+
+    // Current grid size
+    const currentCols = instance.options.columns.length;
+    const currentRows = instance.getData().length;
+
+    const neededCols = startCol + colCount;
+    const neededRows = startRow + rowCount;
+
+    // Add columns if needed
+    if (neededCols > currentCols) {
+      const addN = neededCols - currentCols;
+      // Insert at end
+      instance.insertColumn(addN, currentCols);
+      // Give new columns default titles
+      for (let i = currentCols; i < neededCols; i++) {
+        instance.setHeader(i, `Column${i + 1}`);
+      }
+    }
+
+    // Add rows if needed
+    if (neededRows > currentRows) {
+      const addN = neededRows - currentRows;
+      instance.insertRow(addN);
+    }
+  }
+});
+
 
     lastGridHeadersKey = headersKey;
   } else {
@@ -2476,54 +2511,76 @@ if (dataEditorApplyButton) {
     let loadedOk = false;
 
     try {
-      // NEW: read from spreadsheet grid instead of textarea CSV
       if (!dataEditorGrid) {
         showError("Spreadsheet editor not initialised. Try reopening the editor.");
         return;
       }
 
-      const data2D = dataEditorGrid.getData(); // array of rows
-      const rows = sheetToObjects(gridHeaders, data2D);
+      const data2D = dataEditorGrid.getData();
+
+      // Drop fully blank rows
+      const nonBlank = data2D.filter(row =>
+        row.some(cell => String(cell ?? "").trim() !== "")
+      );
+
+      if (nonBlank.length === 0) {
+        showError("Please enter at least one data row.");
+        return;
+      }
+
+      // Decide if first row is headers (checkbox)
+      const useHeaders = !!(dataEditorHasHeaders && dataEditorHasHeaders.checked);
+
+      let headers;
+      let body;
+
+      if (useHeaders) {
+        headers = nonBlank[0].map((h, i) => {
+          const name = String(h ?? "").trim();
+          return name || `Column${i + 1}`;
+        });
+        body = nonBlank.slice(1); // remove header row from data
+      } else {
+        const maxCols = nonBlank.reduce((m, r) => Math.max(m, r.length), 0);
+        headers = Array.from({ length: maxCols }, (_, i) => `Column${i + 1}`);
+        body = nonBlank;
+      }
+
+      const rows = sheetToObjects(headers, body);
 
       if (!rows || rows.length === 0) {
-        showError("Please enter at least one data row.");
+        showError("Paste at least one row of data.");
         return;
       }
 
       if (!loadRows(rows)) return;
       loadedOk = true;
 
-      // If we got here, data loaded successfully — clear scary messages
       clearError();
 
-      // Reset annotations/splits because the data changed
+      // Reset annotations/splits etc... (keep your existing block)
       annotations = [];
       if (annotationDateInput) annotationDateInput.value = "";
       if (annotationLabelInput) annotationLabelInput.value = "";
       splits = [];
       if (splitPointSelect) splitPointSelect.innerHTML = "";
 
-      // Close editor (non-critical UI step)
       try { closeDataEditor(); } catch (uiErr) { console.warn("closeDataEditor failed:", uiErr); }
 
-      // Hide "Load data..." hint if you added it
       const hint = document.getElementById("noDataYetHint");
       if (hint) hint.style.display = "none";
 
-      // Auto-generate (also non-critical)
       try { if (generateButton) generateButton.click(); }
       catch (genErr) { console.warn("Auto-generate failed:", genErr); }
 
     } catch (e) {
       console.error(e);
-      if (!loadedOk) {
-        showError("Unexpected error reading spreadsheet data.");
-      } else {
-        clearError();
-      }
+      if (!loadedOk) showError("Unexpected error reading spreadsheet data.");
+      else clearError();
     }
   });
 }
+
 
 
 function formatDateOnlyLabel(v) {
