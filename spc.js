@@ -6228,23 +6228,28 @@ if (action === "clearAnnotations") {
 
 
       if (action === "addSplit") {
-        if (clickedPointIndex === null || clickedPointIndex === undefined) {
-          alert("Right-click near a data point to add a split.");
-          return;
-        }
+  if (clickedPointIndex === null || clickedPointIndex === undefined) {
+    alert("Right-click near a data point to add a split.");
+    return;
+  }
 
-        // Mimic the sidebar workflow: set dropdown value then apply
-        if (splitPointSelect) splitPointSelect.value = String(clickedPointIndex);
+  // Try sidebar-style apply ONLY if the split dropdown exists.
+  // If it fails (e.g. dropdown removed), fall back to direct add.
+  let applied = false;
 
-        // Use your shared sidebar function if it exists
-        if (typeof applySplitFromSidebarSelection === "function") {
-          applySplitFromSidebarSelection();
-        } else {
-          // Fallback: add directly and redraw
-          addSplitAfterIndex(clickedPointIndex);
-        }
-        return;
-      }
+  if (splitPointSelect && typeof applySplitFromSidebarSelection === "function") {
+    splitPointSelect.value = String(clickedPointIndex);
+    applied = (applySplitFromSidebarSelection() === true);
+  }
+
+  if (!applied) {
+    // Direct method that does NOT require sidebar UI
+    addSplitAfterIndex(clickedPointIndex);
+  }
+
+  return;
+}
+
 
       if (action === "clearSplits") {
         // Clear splits immediately + redraw (same effect as your sidebar clear button)

@@ -791,8 +791,6 @@ body.modal-open {
 </div>
 
 <button id="resetButton" type="button" style="margin-left:0.5rem;">Reset tool</button>
-
-<button id="downloadPngButton" style="margin-left:0.5rem;">Download chart as PNG</button>
 <button id="downloadPdfButton" style="margin-left:0.5rem;">Download PDF report</button>
 <button type="button" style="margin-left:0.5rem;" onclick="toggleHelpSection()">Help &amp; guidance</button>
 <button type="button" style="margin-left:0.5rem;" onclick="toggleSpcHelper()">SPC helper</button>
@@ -1089,8 +1087,6 @@ body.modal-open {
 <div class="chart-container">
   <canvas id="spcChart"></canvas>
 </div>
-
-          
           <div id="summary" style="margin-top: 1rem; font-size: 0.9rem;"></div>
           <div id="capability" style="margin-top: 1rem; font-size: 0.9rem;"></div>
         </div>
@@ -1109,178 +1105,272 @@ body.modal-open {
   </div> <!-- end .layout -->
 
   <!-- HELP SECTION -->
-  <div id="helpModal" class="modal" aria-hidden="true">
+<div id="helpModal" class="modal" aria-hidden="true">
   <div class="modal-backdrop" aria-hidden="true"></div>
 
   <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="helpModalTitle">
     <button type="button" class="modal-close" aria-label="Close help" onclick="toggleHelpSection(false)">×</button>
 
     <section id="helpSection" class="panel" style="display:block; margin:0;">
-    <h2 id="helpModalTitle">Help &amp; guidance</h2>
-    <p class="sub">
-      This section explains how to use the Simple SPC Web Tool and how to interpret the charts.
-    </p>
-
-    <details open>
-      <summary><strong>1. What this tool does</strong></summary>
-      <p>
-        This tool creates simple Statistical Process Control (SPC) charts directly in your browser.
-        It supports:
+      <h2 id="helpModalTitle">Help &amp; guidance</h2>
+      <p class="sub">
+        This section explains how to use the Simple SPC Web Tool and how to interpret the charts.
       </p>
+
+      <details open>
+        <summary><strong>1. What this tool does</strong></summary>
+        <p>
+          This tool helps you create <strong>Statistical Process Control (SPC)</strong> charts directly in your browser.
+          All calculations happen in your browser. The data are <strong>not</strong> uploaded to a server.
+          This tool has been designed for learning, improvement work, and rapid analysis — not as a regulated statistical package.
+          It supports:
+        </p>
+        <ul>
+          <li><strong>Run charts</strong> – values over time with a median line and simple run/trend rules.</li>
+          <li><strong>XmR charts</strong> – Individuals (X) chart with mean and control limits plus a Moving Range (MR) chart.</li>
+          <li><strong>X̄–S charts</strong> – X̄ and S charts for grouped data (multiple measurements per subgroup).</li>
+          <li><strong>P / U charts</strong> – for proportions or rates.</li>
+          <li><strong>T / G charts</strong> – for rare events.</li>
+        </ul>
+        <p>
+          The control panel on the left side of the screen allows you to upload data, select options for how to present it,
+          and use some advanced options for refining your charts.
+        </p>
+      </details>
+
+      <details>
+        <summary><strong>2. Preparing and loading your data</strong></summary>
+        <ul>
+          <li>Your data should have at least two columns:
+            <ul>
+              <li>a <strong>time/order column</strong> (e.g. date, month, or sequence number), and</li>
+              <li>a <strong>numeric column</strong> (e.g. waiting time, rate, count, score).</li>
+            </ul>
+          </li>
+          <li>Click <strong>“Upload CSV file”</strong> to choose a .csv file, or use the
+            <strong>“Open data editor (paste/type data)”</strong> button to paste directly from Excel.</li>
+          <li>Once loaded, use the <strong>“Choose columns”</strong> dropdowns to specify:
+            <ul>
+              <li><strong>Date / X-axis column</strong></li>
+              <li><strong>Value / Y-axis column</strong></li>
+            </ul>
+          </li>
+        </ul>
+        <p class="hint">
+          If the chart does not appear, check that the value column contains valid numbers and that there are no
+          unexpected headers or blank rows in the middle of the data.
+        </p>
+      </details>
+
+      <details>
+  <summary><strong>3. X-axis type &amp; chart type</strong></summary>
+
+  <h3 style="margin-top:0.4rem;">X-axis type</h3>
+  <ul>
+    <li><strong>Date / time</strong> – recommended for usual time-series SPC
+      (e.g. daily, weekly or monthly measures).</li>
+    <li><strong>Sequence / category</strong> – use when you want each row in the
+      order it appears (e.g. individual patients, samples or tests), even if the
+      X-value is not a date.</li>
+  </ul>
+
+  <h3 style="margin-top:0.8rem;">Chart type</h3>
+  <p>
+    The tool supports several SPC chart types. If you are unsure which to use,
+    click <strong>“Help me choose a chart”</strong> to open the chart selection wizard.
+  </p>
+
+  <ul>
+    <li><strong>Run chart</strong>
       <ul>
-        <li><strong>Run charts</strong> – values over time with a median line and simple run/trend rules.</li>
-        <li><strong>XmR charts</strong> – Individuals (X) chart with mean and control limits plus a Moving Range (MR) chart.</li>
+        <li>Simple view of data over time using the median.</li>
+        <li>Useful as a first look or when data are limited.</li>
       </ul>
-      <p>
-        All calculations happen in your browser. The data are <strong>not</strong> uploaded to a server.
-      </p>
-    </details>
+    </li>
 
-    <details>
-      <summary><strong>2. Preparing and loading your data</strong></summary>
+    <li><strong>XmR chart</strong>
       <ul>
-        <li>Your data should have at least two columns:
-          <ul>
-            <li>a <strong>time/order column</strong> (e.g. date, month, or sequence number), and</li>
-            <li>a <strong>numeric column</strong> (e.g. waiting time, rate, count, score).</li>
-          </ul>
-        </li>
-        <li>Click <strong>“Upload CSV file”</strong> to choose a .csv file, or use the
-          <strong>“Open data editor (paste/type data)”</strong> button to paste directly from Excel.</li>
-        <li>Once loaded, use the <strong>“Choose columns”</strong> dropdowns to specify:
-          <ul>
-            <li><strong>Date / X-axis column</strong></li>
-            <li><strong>Value / Y-axis column</strong></li>
-          </ul>
-        </li>
+        <li>For continuous data with one observation per time point.</li>
+        <li>Shows a mean with upper and lower control limits.</li>
+        <li>Includes an optional <strong>Moving Range (MR)</strong> chart.</li>
       </ul>
-      <p class="hint">
-        If the chart does not appear, check that the value column contains valid numbers and that there are no
-        unexpected headers or blank rows in the middle of the data.
-      </p>
-    </details>
+    </li>
 
-    <details>
-      <summary><strong>3. X-axis type &amp; chart type</strong></summary>
-      <h3 style="margin-top:0.4rem;">X-axis type</h3>
+    <li><strong>X̄–S chart</strong>
       <ul>
-        <li><strong>Date / time</strong> – recommended for usual time-series SPC (e.g. daily or weekly metrics).
-        </li>
-        <li><strong>Sequence / category</strong> – use when you want each row in the order it appears, e.g. individual
-          patients, tests or cases, even if the X-value is not a date.</li>
+        <li>Confirming and understanding variation within and between subgroups.</li>
+        <li>Use when you have multiple measurements per subgroup (e.g. samples per day).</li>
       </ul>
+    </li>
 
-      <h3 style="margin-top:0.8rem;">Chart type</h3>
+    <li><strong>P chart</strong>
       <ul>
-        <li><strong>Run chart</strong>
-          <ul>
-            <li>Draws a median line only.</li>
-            <li>Highlights long runs and trends as possible special-cause signals.</li>
-          </ul>
-        </li>
-        <li><strong>XmR chart</strong>
-          <ul>
-            <li>Draws a mean with upper and lower control limits (UCL/LCL).</li>
-            <li>Shows ±1σ and ±2σ reference lines where possible.</li>
-            <li>Includes an optional <strong>Moving Range (MR)</strong> chart underneath.</li>
-          </ul>
-        </li>
+        <li>For proportions (e.g. percentage of patients with a defect).</li>
+        <li>Requires a numerator and denominator.</li>
       </ul>
-    </details>
+    </li>
 
-    <details>
-      <summary><strong>4. Baseline, splits and target</strong></summary>
-      <h3 style="margin-top:0.4rem;">Baseline</h3>
-      <p>
-        The <strong>“Use first N points as baseline”</strong> box lets you restrict which points are used to calculate
-        the median (run chart) or mean and limits (XmR).
-        Leave this blank to use all points.
-      </p>
-
-      <h3 style="margin-top:0.8rem;">Splits (XmR only)</h3>
-      <p>
-        The <strong>“Split the XmR chart”</strong> controls allow you to recalculate the mean and limits from a chosen
-        point onwards. This is useful when you make a clear change to the system (e.g. a new pathway) and want to see
-        the new, post-change process performance.
-      </p>
-
-      <h3 style="margin-top:0.8rem;">Target / goal</h3>
-      <p>
-        You can enter a <strong>Target / goal value</strong> and choose whether “at or above” or “at or below” the
-        target is desirable. The chart will show a dashed target line.
-      </p>
-      <p class="hint">
-        In XmR mode, the summary panel will show an approximate process capability against this target
-        <em>if</em> the process looks stable (no obvious special-cause signals).
-      </p>
-    </details>
-
-    <details>
-      <summary><strong>5. Annotations</strong></summary>
-      <p>
-        Use the <strong>Annotations</strong> section to mark important events, such as new interventions, policy changes
-        or data definition changes.
-      </p>
+    <li><strong>U chart</strong>
       <ul>
-        <li>Select an <strong>Annotation date</strong> from the dropdown (this uses the dates on the X-axis).</li>
-        <li>Type a short <strong>Annotation label</strong> (e.g. “New pathway introduced”).</li>
-        <li>Click <strong>“Add annotation”</strong> to add a vertical dashed line and label.</li>
-        <li>Use <strong>“Clear all annotations”</strong> to remove them.</li>
+        <li>For rates (e.g. defects per opportunity).</li>
+        <li>Requires a count and a number of opportunities.</li>
       </ul>
-    </details>
+    </li>
 
-    <details>
-      <summary><strong>6. Interpreting the summary</strong></summary>
-      <p>
-        Under the chart, the <strong>Summary</strong> section gives a brief interpretation of the pattern.
-        It comments on:
-      </p>
+    <li><strong>T chart</strong>
       <ul>
-        <li>Number of data points and which points are used as baseline.</li>
-        <li>The median (run chart) or mean and limits (XmR).</li>
-        <li>Whether any simple rules are breached (points beyond limits, long runs, or clear trends).</li>
+        <li>For time between rare events.</li>
       </ul>
-      <p class="hint">
-        These rules are intended as prompts, not absolute answers.
-        Always interpret the pattern in the context of the clinical or operational system.
-      </p>
-    </details>
+    </li>
 
-    <details>
-      <summary><strong>7. Downloading charts and reports</strong></summary>
+    <li><strong>G chart</strong>
       <ul>
-        <li><strong>Download chart as PNG</strong> – saves the main chart as an image for use in slides, emails or reports.</li>
-        <li><strong>Download PDF report</strong> – exports the chart and summary into a simple PDF layout.</li>
+        <li>For opportunities between rare events.</li>
       </ul>
-      <p class="hint">
-        Check the PDF in a PDF viewer before sharing, especially if your chart is very wide or contains many annotations.
-      </p>
-    </details>
+    </li>
+  </ul>
 
-    <details>
-      <summary><strong>8. Data privacy</strong></summary>
-      <p>
-        The tool runs entirely in your browser:
-      </p>
-      <ul>
-        <li>Data are not sent to a server.</li>
-        <li>Once you close the page, your data are no longer available to the tool.</li>
-      </ul>
-      <p class="hint">
-        Always follow your local information governance guidance before using real patient-identifiable data.
-      </p>
-    </details>
+  <p class="hint">
+    If you are new to SPC, start with a Run chart or XmR chart unless the wizard
+    suggests otherwise.
+  </p>
+</details>
 
-	<details>
-      <summary><strong>9. About the tool</strong></summary>
-      <p>
-        This tool was developed by Jem Ramazanoglu - <a href="mailto:j.ramazanoglu@nhs.net">j.ramazanoglu@nhs.net</a> as a free resource to support Quality 	Improvement in the NHS.</p>
-      <p class="hint">
-        I hope you like the tool - I'm always keen to hear feedback - please let me know if you spot a bug or to suggest an improvement.
-      </p>
-    </details>
 
-   </section>
+      <details>
+        <summary><strong>4. Baseline, splits and target</strong></summary>
+
+        <h3 style="margin-top:0.4rem;">Baseline</h3>
+        <p>
+          The <strong>“Use first N points as baseline”</strong> box lets you restrict which points are used to calculate
+          the median (run chart) or mean and limits (XmR).
+          Leave this blank to use all points.
+        </p>
+
+        <h3 style="margin-top:0.8rem;">Splitting control limits</h3>
+        <p>
+          Splits allow you to recalculate the mean and control limits from a chosen point onwards.
+          This is useful when you make a clear change to the system (for example, introducing a new pathway)
+          and want to assess performance after that change.
+        </p>
+        <p>
+          Splits are added from the chart menu by <strong>right-clicking on the chart</strong>.
+        </p>
+        <p class="hint">
+          Use splits sparingly and only when there is good evidence of a real process change.
+          Avoid using splits simply to make a chart appear more stable.
+        </p>
+
+        <h3 style="margin-top:0.8rem;">Target / goal</h3>
+        <p>
+          You can enter a <strong>Target / goal value</strong> and choose whether “at or above” or “at or below”
+          the target is desirable. The chart will show a dashed target line.
+        </p>
+        <p class="hint">
+          In XmR mode, the summary panel will show an approximate process capability against this target
+          <em>if</em> the process looks stable (no obvious special-cause signals).
+        </p>
+      </details>
+
+      <details>
+        <summary><strong>5. Annotations</strong></summary>
+        <p>
+          Annotations are used to mark important events, such as new interventions,
+          policy changes or data definition changes.
+        </p>
+        <p>
+          Annotations are added from the chart menu by <strong>right-clicking on the chart</strong>.
+        </p>
+        <p class="hint">
+          Keep annotation labels short and factual to avoid cluttering the chart.
+        </p>
+      </details>
+
+      <details>
+        <summary><strong>6. Interpreting the summary</strong></summary>
+        <p>
+  Under the chart, the <strong>Summary</strong> section gives a brief interpretation
+  of the pattern, tailored to the selected chart type.
+</p>
+
+<p>
+  Depending on the chart, it may comment on:
+</p>
+
+<ul>
+  <li>The number of data points and which points are used as baseline.</li>
+  <li>The median (run chart), mean and limits (XmR / X̄–S), or centre line
+      appropriate to the chart type.</li>
+  <li>Possible special-cause signals such as:
+    <ul>
+      <li>points beyond control limits,</li>
+      <li>long runs on one side of the centre line,</li>
+      <li>clear upward or downward trends.</li>
+    </ul>
+  </li>
+</ul>
+
+<p class="hint">
+  These rules are intended as prompts, not absolute answers.
+  Always interpret the pattern in the context of the clinical or operational system.
+</p>
+
+<p>
+  For further help interpreting charts, rules, and good SPC practice, use the
+  <strong>SPC helper</strong>.
+</p>
+
+      </details>
+
+      <details>
+  <summary><strong>7. Copying and downloading charts</strong></summary>
+  <p>
+    Additional options are available from the chart menu by
+    <strong>right-clicking on the chart</strong>.
+  </p>
+
+  <ul>
+    <li><strong>Copy chart image</strong> – copies the chart to the clipboard
+        for pasting into slides, emails or documents.</li>
+    <li><strong>Copy chart and analysis</strong> – copies the chart together with
+        the summary text.</li>
+    <li><strong>Save chart as PNG</strong> – downloads the chart image to your computer.</li>
+    <li><strong>Download PDF report</strong> – exports the chart and summary into a
+        simple PDF layout.</li>
+  </ul>
+
+  <p class="hint">
+    When copying or exporting charts, make sure axes labels, annotations and context
+    are clear to someone who was not involved in the analysis.
+  </p>
+</details>
+
+
+      <details>
+        <summary><strong>8. Data privacy</strong></summary>
+        <p>The tool runs entirely in your browser:</p>
+        <ul>
+          <li>Data are not sent to a server.</li>
+          <li>Once you close the page, your data are no longer available to the tool.</li>
+        </ul>
+        <p class="hint">
+          Always follow your local information governance guidance before using real patient-identifiable data.
+        </p>
+      </details>
+
+      <details>
+        <summary><strong>9. About the tool</strong></summary>
+        <p>
+          This tool was developed by Jem Ramazanoglu –
+          <a href="mailto:j.ramazanoglu@nhs.net">j.ramazanoglu@nhs.net</a>
+          as a free resource to support Quality Improvement in the NHS.
+        </p>
+        <p class="hint">
+          Feedback and suggestions are very welcome.
+        </p>
+      </details>
+
+    </section>
   </div>
 </div>
 
