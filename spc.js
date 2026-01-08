@@ -6925,18 +6925,24 @@ if (downloadPdfBtn) {
 
 renderHelperState();
 
-[
-  chartTitleInput,
-  xAxisLabelInput,
-  yAxisLabelInput,
-  yAxisUnitsInput,
-  yAxisMinInput,
-  yAxisMaxInput,
-  yAxisStepInput,
-  chartFontFamilyInput,
-  chartFontSizeInput
-].filter(Boolean).forEach(el => {
-  el.addEventListener("input", applyFormattingLive);
-  el.addEventListener("change", applyFormattingLive);
+// -----------------------------
+// Wire formatting inputs AFTER page load
+// -----------------------------
+window.addEventListener("DOMContentLoaded", () => {
+  [
+    chartTitleInput,
+    xAxisLabelInput,
+    yAxisLabelInput,
+    yAxisUnitsInput,
+    yAxisMinInput,
+    yAxisMaxInput,
+    yAxisStepInput,
+    chartFontFamilyInput,
+    chartFontSizeInput
+  ].filter(Boolean).forEach(el => {
+    el.addEventListener("input", applyFormattingLive);
+    el.addEventListener("change", applyFormattingLive);
+  });
 });
+
 
