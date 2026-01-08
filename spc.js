@@ -394,14 +394,6 @@ function debounce(fn, ms = 80) {
   };
 }
 
-const applyPresentationEditsLiveDebounced = debounce(applyPresentationEditsLive, 60);
-
-if (chartTitleInput) chartTitleInput.addEventListener("input", applyPresentationEditsLiveDebounced);
-if (xAxisLabelInput) xAxisLabelInput.addEventListener("input", applyPresentationEditsLiveDebounced);
-if (yAxisLabelInput) yAxisLabelInput.addEventListener("input", applyPresentationEditsLiveDebounced);
-
-
-
 function loadRows(rows) {
   if (!rows || rows.length === 0) {
     showError("No rows found in the data.");
@@ -2429,10 +2421,14 @@ function applyYAxisUnitsInstantly() {
     yScale.title = yScale.title || {};
 
     // Base label: use current input if present, otherwise existing text
-    let baseLabel =
-      (yAxisLabelInput && yAxisLabelInput.value.trim())
-        ? yAxisLabelInput.value.trim()
-        : (typeof yScale.title.text === "string" ? yScale.title.text : "");
+    let baseLabel = "";
+
+if (yAxisLabelInput && typeof yAxisLabelInput.value === "string" && yAxisLabelInput.value.trim()) {
+  baseLabel = yAxisLabelInput.value.trim();
+} else if (typeof yScale.title.text === "string") {
+  baseLabel = yScale.title.text;
+}
+
 
     // Remove any existing "(...)" suffix
     baseLabel = baseLabel.replace(/\s*\(.*?\)\s*$/, "");
