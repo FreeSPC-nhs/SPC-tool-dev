@@ -135,8 +135,6 @@ const clampLclAtZeroCheckbox = document.getElementById("clampLclAtZero");
 
 const dataEditorGridEl = document.getElementById("dataEditorGrid");
 let dataEditorGrid = null; // jspreadsheet instance
-let gridHeaders = ["Date", "Value"];
-
 
 
 function guessColumns(rows) {
