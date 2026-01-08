@@ -79,6 +79,14 @@ const baselineInput     = document.getElementById("baselinePoints");
 const chartTitleInput   = document.getElementById("chartTitle");
 const xAxisLabelInput   = document.getElementById("xAxisLabel");
 const yAxisLabelInput   = document.getElementById("yAxisLabel");
+
+const yAxisMinInput     = document.getElementById("yAxisMin");
+const yAxisMaxInput     = document.getElementById("yAxisMax");
+const yAxisStepInput    = document.getElementById("yAxisStep");
+const yAxisUnitsInput   = document.getElementById("yAxisUnits");
+const chartFontFamilyInput = document.getElementById("chartFontFamily");
+const chartFontSizeInput   = document.getElementById("chartFontSize");
+
 const targetInput       = document.getElementById("targetValue");
 const targetDirectionInput = document.getElementById("targetDirection");
 const capabilityDiv     = document.getElementById("capability");
@@ -96,6 +104,7 @@ const mrChartCanvas     = document.getElementById("mrChartCanvas");
 const mrCanvas = mrChartCanvas;
 const mrToggleRow = document.getElementById("mrToggleRow");
 
+const showSummaryCheckbox = document.getElementById("showSummaryCheckbox");
 
 const generateButton    = document.getElementById("generateButton");
 const errorMessage      = document.getElementById("errorMessage");
@@ -2264,7 +2273,7 @@ function drawGChart(values, baselineCount, labels) {
 
 	
 
-// Get title / axis labels with fallbacks
+// Get title / axis labels with fallbacks (now supports optional Y-axis units)
 function getChartLabels(defaultTitle, defaultX, defaultY) {
   const title = chartTitleInput && chartTitleInput.value.trim()
     ? chartTitleInput.value.trim()
@@ -2274,12 +2283,164 @@ function getChartLabels(defaultTitle, defaultX, defaultY) {
     ? xAxisLabelInput.value.trim()
     : defaultX;
 
-  const yLabel = yAxisLabelInput && yAxisLabelInput.value.trim()
+  let yLabel = yAxisLabelInput && yAxisLabelInput.value.trim()
     ? yAxisLabelInput.value.trim()
     : defaultY;
 
+  const units = (yAxisUnitsInput && yAxisUnitsInput.value.trim())
+    ? yAxisUnitsInput.value.trim()
+    : "";
+
+  // If units are provided, append them like "Value (units)" unless the label already contains units
+  if (units) {
+    const hasParen = yLabel.includes("(") && yLabel.includes(")");
+    if (!hasParen) yLabel = `${yLabel} (${units})`;
+  }
+
   return { title, xLabel, yLabel };
 }
+
+// -----------------------------
+// Presentation controls (Y axis + fonts + summary visibility)
+// -----------------------------
+function readYAxisSettings() {
+  const min = yAxisMinInput && yAxisMinInput.value !== "" ? Number(yAxisMinInput.value) : null;
+  const max = yAxisMaxInput && yAxisMaxInput.value !== "" ? Number(yAxisMaxInput.value) : null;
+  const step = yAxisStepInput && yAxisStepInput.value !== "" ? Number(yAxisStepInput.value) : null;
+
+  return {
+    min: Number.isFinite(min) ? min : null,
+    max: Number.isFinite(max) ? max : null,
+    step: Number.isFinite(step) ? step : null
+  };
+}
+
+function readFontSettings() {
+  const family = (chartFontFamilyInput && chartFontFamilyInput.value.trim()) ? chartFontFamilyInput.value.trim() : "";
+  const size = (chartFontSizeInput && chartFontSizeInput.value !== "") ? Number(chartFontSizeInput.value) : 12;
+
+  return {
+    family,
+    size: Number.isFinite(size) ? size : 12
+  };
+}
+
+function shouldShowSummary() {
+  // default to "true" if checkbox isn't present for any reason
+  return showSummaryCheckbox ? !!showSummaryCheckbox.checked : true;
+}
+
+function syncSummaryVisibility() {
+  const show = shouldShowSummary();
+  if (summaryDiv) summaryDiv.style.display = show ? "block" : "none";
+  if (capabilityDiv) capabilityDiv.style.display = show ? "block" : "none";
+}
+
+// Apply font + Y settings to ANY Chart.js chart instance
+function applyPresentationToChart(chart, { suggestedMin, suggestedMax } = {}) {
+  if (!chart || !chart.options) return;
+
+  // ---- Fonts ----
+  const { family, size } = readFontSettings();
+  const titleSize = Math.min(28, size + 4);
+
+  // Ensure objects exist
+  chart.options.plugins = chart.options.plugins || {};
+  chart.options.plugins.title = chart.options.plugins.title || {};
+  chart.options.plugins.legend = chart.options.plugins.legend || {};
+
+  chart.options.plugins.title.font = chart.options.plugins.title.font || {};
+  chart.options.plugins.legend.labels = chart.options.plugins.legend.labels || {};
+  chart.options.plugins.legend.labels.font = chart.options.plugins.legend.labels.font || {};
+
+  if (family) {
+    chart.options.plugins.title.font.family = family;
+    chart.options.plugins.legend.labels.font.family = family;
+  }
+  chart.options.plugins.title.font.size = titleSize;
+  chart.options.plugins.legend.labels.font.size = size;
+
+  // Axis fonts
+  if (chart.options.scales) {
+    ["x", "y"].forEach((axisKey) => {
+      const ax = chart.options.scales[axisKey];
+      if (!ax) return;
+
+      ax.title = ax.title || {};
+      ax.title.font = ax.title.font || {};
+      ax.ticks = ax.ticks || {};
+      ax.ticks.font = ax.ticks.font || {};
+
+      if (family) {
+        ax.title.font.family = family;
+        ax.ticks.font.family = family;
+      }
+      ax.title.font.size = size;
+      ax.ticks.font.size = size;
+    });
+  }
+
+  // ---- Y axis min/max/step ----
+  const y = chart.options.scales && chart.options.scales.y ? chart.options.scales.y : null;
+  if (y) {
+    const { min, max, step } = readYAxisSettings();
+
+    // If user set min/max, that overrides everything
+    if (min !== null) y.min = min; else delete y.min;
+    if (max !== null) y.max = max; else delete y.max;
+
+    // Otherwise use suggestedMin/Max if provided by the calling chart (nice defaults)
+    if (min === null && Number.isFinite(suggestedMin)) y.suggestedMin = suggestedMin; else if (min !== null) delete y.suggestedMin;
+    if (max === null && Number.isFinite(suggestedMax)) y.suggestedMax = suggestedMax; else if (max !== null) delete y.suggestedMax;
+
+    y.ticks = y.ticks || {};
+    if (step !== null) {
+      y.ticks.stepSize = step;
+    } else {
+      // leave Chart.js automatic if blank
+      delete y.ticks.stepSize;
+    }
+  }
+
+  chart.update();
+}
+
+// When users change these controls, show the “recalc” prompt (your tool already uses this idea)
+function markNeedsRecalcFromPresentationControls() {
+  if (typeof markDataModelDirty === "function") {
+    markDataModelDirty();
+  } else {
+    // fallback: do nothing
+  }
+}
+
+// Hook up change listeners (safe if elements not present)
+(function wirePresentationControlListeners() {
+  const inputs = [
+    yAxisMinInput, yAxisMaxInput, yAxisStepInput, yAxisUnitsInput,
+    chartFontFamilyInput, chartFontSizeInput
+  ].filter(Boolean);
+
+  inputs.forEach(el => {
+    el.addEventListener("change", () => markNeedsRecalcFromPresentationControls());
+    el.addEventListener("input",  () => markNeedsRecalcFromPresentationControls());
+  });
+
+  if (showSummaryCheckbox) {
+    showSummaryCheckbox.addEventListener("change", () => {
+      syncSummaryVisibility();
+      // also clear summary content when hiding (so exports look clean)
+      if (!shouldShowSummary()) {
+        if (summaryDiv) summaryDiv.innerHTML = "";
+        if (capabilityDiv) capabilityDiv.innerHTML = "";
+      }
+    });
+  }
+
+  // set initial state on load
+  syncSummaryVisibility();
+})();
+
 
 function populateAnnotationDateOptions(labels) {
   if (!annotationDateInput) return;
@@ -2872,6 +3033,13 @@ function smallSampleWarningHtml(nPoints, chartLabel = "this chart") {
 function renderAttributeSummary(a) {
   if (!summaryDiv) return;
 
+  if (!shouldShowSummary()) {
+    summaryDiv.innerHTML = "";
+    if (capabilityDiv) capabilityDiv.innerHTML = "";
+    syncSummaryVisibility();
+    return;
+  }
+
   const nameMap = { c: "C chart", p: "P chart", u: "U chart" };
   const chartName = nameMap[a.chartType] || "Chart";
 
@@ -2879,7 +3047,6 @@ function renderAttributeSummary(a) {
     ? "No clear signal of change (routine ups and downs)."
     : "A signal of change is present (worth investigating).";
 
-  // Period context (if splits are used, you currently summarise the latest period)
   const periodText =
     (a.periodIndex && a.periodCount && a.periodCount > 1)
       ? ` (showing the latest period: ${a.periodIndex} of ${a.periodCount})`
@@ -2889,8 +3056,6 @@ function renderAttributeSummary(a) {
   html += `<ul>`;
 
   html += `<li><strong>What this suggests:</strong> ${stableLine}</li>`;
-
-  // Small sample warning (only appears if needed)
   html += smallSampleWarningHtml(a.nPoints, `${chartName.toLowerCase()} analysis`);
 
   if (!a.isStable && Array.isArray(a.signals) && a.signals.length) {
@@ -2905,12 +3070,10 @@ function renderAttributeSummary(a) {
     html += `<li><strong>Example to check:</strong> ${ex.label} is ${exText}.</li>`;
   }
 
-  // “What to do next” guidance (keep your tone/style)
   html += a.isStable
     ? `<li><strong>What to do next:</strong> If performance isn’t good enough, focus on changing the process (the system) rather than reacting to individual points.</li>`
     : `<li><strong>What to do next:</strong> Look for a real-world explanation (process change, staffing, demand, definition/coding). If it was a planned change, you may want a new baseline after it settles.</li>`;
 
-  // Gentle chart-type hint (reduces misuse)
   if (a.chartType === "c") {
     html += `<li><strong>Best used when:</strong> Each time period is broadly comparable (similar time window / similar-sized service).</li>`;
   } else if (a.chartType === "p") {
@@ -2921,12 +3084,19 @@ function renderAttributeSummary(a) {
 
   html += `</ul>`;
   summaryDiv.innerHTML = html;
+  syncSummaryVisibility();
 }
-
 
 
 function renderRareChartSummary(a) {
   if (!summaryDiv) return;
+
+  if (!shouldShowSummary()) {
+    summaryDiv.innerHTML = "";
+    if (capabilityDiv) capabilityDiv.innerHTML = "";
+    syncSummaryVisibility();
+    return;
+  }
 
   const chartName = a.chartType === "t" ? "T chart" : "G chart";
   const stableLine = a.isStable
@@ -2943,8 +3113,6 @@ function renderRareChartSummary(a) {
 
   html += `<li><strong>What this suggests:</strong> ${stableLine}</li>`;
   html += `<li><strong>Note:</strong> Rare-event charts are skewed, so the limits won’t look symmetrical like an XmR chart.</li>`;
-
-  // Small sample warning (only appears if needed)
   html += smallSampleWarningHtml(a.nPoints, `${chartName.toLowerCase()} analysis`);
 
   if (!a.isStable && Array.isArray(a.signals) && a.signals.length) {
@@ -2965,13 +3133,11 @@ function renderRareChartSummary(a) {
     ? `<li><strong>What to do next:</strong> If you need improvement, focus on changing the system rather than reacting to individual points.</li>`
     : `<li><strong>What to do next:</strong> Look for a real-world explanation (process change, staffing, detection/definition changes). If it was planned, consider a new baseline after it settles.</li>`;
 
-  html += a.chartType === "t"
-    ? `<li><strong>Data reminder:</strong> This chart uses the time between events (e.g., days between incidents).</li>`
-    : `<li><strong>Data reminder:</strong> This chart uses the number of opportunities between events (values should be 1 or more).</li>`;
-
   html += `</ul>`;
   summaryDiv.innerHTML = html;
+  syncSummaryVisibility();
 }
+
 
 
 
@@ -3117,9 +3283,17 @@ function showStatusMessage(msg) {
 function updateXmRMultiSummary(segments, totalPoints) {
   if (!summaryDiv) return;
 
+  if (!shouldShowSummary()) {
+    summaryDiv.innerHTML = "";
+    if (capabilityDiv) capabilityDiv.innerHTML = "";
+    syncSummaryVisibility();
+    return;
+  }
+
   if (!segments || segments.length === 0) {
     summaryDiv.innerHTML = "";
     if (capabilityDiv) capabilityDiv.innerHTML = "";
+    syncSummaryVisibility();
     return;
   }
 
@@ -3339,6 +3513,7 @@ const rangeText =
   }
 
   summaryDiv.innerHTML = html;
+  syncSummaryVisibility();
 
   // Capability badge – last period only
   if (!capabilityDiv) return;
@@ -3838,6 +4013,7 @@ function drawRunChart(points, baselineCount, labels) {
     }
   });
 
+    applyPresentationToChart(currentChart);
     clearDataModelDirty();
 
   // ----- Build summary inputs safely -----
@@ -4310,7 +4486,11 @@ function drawSimpleSPCChart({
   });
 }
 
-
+ applyPresentationToChart(currentChart, {
+    suggestedMin: isFinite(yAxisSuggestedMin) ? yAxisSuggestedMin : undefined,
+    suggestedMax: isFinite(yAxisSuggestedMax) ? yAxisSuggestedMax : undefined
+  });
+}
 
 function drawXmRChart(points, baselineCount, labels) {
   if (!chartCanvas) return;
@@ -4587,6 +4767,8 @@ function drawXmRChart(points, baselineCount, labels) {
     }
   });
 
+  applyPresentationToChart(currentChart);
+
   // ----- Summary -----
   if (segmentSummaries.length > 0) {
     updateXmRMultiSummary(segmentSummaries, points.length);
@@ -4745,7 +4927,7 @@ function drawMrChart(allPoints, labels, segments) {
         }
       }
     });
-
+    applyPresentationToChart(mrChart);
     return;
   }
 
@@ -4854,7 +5036,9 @@ function drawMrChart(allPoints, labels, segments) {
       }
     }
   });
+  applyPresentationToChart(mrChart);
 }
+
 
 
 // Helper used by "last period only" mode — uses your existing MR canvas/chart variables
@@ -4930,6 +5114,8 @@ function renderMrChart(mrLabels, mrValues, avgMR, uclMR) {
       }
     }
   });
+
+  applyPresentationToChart(mrChart);
 }
 
 

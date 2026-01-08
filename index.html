@@ -982,29 +982,92 @@ body.modal-open {
 
 
 	<!-- Section 3: Titles & labels -->
-        <details>
-        <summary>3. Titles & labels</summary>
-        <div class="panel">
-	<div>
-  	<label>
-    	Chart title:
-    	<input type="text" id="chartTitle" placeholder="e.g. X-MR Chart – Demonstration data" style="width: 16rem;" />
-  	</label>
-	</div>
-	<div>
-  	<label>
-    	X-axis label:
-   	 <input type="text" id="xAxisLabel" placeholder="Date" style="width: 16rem;" />
- 	 </label>
-	</div>
-	<div>
-  	<label>
-   	 Y-axis label:
-    	<input type="text" id="yAxisLabel" placeholder="Example metric" style="width: 16rem;" />
- 	 </label>
-	</div>
-	</div>
-      </details>
+<details>
+  <summary>3. Titles &amp; labels</summary>
+  <div class="panel">
+
+    <div>
+      <label>
+        Chart title:
+        <input type="text" id="chartTitle" placeholder="e.g. X-MR Chart – Demonstration data" style="width: 16rem;" />
+      </label>
+    </div>
+
+    <div>
+      <label>
+        X-axis label:
+        <input type="text" id="xAxisLabel" placeholder="Date" style="width: 16rem;" />
+      </label>
+    </div>
+
+    <div>
+      <label>
+        Y-axis label:
+        <input type="text" id="yAxisLabel" placeholder="Example metric" style="width: 16rem;" />
+      </label>
+    </div>
+
+    <hr />
+
+    <strong class="field-label">Y-axis formatting:</strong>
+
+    <div style="display:flex; gap:0.75rem; flex-wrap:wrap; align-items:flex-end;">
+      <label>
+        Min:
+        <input type="number" id="yAxisMin" step="any" placeholder="auto" style="width: 7rem;" />
+      </label>
+
+      <label>
+        Max:
+        <input type="number" id="yAxisMax" step="any" placeholder="auto" style="width: 7rem;" />
+      </label>
+
+      <label>
+        Step (tick spacing):
+        <input type="number" id="yAxisStep" step="any" placeholder="auto" style="width: 10rem;" />
+      </label>
+
+      <label>
+        Units (optional):
+        <input type="text" id="yAxisUnits" placeholder="e.g. minutes, %, days" style="width: 12rem;" />
+      </label>
+    </div>
+
+    <div class="hint small-hint" style="margin-top:0.25rem;">
+      Leave Min/Max/Step blank to let the tool choose automatically. Units are added to the Y-axis label, e.g. “Time (minutes)”.
+    </div>
+
+    <hr />
+
+    <strong class="field-label">Font formatting:</strong>
+
+    <div style="display:flex; gap:0.75rem; flex-wrap:wrap; align-items:flex-end;">
+      <label>
+        Font:
+        <select id="chartFontFamily" style="width: 16rem;">
+          <option value="">Default</option>
+          <option value="system-ui, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif">System UI</option>
+          <option value="Arial, sans-serif">Arial</option>
+          <option value="Calibri, sans-serif">Calibri</option>
+          <option value="Verdana, sans-serif">Verdana</option>
+          <option value="Tahoma, sans-serif">Tahoma</option>
+          <option value="&quot;Times New Roman&quot;, serif">Times New Roman</option>
+        </select>
+      </label>
+
+      <label>
+        Base font size:
+        <input type="number" id="chartFontSize" min="8" max="28" step="1" value="12" style="width: 8rem;" />
+      </label>
+    </div>
+
+    <div class="hint small-hint" style="margin-top:0.25rem;">
+      Base font size affects axis labels/ticks/legend. Titles scale up slightly from this.
+    </div>
+
+  </div>
+</details>
+
 
 	<!-- Section 4: Baseline and targets -->
       <details>
@@ -1077,9 +1140,14 @@ body.modal-open {
 
     <hr />
 
-    <label class="radio-pill" style="display:inline-flex; gap:0.5rem; align-items:center;">
+    <label class="radio-pill" style="display:inline-flex; gap:0.5rem; align-items:center; margin-right:0.5rem;">
       <input type="checkbox" id="flagSpecialCauseOnChart" checked />
       Flag special-cause signals on the chart
+    </label>
+
+    <label class="radio-pill" style="display:inline-flex; gap:0.5rem; align-items:center;">
+      <input type="checkbox" id="showSummaryCheckbox" checked />
+      Show summary analysis under the chart
     </label>
 
     <!-- Only shown when the current XmR LCL would be below 0 -->
@@ -1095,6 +1163,7 @@ body.modal-open {
 
   </div>
 </details>
+
 
 
 
