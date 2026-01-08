@@ -877,7 +877,7 @@ body.modal-open {
 <div id="mrToggleRow" class="mr-compact">
   <label class="mr-check">
     <input type="checkbox" id="showMRCheckbox" checked />
-    <span>Show MR</span>
+    <span>Show Moving Range (MR) chart</span>
   </label>
 
   <div id="mrDisplayOptions" class="mr-mode">
@@ -1079,8 +1079,10 @@ body.modal-open {
   Quick start:
   <ol style="margin:0.5rem 0 0 1.25rem; padding:0;">
     <li>Paste data (or upload a csv file)</li>
-    <li>Select your Date and Value columns</li>
-    <li>Click Generate / Recalculate button </li>
+    <li>Select your chart type and data columns</li>
+    <li>Click Generate / Recalculate button (if changes don't load automatically) </li>
+    <li>Add title and labels</li>
+    <li>Right click on the chart to see other options</li>
   </ol>
 </div>
 
@@ -1361,11 +1363,11 @@ body.modal-open {
 
   <!-- Chart right-click menu -->
   <div id="chartContextMenu" class="chart-context-menu" style="display:none;">
-    <button type="button" data-action="addAnnotation">Add annotation at this point…</button>
-    <button type="button" data-action="clearAnnotations">Clear annotations</button>
+    <button type="button" data-action="addAnnotation" title="Annotations show as a vertical line with a small text box - these enable you to highlight key events on the chart (e.g. 'new change started here')">Add annotation at this point…</button>
+    <button type="button" data-action="clearAnnotations" title="Will remove all annotations from the chart">Clear annotations</button>
     <div class="menu-sep"></div>
     <button type="button" data-action="addSplit"
-  title="Splits let the centre line and limits recalculate from a chosen point onward. Splitting the control limits should <em>only</em> be done where a sustained shift in performance has been investigated, understood and agreed to be representative of the <em>new normal</em> level of performance for the process..">
+  title="Splits recalculate the central line and control limits from the chosen point onward. Splitting the control limits should <em>only</em> be done where a sustained shift in performance has been identified, investigated, understood and agreed to be representative of the <em>new normal</em> level of performance for the process.">
   Add split after this point…
 </button>
 <button type="button" data-action="clearSplits"
@@ -1374,10 +1376,10 @@ body.modal-open {
 </button>
 
     <div class="menu-sep"></div>
-    <button type="button" data-action="copyCharts">Copy chart(s)</button>
-    <button type="button" data-action="copyChartsAndAnalysis">Copy chart(s) + analysis</button>
+    <button type="button" data-action="copyCharts" title="Copy the chart (only) to the clipboard.">Copy chart(s)</button>
+    <button type="button" data-action="copyChartsAndAnalysis" title="Copy the chart and the analysis area to the clipboard">Copy chart(s) + analysis</button>
     <div class="menu-sep"></div>
-    <button type="button" data-action="saveChartsAs">Save chart(s) as…</button>
+    <button type="button" data-action="saveChartsAs" title="Save a copy of the chart as a PNG image file">Save chart(s) as PNG image</button>
   </div>
 
   <script src="spc.js"></script>
