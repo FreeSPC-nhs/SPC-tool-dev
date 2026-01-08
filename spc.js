@@ -980,11 +980,7 @@ function drawSecondarySPCChart({
     }
   });
 
-  applyPresentationToChart(ch, {
-    suggestedMin: isFinite(suggestedMin) ? suggestedMin : undefined,
-    suggestedMax: isFinite(suggestedMax) ? suggestedMax : undefined
-  });
-
+ 
   return ch;
 }
 
@@ -1119,7 +1115,7 @@ function drawXbarSCombinedChart({
       }
     }
   });
-  applyPresentationToChart(currentChart);
+  
 
   // -------------------------
   // 2) Secondary chart: S chart (in MR panel)
@@ -2371,75 +2367,6 @@ function syncSummaryVisibility() {
   const show = shouldShowSummary();
   if (summaryDiv) summaryDiv.style.display = show ? "block" : "none";
   if (capabilityDiv) capabilityDiv.style.display = show ? "block" : "none";
-}
-
-// Apply font + Y settings to ANY Chart.js chart instance
-function applyPresentationToChart(chart, { suggestedMin, suggestedMax } = {}) {
-  if (!chart || !chart.options) return;
-
-  // ---- Fonts ----
-  const { family, size } = readFontSettings();
-  const titleSize = Math.min(28, size + 4);
-
-  // Ensure objects exist
-  chart.options.plugins = chart.options.plugins || {};
-  chart.options.plugins.title = chart.options.plugins.title || {};
-  chart.options.plugins.legend = chart.options.plugins.legend || {};
-
-  chart.options.plugins.title.font = chart.options.plugins.title.font || {};
-  chart.options.plugins.legend.labels = chart.options.plugins.legend.labels || {};
-  chart.options.plugins.legend.labels.font = chart.options.plugins.legend.labels.font || {};
-
-  if (family) {
-    chart.options.plugins.title.font.family = family;
-    chart.options.plugins.legend.labels.font.family = family;
-  }
-  chart.options.plugins.title.font.size = titleSize;
-  chart.options.plugins.legend.labels.font.size = size;
-
-  // Axis fonts
-  if (chart.options.scales) {
-    ["x", "y"].forEach((axisKey) => {
-      const ax = chart.options.scales[axisKey];
-      if (!ax) return;
-
-      ax.title = ax.title || {};
-      ax.title.font = ax.title.font || {};
-      ax.ticks = ax.ticks || {};
-      ax.ticks.font = ax.ticks.font || {};
-
-      if (family) {
-        ax.title.font.family = family;
-        ax.ticks.font.family = family;
-      }
-      ax.title.font.size = size;
-      ax.ticks.font.size = size;
-    });
-  }
-
-  // ---- Y axis min/max/step ----
-  const y = chart.options.scales && chart.options.scales.y ? chart.options.scales.y : null;
-  if (y) {
-    const { min, max, step } = readYAxisSettings();
-
-    // If user set min/max, that overrides everything
-    if (min !== null) y.min = min; else delete y.min;
-    if (max !== null) y.max = max; else delete y.max;
-
-    // Otherwise use suggestedMin/Max if provided by the calling chart (nice defaults)
-    if (min === null && Number.isFinite(suggestedMin)) y.suggestedMin = suggestedMin; else if (min !== null) delete y.suggestedMin;
-    if (max === null && Number.isFinite(suggestedMax)) y.suggestedMax = suggestedMax; else if (max !== null) delete y.suggestedMax;
-
-    y.ticks = y.ticks || {};
-    if (step !== null) {
-      y.ticks.stepSize = step;
-    } else {
-      // leave Chart.js automatic if blank
-      delete y.ticks.stepSize;
-    }
-  }
-
-  chart.update();
 }
 
 
@@ -4024,7 +3951,6 @@ function drawRunChart(points, baselineCount, labels) {
     }
   });
 
-    applyPresentationToChart(currentChart);
     clearDataModelDirty();
 
   // ----- Build summary inputs safely -----
@@ -4496,11 +4422,6 @@ function drawSimpleSPCChart({
     }
   });
 
-
- applyPresentationToChart(currentChart, {
-    suggestedMin: isFinite(yAxisSuggestedMin) ? yAxisSuggestedMin : undefined,
-    suggestedMax: isFinite(yAxisSuggestedMax) ? yAxisSuggestedMax : undefined
-  });
 }
 
 function drawXmRChart(points, baselineCount, labels) {
@@ -4778,8 +4699,6 @@ function drawXmRChart(points, baselineCount, labels) {
     }
   });
 
-  applyPresentationToChart(currentChart);
-
   // ----- Summary -----
   if (segmentSummaries.length > 0) {
     updateXmRMultiSummary(segmentSummaries, points.length);
@@ -4938,7 +4857,6 @@ function drawMrChart(allPoints, labels, segments) {
         }
       }
     });
-    applyPresentationToChart(mrChart);
     return;
   }
 
@@ -5047,7 +4965,7 @@ function drawMrChart(allPoints, labels, segments) {
       }
     }
   });
-  applyPresentationToChart(mrChart);
+
 }
 
 
@@ -5126,7 +5044,6 @@ function renderMrChart(mrLabels, mrValues, avgMR, uclMR) {
     }
   });
 
-  applyPresentationToChart(mrChart);
 }
 
 
