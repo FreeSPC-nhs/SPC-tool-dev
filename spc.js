@@ -2717,6 +2717,13 @@ if (useHeaders !== autoGuess) {
   });
 }
 
+function formatYMD_Local(d) {
+  if (!(d instanceof Date) || isNaN(d.getTime())) return "";
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
 
 
 function formatDateOnlyLabel(v) {
@@ -2724,7 +2731,7 @@ function formatDateOnlyLabel(v) {
 
   // If it's already a Date object
   if (v instanceof Date && !isNaN(v.getTime())) {
-    return v.toISOString().slice(0, 10); // YYYY-MM-DD
+    return formatYMD_Local(v);
   }
 
   const s = String(v).trim();
@@ -2741,7 +2748,7 @@ function formatDateOnlyLabel(v) {
 
   // Fallback: try parsing and formatting
   const d = new Date(s);
-  if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+  if (!isNaN(d.getTime())) return formatYMD_Local(d);
 
   return firstToken;
 }
@@ -3622,7 +3629,7 @@ generateButton.addEventListener("click", () => {
 
     if (axisType === "date") {
       points = [...parsedPoints].sort((a, b) => a.x - b.x);
-      labels = points.map((p) => p.x.toISOString().slice(0, 10));
+      labels = points.map((p) => formatYMD_Local(p.x));
     } else {
       points = parsedPoints;
       labels = points.map((p) => p.label);
