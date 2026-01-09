@@ -47,6 +47,77 @@ function makePointColoursFromFlags(flags) {
   return flags.map(f => (f ? SPC_STYLE.pointSpecial : SPC_STYLE.pointNormal));
 }
 
+// -----------------------------
+// Baseline overlay (shade + boundary line)
+// Draws a light band behind the first N baseline points and a vertical line where baseline ends.
+// Safe: does not mutate chart options; it only draws to the canvas.
+// -----------------------------
+const baselineOverlayPlugin = {
+  id: "baselineOverlay",
+  beforeDatasetsDraw(chart, args, pluginOptions) {
+    const opts = pluginOptions || {};
+    if (opts.enabled === false) return;
+
+    const baselineEl = document.getElementById("baselinePoints");
+    const n = baselineEl && baselineEl.value !== "" ? Number(baselineEl.value) : NaN;
+    if (!Number.isFinite(n) || n < 2) return;
+
+    const labels = chart?.data?.labels || [];
+    if (!Array.isArray(labels) || labels.length < 2) return;
+
+    const count = Math.min(Math.floor(n), labels.length);
+    if (count < 2) return;
+
+    const xScale = chart.scales?.x;
+    if (!xScale) return;
+
+    const { ctx, chartArea } = chart;
+    if (!ctx || !chartArea) return;
+
+    const x0 = xScale.getPixelForValue(0);
+
+    // End boundary: halfway between last baseline point and next point (if it exists),
+    // otherwise to the end of the chart area.
+    const lastIdx = count - 1;
+    const xLast = xScale.getPixelForValue(lastIdx);
+    let xBoundary = chartArea.right;
+
+    if (count < labels.length) {
+      const xNext = xScale.getPixelForValue(count);
+      xBoundary = (xLast + xNext) / 2;
+    } else {
+      xBoundary = chartArea.right;
+    }
+
+    // Clamp to chart area
+    const left = Math.max(chartArea.left, Math.min(x0, xBoundary));
+    const right = Math.min(chartArea.right, Math.max(x0, xBoundary));
+    if (!(right > left)) return;
+
+    ctx.save();
+
+    // Shade
+    ctx.fillStyle = opts.fillStyle || "rgba(120, 120, 120, 0.10)";
+    ctx.fillRect(left, chartArea.top, right - left, chartArea.bottom - chartArea.top);
+
+    // Boundary line
+    const lineX = Math.max(chartArea.left, Math.min(chartArea.right, xBoundary));
+    ctx.strokeStyle = opts.lineStyle || "rgba(80, 80, 80, 0.55)";
+    ctx.lineWidth = opts.lineWidth || 1;
+    ctx.setLineDash(opts.lineDash || [4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(lineX, chartArea.top);
+    ctx.lineTo(lineX, chartArea.bottom);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+};
+
+// Register once (Chart.js v3/v4)
+if (typeof Chart !== "undefined" && Chart.register) {
+  Chart.register(baselineOverlayPlugin);
+}
 
 
 // Dynamic column labels + optional 3rd selector
