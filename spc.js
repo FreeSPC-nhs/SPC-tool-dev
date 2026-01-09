@@ -2944,8 +2944,9 @@ function renderAttributeMultiSummary(segmentAnalyses, totalPoints) {
   html += `(based on the baseline and any splits).</p>`;
 
   segmentAnalyses.forEach((a, idx) => {
-    html += segmentAnalyses.length > 1 ? `<h4>Period ${idx + 1}</h4>` : `<h4>Single period</h4>`;
-    html += `<ul>`;
+  html += `<div class="pdf-avoid-break">`;
+  html += segmentAnalyses.length > 1 ? `<h4>Period ${idx + 1}</h4>` : `<h4>Single period</h4>`;
+  html += `<ul>`;
 
     // Coverage
     if (a.startIndex != null && a.endIndex != null && a.labelStart && a.labelEnd) {
@@ -3000,6 +3001,7 @@ function renderAttributeMultiSummary(segmentAnalyses, totalPoints) {
 
     html += `<li><strong>Interpretation:</strong> ${interpretation}</li>`;
     html += `</ul>`;
+    html += `</div>`;
   });
 
   summaryDiv.innerHTML = html;
@@ -3437,6 +3439,7 @@ const rangeText =
     : base;
 
 
+    html += `<div class="pdf-avoid-break">`;    
     html += `<h4>${periodLabel}</h4>`;
     html += `<ul>`;
     html += `<li>Coverage: <strong>${rangeText}</strong> – ${n} point${n !== 1 ? "s" : ""}.</li>`;
@@ -3489,6 +3492,7 @@ const rangeText =
     }
 
     html += `</ul>`;
+    html += `</div>`;
 
     // Remember last period for badge + helper (store structured information)
     if (idx === segments.length - 1) {
@@ -7021,7 +7025,10 @@ function exportPdfReport() {
     filename:     "spc-report.pdf",
     image:        { type: "jpeg", quality: 0.98 },
     html2canvas:  { scale: 2, scrollY: -window.scrollY },
-    jsPDF:        { unit: "mm", format: "a4", orientation: "landscape" }
+    jsPDF:        { unit: "mm", format: "a4", orientation: "landscape" },
+    pagebreak: {
+          mode: ["css", "legacy"],
+          avoid: [".pdf-avoid-break"]
   };
 
   html2pdf().set(opt).from(reportElement).save();
