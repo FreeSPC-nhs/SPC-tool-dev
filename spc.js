@@ -7029,6 +7029,7 @@ function exportPdfReport() {
     pagebreak: {
           mode: ["css", "legacy"],
           avoid: [".pdf-avoid-break"]
+    }
   };
 
   html2pdf().set(opt).from(reportElement).save();
