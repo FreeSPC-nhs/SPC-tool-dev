@@ -352,46 +352,45 @@ if (chart.options?.scales?.y) {
   }
 
 
-  // ----- Fonts -----
+    // ----- Fonts (SAFE: replace objects, don't mutate wrapped scriptables) -----
   const size = Number(chartFontSizeInput?.value) || 12;
-  const family = chartFontFamilyInput?.value;
+  const family = chartFontFamilyInput?.value || undefined;
 
   // Title font
-  if (chart.options.plugins && chart.options.plugins.title) {
-    chart.options.plugins.title.font =
-      chart.options.plugins.title.font || {};
-    chart.options.plugins.title.font.size = size + 4;
-    if (family) chart.options.plugins.title.font.family = family;
+  if (chart.options?.plugins?.title) {
+    chart.options.plugins.title.font = {
+      size: size + 4,
+      ...(family ? { family } : {})
+    };
   }
 
   // Legend font
-  if (chart.options.plugins && chart.options.plugins.legend) {
-    chart.options.plugins.legend.labels =
-      chart.options.plugins.legend.labels || {};
-    chart.options.plugins.legend.labels.font =
-      chart.options.plugins.legend.labels.font || {};
-    chart.options.plugins.legend.labels.font.size = size;
-    if (family) chart.options.plugins.legend.labels.font.family = family;
+  if (chart.options?.plugins?.legend?.labels) {
+    chart.options.plugins.legend.labels.font = {
+      size,
+      ...(family ? { family } : {})
+    };
   }
 
   // Axis fonts
   ["x", "y"].forEach(axis => {
-    const ax = chart.options.scales?.[axis];
+    const ax = chart.options?.scales?.[axis];
     if (!ax) return;
 
     ax.title = ax.title || {};
-    ax.title.font = ax.title.font || {};
     ax.ticks = ax.ticks || {};
-    ax.ticks.font = ax.ticks.font || {};
 
-    ax.title.font.size = size;
-    ax.ticks.font.size = size;
+    ax.title.font = {
+      size,
+      ...(family ? { family } : {})
+    };
 
-    if (family) {
-      ax.title.font.family = family;
-      ax.ticks.font.family = family;
-    }
+    ax.ticks.font = {
+      size,
+      ...(family ? { family } : {})
+    };
   });
+
 
   // ----- IMPORTANT -----
   scheduleChartUpdate(chart);
