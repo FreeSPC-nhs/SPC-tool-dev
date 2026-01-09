@@ -2931,6 +2931,13 @@ function renderAttributeMultiSummary(segmentAnalyses, totalPoints) {
   const chartType = segmentAnalyses?.[0]?.chartType;
   const chartName = nameMap[chartType] || "Chart";
 
+  const fmt = (v) =>
+    Number.isFinite(v)
+      ? (typeof formatNumber === "function" ? formatNumber(v, 3) : Number(v).toFixed(3))
+      : "—";
+
+  const sym = (t) => (t === "c" ? "c\u0304" : t === "p" ? "p\u0304" : t === "u" ? "\u016B" : "CL");
+
   let html = `<h3>Summary (${chartName})</h3>`;
   html += `<p>Total number of points: <strong>${totalPoints}</strong>. `;
   html += `The chart is divided into <strong>${segmentAnalyses.length}</strong> period${segmentAnalyses.length !== 1 ? "s" : ""} `;
@@ -2953,33 +2960,33 @@ function renderAttributeMultiSummary(segmentAnalyses, totalPoints) {
       html += `<li><strong>Baseline for this period:</strong> first ${a.baselineCountUsed} points used to calculate centre line and limits.</li>`;
     }
 
-    // Descriptive stats (centre line + limits)
-    // Your analyzer may store different field names; we check a few common ones.
-    const clVal =
-      (typeof a.cl === "number" && isFinite(a.cl)) ? a.cl :
-      (typeof a.centerLine === "number" && isFinite(a.centerLine)) ? a.centerLine :
-      (typeof a.cbar === "number" && isFinite(a.cbar)) ? a.cbar :
-      (typeof a.pbar === "number" && isFinite(a.pbar)) ? a.pbar :
-      (typeof a.ubar === "number" && isFinite(a.ubar)) ? a.ubar :
-      null;
+    // -------- Stats (prefer a.stats) --------
+    const st = a.stats || null;
 
-    const lclVal =
-      (typeof a.lcl === "number" && isFinite(a.lcl)) ? a.lcl :
-      (typeof a.lclValue === "number" && isFinite(a.lclValue)) ? a.lclValue :
-      null;
+    // Always show mean if we have it
+    if (st && ("mean" in st)) {
+      html += `<li><strong>Mean:</strong> ${fmt(st.mean)}</li>`;
+    }
 
-    const uclVal =
-      (typeof a.ucl === "number" && isFinite(a.ucl)) ? a.ucl :
-      (typeof a.uclValue === "number" && isFinite(a.uclValue)) ? a.uclValue :
-      null;
+    // Centre line + limits
+    if (st && Number.isFinite(st.cl)) {
+      if (a.chartType === "c") {
+        html += `<li><strong>Centre line (${sym(a.chartType)}):</strong> ${fmt(st.cl)}; <strong>control limits:</strong> LCL = ${fmt(st.lcl)}, UCL = ${fmt(st.ucl)}.</li>`;
+      } else if (a.chartType === "p" || a.chartType === "u") {
+        html += `<li><strong>Centre line (${sym(a.chartType)}):</strong> ${fmt(st.cl)}; <strong>control limits:</strong> LCL = ${fmt(st.lclMin)}–${fmt(st.lclMax)}, UCL = ${fmt(st.uclMin)}–${fmt(st.uclMax)}.</li>`;
+      } else {
+        html += `<li><strong>Centre line:</strong> ${fmt(st.cl)}</li>`;
+      }
+    } else {
+      // Fallback (older logic) if st missing
+      const fallbackCL =
+        (typeof a.cl === "number" && Number.isFinite(a.cl)) ? a.cl :
+        (typeof a.centerLine === "number" && Number.isFinite(a.centerLine)) ? a.centerLine :
+        null;
 
-    // Use your existing formatting helper if you have one; otherwise fall back to toFixed.
-    const fmt = (v) => (typeof formatNumber === "function" ? formatNumber(v, 3) : Number(v).toFixed(3));
-
-    if (clVal != null && lclVal != null && uclVal != null) {
-      html += `<li><strong>Centre line:</strong> ${fmt(clVal)}; <strong>control limits:</strong> LCL = ${fmt(lclVal)}, UCL = ${fmt(uclVal)}.</li>`;
-    } else if (clVal != null) {
-      html += `<li><strong>Centre line:</strong> ${fmt(clVal)}.</li>`;
+      if (fallbackCL != null) {
+        html += `<li><strong>Centre line:</strong> ${fmt(fallbackCL)}</li>`;
+      }
     }
 
     // Signals (keep brief, like XmR)
@@ -2987,13 +2994,12 @@ function renderAttributeMultiSummary(segmentAnalyses, totalPoints) {
       html += `<li><strong>Signals:</strong> ${a.signals.join("; ")}.</li>`;
     }
 
-    // Interpretation (final line, XmR-style)
+    // Interpretation (XmR-style final line)
     const interpretation = a.isStable
       ? "No clear special-cause signals were detected in this period. The pattern is consistent with natural/common variation."
       : "Special-cause signals were detected in this period (pattern inconsistent with routine variation).";
 
     html += `<li><strong>Interpretation:</strong> ${interpretation}</li>`;
-
     html += `</ul>`;
   });
 
@@ -3290,6 +3296,20 @@ function showStatusMessage(msg) {
 
 
 // ---- Summary helpers ----
+
+function meanFinite(arr) {
+  const xs = (arr || []).filter(v => Number.isFinite(v));
+  if (!xs.length) return NaN;
+  return xs.reduce((a, b) => a + b, 0) / xs.length;
+}
+
+function rangeFinite(arr) {
+  const xs = (arr || []).filter(v => Number.isFinite(v));
+  if (!xs.length) return { min: NaN, max: NaN };
+  return { min: Math.min(...xs), max: Math.max(...xs) };
+}
+
+
 
 // Multi-period XmR summary (handles baseline + splits) — lay-user interpretation + astronomical points
 function updateXmRMultiSummary(segments, totalPoints) {
@@ -4159,6 +4179,19 @@ function drawCChart(points, baselineCount, labels) {
       lcl: lclArr.slice(start, end + 1)
     });
 
+    const segValues = values.slice(start, end + 1);
+    const segCL = clArr.slice(start, end + 1);
+    const segUCL = uclArr.slice(start, end + 1);
+    const segLCL = lclArr.slice(start, end + 1);
+
+    a.stats = {
+      mean: meanFinite(segValues),                 // observed mean of the period values
+      cl: segCL.find(v => Number.isFinite(v)),     // c̄ (constant within period)
+      ucl: segUCL.find(v => Number.isFinite(v)),   // constant within period
+      lcl: segLCL.find(v => Number.isFinite(v))    // constant within period
+    };
+
+
     // Context (so the summary can mirror XmR style)
     a.periodIndex = s + 1;
     a.periodCount = segmentStarts.length;
@@ -4272,6 +4305,22 @@ function drawPChart(pointsWithN, baselineCount, labels) {
       lcl: lclArr.slice(start, end + 1)
     });
 
+const segValues = values.slice(start, end + 1);
+const segCL = clArr.slice(start, end + 1);
+const segUCL = uclArr.slice(start, end + 1);
+const segLCL = lclArr.slice(start, end + 1);
+
+const uRange = rangeFinite(segUCL);
+const lRange = rangeFinite(segLCL);
+
+a.stats = {
+  mean: meanFinite(segValues),         // observed mean of plotted proportions
+  cl: segCL.find(Number.isFinite),     // p̄ (constant within period)
+  uclMin: uRange.min, uclMax: uRange.max,
+  lclMin: lRange.min, lclMax: lRange.max
+};
+
+
     // Context (XmR-style)
     a.periodIndex = s + 1;
     a.periodCount = segmentStarts.length;
@@ -4383,6 +4432,22 @@ function drawUChart(pointsWithN, baselineCount, labels) {
       ucl: uclArr.slice(start, end + 1),
       lcl: lclArr.slice(start, end + 1)
     });
+
+const segValues = values.slice(start, end + 1);
+const segCL = clArr.slice(start, end + 1);
+const segUCL = uclArr.slice(start, end + 1);
+const segLCL = lclArr.slice(start, end + 1);
+
+const uRange = rangeFinite(segUCL);
+const lRange = rangeFinite(segLCL);
+
+a.stats = {
+  mean: meanFinite(segValues),         // observed mean of plotted rates
+  cl: segCL.find(Number.isFinite),     // ū (constant within period)
+  uclMin: uRange.min, uclMax: uRange.max,
+  lclMin: lRange.min, lclMax: lRange.max
+};
+
 
     // Context (XmR-style)
     a.periodIndex = s + 1;
