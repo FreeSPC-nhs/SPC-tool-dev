@@ -204,6 +204,17 @@ function guessColumns(rows) {
   return { dateCol, valueCol, hasDateCandidate };
 }
 
+let _formattingUpdateRAF = null;
+
+function scheduleChartUpdate(chart) {
+  if (_formattingUpdateRAF) cancelAnimationFrame(_formattingUpdateRAF);
+  _formattingUpdateRAF = requestAnimationFrame(() => {
+    _formattingUpdateRAF = null;
+    // Guard in case chart got destroyed
+    if (chart && !chart._destroyed) chart.update("none");
+  });
+}
+
 
 function updateMrToggleVisibility() {
   if (!showMRCheckbox || !mrPanel) return;
@@ -350,7 +361,8 @@ function applyFormattingLive() {
   });
 
   // ----- IMPORTANT -----
-  chart.update("none"); // prevents recursion / stack overflow
+  scheduleChartUpdate(chart);
+
 }
 
 
