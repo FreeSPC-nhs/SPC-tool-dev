@@ -2963,17 +2963,15 @@ function renderAttributeMultiSummary(segmentAnalyses, totalPoints) {
     // -------- Stats (prefer a.stats) --------
     const st = a.stats || null;
 
-    // Always show mean if we have it
-    if (st && ("mean" in st)) {
-      html += `<li><strong>Mean:</strong> ${fmt(st.mean)}</li>`;
-    }
-
-    // Centre line + limits
+       // Centre line + limits
     if (st && Number.isFinite(st.cl)) {
       if (a.chartType === "c") {
         html += `<li><strong>Centre line (${sym(a.chartType)}):</strong> ${fmt(st.cl)}; <strong>control limits:</strong> LCL = ${fmt(st.lcl)}, UCL = ${fmt(st.ucl)}.</li>`;
       } else if (a.chartType === "p" || a.chartType === "u") {
-        html += `<li><strong>Centre line (${sym(a.chartType)}):</strong> ${fmt(st.cl)}; <strong>control limits:</strong> LCL = ${fmt(st.lclMin)}–${fmt(st.lclMax)}, UCL = ${fmt(st.uclMin)}–${fmt(st.uclMax)}.</li>`;
+        html += `<li><strong>Centre line (${sym(a.chartType)}):</strong> ${fmt(st.cl)}; ` +
+                `<strong>control limits:</strong> ` +
+                `LCL = ${fmt(st.lclAvg)} (range ${fmt(st.lclMin)}–${fmt(st.lclMax)}), ` +
+                `UCL = ${fmt(st.uclAvg)} (range ${fmt(st.uclMin)}–${fmt(st.uclMax)}).</li>`;
       } else {
         html += `<li><strong>Centre line:</strong> ${fmt(st.cl)}</li>`;
       }
@@ -2988,6 +2986,7 @@ function renderAttributeMultiSummary(segmentAnalyses, totalPoints) {
         html += `<li><strong>Centre line:</strong> ${fmt(fallbackCL)}</li>`;
       }
     }
+
 
     // Signals (keep brief, like XmR)
     if (!a.isStable && Array.isArray(a.signals) && a.signals.length) {
@@ -4185,7 +4184,6 @@ function drawCChart(points, baselineCount, labels) {
     const segLCL = lclArr.slice(start, end + 1);
 
     a.stats = {
-      mean: meanFinite(segValues),                 // observed mean of the period values
       cl: segCL.find(v => Number.isFinite(v)),     // c̄ (constant within period)
       ucl: segUCL.find(v => Number.isFinite(v)),   // constant within period
       lcl: segLCL.find(v => Number.isFinite(v))    // constant within period
@@ -4314,11 +4312,15 @@ const uRange = rangeFinite(segUCL);
 const lRange = rangeFinite(segLCL);
 
 a.stats = {
-  mean: meanFinite(segValues),         // observed mean of plotted proportions
-  cl: segCL.find(Number.isFinite),     // p̄ (constant within period)
-  uclMin: uRange.min, uclMax: uRange.max,
-  lclMin: lRange.min, lclMax: lRange.max
+  cl: segCL.find(v => Number.isFinite(v)),     // p̄
+  uclMin: uRange.min,
+  uclMax: uRange.max,
+  uclAvg: meanFinite(segUCL),                  
+  lclMin: lRange.min,
+  lclMax: lRange.max,
+  lclAvg: meanFinite(segLCL)                   
 };
+
 
 
     // Context (XmR-style)
@@ -4442,11 +4444,15 @@ const uRange = rangeFinite(segUCL);
 const lRange = rangeFinite(segLCL);
 
 a.stats = {
-  mean: meanFinite(segValues),         // observed mean of plotted rates
-  cl: segCL.find(Number.isFinite),     // ū (constant within period)
-  uclMin: uRange.min, uclMax: uRange.max,
-  lclMin: lRange.min, lclMax: lRange.max
+  cl: segCL.find(v => Number.isFinite(v)),     // ū
+  uclMin: uRange.min,
+  uclMax: uRange.max,
+  uclAvg: meanFinite(segUCL),                  // ✅
+  lclMin: lRange.min,
+  lclMax: lRange.max,
+  lclAvg: meanFinite(segLCL)                   // ✅
 };
+
 
 
     // Context (XmR-style)
