@@ -79,14 +79,6 @@ const baselineInput     = document.getElementById("baselinePoints");
 const chartTitleInput   = document.getElementById("chartTitle");
 const xAxisLabelInput   = document.getElementById("xAxisLabel");
 const yAxisLabelInput   = document.getElementById("yAxisLabel");
-
-const yAxisMinInput     = document.getElementById("yAxisMin");
-const yAxisMaxInput     = document.getElementById("yAxisMax");
-const yAxisStepInput    = document.getElementById("yAxisStep");
-const yAxisUnitsInput   = document.getElementById("yAxisUnits");
-const chartFontFamilyInput = document.getElementById("chartFontFamily");
-const chartFontSizeInput   = document.getElementById("chartFontSize");
-
 const targetInput       = document.getElementById("targetValue");
 const targetDirectionInput = document.getElementById("targetDirection");
 const capabilityDiv     = document.getElementById("capability");
@@ -104,7 +96,6 @@ const mrChartCanvas     = document.getElementById("mrChartCanvas");
 const mrCanvas = mrChartCanvas;
 const mrToggleRow = document.getElementById("mrToggleRow");
 
-const showSummaryCheckbox = document.getElementById("showSummaryCheckbox");
 
 const generateButton    = document.getElementById("generateButton");
 const errorMessage      = document.getElementById("errorMessage");
@@ -204,17 +195,6 @@ function guessColumns(rows) {
   return { dateCol, valueCol, hasDateCandidate };
 }
 
-let _formattingUpdateRAF = null;
-
-function scheduleChartUpdate(chart) {
-  if (_formattingUpdateRAF) cancelAnimationFrame(_formattingUpdateRAF);
-  _formattingUpdateRAF = requestAnimationFrame(() => {
-    _formattingUpdateRAF = null;
-    // Guard in case chart got destroyed
-    if (chart && !chart._destroyed) chart.update("none");
-  });
-}
-
 
 function updateMrToggleVisibility() {
   if (!showMRCheckbox || !mrPanel) return;
@@ -277,125 +257,6 @@ function renderHeaderStatus() {
     `Apply will treat the <strong>first row</strong> as <strong>${mode}</strong>.`;
 }
 
-// ------------------------------------
-// SAFE live formatting updater (fixed)
-// ------------------------------------
-function applyFormattingLive() {
-  if (!currentChart) return;
-
-  const chart = currentChart;
-
-if (chart.options?.scales?.x) {
-  chart.options.scales.x.title = chart.options.scales.x.title || {};
-  chart.options.scales.x.title.display = true;
-  chart.options.scales.x.title.font = chart.options.scales.x.title.font || {};
-}
-if (chart.options?.scales?.y) {
-  chart.options.scales.y.title = chart.options.scales.y.title || {};
-  chart.options.scales.y.title.display = true;
-  chart.options.scales.y.title.font = chart.options.scales.y.title.font || {};
-}
-
-
-  // ----- Title -----
-  if (chart.options.plugins && chart.options.plugins.title) {
-    const title = chartTitleInput?.value?.trim();
-    if (typeof title === "string") {
-      chart.options.plugins.title.text =
-        title || chart.options.plugins.title.text;
-
-      chart.options.plugins.title.font =
-        chart.options.plugins.title.font || {};
-    }
-  }
-
-  // ----- X-axis label -----
-  if (chart.options.scales && chart.options.scales.x && chart.options.scales.x.title) {
-    chart.options.scales.x.title.font =
-      chart.options.scales.x.title.font || {};
-
-    const x = xAxisLabelInput?.value?.trim();
-    if (typeof x === "string") {
-      chart.options.scales.x.title.text = x;
-    }
-  }
-
-  // ----- Y-axis label + units -----
-  if (chart.options.scales && chart.options.scales.y && chart.options.scales.y.title) {
-    chart.options.scales.y.title.font =
-      chart.options.scales.y.title.font || {};
-
-    let y = yAxisLabelInput?.value?.trim() || "";
-    const units = yAxisUnitsInput?.value?.trim();
-    if (units) y += ` (${units})`;
-    chart.options.scales.y.title.text = y;
-  }
-
-  // ----- Y axis range / ticks -----
-  const yScale = chart.options?.scales?.y;
-
-  if (yScale) {
-    const min = yAxisMinInput && yAxisMinInput.value !== "" ? Number(yAxisMinInput.value) : null;
-    const max = yAxisMaxInput && yAxisMaxInput.value !== "" ? Number(yAxisMaxInput.value) : null;
-    const step = yAxisStepInput && yAxisStepInput.value !== "" ? Number(yAxisStepInput.value) : null;
-
-    // Important: Chart.js treats undefined as "auto".
-    if (Number.isFinite(min)) yScale.min = min;
-    else delete yScale.min;
-
-    if (Number.isFinite(max)) yScale.max = max;
-    else delete yScale.max;
-
-    yScale.ticks = yScale.ticks || {};
-    if (Number.isFinite(step) && step > 0) yScale.ticks.stepSize = step;
-    else delete yScale.ticks.stepSize;
-  }
-
-
-    // ----- Fonts (SAFE: replace objects, don't mutate wrapped scriptables) -----
-  const size = Number(chartFontSizeInput?.value) || 12;
-  const family = chartFontFamilyInput?.value || undefined;
-
-  // Title font
-  if (chart.options?.plugins?.title) {
-    chart.options.plugins.title.font = {
-      size: size + 4,
-      ...(family ? { family } : {})
-    };
-  }
-
-  // Legend font
-  if (chart.options?.plugins?.legend?.labels) {
-    chart.options.plugins.legend.labels.font = {
-      size,
-      ...(family ? { family } : {})
-    };
-  }
-
-  // Axis fonts
-  ["x", "y"].forEach(axis => {
-    const ax = chart.options?.scales?.[axis];
-    if (!ax) return;
-
-    ax.title = ax.title || {};
-    ax.ticks = ax.ticks || {};
-
-    ax.title.font = {
-      size,
-      ...(family ? { family } : {})
-    };
-
-    ax.ticks.font = {
-      size,
-      ...(family ? { family } : {})
-    };
-  });
-
-
-  // ----- IMPORTANT -----
-  scheduleChartUpdate(chart);
-
-}
 
 
 function hideMrPanelNow() {
@@ -452,6 +313,33 @@ function updateTargetToggleBtn() {
   targetToggleBtn.textContent = targetEnabled ? "Hide target line" : "Show target line";
 }
 
+function applyPresentationEditsLive() {
+  if (!currentChart) return;
+
+  const title = (chartTitleInput?.value || "").trim();
+  const xLabel = (xAxisLabelInput?.value || "").trim();
+  const yLabel = (yAxisLabelInput?.value || "").trim();
+
+  // Title
+  if (currentChart.options?.plugins?.title) {
+    currentChart.options.plugins.title.display = !!title;
+    currentChart.options.plugins.title.text = title;
+  }
+
+  // Axes
+  if (currentChart.options?.scales?.x?.title) {
+    currentChart.options.scales.x.title.display = !!xLabel;
+    currentChart.options.scales.x.title.text = xLabel;
+  }
+  if (currentChart.options?.scales?.y?.title) {
+    currentChart.options.scales.y.title.display = !!yLabel;
+    currentChart.options.scales.y.title.text = yLabel;
+  }
+
+  // Update without animation for a crisp “as you type” feel
+  currentChart.update("none");
+}
+
 function hasValidTargetInput() {
   if (!targetInput) return false;
   const v = targetInput.value.trim();
@@ -488,6 +376,20 @@ if (targetInput) {
 // Call once on load
 updateTargetToggleVisibility();
 	
+
+function debounce(fn, ms = 80) {
+  let t;
+  return (...args) => {
+    clearTimeout(t);
+    t = setTimeout(() => fn(...args), ms);
+  };
+}
+
+const applyPresentationEditsLiveDebounced = debounce(applyPresentationEditsLive, 60);
+
+if (chartTitleInput) chartTitleInput.addEventListener("input", applyPresentationEditsLiveDebounced);
+if (xAxisLabelInput) xAxisLabelInput.addEventListener("input", applyPresentationEditsLiveDebounced);
+if (yAxisLabelInput) yAxisLabelInput.addEventListener("input", applyPresentationEditsLiveDebounced);
 
 
 
@@ -646,23 +548,22 @@ if (targetToggleBtn) {
   });
 }
 
-function triggerRegen() {
+const debouncedRegen = debounce(() => {
   if (rawRows && rawRows.length) generateButton.click();
-}
-
+}, 250);
 
 if (baselineInput) {
-  baselineInput.addEventListener("input", triggerRegen);
-  baselineInput.addEventListener("change", triggerRegen);
+  baselineInput.addEventListener("input", debouncedRegen);
+  baselineInput.addEventListener("change", debouncedRegen);
 }
 
 if (shiftRulePointsInput) {
-  shiftRulePointsInput.addEventListener("input", triggerRegen);
-  shiftRulePointsInput.addEventListener("change", triggerRegen);
+  shiftRulePointsInput.addEventListener("input", debouncedRegen);
+  shiftRulePointsInput.addEventListener("change", debouncedRegen);
 }
 if (trendRulePointsInput) {
-  trendRulePointsInput.addEventListener("input", triggerRegen);
-  trendRulePointsInput.addEventListener("change", triggerRegen);
+  trendRulePointsInput.addEventListener("input", debouncedRegen);
+  trendRulePointsInput.addEventListener("change", debouncedRegen);
 }
 if (flagSpecialCauseOnChartCheckbox) {
   flagSpecialCauseOnChartCheckbox.addEventListener("change", () => {
@@ -678,32 +579,34 @@ if (clampLclAtZeroCheckbox) {
 
 const recalcPrompt = document.getElementById("recalcPrompt");
 const firstRunGuide = document.getElementById("firstRunGuide");
+const FIRST_RUN_KEY = "spc_first_run_done_v1";
 
-// In-memory flag (NOT persisted) — resets on refresh
-let firstRunGuideHidden = false;
+// Safe storage wrappers (localStorage can throw in some browser/privacy modes)
+function safeGetItem(key) {
+  try { return localStorage.getItem(key); } catch (e) { return null; }
+}
+function safeSetItem(key, value) {
+  try { localStorage.setItem(key, value); } catch (e) {}
+}
+function safeRemoveItem(key) {
+  try { localStorage.removeItem(key); } catch (e) {}
+}
 
 function updateFirstRunGuideVisibility() {
   if (!firstRunGuide) return;
-  firstRunGuide.style.display = firstRunGuideHidden ? "none" : "block";
+  const done = safeGetItem(FIRST_RUN_KEY) === "1";
+  firstRunGuide.style.display = done ? "none" : "block";
 }
 
 function markFirstRunComplete() {
-  firstRunGuideHidden = true;
+  safeSetItem(FIRST_RUN_KEY, "1");
   updateFirstRunGuideVisibility();
 }
 
 function clearFirstRunFlag() {
-  firstRunGuideHidden = false;
+  safeRemoveItem(FIRST_RUN_KEY);
   updateFirstRunGuideVisibility();
 }
-
-// Show it on every page load
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", clearFirstRunFlag);
-} else {
-  clearFirstRunFlag();
-}
-
 
 function getSelectedChartType() {
   const el = document.querySelector('input[name="chartType"]:checked');
@@ -1007,7 +910,7 @@ function drawSecondarySPCChart({
     }
   ];
 
-  const ch = new Chart(canvas.getContext("2d"), {
+  return new Chart(canvas.getContext("2d"), {
     type: "line",
     data: { labels, datasets },
     options: {
@@ -1041,11 +944,7 @@ function drawSecondarySPCChart({
       }
     }
   });
-
- 
-  return ch;
 }
-
 
 // -----------------------------
 // X̄–S combined chart renderer
@@ -1177,8 +1076,6 @@ function drawXbarSCombinedChart({
       }
     }
   });
-  applyFormattingLive();
-
 
   // -------------------------
   // 2) Secondary chart: S chart (in MR panel)
@@ -2369,7 +2266,7 @@ function drawGChart(values, baselineCount, labels) {
 
 	
 
-// Get title / axis labels with fallbacks (now supports optional Y-axis units)
+// Get title / axis labels with fallbacks
 function getChartLabels(defaultTitle, defaultX, defaultY) {
   const title = chartTitleInput && chartTitleInput.value.trim()
     ? chartTitleInput.value.trim()
@@ -2379,69 +2276,12 @@ function getChartLabels(defaultTitle, defaultX, defaultY) {
     ? xAxisLabelInput.value.trim()
     : defaultX;
 
-  let yLabel = yAxisLabelInput && yAxisLabelInput.value.trim()
+  const yLabel = yAxisLabelInput && yAxisLabelInput.value.trim()
     ? yAxisLabelInput.value.trim()
     : defaultY;
 
-  const units = (yAxisUnitsInput && yAxisUnitsInput.value.trim())
-    ? yAxisUnitsInput.value.trim()
-    : "";
-
-  // If units are provided, append them like "Value (units)" unless the label already contains units
-  if (units) {
-    const hasParen = yLabel.includes("(") && yLabel.includes(")");
-    if (!hasParen) yLabel = `${yLabel} (${units})`;
-  }
-
   return { title, xLabel, yLabel };
 }
-
-// -----------------------------
-// Presentation controls (Y axis + fonts + summary visibility)
-// -----------------------------
-function readYAxisSettings() {
-  const min = yAxisMinInput && yAxisMinInput.value !== "" ? Number(yAxisMinInput.value) : null;
-  const max = yAxisMaxInput && yAxisMaxInput.value !== "" ? Number(yAxisMaxInput.value) : null;
-  const step = yAxisStepInput && yAxisStepInput.value !== "" ? Number(yAxisStepInput.value) : null;
-
-  return {
-    min: Number.isFinite(min) ? min : null,
-    max: Number.isFinite(max) ? max : null,
-    step: Number.isFinite(step) ? step : null
-  };
-}
-
-function readFontSettings() {
-  const family = (chartFontFamilyInput && chartFontFamilyInput.value.trim()) ? chartFontFamilyInput.value.trim() : "";
-  const size = (chartFontSizeInput && chartFontSizeInput.value !== "") ? Number(chartFontSizeInput.value) : 12;
-
-  return {
-    family,
-    size: Number.isFinite(size) ? size : 12
-  };
-}
-
-function shouldShowSummary() {
-  // default to "true" if checkbox isn't present for any reason
-  return showSummaryCheckbox ? !!showSummaryCheckbox.checked : true;
-}
-
-function syncSummaryVisibility() {
-  const show = shouldShowSummary();
-  if (summaryDiv) summaryDiv.style.display = show ? "block" : "none";
-  if (capabilityDiv) capabilityDiv.style.display = show ? "block" : "none";
-}
-
-
-// When users change these controls, show the “recalc” prompt (your tool already uses this idea)
-function markNeedsRecalcFromPresentationControls() {
-  if (typeof markDataModelDirty === "function") {
-    markDataModelDirty();
-  } else {
-    // fallback: do nothing
-  }
-}
-
 
 function populateAnnotationDateOptions(labels) {
   if (!annotationDateInput) return;
@@ -2986,9 +2826,8 @@ function analyzeAttributeChart({ chartType, labels, values, cl, ucl, lcl }) {
     if (trend) signals.push(trend);
   }
 
-   return {
+  return {
     chartType,
-    nPoints: Array.isArray(values) ? values.length : 0,
     isStable: signals.length === 0,
     signals,
     outOfControl,
@@ -2997,7 +2836,6 @@ function analyzeAttributeChart({ chartType, labels, values, cl, ucl, lcl }) {
     trendLength,
     firstOutOfControl: outOfControl.length ? outOfControl[0] : null
   };
-
 }
 
 
@@ -3007,39 +2845,8 @@ function analyzeRareChart({ chartType, labels, values, cl, ucl, lcl }) {
   return a;
 }
 
-// -----------------------------
-// Small sample-size warning (shared by all summaries)
-// -----------------------------
-function smallSampleWarningHtml(nPoints, chartLabel = "this chart") {
-  const n = Number.isFinite(nPoints) ? nPoints : null;
-  if (!n) return "";
-
-  // Only show a warning when data are plausibly too few to trust limits/rules
-  if (n >= 30) return "";
-
-  // Stronger wording for very small samples
-  if (n < 12) {
-    return `<li><strong>Small sample warning:</strong> Only <strong>${n}</strong> points are being used for ${chartLabel}. With very small samples, medians/means and control limits can be unstable and rule signals are less reliable. If possible, aim for <strong>20+</strong> points (ideally <strong>30+</strong>).</li>`;
-  }
-
-  if (n < 20) {
-    return `<li><strong>Small sample warning:</strong> Only <strong>${n}</strong> points are being used for ${chartLabel}. Signals and limits are less reliable than they would be with larger datasets. If possible, aim for <strong>30+</strong> points.</li>`;
-  }
-
-  // 20–29
-  return `<li><strong>Note:</strong> This summary is based on <strong>${n}</strong> points. It will be more reliable with <strong>30+</strong> points.</li>`;
-}
-
-
 function renderAttributeSummary(a) {
   if (!summaryDiv) return;
-
-  if (!shouldShowSummary()) {
-    summaryDiv.innerHTML = "";
-    if (capabilityDiv) capabilityDiv.innerHTML = "";
-    syncSummaryVisibility();
-    return;
-  }
 
   const nameMap = { c: "C chart", p: "P chart", u: "U chart" };
   const chartName = nameMap[a.chartType] || "Chart";
@@ -3048,16 +2855,9 @@ function renderAttributeSummary(a) {
     ? "No clear signal of change (routine ups and downs)."
     : "A signal of change is present (worth investigating).";
 
-  const periodText =
-    (a.periodIndex && a.periodCount && a.periodCount > 1)
-      ? ` (showing the latest period: ${a.periodIndex} of ${a.periodCount})`
-      : "";
-
-  let html = `<h3>${chartName} summary${periodText}</h3>`;
+  let html = `<h3>${chartName} summary</h3>`;
   html += `<ul>`;
-
   html += `<li><strong>What this suggests:</strong> ${stableLine}</li>`;
-  html += smallSampleWarningHtml(a.nPoints, `${chartName.toLowerCase()} analysis`);
 
   if (!a.isStable && Array.isArray(a.signals) && a.signals.length) {
     html += `<li><strong>What I can see:</strong> ${a.signals.join("; ")}.</li>`;
@@ -3071,50 +2871,37 @@ function renderAttributeSummary(a) {
     html += `<li><strong>Example to check:</strong> ${ex.label} is ${exText}.</li>`;
   }
 
+  // Very short “what to do next” guidance (plain English)
   html += a.isStable
     ? `<li><strong>What to do next:</strong> If performance isn’t good enough, focus on changing the process (the system) rather than reacting to individual points.</li>`
     : `<li><strong>What to do next:</strong> Look for a real-world explanation (process change, staffing, demand, definition/coding). If it was a planned change, you may want a new baseline after it settles.</li>`;
 
+  // Gentle chart-type hint (reduces misuse)
   if (a.chartType === "c") {
     html += `<li><strong>Best used when:</strong> Each time period is broadly comparable (similar time window / similar-sized service).</li>`;
   } else if (a.chartType === "p") {
     html += `<li><strong>Best used when:</strong> You have a number out of a total each time (a proportion or %).</li>`;
   } else if (a.chartType === "u") {
-    html += `<li><strong>Best used when:</strong> You have a rate where the “out of how many” changes (e.g. per 1,000 bed days).</li>`;
+    html += `<li><strong>Best used when:</strong> You have a rate where the “out of how many” changes (e.g., per 1,000 bed days).</li>`;
   }
 
   html += `</ul>`;
   summaryDiv.innerHTML = html;
-  syncSummaryVisibility();
 }
 
 
 function renderRareChartSummary(a) {
   if (!summaryDiv) return;
 
-  if (!shouldShowSummary()) {
-    summaryDiv.innerHTML = "";
-    if (capabilityDiv) capabilityDiv.innerHTML = "";
-    syncSummaryVisibility();
-    return;
-  }
-
   const chartName = a.chartType === "t" ? "T chart" : "G chart";
   const stableLine = a.isStable
     ? "No clear signal of change (routine variation)."
     : "A signal of change is present (worth investigating).";
 
-  const periodText =
-    (a.periodIndex && a.periodCount && a.periodCount > 1)
-      ? ` (showing the latest period: ${a.periodIndex} of ${a.periodCount})`
-      : "";
-
-  let html = `<h3>${chartName} summary${periodText}</h3>`;
+  let html = `<h3>${chartName} summary</h3>`;
   html += `<ul>`;
-
   html += `<li><strong>What this suggests:</strong> ${stableLine}</li>`;
   html += `<li><strong>Note:</strong> Rare-event charts are skewed, so the limits won’t look symmetrical like an XmR chart.</li>`;
-  html += smallSampleWarningHtml(a.nPoints, `${chartName.toLowerCase()} analysis`);
 
   if (!a.isStable && Array.isArray(a.signals) && a.signals.length) {
     html += `<li><strong>What I can see:</strong> ${a.signals.join("; ")}.</li>`;
@@ -3134,31 +2921,27 @@ function renderRareChartSummary(a) {
     ? `<li><strong>What to do next:</strong> If you need improvement, focus on changing the system rather than reacting to individual points.</li>`
     : `<li><strong>What to do next:</strong> Look for a real-world explanation (process change, staffing, detection/definition changes). If it was planned, consider a new baseline after it settles.</li>`;
 
+  html += a.chartType === "t"
+    ? `<li><strong>Data reminder:</strong> This chart uses the time between events (e.g., days between incidents).</li>`
+    : `<li><strong>Data reminder:</strong> This chart uses the number of opportunities between events (values should be 1 or more).</li>`;
+
   html += `</ul>`;
   summaryDiv.innerHTML = html;
-  syncSummaryVisibility();
 }
-
 
 
 
 function updateRunSummary(points, medianIgnored, ruleHitsIgnored, baselineCountUsedIgnored) {
   if (!summaryDiv) return;
 
-  const { shiftLength, trendLength } =
-    (typeof getRuleSettings === "function") ? getRuleSettings() : { shiftLength: 8, trendLength: 6 };
+  const { shiftLength, trendLength } = getRuleSettings();
+  const n = points.length;
 
-  const n = Array.isArray(points) ? points.length : 0;
-  if (n < 2) {
-    summaryDiv.innerHTML = `<h3>Run chart summary</h3><p class="hint">Add more data points to generate a useful summary.</p>`;
-    return;
-  }
-
-  // Pull baseline setting from UI (works even if caller passes something else)
+  // Pull baseline setting from the UI (so it works per-period too)
   const rawBaseline = baselineInput ? parseInt(baselineInput.value, 10) : NaN;
   const baselineSetting = Number.isFinite(rawBaseline) ? rawBaseline : null;
 
-  // Split indices are “after index”, 0-based
+  // Build segments based on splits (splits are “after index”, 0-based)
   const splitIdxs = Array.isArray(splits)
     ? splits
         .map(v => parseInt(v, 10))
@@ -3166,8 +2949,7 @@ function updateRunSummary(points, medianIgnored, ruleHitsIgnored, baselineCountU
         .sort((a, b) => a - b)
     : [];
 
-  // Build segments as [start,end] inclusive
-  const boundaries = [-1, ...splitIdxs, n - 1];
+  const boundaries = [-1, ...splitIdxs, n - 1]; // inclusive ends
   const segments = [];
   for (let i = 0; i < boundaries.length - 1; i++) {
     const start = boundaries[i] + 1;
@@ -3175,93 +2957,164 @@ function updateRunSummary(points, medianIgnored, ruleHitsIgnored, baselineCountU
     if (start <= end) segments.push({ start, end });
   }
 
-  // Human-friendly segment range
   function rangeText(start, end) {
-    const axisType = (typeof getAxisType === "function") ? getAxisType() : "sequence";
-    const base = `points ${start + 1}–${end + 1}`;
+  const axisType = getAxisType(); // "date" or "sequence"
 
-    // If date axis, try to show the first/last label too (if we can)
-    if (axisType === "date" && currentChart?.data?.labels?.length) {
-      const labels = currentChart.data.labels;
-      const a = labels[start];
-      const b = labels[end];
-      if (a && b) return `${base} (${a} to ${b})`;
+  // Always show point indices
+  const base = `points ${start + 1}–${end + 1}`;
+
+  // Only add date range if DATE axis is selected
+  if (axisType !== "date") return base;
+
+  const a = points[start]?.x;
+  const b = points[end]?.x;
+  const hasDates = a !== undefined && b !== undefined && a !== null && b !== null;
+
+  return hasDates
+    ? `${base} (${formatDateOnlyLabel(a)} to ${formatDateOnlyLabel(b)})`
+    : base;
+}
+
+
+
+  function findTrendRanges(values, len) {
+    const out = [];
+    if (!values || values.length < len) return out;
+
+    let inc = 1, dec = 1;
+    let incStart = 0, decStart = 0;
+
+    for (let i = 1; i < values.length; i++) {
+      if (values[i] > values[i - 1]) {
+        inc++;
+        dec = 1;
+        decStart = i;
+      } else if (values[i] < values[i - 1]) {
+        dec++;
+        inc = 1;
+        incStart = i;
+      } else {
+        inc = 1; dec = 1;
+        incStart = i; decStart = i;
+      }
+
+      if (inc === len) out.push({ start: i - len + 1, end: i, dir: "increasing" });
+      if (dec === len) out.push({ start: i - len + 1, end: i, dir: "decreasing" });
     }
-    return base;
+
+    // Merge overlaps
+    out.sort((a, b) => a.start - b.start);
+    const merged = [];
+    for (const r of out) {
+      const last = merged[merged.length - 1];
+      if (!last || r.start > last.end + 1 || r.dir !== last.dir) {
+        merged.push({ ...r });
+      } else {
+        last.end = Math.max(last.end, r.end);
+      }
+    }
+    return merged;
   }
 
-  // Median helper
-  function safeMedian(arr) {
-    if (typeof computeMedian === "function") return computeMedian(arr);
-    // fallback minimal
-    const s = arr.slice().sort((a,b)=>a-b);
-    const m = Math.floor(s.length/2);
-    return s.length % 2 ? s[m] : (s[m-1] + s[m]) / 2;
+  function flagsToRanges(flags) {
+    const ranges = [];
+    let i = 0;
+    while (i < flags.length) {
+      if (!flags[i]) { i++; continue; }
+      let j = i;
+      while (j < flags.length && flags[j]) j++;
+      ranges.push({ start: i, end: j - 1 });
+      i = j;
+    }
+    return ranges;
   }
 
-  // Range finders (use existing if present)
-  const findRuns = (segValues, segMedian) =>
-    (typeof findLongRunRanges === "function") ? findLongRunRanges(segValues, segMedian, shiftLength) : [];
-
-  const findTrends = (segValues) =>
-    (typeof findTrendRanges === "function") ? findTrendRanges(segValues, trendLength) : [];
-
-  // Build summary
-  let html = `<h3>Run chart summary</h3>`;
-
-  if (segments.length > 1) {
-    html += `<p class="hint">Splits are applied, so the summary is shown <strong>per period</strong> (each period has its own median).</p>`;
-  }
-
-  html += `<ul>`;
+  let html = `<h3>Summary (Run chart)</h3>`;
+  html += `<p>Total number of points: <strong>${n}</strong>. `;
+  html += `The chart is divided into <strong>${segments.length}</strong> period${segments.length !== 1 ? "s" : ""}`;
+  html += segments.length > 1 ? ` (based on your splits).` : `.`;
+  html += `</p>`;
 
   segments.forEach((seg, idx) => {
     const segPoints = points.slice(seg.start, seg.end + 1);
-    const segValues = segPoints.map(p => p.y).filter(v => Number.isFinite(v));
+    const values = segPoints.map(p => p.y);
 
-    if (segValues.length < 2) {
-      html += `<li><strong>Period ${idx + 1} (${rangeText(seg.start, seg.end)}):</strong> Not enough valid values to analyse.</li>`;
-      return;
+    const segLen = values.length;
+
+    // Baseline per period (keep the same user setting, but cap to segment length)
+    let baselineCountUsed = segLen;
+    if (baselineSetting && baselineSetting >= 2) baselineCountUsed = Math.min(baselineSetting, segLen);
+
+    const baselineValues = values.slice(0, baselineCountUsed);
+    const median = computeMedian(baselineValues);
+
+    // Signals for this segment
+    const runFlags = detectLongRuns(values, median, shiftLength);
+    const runRanges = flagsToRanges(runFlags);
+
+    const trendRanges = findTrendRanges(values, trendLength);
+
+    // Astronomical points (use baseline values as reference if possible)
+    const astro = findAstronomicalPoints(values, median, baselineValues, 3.5);
+    const astroIdx = astro?.indices || [];
+
+    const signals = [];
+    if (runRanges.length) signals.push(`a sustained shift (≥ ${shiftLength} points on one side of the median)`);
+    if (trendRanges.length) signals.push(`a sustained trend (≥ ${trendLength} points increasing or decreasing)`);
+    if (astroIdx.length) signals.push(`an unusual outlier ("astronomical" point)`);
+
+    const periodLabel =
+      segments.length === 1
+        ? "Single period"
+        : idx === 0
+          ? "Period 1"
+          : `Period ${idx + 1}`;
+
+    html += `<h4>${periodLabel}</h4>`;
+    html += `<ul>`;
+    html += `<li>Coverage: <strong>${rangeText(seg.start, seg.end)}</strong> – ${segLen} point${segLen !== 1 ? "s" : ""}.</li>`;
+
+    html += (baselineCountUsed < segLen)
+      ? `<li>Baseline for this period: first <strong>${baselineCountUsed}</strong> point${baselineCountUsed !== 1 ? "s" : ""} used to calculate the median.</li>`
+      : `<li>Baseline for this period: all points in this period used to calculate the median.</li>`;
+
+    html += `<li>Median (this period): <strong>${Number.isFinite(median) ? median.toFixed(3) : "—"}</strong>.</li>`;
+
+    if (!signals.length) {
+      html += `<li><strong>Interpretation:</strong> No clear special-cause signals detected in this period (no sustained shift, trend, or unusual outlier). This pattern is consistent with common variation, but always interpret in context.</li>`;
+    } else {
+      html += `<li><strong>Interpretation:</strong> This period shows special-cause signals: ${signals.join("; ")}.</li>`;
+
+      // “Where to look” (simple + practical)
+      const where = [];
+
+      if (runRanges.length) {
+        const r = runRanges[0];
+        where.push(`shift around points ${seg.start + r.start + 1}–${seg.start + r.end + 1}`);
+      }
+
+      if (trendRanges.length) {
+        const t = trendRanges[0];
+        where.push(`trend around points ${seg.start + t.start + 1}–${seg.start + t.end + 1} (${t.dir})`);
+      }
+
+      if (astroIdx.length) {
+        const pts = astroIdx.slice(0, 5).map(i => seg.start + i + 1);
+        where.push(`outlier at point${pts.length !== 1 ? "s" : ""} ${pts.join(", ")}`);
+      }
+
+      if (where.length) {
+        html += `<li><strong>Where to look:</strong> ${where.join("; ")}.</li>`;
+      }
     }
 
-    // Baseline only applies to the first segment; later segments use the whole segment
-    const baselineUsed =
-      (idx === 0 && baselineSetting && baselineSetting >= 2)
-        ? Math.min(baselineSetting, segValues.length)
-        : segValues.length;
-
-    const segMedian = safeMedian(segValues.slice(0, baselineUsed));
-    const runRanges = findRuns(segValues, segMedian);
-    const trendRanges = findTrends(segValues);
-
-    const hasShift = Array.isArray(runRanges) && runRanges.length > 0;
-    const hasTrend = Array.isArray(trendRanges) && trendRanges.length > 0;
-
-    const stableLine = (!hasShift && !hasTrend)
-      ? "No clear signal of change (routine variation)."
-      : "A signal of change is present (worth investigating).";
-
-    html += `<li><strong>Period ${idx + 1} (${rangeText(seg.start, seg.end)}):</strong> ${stableLine}</li>`;
-
-    // Small sample warning for THIS period (based on points used in this segment)
-    html += smallSampleWarningHtml(segValues.length, `this run chart period`);
-
-    html += `<li><strong>Centre line (median):</strong> ${Number.isFinite(segMedian) ? segMedian.toFixed(2) : "—"}${(idx === 0 && baselineSetting) ? ` (based on first ${baselineUsed} points)` : ""}</li>`;
-
-    if (hasShift) {
-      // runRanges format depends on your implementation; keep it simple
-      html += `<li><strong>What I can see:</strong> A long run (≥${shiftLength}) is present.</li>`;
-    }
-    if (hasTrend) {
-      html += `<li><strong>What I can see:</strong> A trend (≥${trendLength}) is present.</li>`;
-    }
-
-    html += (!hasShift && !hasTrend)
-      ? `<li><strong>What to do next:</strong> If performance isn’t good enough, focus on changing the process (the system) rather than reacting to individual points.</li>`
-      : `<li><strong>What to do next:</strong> Look for a real-world explanation (process change, staffing, demand, definition/coding). If it was a planned change, you may want a new baseline after it settles.</li>`;
+    html += `</ul>`;
   });
 
-  html += `</ul>`;
+  if (segments.length > 1) {
+    html += `<p><em>Note:</em> Each period is summarised separately because splits suggest the process may have changed over time.</p>`;
+  }
+
   summaryDiv.innerHTML = html;
 }
 
@@ -3284,17 +3137,9 @@ function showStatusMessage(msg) {
 function updateXmRMultiSummary(segments, totalPoints) {
   if (!summaryDiv) return;
 
-  if (!shouldShowSummary()) {
-    summaryDiv.innerHTML = "";
-    if (capabilityDiv) capabilityDiv.innerHTML = "";
-    syncSummaryVisibility();
-    return;
-  }
-
   if (!segments || segments.length === 0) {
     summaryDiv.innerHTML = "";
     if (capabilityDiv) capabilityDiv.innerHTML = "";
-    syncSummaryVisibility();
     return;
   }
 
@@ -3514,7 +3359,6 @@ const rangeText =
   }
 
   summaryDiv.innerHTML = html;
-  syncSummaryVisibility();
 
   // Capability badge – last period only
   if (!capabilityDiv) return;
@@ -4013,7 +3857,6 @@ function drawRunChart(points, baselineCount, labels) {
       }
     }
   });
-    applyFormattingLive();
 
     clearDataModelDirty();
 
@@ -4485,9 +4328,9 @@ function drawSimpleSPCChart({
       }
     }
   });
-  applyFormattingLive();
-
 }
+
+
 
 function drawXmRChart(points, baselineCount, labels) {
   if (!chartCanvas) return;
@@ -4764,8 +4607,6 @@ function drawXmRChart(points, baselineCount, labels) {
     }
   });
 
-  applyFormattingLive();
-
   // ----- Summary -----
   if (segmentSummaries.length > 0) {
     updateXmRMultiSummary(segmentSummaries, points.length);
@@ -4924,10 +4765,9 @@ function drawMrChart(allPoints, labels, segments) {
         }
       }
     });
+
     return;
   }
-
-  applyFormattingLive();
 
   // ----- ALL PERIODS (WITH SPLITS) -----
   const valuesAll = allPoints.map(p => p.y);
@@ -5034,10 +4874,7 @@ function drawMrChart(allPoints, labels, segments) {
       }
     }
   });
-  applyFormattingLive();
-
 }
-
 
 
 // Helper used by "last period only" mode — uses your existing MR canvas/chart variables
@@ -5113,8 +4950,6 @@ function renderMrChart(mrLabels, mrValues, avgMR, uclMR) {
       }
     }
   });
-  applyFormattingLive();
-
 }
 
 
@@ -5729,7 +5564,6 @@ if (clearSplitsBtn) {
     clearSplitsBtn.title = clearSplitsBtn.dataset.defaultTitle;
   }
 }
-
 
 
   chartContextMenu.style.display = "block";
@@ -6913,32 +6747,3 @@ if (downloadPdfBtn) {
 }
 
 renderHelperState();
-
-// -----------------------------
-// Wire formatting inputs AFTER page load
-// -----------------------------
-window.addEventListener("DOMContentLoaded", () => {
-  [
-    chartTitleInput,
-    xAxisLabelInput,
-    yAxisLabelInput,
-    yAxisUnitsInput,
-    yAxisMinInput,
-    yAxisMaxInput,
-    yAxisStepInput,
-    chartFontFamilyInput,
-    chartFontSizeInput
-  ].filter(Boolean).forEach(el => {
-    el.addEventListener("input", applyFormattingLive);
-    el.addEventListener("change", applyFormattingLive);
-  });
-
-    if (showSummaryCheckbox) {
-    showSummaryCheckbox.addEventListener("change", () => {
-      syncSummaryVisibility();
-    });
-  }
-
-  // Optional but nice: set initial visibility on page load
-  syncSummaryVisibility();
-});
