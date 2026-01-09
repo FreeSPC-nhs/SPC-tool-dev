@@ -5731,11 +5731,6 @@ if (clearSplitsBtn) {
   }
 }
 
-if (showSummaryCheckbox) {
-  showSummaryCheckbox.addEventListener("change", () => {
-    syncSummaryVisibility();
-  });
-}
 
 
   chartContextMenu.style.display = "block";
@@ -6938,6 +6933,13 @@ window.addEventListener("DOMContentLoaded", () => {
     el.addEventListener("input", applyFormattingLive);
     el.addEventListener("change", applyFormattingLive);
   });
+
+    if (showSummaryCheckbox) {
+    showSummaryCheckbox.addEventListener("change", () => {
+      syncSummaryVisibility();
+    });
+  }
+
+  // Optional but nice: set initial visibility on page load
+  syncSummaryVisibility();
 });
-
-
