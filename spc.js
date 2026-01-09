@@ -2937,20 +2937,13 @@ function renderAttributeMultiSummary(segmentAnalyses, totalPoints) {
   html += `(based on the baseline and any splits).</p>`;
 
   segmentAnalyses.forEach((a, idx) => {
-    const periodTitle =
-      segmentAnalyses.length > 1 ? `<h4>Period ${idx + 1}</h4>` : `<h4>Single period</h4>`;
-
-    const stableLine = a.isStable
-      ? "No clear signal of change (routine variation)."
-      : "A signal of change is present (worth investigating).";
-
-    html += periodTitle;
+    html += segmentAnalyses.length > 1 ? `<h4>Period ${idx + 1}</h4>` : `<h4>Single period</h4>`;
     html += `<ul>`;
 
     // Coverage
     if (a.startIndex != null && a.endIndex != null && a.labelStart && a.labelEnd) {
       const n = (a.endIndex - a.startIndex + 1);
-      html += `<li><strong>Coverage:</strong> points ${a.startIndex + 1}–${a.endIndex + 1} (${a.labelStart} to ${a.labelEnd}) – ${n} points.</li>`;
+      html += `<li><strong>Coverage:</strong> <strong>points ${a.startIndex + 1}–${a.endIndex + 1}</strong> (${a.labelStart} to ${a.labelEnd}) – ${n} points.</li>`;
     } else if (a.nPoints != null) {
       html += `<li><strong>Coverage:</strong> ${a.nPoints} points.</li>`;
     }
@@ -2960,36 +2953,46 @@ function renderAttributeMultiSummary(segmentAnalyses, totalPoints) {
       html += `<li><strong>Baseline for this period:</strong> first ${a.baselineCountUsed} points used to calculate centre line and limits.</li>`;
     }
 
-    // Core interpretation
-    html += `<li><strong>Interpretation:</strong> ${stableLine}</li>`;
+    // Descriptive stats (centre line + limits)
+    // Your analyzer may store different field names; we check a few common ones.
+    const clVal =
+      (typeof a.cl === "number" && isFinite(a.cl)) ? a.cl :
+      (typeof a.centerLine === "number" && isFinite(a.centerLine)) ? a.centerLine :
+      (typeof a.cbar === "number" && isFinite(a.cbar)) ? a.cbar :
+      (typeof a.pbar === "number" && isFinite(a.pbar)) ? a.pbar :
+      (typeof a.ubar === "number" && isFinite(a.ubar)) ? a.ubar :
+      null;
 
-    // What was detected
+    const lclVal =
+      (typeof a.lcl === "number" && isFinite(a.lcl)) ? a.lcl :
+      (typeof a.lclValue === "number" && isFinite(a.lclValue)) ? a.lclValue :
+      null;
+
+    const uclVal =
+      (typeof a.ucl === "number" && isFinite(a.ucl)) ? a.ucl :
+      (typeof a.uclValue === "number" && isFinite(a.uclValue)) ? a.uclValue :
+      null;
+
+    // Use your existing formatting helper if you have one; otherwise fall back to toFixed.
+    const fmt = (v) => (typeof formatNumber === "function" ? formatNumber(v, 3) : Number(v).toFixed(3));
+
+    if (clVal != null && lclVal != null && uclVal != null) {
+      html += `<li><strong>Centre line:</strong> ${fmt(clVal)}; <strong>control limits:</strong> LCL = ${fmt(lclVal)}, UCL = ${fmt(uclVal)}.</li>`;
+    } else if (clVal != null) {
+      html += `<li><strong>Centre line:</strong> ${fmt(clVal)}.</li>`;
+    }
+
+    // Signals (keep brief, like XmR)
     if (!a.isStable && Array.isArray(a.signals) && a.signals.length) {
-      html += `<li><strong>What I can see:</strong> ${a.signals.join("; ")}.</li>`;
+      html += `<li><strong>Signals:</strong> ${a.signals.join("; ")}.</li>`;
     }
 
-    // Example point
-    if (a.firstOutOfControl) {
-      const ex = a.firstOutOfControl;
-      const exText = ex.type === "aboveUCL"
-        ? "above the upper limit"
-        : "below the lower limit";
-      html += `<li><strong>Example to check:</strong> ${ex.label} is ${exText}.</li>`;
-    }
+    // Interpretation (final line, XmR-style)
+    const interpretation = a.isStable
+      ? "No clear special-cause signals were detected in this period. The pattern is consistent with natural/common variation."
+      : "Special-cause signals were detected in this period (pattern inconsistent with routine variation).";
 
-    // Guidance (same style you already use)
-    html += a.isStable
-      ? `<li><strong>What to do next:</strong> If performance isn’t good enough, focus on changing the process (the system) rather than reacting to individual points.</li>`
-      : `<li><strong>What to do next:</strong> Look for a real-world explanation (process change, staffing, demand, definition/coding). If it was a planned change, you may want a new baseline after it settles.</li>`;
-
-    // Chart-type “best used when” hints
-    if (a.chartType === "c") {
-      html += `<li><strong>Best used when:</strong> Each time period is broadly comparable (similar time window / similar-sized service).</li>`;
-    } else if (a.chartType === "p") {
-      html += `<li><strong>Best used when:</strong> You have a number out of a total each time (a proportion or %).</li>`;
-    } else if (a.chartType === "u") {
-      html += `<li><strong>Best used when:</strong> You have a rate where the “out of how many” changes (e.g. per 1,000 bed days).</li>`;
-    }
+    html += `<li><strong>Interpretation:</strong> ${interpretation}</li>`;
 
     html += `</ul>`;
   });
