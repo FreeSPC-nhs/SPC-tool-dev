@@ -2923,6 +2923,83 @@ function analyzeRareChart({ chartType, labels, values, cl, ucl, lcl }) {
   return a;
 }
 
+
+function renderAttributeMultiSummary(segmentAnalyses, totalPoints) {
+  if (!summaryDiv) return;
+
+  const nameMap = { c: "C chart", p: "P chart", u: "U chart" };
+  const chartType = segmentAnalyses?.[0]?.chartType;
+  const chartName = nameMap[chartType] || "Chart";
+
+  let html = `<h3>Summary (${chartName})</h3>`;
+  html += `<p>Total number of points: <strong>${totalPoints}</strong>. `;
+  html += `The chart is divided into <strong>${segmentAnalyses.length}</strong> period${segmentAnalyses.length !== 1 ? "s" : ""} `;
+  html += `(based on the baseline and any splits).</p>`;
+
+  segmentAnalyses.forEach((a, idx) => {
+    const periodTitle =
+      segmentAnalyses.length > 1 ? `<h4>Period ${idx + 1}</h4>` : `<h4>Single period</h4>`;
+
+    const stableLine = a.isStable
+      ? "No clear signal of change (routine variation)."
+      : "A signal of change is present (worth investigating).";
+
+    html += periodTitle;
+    html += `<ul>`;
+
+    // Coverage
+    if (a.startIndex != null && a.endIndex != null && a.labelStart && a.labelEnd) {
+      const n = (a.endIndex - a.startIndex + 1);
+      html += `<li><strong>Coverage:</strong> points ${a.startIndex + 1}–${a.endIndex + 1} (${a.labelStart} to ${a.labelEnd}) – ${n} points.</li>`;
+    } else if (a.nPoints != null) {
+      html += `<li><strong>Coverage:</strong> ${a.nPoints} points.</li>`;
+    }
+
+    // Baseline
+    if (a.baselineCountUsed != null) {
+      html += `<li><strong>Baseline for this period:</strong> first ${a.baselineCountUsed} points used to calculate centre line and limits.</li>`;
+    }
+
+    // Core interpretation
+    html += `<li><strong>Interpretation:</strong> ${stableLine}</li>`;
+
+    // What was detected
+    if (!a.isStable && Array.isArray(a.signals) && a.signals.length) {
+      html += `<li><strong>What I can see:</strong> ${a.signals.join("; ")}.</li>`;
+    }
+
+    // Example point
+    if (a.firstOutOfControl) {
+      const ex = a.firstOutOfControl;
+      const exText = ex.type === "aboveUCL"
+        ? "above the upper limit"
+        : "below the lower limit";
+      html += `<li><strong>Example to check:</strong> ${ex.label} is ${exText}.</li>`;
+    }
+
+    // Guidance (same style you already use)
+    html += a.isStable
+      ? `<li><strong>What to do next:</strong> If performance isn’t good enough, focus on changing the process (the system) rather than reacting to individual points.</li>`
+      : `<li><strong>What to do next:</strong> Look for a real-world explanation (process change, staffing, demand, definition/coding). If it was a planned change, you may want a new baseline after it settles.</li>`;
+
+    // Chart-type “best used when” hints
+    if (a.chartType === "c") {
+      html += `<li><strong>Best used when:</strong> Each time period is broadly comparable (similar time window / similar-sized service).</li>`;
+    } else if (a.chartType === "p") {
+      html += `<li><strong>Best used when:</strong> You have a number out of a total each time (a proportion or %).</li>`;
+    } else if (a.chartType === "u") {
+      html += `<li><strong>Best used when:</strong> You have a rate where the “out of how many” changes (e.g. per 1,000 bed days).</li>`;
+    }
+
+    html += `</ul>`;
+  });
+
+  summaryDiv.innerHTML = html;
+}
+
+
+
+
 function renderAttributeSummary(a) {
   if (!summaryDiv) return;
 
@@ -4055,29 +4132,48 @@ function drawCChart(points, baselineCount, labels) {
     showLCL: true
   });
 
-  // Store analysis for the latest period (last segment)
-  const lastSeg = segmentStarts.length - 1;
-  const start = segmentStarts[lastSeg];
-  const end = segmentEnds[lastSeg];
+    // ---- Multi-period analysis (ALL segments) ----
+  const analyses = [];
 
-  lastAttributeAnalysis = analyzeAttributeChart({
-    chartType: "c",
-    labels: labels.slice(start, end + 1),
-    values: values.slice(start, end + 1),
-    cl: clArr.slice(start, end + 1),
-    ucl: uclArr.slice(start, end + 1),
-    lcl: lclArr.slice(start, end + 1)
-  });
+  for (let s = 0; s < segmentStarts.length; s++) {
+    const start = segmentStarts[s];
+    const end = segmentEnds[s];
 
-  // Add context for helper (latest period)
-  lastAttributeAnalysis.periodIndex = lastSeg + 1;
-  lastAttributeAnalysis.periodCount = segmentStarts.length;
-  lastAttributeAnalysis.startIndex = start;
-  lastAttributeAnalysis.endIndex = end;
-  lastAttributeAnalysis.labelStart = labels[start];
-  lastAttributeAnalysis.labelEnd = labels[end];
+    const segPoints = points.slice(start, end + 1);
 
-  renderAttributeSummary(lastAttributeAnalysis);
+    // baselineCount only applies to first segment; later segments use their whole segment
+    const segBaselineCountUsed =
+      (s === 0 && baselineCount && baselineCount >= 1)
+        ? Math.min(baselineCount, segPoints.length)
+        : segPoints.length;
+
+    const a = analyzeAttributeChart({
+      chartType: "c",
+      labels: labels.slice(start, end + 1),
+      values: values.slice(start, end + 1),
+      cl: clArr.slice(start, end + 1),
+      ucl: uclArr.slice(start, end + 1),
+      lcl: lclArr.slice(start, end + 1)
+    });
+
+    // Context (so the summary can mirror XmR style)
+    a.periodIndex = s + 1;
+    a.periodCount = segmentStarts.length;
+    a.startIndex = start;
+    a.endIndex = end;
+    a.labelStart = labels[start];
+    a.labelEnd = labels[end];
+    a.baselineCountUsed = segBaselineCountUsed;
+
+    analyses.push(a);
+  }
+
+  // Render XmR-style multi-period summary
+  renderAttributeMultiSummary(analyses, labels.length);
+
+  // Keep "latest" available for anything else that expects it
+  lastAttributeAnalysis = analyses[analyses.length - 1];
+
 }
 
 
@@ -4150,28 +4246,47 @@ function drawPChart(pointsWithN, baselineCount, labels) {
     showLCL: true
   });
 
-  // Latest period analysis
-  const lastSeg = segmentStarts.length - 1;
-  const start = segmentStarts[lastSeg];
-  const end = segmentEnds[lastSeg];
+    // ---- Multi-period analysis (ALL segments) ----
+  const analyses = [];
 
-  lastAttributeAnalysis = analyzeAttributeChart({
-    chartType: "p",
-    labels: labels.slice(start, end + 1),
-    values: values.slice(start, end + 1),
-    cl: clArr.slice(start, end + 1),
-    ucl: uclArr.slice(start, end + 1),
-    lcl: lclArr.slice(start, end + 1)
-  });
+  for (let s = 0; s < segmentStarts.length; s++) {
+    const start = segmentStarts[s];
+    const end = segmentEnds[s];
 
-  lastAttributeAnalysis.periodIndex = lastSeg + 1;
-  lastAttributeAnalysis.periodCount = segmentStarts.length;
-  lastAttributeAnalysis.startIndex = start;
-  lastAttributeAnalysis.endIndex = end;
-  lastAttributeAnalysis.labelStart = labels[start];
-  lastAttributeAnalysis.labelEnd = labels[end];
+    const segPoints = pointsWithN.slice(start, end + 1);
 
-  renderAttributeSummary(lastAttributeAnalysis);
+    const segBaselineCountUsed =
+      (s === 0 && baselineCount && baselineCount >= 1)
+        ? Math.min(baselineCount, segPoints.length)
+        : segPoints.length;
+
+    const a = analyzeAttributeChart({
+      chartType: "p",
+      labels: labels.slice(start, end + 1),
+      values: values.slice(start, end + 1),
+      cl: clArr.slice(start, end + 1),
+      ucl: uclArr.slice(start, end + 1),
+      lcl: lclArr.slice(start, end + 1)
+    });
+
+    // Context (XmR-style)
+    a.periodIndex = s + 1;
+    a.periodCount = segmentStarts.length;
+    a.startIndex = start;
+    a.endIndex = end;
+    a.labelStart = labels[start];
+    a.labelEnd = labels[end];
+    a.baselineCountUsed = segBaselineCountUsed;
+
+    analyses.push(a);
+  }
+
+  // Render XmR-style multi-period summary
+  renderAttributeMultiSummary(analyses, labels.length);
+
+  // Keep "latest" available for anything else that expects it
+  lastAttributeAnalysis = analyses[analyses.length - 1];
+
 }
 
 function drawUChart(pointsWithN, baselineCount, labels) {
@@ -4243,28 +4358,47 @@ function drawUChart(pointsWithN, baselineCount, labels) {
     showLCL: true
   });
 
-  // Latest period analysis
-  const lastSeg = segmentStarts.length - 1;
-  const start = segmentStarts[lastSeg];
-  const end = segmentEnds[lastSeg];
+    // ---- Multi-period analysis (ALL segments) ----
+  const analyses = [];
 
-  lastAttributeAnalysis = analyzeAttributeChart({
-    chartType: "u",
-    labels: labels.slice(start, end + 1),
-    values: values.slice(start, end + 1),
-    cl: clArr.slice(start, end + 1),
-    ucl: uclArr.slice(start, end + 1),
-    lcl: lclArr.slice(start, end + 1)
-  });
+  for (let s = 0; s < segmentStarts.length; s++) {
+    const start = segmentStarts[s];
+    const end = segmentEnds[s];
 
-  lastAttributeAnalysis.periodIndex = lastSeg + 1;
-  lastAttributeAnalysis.periodCount = segmentStarts.length;
-  lastAttributeAnalysis.startIndex = start;
-  lastAttributeAnalysis.endIndex = end;
-  lastAttributeAnalysis.labelStart = labels[start];
-  lastAttributeAnalysis.labelEnd = labels[end];
+    const segPoints = pointsWithN.slice(start, end + 1);
 
-  renderAttributeSummary(lastAttributeAnalysis);
+    const segBaselineCountUsed =
+      (s === 0 && baselineCount && baselineCount >= 1)
+        ? Math.min(baselineCount, segPoints.length)
+        : segPoints.length;
+
+    const a = analyzeAttributeChart({
+      chartType: "u",
+      labels: labels.slice(start, end + 1),
+      values: values.slice(start, end + 1),
+      cl: clArr.slice(start, end + 1),
+      ucl: uclArr.slice(start, end + 1),
+      lcl: lclArr.slice(start, end + 1)
+    });
+
+    // Context (XmR-style)
+    a.periodIndex = s + 1;
+    a.periodCount = segmentStarts.length;
+    a.startIndex = start;
+    a.endIndex = end;
+    a.labelStart = labels[start];
+    a.labelEnd = labels[end];
+    a.baselineCountUsed = segBaselineCountUsed;
+
+    analyses.push(a);
+  }
+
+  // Render XmR-style multi-period summary
+  renderAttributeMultiSummary(analyses, labels.length);
+
+  // Keep "latest" available for anything else that expects it
+  lastAttributeAnalysis = analyses[analyses.length - 1];
+
 }
 
 
