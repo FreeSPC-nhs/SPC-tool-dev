@@ -285,6 +285,18 @@ function applyFormattingLive() {
 
   const chart = currentChart;
 
+if (chart.options?.scales?.x) {
+  chart.options.scales.x.title = chart.options.scales.x.title || {};
+  chart.options.scales.x.title.display = true;
+  chart.options.scales.x.title.font = chart.options.scales.x.title.font || {};
+}
+if (chart.options?.scales?.y) {
+  chart.options.scales.y.title = chart.options.scales.y.title || {};
+  chart.options.scales.y.title.display = true;
+  chart.options.scales.y.title.font = chart.options.scales.y.title.font || {};
+}
+
+
   // ----- Title -----
   if (chart.options.plugins && chart.options.plugins.title) {
     const title = chartTitleInput?.value?.trim();
@@ -318,6 +330,27 @@ function applyFormattingLive() {
     if (units) y += ` (${units})`;
     chart.options.scales.y.title.text = y;
   }
+
+  // ----- Y axis range / ticks -----
+  const yScale = chart.options?.scales?.y;
+
+  if (yScale) {
+    const min = yAxisMinInput && yAxisMinInput.value !== "" ? Number(yAxisMinInput.value) : null;
+    const max = yAxisMaxInput && yAxisMaxInput.value !== "" ? Number(yAxisMaxInput.value) : null;
+    const step = yAxisStepInput && yAxisStepInput.value !== "" ? Number(yAxisStepInput.value) : null;
+
+    // Important: Chart.js treats undefined as "auto".
+    if (Number.isFinite(min)) yScale.min = min;
+    else delete yScale.min;
+
+    if (Number.isFinite(max)) yScale.max = max;
+    else delete yScale.max;
+
+    yScale.ticks = yScale.ticks || {};
+    if (Number.isFinite(step) && step > 0) yScale.ticks.stepSize = step;
+    else delete yScale.ticks.stepSize;
+  }
+
 
   // ----- Fonts -----
   const size = Number(chartFontSizeInput?.value) || 12;
@@ -1145,7 +1178,8 @@ function drawXbarSCombinedChart({
       }
     }
   });
-  
+  applyFormattingLive();
+
 
   // -------------------------
   // 2) Secondary chart: S chart (in MR panel)
@@ -3980,6 +4014,7 @@ function drawRunChart(points, baselineCount, labels) {
       }
     }
   });
+    applyFormattingLive();
 
     clearDataModelDirty();
 
@@ -4451,6 +4486,7 @@ function drawSimpleSPCChart({
       }
     }
   });
+  applyFormattingLive();
 
 }
 
@@ -4729,6 +4765,8 @@ function drawXmRChart(points, baselineCount, labels) {
     }
   });
 
+  applyFormattingLive();
+
   // ----- Summary -----
   if (segmentSummaries.length > 0) {
     updateXmRMultiSummary(segmentSummaries, points.length);
@@ -4890,6 +4928,8 @@ function drawMrChart(allPoints, labels, segments) {
     return;
   }
 
+  applyFormattingLive();
+
   // ----- ALL PERIODS (WITH SPLITS) -----
   const valuesAll = allPoints.map(p => p.y);
   const mrAll = mrForValues(valuesAll);
@@ -4995,6 +5035,7 @@ function drawMrChart(allPoints, labels, segments) {
       }
     }
   });
+  applyFormattingLive();
 
 }
 
@@ -5073,6 +5114,7 @@ function renderMrChart(mrLabels, mrValues, avgMR, uclMR) {
       }
     }
   });
+  applyFormattingLive();
 
 }
 
@@ -5687,6 +5729,12 @@ if (clearSplitsBtn) {
   } else {
     clearSplitsBtn.title = clearSplitsBtn.dataset.defaultTitle;
   }
+}
+
+if (showSummaryCheckbox) {
+  showSummaryCheckbox.addEventListener("change", () => {
+    syncSummaryVisibility();
+  });
 }
 
 
