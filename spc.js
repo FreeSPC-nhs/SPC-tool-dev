@@ -7019,27 +7019,67 @@ async function exportPdfReport() {
     return;
   }
 
-  // Basic options – you can tweak orientation/format later
+  // Wait for fonts (helps missing-text issues in html2canvas)
+  if (document.fonts && document.fonts.ready) {
+    await document.fonts.ready;
+  }
+
+  const prevScrollY = window.scrollY;
+  window.scrollTo(0, 0);
+
+  // Temporarily simplify capability markup for export (fix blank text)
+  const capEl = document.getElementById("capability");
+  const capBackupHTML = capEl ? capEl.innerHTML : null;
+  const capText = capEl ? (capEl.innerText || "").trim() : "";
+
+  if (capEl && capText) {
+    capEl.innerHTML = `
+      <div style="
+        border: 1px solid #c9b200;
+        background: #fff3a6;
+        border-radius: 4px;
+        padding: 14px;
+      ">
+        ${capText.split("\n").map(line => `<div>${line}</div>`).join("")}
+      </div>
+    `;
+  }
+
   const opt = {
-    margin:       [10, 16, 10, 16], // top, left, bottom, right (extra L/R helps clipping)
-    filename:     "spc-report.pdf",
-    image:        { type: "jpeg", quality: 0.98 },
-    html2canvas:  { scale: 2, scrollY: -window.scrollY },
-    jsPDF:        { unit: "mm", format: "a4", orientation: "landscape" },
+    margin: [10, 16, 10, 16], // extra L/R helps avoid clipping
+    filename: "spc-report.pdf",
+    image: { type: "jpeg", quality: 0.98 },
+    html2canvas: {
+      scale: 2,
+      scrollX: 0,
+      scrollY: 0,
+      windowWidth: document.documentElement.scrollWidth,
+      windowHeight: document.documentElement.scrollHeight
+    },
+    jsPDF: { unit: "mm", format: "a4", orientation: "landscape" },
     pagebreak: {
       mode: ["css", "legacy"],
       avoid: [".pdf-avoid-break"]
     }
   };
 
-    document.body.classList.add("pdf-exporting");
+  document.body.classList.add("pdf-exporting");
 
   try {
     await html2pdf().set(opt).from(reportElement).save();
   } finally {
     document.body.classList.remove("pdf-exporting");
+
+    // restore capability HTML
+    if (capEl && capBackupHTML != null) capEl.innerHTML = capBackupHTML;
+
+    // restore scroll
+    window.scrollTo(0, prevScrollY);
   }
 }
+
+
+
 // Optional: keep this in case you ever add the top button back
 if (downloadPdfBtn) {
   downloadPdfBtn.addEventListener("click", exportPdfReport);
