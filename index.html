@@ -816,6 +816,15 @@ body.modal-open {
   page-break-inside: avoid;
 }
 
+/* PDF export: ensure capability text renders */
+body.pdf-exporting #capability {
+  position: static !important;
+  transform: none !important;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+
   </style>
 </head>
 
@@ -1136,10 +1145,10 @@ body.modal-open {
   <canvas id="spcChart"></canvas>
 </div>
           <div id="summary" style="margin-top: 1rem; font-size: 0.9rem;"></div>
-          <div id="capability" style="margin-top: 1rem; font-size: 0.9rem;"></div>
+          <div id="capability" class="pdf-avoid-break" style="margin-top: 1rem; font-size: 0.9rem;"></div>
         </div>
 
-        <div class="panel" id="mrPanel" style="display: none;">
+        <div class="panel pdf-avoid-break" id="mrPanel" style="display: none;">
           <strong>Moving Range chart:</strong>
           <div class="chart-container">
             <canvas id="mrChartCanvas"></canvas>

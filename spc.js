@@ -7008,7 +7008,7 @@ if (dataEditorDetectHeadersButton) {
 }
 
 
-function exportPdfReport() {
+async function exportPdfReport() {
   const reportElement = document.getElementById("reportContent");
   if (!reportElement) {
     alert("Report content not found.");
@@ -7021,20 +7021,25 @@ function exportPdfReport() {
 
   // Basic options – you can tweak orientation/format later
   const opt = {
-    margin:       10,
+    margin:       [10, 16, 10, 16], // top, left, bottom, right (extra L/R helps clipping)
     filename:     "spc-report.pdf",
     image:        { type: "jpeg", quality: 0.98 },
     html2canvas:  { scale: 2, scrollY: -window.scrollY },
     jsPDF:        { unit: "mm", format: "a4", orientation: "landscape" },
     pagebreak: {
-          mode: ["css", "legacy"],
-          avoid: [".pdf-avoid-break"]
+      mode: ["css", "legacy"],
+      avoid: [".pdf-avoid-break"]
     }
   };
 
-  html2pdf().set(opt).from(reportElement).save();
-}
+    document.body.classList.add("pdf-exporting");
 
+  try {
+    await html2pdf().set(opt).from(reportElement).save();
+  } finally {
+    document.body.classList.remove("pdf-exporting");
+  }
+}
 // Optional: keep this in case you ever add the top button back
 if (downloadPdfBtn) {
   downloadPdfBtn.addEventListener("click", exportPdfReport);
