@@ -316,7 +316,12 @@ function getNonBlankGridRows() {
 
 function detectHeadersFromGrid() {
   const rows = getNonBlankGridRows();
-  if (rows.length < 2) return true; // default to “has headers” for empty/small
+
+  // SAFER default:
+  // In this tool, column headings usually live in the grid's column titles already.
+  // Only treat the first row as headers if we actually see "header-like" text.
+  if (rows.length < 2) return false;
+
   return isProbablyHeaderRow(rows[0]);
 }
 
@@ -324,9 +329,12 @@ function renderHeaderStatus() {
   if (!dataEditorHeaderStatus || !dataEditorHasHeaders) return;
 
   const mode = dataEditorHasHeaders.checked ? "headings" : "data";
+
   dataEditorHeaderStatus.innerHTML =
-    `Apply will treat the <strong>first row</strong> as <strong>${mode}</strong>.`;
+    `Apply will treat the <strong>first row of the grid</strong> as <strong>${mode}</strong>. ` +
+    `<br><small>Tip: If you loaded a CSV normally, your headings are already the column titles — so usually leave this OFF.</small>`;
 }
+
 
 
 
@@ -714,6 +722,20 @@ function clearDataModelDirty() {
 
 // On initial load, show guide only until first successful generate
 updateFirstRunGuideVisibility();
+
+window.addEventListener("beforeunload", (e) => {
+  // If you have a boolean dirty flag, use it here.
+  // Fallback: warn if a chart exists (user did work)
+  const shouldWarn =
+    (typeof isDataModelDirty === "function" && isDataModelDirty()) ||
+    !!currentChart;
+
+  if (!shouldWarn) return;
+
+  e.preventDefault();
+  e.returnValue = "";
+});
+
 
 
 //---- Add annotations button
@@ -3654,6 +3676,23 @@ function parseDateValue(xRaw) {
   return new Date(s);
 }
 
+
+function validateCountLikeColumn(values, label, { allowZero = true } = {}) {
+  for (let i = 0; i < values.length; i++) {
+    const v = Number(values[i]);
+    if (!Number.isFinite(v)) return `${label} has a non-numeric value at row ${i + 1}.`;
+    if (v < 0) return `${label} has a negative value at row ${i + 1}.`;
+    if (!allowZero && v === 0) return `${label} has a zero value at row ${i + 1}, but it must be > 0.`;
+    // counts are usually integers — warn (not hard fail)
+    if (!isIntegerish(v)) {
+      return `${label} has a non-integer value at row ${i + 1}. Counts/denominators are usually whole numbers.`;
+    }
+  }
+  return null;
+}
+
+
+
 // Parse numeric cells, including percentages like "55.17%"
 function toNumericValue(raw) {
   if (raw === null || raw === undefined) return NaN;
@@ -3671,6 +3710,84 @@ function toNumericValue(raw) {
 
   const num = Number(s);
   return isFinite(num) ? num : NaN;
+}
+
+/* ============================================================
+   VALIDATION HELPERS (P / U / C charts)
+   - "error" => block chart generation
+   - "warn"  => ask user whether to continue
+   ============================================================ */
+
+function isIntegerish(n) {
+  return Number.isFinite(n) && Math.abs(n - Math.round(n)) < 1e-9;
+}
+
+function validateNonNegativeNumbers(arr, label) {
+  for (let i = 0; i < arr.length; i++) {
+    const v = Number(arr[i]);
+    if (!Number.isFinite(v)) {
+      return { level: "error", message: `${label} has a non-numeric value at row ${i + 1}.` };
+    }
+    if (v < 0) {
+      return { level: "error", message: `${label} has a negative value at row ${i + 1}.` };
+    }
+  }
+  return null;
+}
+
+function warnIfNonInteger(arr, label) {
+  for (let i = 0; i < arr.length; i++) {
+    const v = Number(arr[i]);
+    if (Number.isFinite(v) && !isIntegerish(v)) {
+      return {
+        level: "warn",
+        message:
+          `${label} has a non-integer value at row ${i + 1} (${v}). ` +
+          `Counts/denominators are usually whole numbers.\n\nGenerate the chart anyway?`
+      };
+    }
+  }
+  return null;
+}
+
+function validateDenominatorPositive(arr, label) {
+  for (let i = 0; i < arr.length; i++) {
+    const v = Number(arr[i]);
+    if (!Number.isFinite(v)) {
+      return { level: "error", message: `${label} has a non-numeric value at row ${i + 1}.` };
+    }
+    if (v <= 0) {
+      return { level: "error", message: `${label} must be > 0 at row ${i + 1}.` };
+    }
+  }
+  return null;
+}
+
+function validateNumeratorNotGreaterThanDenom(numerArr, denomArr) {
+  for (let i = 0; i < numerArr.length; i++) {
+    const d = Number(numerArr[i]);
+    const n = Number(denomArr[i]);
+    if (Number.isFinite(d) && Number.isFinite(n) && d > n) {
+      return {
+        level: "error",
+        message:
+          `P chart invalid at row ${i + 1}: numerator (d=${d}) is greater than denominator (n=${n}).`
+      };
+    }
+  }
+  return null;
+}
+
+function handleValidationResult(result) {
+  if (!result) return true;
+
+  if (result.level === "error") {
+    alert(result.message);
+    return false;
+  }
+
+  // warn
+  return confirm(result.message);
 }
 
 
@@ -3787,6 +3904,17 @@ if (chartType === "run") {
   drawXmRChart(points, baselineCount, labels);
 
 } else if (chartType === "c") {
+  // -----------------------------
+  // VALIDATION: C chart (counts)
+  // -----------------------------
+  const cValues = points.map(p => p.y);
+
+  // Block: non-numeric or negative
+  if (!handleValidationResult(validateNonNegativeNumbers(cValues, "C chart count"))) return;
+
+  // Warn: non-integers (allow user to continue)
+  if (!handleValidationResult(warnIfNonInteger(cValues, "C chart count"))) return;
+
   drawCChart(points, baselineCount, labels);
 
 } else if (chartType === "p" || chartType === "u") {
@@ -3806,13 +3934,36 @@ if (chartType === "run") {
 
     return {
       x: p.x,
-      y: numerator,
-      n: denom,
+      y: numerator,  // P chart: numerator (d); U chart: numerator (c)
+      n: denom,      // denominator/opportunities
       label: labels[i],
       _rowIndex: p._rowIndex
     };
   });
 
+  // -----------------------------
+  // VALIDATION: P / U charts
+  // -----------------------------
+  const numerArr = pointsWithNOrdered.map(p => p.y);
+  const denomArr = pointsWithNOrdered.map(p => p.n);
+
+  // Block: non-numeric or negative numerator
+  if (!handleValidationResult(validateNonNegativeNumbers(numerArr, chartType === "p" ? "P chart numerator (d)" : "U chart numerator (c)"))) return;
+
+  // Block: denominator must be > 0
+  if (!handleValidationResult(validateDenominatorPositive(denomArr, chartType === "p" ? "P chart denominator (n)" : "U chart denominator/opportunities (n)"))) return;
+
+  // Extra rule for P: numerator must not exceed denominator
+  if (chartType === "p") {
+    if (!handleValidationResult(validateNumeratorNotGreaterThanDenom(numerArr, denomArr))) return;
+  }
+
+  // Warn: non-integers (allow user to continue)
+  // (Useful for QA cases like 12.5 denominators, etc.)
+  if (!handleValidationResult(warnIfNonInteger(numerArr, chartType === "p" ? "P chart numerator (d)" : "U chart numerator (c)"))) return;
+  if (!handleValidationResult(warnIfNonInteger(denomArr, chartType === "p" ? "P chart denominator (n)" : "U chart denominator/opportunities (n)"))) return;
+
+  // Draw chart
   if (chartType === "p") {
     drawPChart(pointsWithNOrdered, baselineCount, labels);
   } else {
@@ -3831,7 +3982,9 @@ if (chartType === "run") {
   drawTChart(points, baselineCount, labels);
 
 } else if (chartType === "g") {
-  drawGChart(points, baselineCount, labels);
+  // drawGChart expects a numeric array of values (not {x,y} point objects)
+  const gValues = points.map(p => p.y);
+  drawGChart(gValues, baselineCount, labels);
 
 } else {
   showError(`Chart type "${chartType}" is not implemented yet.`);
@@ -6256,10 +6409,27 @@ async function copyCanvasToClipboard(canvas) {
 
 function downloadCanvasAsPng(canvas, filename) {
   if (!canvas) return;
-  const link = document.createElement("a");
-  link.href = canvas.toDataURL("image/png");
-  link.download = filename;
-  link.click();
+
+  // More reliable across browsers than link.click() on a detached node
+  canvas.toBlob((blob) => {
+    if (!blob) {
+      alert("Sorry — your browser could not export this image.");
+      return;
+    }
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+
+    // Attach to DOM for Safari / locked-down contexts
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    // Clean up the object URL
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }, "image/png");
 }
 
 // ---- Existing top button: Download chart as PNG ----
