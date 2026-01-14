@@ -3295,7 +3295,6 @@ function showStatusMessage(msg) {
 
 
 
-
 // ---- Summary helpers ----
 
 function meanFinite(arr) {
@@ -6066,7 +6065,12 @@ function renderSummaryToCanvas(ctx, x, y, maxWidth) {
   function drawWrappedText(text, startX, startY, size, bold, indent = 0, bullet = false) {
     setFont(size, bold);
 
-    const clean = String(text || "").replace(/\s+/g, " ").trim();
+    const clean = String(text || "")
+          .replace(/\r\n|\r/g, "\n")   // normalize newlines
+          .replace(/\n{2,}/g, "\n")   // collapse multiple blank lines
+          .replace(/[ \t]+/g, " ")    // collapse spaces/tabs (but NOT newlines)
+          .trim();
+
     if (!clean) return 0;
 
     const words = clean.split(" ");
