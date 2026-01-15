@@ -11,6 +11,15 @@ let dataModelDirty = false;
 let gridHeaders = ["Date", "Value"];
 let lastGridHeadersKey = ""; // track changes
 
+// ------------------------------------------------------------
+// Column intelligence (Levels 1–3):
+// - Profile columns once per dataset
+// - Use profiles for filtering dropdowns + smart default selection
+// ------------------------------------------------------------
+let allColumns = [];
+let columnProfiles = {}; // { [colName]: { ...stats } }
+
+
 
 const fileInput         = document.getElementById("fileInput");
 const columnSelectors   = document.getElementById("columnSelectors");
@@ -488,98 +497,105 @@ function loadRows(rows) {
     return false;
   }
 
+  // Ensure global column list is updated (used by column intelligence)
+  allColumns = columns.slice();
+
   // Clear dropdowns safely
   if (dateSelect) dateSelect.innerHTML = "";
   if (valueSelect) valueSelect.innerHTML = "";
   if (thirdSelect) thirdSelect.innerHTML = "";
 
-  // (Optional extra selects - keep safe)
+  // (Optional extra selects - keep safe; these may exist in older versions)
   if (typeof numeratorSelect !== "undefined" && numeratorSelect) numeratorSelect.innerHTML = "";
   if (typeof denominatorSelect !== "undefined" && denominatorSelect) denominatorSelect.innerHTML = "";
   if (typeof subgroupSelect !== "undefined" && subgroupSelect) subgroupSelect.innerHTML = "";
   if (typeof eventDateSelect !== "undefined" && eventDateSelect) eventDateSelect.innerHTML = "";
   if (typeof oppBetweenSelect !== "undefined" && oppBetweenSelect) oppBetweenSelect.innerHTML = "";
 
-  // Populate dropdowns
-  columns.forEach((col) => {
-    if (dateSelect) {
-      const opt1 = document.createElement("option");
-      opt1.value = col;
-      opt1.textContent = col;
-      dateSelect.appendChild(opt1);
-    }
+  // ------------------------------------------------------------
+  // LEVEL 3 FOUNDATION: profile the dataset columns once
+  // ------------------------------------------------------------
+  if (typeof profileColumns === "function") {
+    profileColumns(rows);
+  } else {
+    // If profiling is missing for some reason, fall back to basic profiles
+    columnProfiles = {};
+  }
 
-    if (valueSelect) {
-      const opt2 = document.createElement("option");
-      opt2.value = col;
-      opt2.textContent = col;
-      valueSelect.appendChild(opt2);
-    }
+  // Determine the chart type currently selected (without changing state)
+  const chartTypeNow =
+    (typeof getSelectedChartType_NoSideEffects === "function")
+      ? getSelectedChartType_NoSideEffects()
+      : (typeof getSelectedChartType === "function")
+        ? getSelectedChartType()
+        : "run";
 
-    if (thirdSelect) {
-      const opt3 = document.createElement("option");
-      opt3.value = col;
-      opt3.textContent = col;
-      thirdSelect.appendChild(opt3);
-    }
+  // ------------------------------------------------------------
+  // LEVELS 1–2: populate dropdowns with filtering + smart defaults
+  // ------------------------------------------------------------
+  if (typeof applyColumnIntelligence === "function") {
+    applyColumnIntelligence(chartTypeNow);
+  } else {
+    // Fallback: populate all dropdowns with all columns (old behaviour)
+    columns.forEach((col) => {
+      if (dateSelect) {
+        const opt1 = document.createElement("option");
+        opt1.value = col;
+        opt1.textContent = col;
+        dateSelect.appendChild(opt1);
+      }
+      if (valueSelect) {
+        const opt2 = document.createElement("option");
+        opt2.value = col;
+        opt2.textContent = col;
+        valueSelect.appendChild(opt2);
+      }
+      if (thirdSelect) {
+        const opt3 = document.createElement("option");
+        opt3.value = col;
+        opt3.textContent = col;
+        thirdSelect.appendChild(opt3);
+      }
+    });
+  }
 
-    if (typeof numeratorSelect !== "undefined" && numeratorSelect) {
-      const optN = document.createElement("option");
-      optN.value = col;
-      optN.textContent = col;
-      numeratorSelect.appendChild(optN);
-    }
+  // ------------------------------------------------------------
+  // Optional: keep your older "guessColumns" logic ONLY as a fallback
+  // (i.e., if defaults didn't get set by column intelligence)
+  // ------------------------------------------------------------
+  const needDateDefault = dateSelect && !dateSelect.value;
+  const needValueDefault = valueSelect && !valueSelect.value;
 
-    if (typeof denominatorSelect !== "undefined" && denominatorSelect) {
-      const optD = document.createElement("option");
-      optD.value = col;
-      optD.textContent = col;
-      denominatorSelect.appendChild(optD);
-    }
-
-    if (typeof subgroupSelect !== "undefined" && subgroupSelect) {
-      const optSg = document.createElement("option");
-      optSg.value = col;
-      optSg.textContent = col;
-      subgroupSelect.appendChild(optSg);
-    }
-
-    if (typeof eventDateSelect !== "undefined" && eventDateSelect) {
-      const optEv = document.createElement("option");
-      optEv.value = col;
-      optEv.textContent = col;
-      eventDateSelect.appendChild(optEv);
-    }
-
-    if (typeof oppBetweenSelect !== "undefined" && oppBetweenSelect) {
-      const optOb = document.createElement("option");
-      optOb.value = col;
-      optOb.textContent = col;
-      oppBetweenSelect.appendChild(optOb);
-    }
-  });
-
-  // --- Auto-guess defaults (if you have this function) ---
-  if (typeof guessColumns === "function") {
+  if ((needDateDefault || needValueDefault) && typeof guessColumns === "function") {
     const guessed = guessColumns(rows);
 
     // Guess X
-    if (guessed && guessed.dateCol && dateSelect) {
+    if (needDateDefault && guessed && guessed.dateCol && dateSelect) {
       dateSelect.value = guessed.dateCol;
-    } else if (dateSelect) {
-      dateSelect.selectedIndex = 0;
-      if (typeof setAxisType === "function") setAxisType("sequence");
-      showError("Tip: No date column detected. I’ll treat the data as a simple sequence (run chart by order).");
+    } else if (needDateDefault && dateSelect) {
+      // Prefer date-like if present, otherwise first column
+      const best = (typeof getBestXAxisColumn === "function") ? getBestXAxisColumn() : (columns[0] || "");
+      if (best) dateSelect.value = best;
     }
 
     // Guess Y
-    if (guessed && guessed.valueCol && valueSelect) {
+    if (needValueDefault && guessed && guessed.valueCol && valueSelect) {
       valueSelect.value = guessed.valueCol;
-    } else if (valueSelect) {
-      valueSelect.selectedIndex = Math.min(1, valueSelect.options.length - 1);
-      if (errorMessage && !errorMessage.textContent) {
-        showError("Tip: I couldn’t confidently detect a numeric value column. Please check the Value dropdown.");
-      }
+    } else if (needValueDefault && valueSelect) {
+      // Fall back to first available option after blank
+      const opts = Array.from(valueSelect.options).filter(o => o.value);
+      if (opts[0]) valueSelect.value = opts[0].value;
+    }
+  }
+
+  // Optional: if no date-like column, don't nag, but you can keep your tip
+  // (only show if you want — comment out if noisy)
+  if (dateSelect && dateSelect.value) {
+    const p = getProfile ? getProfile(dateSelect.value) : null;
+    if (p && !p.looksLikeDate) {
+      // Do nothing by default. If you WANT the old tip, uncomment below:
+      // if (typeof setAxisType === "function") setAxisType("sequence");
+      // showError("Tip: No date column detected. I’ll treat the data as a simple sequence (run chart by order).");
     }
   }
 
@@ -1389,6 +1405,467 @@ function escapeHtml(str) {
     .replace(/>/g, "&gt;");
 }
 
+/* ============================================================
+   COLUMN INTELLIGENCE (Levels 1–3)
+   Level 3: profileColumns(rows) -> builds columnProfiles
+   Level 2: populate dropdowns using profiles (filter/sort)
+   Level 1: auto-select sensible defaults when chartType changes
+   ============================================================ */
+
+function looksLikeDateString(value) {
+  if (value === null || value === undefined) return false;
+  const s = String(value).trim();
+  if (!s) return false;
+
+  // quick, forgiving checks: ISO, UK-style, slash/dash, etc.
+  // We avoid strict parsing; this is just “date-ish”.
+  const iso = /^\d{4}-\d{2}-\d{2}/.test(s);
+  const uk  = /^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(s);
+  const dash= /^\d{1,2}-\d{1,2}-\d{2,4}$/.test(s);
+
+  if (iso || uk || dash) return true;
+
+  // fallback: Date.parse on a sample (can be locale-dependent, so keep cautious)
+  const t = Date.parse(s);
+  return Number.isFinite(t);
+}
+
+function profileColumns(rows) {
+  const profiles = {};
+  if (!rows || rows.length === 0) return profiles;
+
+  const firstRow = rows[0];
+  const cols = firstRow ? Object.keys(firstRow) : [];
+  allColumns = cols.slice();
+
+  const nRows = rows.length;
+  const maxSample = Math.min(nRows, 500); // keep profiling cheap
+  const sampleIdx = [];
+  // Evenly sample across rows
+  for (let i = 0; i < maxSample; i++) {
+    const idx = Math.floor(i * (nRows - 1) / Math.max(1, (maxSample - 1)));
+    sampleIdx.push(idx);
+  }
+
+  for (const col of cols) {
+    let nonEmpty = 0;
+    let numericCount = 0;
+    let intLikeCount = 0;
+    let hasNeg = false;
+    let hasZero = false;
+    let min = Infinity;
+    let max = -Infinity;
+
+    let dateLikeCount = 0;
+
+    const seen = new Set();
+    const numericVals = [];
+
+    for (const idx of sampleIdx) {
+      const vRaw = rows[idx]?.[col];
+      if (vRaw === null || vRaw === undefined) continue;
+
+      const s = String(vRaw).trim();
+      if (!s) continue;
+
+      nonEmpty++;
+      seen.add(s);
+
+      if (looksLikeDateString(s)) dateLikeCount++;
+
+      const num = toNumericValue(vRaw);
+      if (Number.isFinite(num)) {
+        numericCount++;
+        numericVals.push(num);
+
+        if (Math.abs(num - Math.round(num)) < 1e-9) intLikeCount++;
+        if (num < 0) hasNeg = true;
+        if (num === 0) hasZero = true;
+        if (num < min) min = num;
+        if (num > max) max = num;
+      }
+    }
+
+    const numericFraction = nonEmpty > 0 ? numericCount / nonEmpty : 0;
+    const intFraction = numericCount > 0 ? intLikeCount / numericCount : 0;
+    const uniqueRatio = nonEmpty > 0 ? seen.size / nonEmpty : 1;
+    const dateLikeFraction = nonEmpty > 0 ? dateLikeCount / nonEmpty : 0;
+
+    profiles[col] = {
+      col,
+      nonEmpty,
+      numericCount,
+      numericFraction,
+      isNumeric: numericFraction >= 0.8,      // tolerant of occasional blanks/text
+      intFraction,
+      isMostlyInteger: intFraction >= 0.9,    // “count-like”
+      hasNeg,
+      hasZero,
+      min: min === Infinity ? NaN : min,
+      max: max === -Infinity ? NaN : max,
+      uniqueRatio,
+      repeatsOften: uniqueRatio <= 0.6,       // useful for subgroup candidates
+      looksLikeDate: dateLikeFraction >= 0.6, // likely date/time column
+      dateLikeFraction
+    };
+  }
+
+  columnProfiles = profiles;
+  return profiles;
+}
+
+function getProfile(col) {
+  return columnProfiles && col ? columnProfiles[col] : null;
+}
+
+function buildOption(label, value, { disabled = false, hint = "" } = {}) {
+  const opt = document.createElement("option");
+  opt.value = value;
+  opt.textContent = hint ? `${label} ${hint}` : label;
+  if (disabled) opt.disabled = true;
+  return opt;
+}
+
+function setSelectOptions(selectEl, colList, { includeBlank = true, blankLabel = "(select)" } = {}) {
+  if (!selectEl) return;
+
+  const prev = selectEl.value;
+  selectEl.innerHTML = "";
+
+  if (includeBlank) {
+    const blank = document.createElement("option");
+    blank.value = "";
+    blank.textContent = blankLabel;
+    selectEl.appendChild(blank);
+  }
+
+  for (const item of colList) {
+    // item can be string or {col, disabled, hint}
+    if (typeof item === "string") {
+      selectEl.appendChild(buildOption(item, item));
+    } else {
+      selectEl.appendChild(buildOption(item.col, item.col, { disabled: !!item.disabled, hint: item.hint || "" }));
+    }
+  }
+
+  // restore previous if still present
+  if (prev && Array.from(selectEl.options).some(o => o.value === prev && !o.disabled)) {
+    selectEl.value = prev;
+  }
+}
+
+function getNumericColumnsSorted() {
+  // numeric columns first, then non-numeric
+  const cols = allColumns.slice();
+  cols.sort((a, b) => {
+    const pa = getProfile(a);
+    const pb = getProfile(b);
+    const na = pa?.isNumeric ? 1 : 0;
+    const nb = pb?.isNumeric ? 1 : 0;
+    if (na !== nb) return nb - na;
+
+    // then date-like last for numeric charts (but not for x-axis)
+    const da = pa?.looksLikeDate ? 1 : 0;
+    const db = pb?.looksLikeDate ? 1 : 0;
+    if (da !== db) return da - db;
+
+    // then more non-empty first
+    const ea = pa?.nonEmpty ?? 0;
+    const eb = pb?.nonEmpty ?? 0;
+    return eb - ea;
+  });
+  return cols;
+}
+
+function getCandidatesForValue(chartType) {
+  // returns array of items for valueSelect (strings or {col,disabled,hint})
+  const cols = getNumericColumnsSorted();
+
+  // For most charts, require numeric; for x-axis we do something else.
+  const items = [];
+  for (const c of cols) {
+    const p = getProfile(c);
+    if (!p) continue;
+
+    // Hide clearly non-numeric for value roles
+    if (!p.isNumeric) continue;
+
+    // Soft-hints for suspicious columns
+    let hint = "";
+    let disabled = false;
+
+    if ((chartType === "c" || chartType === "p" || chartType === "u") && p.hasNeg) {
+      hint = "(has negatives)";
+    }
+    if ((chartType === "c" || chartType === "p" || chartType === "u") && p.looksLikeDate) {
+      hint = "(looks like date)";
+    }
+
+    // For G: must be >= 1 (we don't hard-block; we hint)
+    if (chartType === "g" && Number.isFinite(p.min) && p.min < 1) {
+      hint = "(min < 1)";
+    }
+
+    // Prefer count-like columns for C/P/U numerators by sorting (done elsewhere),
+    // but do not disable here.
+    items.push({ col: c, disabled, hint: hint ? `— ${hint}` : "" });
+  }
+
+  return items;
+}
+
+function getCandidatesForThird(chartType) {
+  // thirdSelect: denom/opportunities (P/U), subgroup (Xbars)
+  if (chartType === "p" || chartType === "u") {
+    const cols = getNumericColumnsSorted();
+    const items = [];
+    for (const c of cols) {
+      const p = getProfile(c);
+      if (!p || !p.isNumeric) continue;
+
+      let hint = "";
+      // Denominators should be > 0
+      if (Number.isFinite(p.min) && p.min <= 0) hint = "(min ≤ 0)";
+      if (p.hasNeg) hint = "(has negatives)";
+
+      items.push({ col: c, disabled: false, hint: hint ? `— ${hint}` : "" });
+    }
+    return items;
+  }
+
+  if (chartType === "xbars") {
+    // subgroup id can be text or numeric; date-like is usually NOT subgroup
+    const items = [];
+    for (const c of allColumns) {
+      const p = getProfile(c);
+      if (!p) continue;
+
+      // exclude obvious date columns
+      if (p.looksLikeDate) continue;
+
+      // subgroup candidates tend to repeat
+      let hint = "";
+      if (p.repeatsOften) hint = "(repeats — good subgroup)";
+      else hint = "(many unique values)";
+
+      // allow non-numeric too
+      items.push({ col: c, disabled: false, hint: hint ? `— ${hint}` : "" });
+    }
+
+    // sort: repeats first
+    items.sort((a, b) => {
+      const pa = getProfile(a.col);
+      const pb = getProfile(b.col);
+      const ra = pa?.repeatsOften ? 1 : 0;
+      const rb = pb?.repeatsOften ? 1 : 0;
+      if (ra !== rb) return rb - ra;
+      return (pb?.nonEmpty ?? 0) - (pa?.nonEmpty ?? 0);
+    });
+
+    return items;
+  }
+
+  return [];
+}
+
+function getBestXAxisColumn() {
+  // Prefer date-like columns; otherwise first column
+  const dateLike = allColumns.filter(c => getProfile(c)?.looksLikeDate);
+  if (dateLike.length) return dateLike[0];
+  return allColumns[0] || "";
+}
+
+function scorePChartPair(numerCol, denomCol) {
+  // Score based on how often 0 <= numer <= denom and denom > 0
+  if (!rawRows || rawRows.length === 0) return -Infinity;
+
+  let ok = 0;
+  let total = 0;
+
+  const maxSample = Math.min(rawRows.length, 600);
+  for (let i = 0; i < maxSample; i++) {
+    const row = rawRows[i];
+    const n = toNumericValue(row[numerCol]);
+    const d = toNumericValue(row[denomCol]);
+    if (!Number.isFinite(n) || !Number.isFinite(d)) continue;
+    total++;
+    if (d > 0 && n >= 0 && n <= d) ok++;
+  }
+
+  if (total < 5) return -Infinity;
+  return ok / total;
+}
+
+function chooseDefaultsForChart(chartType) {
+  // returns { xCol, yCol, thirdCol } (any may be "")
+  if (!rawRows || rawRows.length === 0) return { xCol: "", yCol: "", thirdCol: "" };
+
+  const xCol = getBestXAxisColumn();
+
+  // candidates for numeric roles
+  const numericCols = allColumns.filter(c => getProfile(c)?.isNumeric && !getProfile(c)?.looksLikeDate);
+
+  // Helper for count-like numeric columns
+  const countLike = numericCols
+    .slice()
+    .sort((a, b) => (getProfile(b)?.intFraction ?? 0) - (getProfile(a)?.intFraction ?? 0));
+
+  if (chartType === "run" || chartType === "xmr") {
+    // pick first numeric non-date column
+    const yCol = numericCols[0] || "";
+    return { xCol, yCol, thirdCol: "" };
+  }
+
+  if (chartType === "c") {
+    // prefer integer-like, non-negative
+    const yCol = countLike.find(c => !(getProfile(c)?.hasNeg)) || numericCols[0] || "";
+    return { xCol, yCol, thirdCol: "" };
+  }
+
+  if (chartType === "g") {
+    // prefer integer-like with min >= 1
+    const yCol = countLike.find(c => {
+      const p = getProfile(c);
+      return !p?.hasNeg && Number.isFinite(p?.min) && p.min >= 1;
+    }) || countLike.find(c => !(getProfile(c)?.hasNeg)) || numericCols[0] || "";
+    return { xCol, yCol, thirdCol: "" };
+  }
+
+  if (chartType === "p") {
+    // choose best (numer, denom) pair among integer-ish columns
+    const intCols = numericCols.filter(c => getProfile(c)?.isMostlyInteger && !getProfile(c)?.hasNeg);
+    let best = { numer: "", denom: "", score: -Infinity };
+
+    for (const numer of intCols) {
+      for (const denom of intCols) {
+        if (numer === denom) continue;
+        const s = scorePChartPair(numer, denom);
+        if (s > best.score) best = { numer, denom, score: s };
+      }
+    }
+
+    // If no good pair found, fall back to first two numeric cols
+    let yCol = best.numer || intCols[0] || numericCols[0] || "";
+    let thirdCol = best.denom || intCols.find(c => c !== yCol) || numericCols.find(c => c !== yCol) || "";
+
+    // If the chosen pair is reversed (denom smaller), swap by mean magnitude
+    // (very light heuristic)
+    if (yCol && thirdCol) {
+      const py = getProfile(yCol);
+      const pt = getProfile(thirdCol);
+      if (Number.isFinite(py?.max) && Number.isFinite(pt?.max) && py.max > pt.max) {
+        // likely denom is larger, so swap
+        const tmp = yCol; yCol = thirdCol; thirdCol = tmp;
+      }
+    }
+
+    return { xCol, yCol, thirdCol };
+  }
+
+  if (chartType === "u") {
+    // numerator: count-like; denom: positive opportunities-like
+    const yCol = countLike.find(c => !(getProfile(c)?.hasNeg)) || numericCols[0] || "";
+
+    const denomCandidates = numericCols
+      .filter(c => c !== yCol && !(getProfile(c)?.hasNeg))
+      .sort((a, b) => {
+        // prefer min > 0 and larger typical scale
+        const pa = getProfile(a), pb = getProfile(b);
+        const posa = (Number.isFinite(pa?.min) && pa.min > 0) ? 1 : 0;
+        const posb = (Number.isFinite(pb?.min) && pb.min > 0) ? 1 : 0;
+        if (posa !== posb) return posb - posa;
+        return (pb?.max ?? 0) - (pa?.max ?? 0);
+      });
+
+    const thirdCol = denomCandidates[0] || "";
+    return { xCol, yCol, thirdCol };
+  }
+
+  if (chartType === "xbars") {
+    // subgroup: repeatsOften; measurement: numeric
+    const subgroup = allColumns
+      .filter(c => !getProfile(c)?.looksLikeDate)
+      .sort((a, b) => ((getProfile(b)?.repeatsOften ? 1 : 0) - (getProfile(a)?.repeatsOften ? 1 : 0)))[0] || "";
+
+    // measurement value: numeric not equal subgroup
+    const yCol = numericCols.find(c => c !== subgroup) || numericCols[0] || "";
+    return { xCol, yCol, thirdCol: subgroup };
+  }
+
+  // t chart: often event date/time; this tool currently labels y as date/time,
+  // but we keep defaults conservative (xCol + first numeric).
+  if (chartType === "t") {
+    const yCol = numericCols[0] || "";
+    return { xCol, yCol, thirdCol: "" };
+  }
+
+  return { xCol, yCol: numericCols[0] || "", thirdCol: "" };
+}
+
+function applyColumnIntelligence(chartType) {
+  // Level 2: filter option lists
+  if (dateSelect) {
+    // x-axis can be anything; prefer date-like first in ordering
+    const cols = allColumns.slice().sort((a, b) => {
+      const pa = getProfile(a), pb = getProfile(b);
+      const da = pa?.looksLikeDate ? 1 : 0;
+      const db = pb?.looksLikeDate ? 1 : 0;
+      if (da !== db) return db - da;
+      return (pb?.nonEmpty ?? 0) - (pa?.nonEmpty ?? 0);
+    });
+    setSelectOptions(dateSelect, cols, { includeBlank: true, blankLabel: "(select x-axis)" });
+  }
+
+  const valueItems = getCandidatesForValue(chartType);
+  setSelectOptions(valueSelect, valueItems, { includeBlank: true, blankLabel: "(select value)" });
+
+  const thirdItems = getCandidatesForThird(chartType);
+  if (thirdSelect) {
+    if (thirdItems.length) {
+      setSelectOptions(thirdSelect, thirdItems, { includeBlank: true, blankLabel: "(select)" });
+    } else {
+      // keep blank if not needed
+      setSelectOptions(thirdSelect, [], { includeBlank: true, blankLabel: "(not needed)" });
+    }
+  }
+
+  // Level 1: apply sensible defaults if current selections are empty or invalid
+  const defaults = chooseDefaultsForChart(chartType);
+
+  // only set defaults when current selection is empty OR no longer valid in the options
+  function setIfEmptyOrMissing(selectEl, newVal) {
+    if (!selectEl || !newVal) return;
+    const has = Array.from(selectEl.options).some(o => o.value === newVal && !o.disabled);
+    if (!has) return;
+
+    const current = selectEl.value;
+    const currentStillValid = current && Array.from(selectEl.options).some(o => o.value === current && !o.disabled);
+    if (!currentStillValid) {
+      selectEl.value = newVal;
+      return;
+    }
+
+    if (!current) selectEl.value = newVal;
+  }
+
+  setIfEmptyOrMissing(dateSelect, defaults.xCol);
+  setIfEmptyOrMissing(valueSelect, defaults.yCol);
+  if (chartType === "p" || chartType === "u" || chartType === "xbars") {
+    setIfEmptyOrMissing(thirdSelect, defaults.thirdCol);
+  }
+
+  // avoid third == y if needed (light UX polish)
+  if ((chartType === "p" || chartType === "u" || chartType === "xbars") && thirdSelect && valueSelect) {
+    if (thirdSelect.value && valueSelect.value && thirdSelect.value === valueSelect.value) {
+      const alt = Array.from(thirdSelect.options)
+        .map(o => o.value)
+        .find(v => v && v !== valueSelect.value);
+      if (alt) thirdSelect.value = alt;
+    }
+  }
+}
+
+
 function getRuleSettings() {
   const shift = shiftRulePointsInput ? parseInt(shiftRulePointsInput.value, 10) : NaN;
   const trend = trendRulePointsInput ? parseInt(trendRulePointsInput.value, 10) : NaN;
@@ -1561,12 +2038,21 @@ function updateUIForChartType(chartType) {
     thirdHintEl.textContent = cfg.thirdHint;
   }
 
+  // ------------------------------------------------------------
+  // Levels 1–3 glue:
+  // Whenever the chart type changes, rebuild dropdown options
+  // (filtering) and apply sensible defaults for this chart type.
+  // ------------------------------------------------------------
+  if (rawRows && rawRows.length && typeof applyColumnIntelligence === "function") {
+    applyColumnIntelligence(chartType);
+  }
+
   // ---- Optional UX polish: avoid third == y by default ----
   if (cfg.needsThird && thirdSelect && valueSelect) {
-    if (thirdSelect.value === valueSelect.value) {
+    if (thirdSelect.value && valueSelect.value && thirdSelect.value === valueSelect.value) {
       const alt = Array.from(thirdSelect.options)
         .map(o => o.value)
-        .find(v => v !== valueSelect.value);
+        .find(v => v && v !== valueSelect.value);
       if (alt) thirdSelect.value = alt;
     }
   }
