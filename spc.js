@@ -5445,19 +5445,27 @@ function answerSpcQuestion(question) {
 
   const generalFaq = [
     {
-      keywords: ["what is spc", "define spc", ["what", "spc"]],
-      answer:
-        "Statistical Process Control (SPC) is a way of using time-ordered data to decide whether a system is behaving as expected or whether something has changed. " +
-        "A control chart shows your measure over time with a centre line (the usual average) and control limits (the range you’d expect from routine ups and downs). " +
-        "If the pattern breaks simple rules (for example, points outside the limits), that’s treated as a signal that something may have changed."
-    },
+  keywords: ["what is spc", "define spc", ["what", "spc"]],
+  answer:
+    "Statistical Process Control (SPC) helps you use time-ordered data to understand whether a process is behaving as usual, or whether something has changed.\n\n" +
+    "A control chart shows:\n" +
+    "• your measure over time\n" +
+    "• a centre line (the usual level, often the mean or median)\n" +
+    "• control limits (the range you’d expect from routine/common-cause variation)\n\n" +
+    "If the pattern breaks simple rules (for example, a point outside the limits or a long run on one side), that’s treated as a **special-cause signal** — a prompt to investigate what changed in the real world."
+},
+
     {
-      keywords: ["common cause", "special cause", ["common", "special"]],
-      answer:
-        "Common cause variation is the normal, everyday ups and downs you expect from a system that hasn’t changed. " +
-        "Special cause variation is a signal that something different may be happening (for example, a change in process, staffing, demand, or measurement). " +
-        "SPC helps you avoid over-reacting to normal noise, and helps you spot genuine change earlier."
-    },
+  keywords: ["common cause", "special cause", ["common", "special"]],
+  answer:
+    "**Common-cause variation** = the normal ups and downs you expect when the system hasn’t fundamentally changed.\n\n" +
+    "**Special-cause variation** = a signal that something different may be happening (for example, a change in process, staffing, demand, coding/definitions, or measurement).\n\n" +
+    "SPC helps you:\n" +
+    "• avoid over-reacting to normal noise\n" +
+    "• spot real change earlier\n" +
+    "• decide whether you need investigation (special cause) or system redesign (common cause)."
+},
+
     {
       keywords: ["what does stable mean", "what is stable", ["stable", "mean"]],
       answer:
@@ -5465,19 +5473,27 @@ function answerSpcQuestion(question) {
         "If a chart is stable, the best way to improve results is usually to change the system, not chase individual high/low points."
     },
     {
-      keywords: ["control limits", "how do control limits work", ["control", "limits"]],
-      answer:
-        "Control limits are calculated from your data to show the range you would normally expect from routine variation. " +
-        "They are not targets, and they are not the same as a ‘good’ or ‘bad’ threshold. " +
-        "A point outside the limits is a strong signal that something may have changed."
-    },
+  keywords: ["control limits", "how do control limits work", ["control", "limits"]],
+  answer:
+    "Control limits are statistical boundaries calculated from your data. They estimate the range you would normally expect from **routine (common-cause) variation**.\n\n" +
+    "Control limits are **not**:\n" +
+    "• targets\n" +
+    "• pass/fail thresholds\n" +
+    "• the same as a clinical standard\n\n" +
+    "A point outside the limits (or a clear run/trend) is a **special-cause signal** — a prompt to investigate what changed."
+},
+
 	{
-	  keywords: ["split", "splits", ["when", "split"], ["should", "split"], ["control", "limit", "split"], ["new", "normal"]],
-	  answer:
-	    "A split tells the tool to recalculate the centre line and control limits from a chosen point onward, so you can compare the *latest* performance to a new baseline. " 	+
-	    "Use splits only when you have good evidence of a real process change (for example, a redesigned pathway/ policy change/change in circumstances) and you want to show the new normal. " +
-	    "Avoid splitting just to ‘make the chart look stable’ — if the process is unstable, the right response is usually to investigate and understand the local context first. Then, once the cause has been understood, if it represents an ongoing change to the normal performance of that system, then the limits should be recalculated so that they represent what can be expected in the future."
-	},
+  keywords: ["split", "splits", ["when", "split"], ["should", "split"], ["control", "limit", "split"], ["new", "normal"]],
+  answer:
+    "A **split** tells the tool to recalculate the centre line and control limits from a chosen point onward. This lets you compare the *latest* performance to a new baseline (“the new normal”).\n\n" +
+    "Use a split when:\n" +
+    "• you have good evidence of a real process change (e.g., redesigned pathway, policy change, sustained change in circumstances)\n" +
+    "• you expect the change to continue\n\n" +
+    "Avoid splitting just to “make the chart look stable”. If the process is unstable, the first step is usually to investigate and understand local context.\n\n" +
+    "Once the cause is understood and agreed to represent the new normal, recalculating limits can help you monitor the process going forward."
+},
+
     {
       keywords: ["how do i choose the right chart", "choose chart", ["choose", "chart"], ["which", "chart"]],
       answer:
