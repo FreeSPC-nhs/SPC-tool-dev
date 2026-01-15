@@ -3016,12 +3016,17 @@ function renderAttributeMultiSummary(segmentAnalyses, totalPoints) {
       html += `<li><strong>Signals:</strong> ${a.signals.join("; ")}.</li>`;
     }
 
-    // Interpretation (XmR-style final line)
+    /    // Interpretation (safer wording: clear + cautious)
     const interpretation = a.isStable
-      ? "No clear special-cause signals were detected in this period. The pattern is consistent with natural/common variation."
-      : "Special-cause signals were detected in this period (pattern inconsistent with routine variation).";
+      ? "Based on the selected rules, no clear special-cause signals were detected in this period. This suggests the pattern is consistent with routine (common-cause) variation."
+      : "Based on the selected rules, special-cause signals were detected in this period (a pattern unlikely to be routine variation alone).";
+
+    const caution =
+      "These rules are prompts, not absolute answers. Interpret alongside local context (changes in process, staffing, demand, definitions/coding) and consider basic SPC assumptions (e.g. reasonably consistent measurement and opportunity over time).";
 
     html += `<li><strong>Interpretation:</strong> ${interpretation}</li>`;
+    html += `<li><strong>Note:</strong> ${caution}</li>`;
+
     html += `</ul>`;
     html += `</div>`;
   });
@@ -5490,13 +5495,16 @@ function answerSpcQuestion(question) {
         "A run chart shows your data over time with a median line. It’s a simple way to look for non-random patterns like a sustained shift or a sustained trend. " +
         "It’s often a good starting point when you’re early in an improvement project."
     },
-    {
-      keywords: ["what is an xmr chart", "xmr chart", "moving range chart", ["what", "xmr"]],
-      answer:
-        "An XmR chart is used when you have one number each time (for example, a weekly average). " +
-        "The X chart shows the values over time, and the moving range helps estimate how much routine variation you normally have. " +
-        "The chart then draws control limits so you can spot signals of real change."
-    },
+ 	   {
+	      keywords: ["what is an xmr chart", "xmr chart", "moving range chart", ["what", "xmr"]],
+	      answer:
+	        "Use an XmR chart when you record one number each time (for example, a weekly average waiting time). " +
+	        "The X chart shows your values over time. The moving range (MR) looks at the change between consecutive points and helps estimate how much routine variation you normally have. " +
+	        "Using this, the chart draws a centre line (mean) and control limits (statistical boundaries for expected routine variation). " +
+	        "If you see points or patterns beyond the limits, that can be a special-cause signal — a prompt to investigate what changed in the real world (process, staffing, demand, measurement). " +
+	        "These rules are guides, not proof, so always interpret the chart alongside knowledge of your service."
+	    },
+
 
     // Chart type explainers (keywords tightened to reduce false matches)
     {
