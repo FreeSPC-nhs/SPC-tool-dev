@@ -6938,35 +6938,83 @@ if (action === "clearAnnotations") {
 }
 
 function formatSpcHelperAnswerToHtml(text) {
-  const raw = String(text ?? "").trim();
+  const raw = String(text ?? "").replace(/\r\n/g, "\n").trim();
   if (!raw) return `<p>${escapeHtml("No answer available.")}</p>`;
 
   // Escape any HTML to keep this safe
   const escaped = escapeHtml(raw);
+  const lines = escaped.split("\n");
 
-  // Split into blocks by blank lines (paragraph separation)
-  const blocks = escaped.split(/\n\s*\n+/);
+  const out = [];
+  let paraBuf = [];
+  let listBuf = null; // { type: 'ul'|'ol', items: [] }
 
-  const htmlBlocks = blocks.map((block) => {
-    const lines = block.split("\n").map(l => l.trim()).filter(Boolean);
+  function flushParagraph() {
+    if (paraBuf.length === 0) return;
+    const html = applyBasicInlineFormatting(paraBuf.join("<br>"));
+    out.push(`<p>${html}</p>`);
+    paraBuf = [];
+  }
 
-    // If the whole block looks like a bullet list, render as <ul>
-    const isBullets = lines.length > 0 && lines.every(l =>
-      l.startsWith("- ") || l.startsWith("• ")
-    );
+  function flushList() {
+    if (!listBuf || listBuf.items.length === 0) {
+      listBuf = null;
+      return;
+    }
+    const tag = listBuf.type;
+    const itemsHtml = listBuf.items
+      .map(it => `<li>${applyBasicInlineFormatting(it)}</li>`)
+      .join("");
+    out.push(`<${tag}>${itemsHtml}</${tag}>`);
+    listBuf = null;
+  }
 
-    if (isBullets) {
-      const items = lines.map(l => l.replace(/^(-\s+|•\s+)/, ""));
-      return `<ul>${items.map(it => `<li>${applyBasicInlineFormatting(it)}</li>`).join("")}</ul>`;
+  function startList(type) {
+    // Switch list types cleanly (paragraph -> list, ul -> ol, etc.)
+    flushParagraph();
+    if (listBuf && listBuf.type !== type) flushList();
+    if (!listBuf) listBuf = { type, items: [] };
+  }
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trimEnd();
+    const t = line.trim();
+
+    // Blank line = hard break between blocks
+    if (t === "") {
+      flushParagraph();
+      flushList();
+      continue;
     }
 
-    // Otherwise render as a paragraph (preserve single line breaks with <br>)
-    const joined = lines.join("<br>");
-    return `<p>${applyBasicInlineFormatting(joined)}</p>`;
-  });
+    // Bullet item: "- " or "• "
+    if (t.startsWith("- ") || t.startsWith("• ")) {
+      startList("ul");
+      listBuf.items.push(t.replace(/^(-\s+|•\s+)/, ""));
+      continue;
+    }
 
-  return htmlBlocks.join("");
+    // Numbered item: "1. " "2. " etc.
+    if (/^\d+\.\s+/.test(t)) {
+      startList("ol");
+      listBuf.items.push(t.replace(/^\d+\.\s+/, ""));
+      continue;
+    }
+
+    // Normal text line
+    // If we were building a list and now have normal text, close the list first.
+    if (listBuf) flushList();
+
+    // Add to paragraph buffer
+    paraBuf.push(t);
+  }
+
+  flushParagraph();
+  flushList();
+
+  return out.join("");
 }
+
 
 // Optional: allow very small “markdown-like” formatting (safe because input is escaped)
 function applyBasicInlineFormatting(escapedText) {
