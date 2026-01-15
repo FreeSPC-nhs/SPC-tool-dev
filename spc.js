@@ -6937,6 +6937,46 @@ if (action === "clearAnnotations") {
   });
 }
 
+function formatSpcHelperAnswerToHtml(text) {
+  const raw = String(text ?? "").trim();
+  if (!raw) return `<p>${escapeHtml("No answer available.")}</p>`;
+
+  // Escape any HTML to keep this safe
+  const escaped = escapeHtml(raw);
+
+  // Split into blocks by blank lines (paragraph separation)
+  const blocks = escaped.split(/\n\s*\n+/);
+
+  const htmlBlocks = blocks.map((block) => {
+    const lines = block.split("\n").map(l => l.trim()).filter(Boolean);
+
+    // If the whole block looks like a bullet list, render as <ul>
+    const isBullets = lines.length > 0 && lines.every(l =>
+      l.startsWith("- ") || l.startsWith("• ")
+    );
+
+    if (isBullets) {
+      const items = lines.map(l => l.replace(/^(-\s+|•\s+)/, ""));
+      return `<ul>${items.map(it => `<li>${applyBasicInlineFormatting(it)}</li>`).join("")}</ul>`;
+    }
+
+    // Otherwise render as a paragraph (preserve single line breaks with <br>)
+    const joined = lines.join("<br>");
+    return `<p>${applyBasicInlineFormatting(joined)}</p>`;
+  });
+
+  return htmlBlocks.join("");
+}
+
+// Optional: allow very small “markdown-like” formatting (safe because input is escaped)
+function applyBasicInlineFormatting(escapedText) {
+  // **bold**
+  let t = escapedText.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+  // _italic_
+  t = t.replace(/_(.+?)_/g, "<em>$1</em>");
+  return t;
+}
+
 function showHelperAnswer(questionText) {
   if (!spcHelperOutput) return;
 
@@ -6947,7 +6987,12 @@ function showHelperAnswer(questionText) {
   }
 
   const ans = answerSpcQuestion(q);
-  spcHelperOutput.innerHTML = `<p>${escapeHtml(ans)}</p>`;
+
+  // Convert plain text into nicely formatted HTML (paragraphs & bullet lists)
+  spcHelperOutput.innerHTML = formatSpcHelperAnswerToHtml(ans);
+
+  // Optional: auto-scroll to top of the answer so users see the start
+  spcHelperOutput.scrollTop = 0;
 }
 
 if (aiAskButton && aiQuestionInput) {
