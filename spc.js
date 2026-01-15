@@ -1417,18 +1417,25 @@ function looksLikeDateString(value) {
   const s = String(value).trim();
   if (!s) return false;
 
-  // quick, forgiving checks: ISO, UK-style, slash/dash, etc.
-  // We avoid strict parsing; this is just “date-ish”.
-  const iso = /^\d{4}-\d{2}-\d{2}/.test(s);
-  const uk  = /^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(s);
-  const dash= /^\d{1,2}-\d{1,2}-\d{2,4}$/.test(s);
+  // IMPORTANT: Pure numbers are NOT dates.
+  // Without this guard, Date.parse("1") etc can be treated as valid dates.
+  if (/^[+-]?\d+(\.\d+)?$/.test(s)) return false;
 
+  // Obvious date patterns (keep these simple and robust)
+  const iso = /^\d{4}-\d{2}-\d{2}([T\s].*)?$/.test(s);      // 2024-01-07 or 2024-01-07T...
+  const uk  = /^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(s);        // 07/01/2024
+  const dash= /^\d{1,2}-\d{1,2}-\d{2,4}$/.test(s);          // 07-01-2024
+
+  // If it contains common date separators, treat as date-ish
   if (iso || uk || dash) return true;
 
-  // fallback: Date.parse on a sample (can be locale-dependent, so keep cautious)
-  const t = Date.parse(s);
-  return Number.isFinite(t);
+  // Light additional cue: strings with ':' often represent times (but not always)
+  if (s.includes(":") && /\d/.test(s)) return true;
+
+  // Do NOT fall back to Date.parse() — it is too permissive for our use case.
+  return false;
 }
+
 
 function profileColumns(rows) {
   const profiles = {};
