@@ -214,66 +214,178 @@ const dataEditorHeaderStatus = document.getElementById("dataEditorHeaderStatus")
 function guessColumns(rows) {
   if (!rows || rows.length === 0) return { dateCol: null, valueCol: null, hasDateCandidate: false };
 
-  const sample = rows.slice(0, Math.min(rows.length, 50));
+  const sample = rows.slice(0, Math.min(rows.length, 200));
   const cols = Object.keys(sample[0] || {});
   if (cols.length === 0) return { dateCol: null, valueCol: null, hasDateCandidate: false };
 
-  function dateScore(col) {
-    let valid = 0, total = 0;
-    for (const r of sample) {
-      const raw = r[col];
-      if (raw === null || raw === undefined || String(raw).trim() === "") continue;
-      total++;
-      const d = parseDateValue(raw);
-      if (isFinite(d.getTime())) valid++;
-    }
-    return total === 0 ? 0 : valid / total;
+  const norm = (v) => String(v ?? "").trim();
+  const lowerName = (c) => String(c || "").toLowerCase();
+
+  function isDateLikeValue(v) {
+    const s = norm(v);
+    if (!s) return false;
+    const d = parseDateValue(s);
+    return !!d && isFinite(d.getTime());
   }
 
-  function numericScore(col) {
-    let valid = 0, total = 0;
-    for (const r of sample) {
-      const raw = r[col];
-      if (raw === null || raw === undefined || String(raw).trim() === "") continue;
-      total++;
-      const y = toNumericValue(raw);
-      if (isFinite(y)) valid++;
-    }
-    return total === 0 ? 0 : valid / total;
+  function numericValue(v) {
+    const n = toNumericValue(v);
+    return Number.isFinite(n) ? n : NaN;
   }
 
-  const scored = cols.map(c => ({
-    col: c,
-    d: dateScore(c),
-    n: numericScore(c)
-  }));
+  function profileColumn(col) {
+    const vals = sample
+      .map(r => r[col])
+      .filter(v => v !== null && v !== undefined && norm(v) !== "");
 
-  // Prefer date-like columns that are NOT strongly numeric
-  const bestDate = scored
-    .filter(s => s.d > 0 && s.n < 0.5)
-    .sort((a, b) => b.d - a.d)[0];
+    const maxTake = Math.min(vals.length, 200);
+    const taken = vals.slice(0, maxTake);
 
-  // Use let so we can fall back gracefully
-  let dateCol = bestDate && bestDate.d >= 0.4 ? bestDate.col : null;
+    let dateLike = 0;
+    let numeric = 0;
+    let integerish = 0;
+
+    const nums = [];
+    const uniques = new Set();
+
+    for (const v of taken) {
+      const s = norm(v);
+      uniques.add(s);
+
+      if (isDateLikeValue(v)) dateLike++;
+
+      const n = numericValue(v);
+      if (Number.isFinite(n)) {
+        numeric++;
+        nums.push(n);
+        if (isIntegerish(n)) integerish++;
+      }
+    }
+
+    const total = taken.length || 1;
+    const numericFrac = numeric / total;
+    const dateFrac = dateLike / total;
+    const intFrac = numeric ? (integerish / numeric) : 0;
+    const uniqueFrac = uniques.size / total;
+
+    // Detect monotonic increasing (common in index columns like Week_Number)
+    let monotonicScore = 0;
+    if (nums.length >= 6) {
+      let inc = 0;
+      for (let i = 1; i < nums.length; i++) {
+        if (nums[i] >= nums[i - 1]) inc++;
+      }
+      monotonicScore = inc / (nums.length - 1);
+    }
+
+    // Rough variability (std dev)
+    let sd = 0;
+    if (nums.length >= 3) {
+      const mean = nums.reduce((a, b) => a + b, 0) / nums.length;
+      const v = nums.reduce((a, b) => a + (b - mean) * (b - mean), 0) / (nums.length - 1);
+      sd = Math.sqrt(Math.max(0, v));
+    }
+
+    const name = lowerName(col);
+    const nameLooksLikeId =
+      name.includes("week") ||
+      name.includes("id") ||
+      name.includes("index") ||
+      name.includes("number") ||
+      name.includes("seq") ||
+      name.includes("row");
+
+    const nameLooksLikeMeasure =
+      name.includes("value") ||
+      name.includes("measure") ||
+      name.includes("mean") ||
+      name.includes("rate") ||
+      name.includes("time") ||
+      name.includes("score") ||
+      name.includes("count");
+
+    const looksIndexLike =
+      numericFrac > 0.9 &&
+      intFrac > 0.9 &&
+      uniqueFrac > 0.85 &&
+      monotonicScore > 0.85;
+
+    return {
+      col,
+      numericFrac,
+      dateFrac,
+      intFrac,
+      uniqueFrac,
+      monotonicScore,
+      sd,
+      nameLooksLikeId,
+      nameLooksLikeMeasure,
+      looksIndexLike
+    };
+  }
+
+  const profiles = cols.map(profileColumn);
+
+  // ---- Pick date column (prefer truly date-like columns that are NOT strongly numeric) ----
+  const bestDate = profiles
+    .filter(p => p.dateFrac > 0.4)
+    .sort((a, b) => {
+      if (b.dateFrac !== a.dateFrac) return b.dateFrac - a.dateFrac;
+      // tie-break: name contains "date" or "time"
+      const aName = lowerName(a.col);
+      const bName = lowerName(b.col);
+      const aHas = aName.includes("date") || aName.includes("time");
+      const bHas = bName.includes("date") || bName.includes("time");
+      return (bHas ? 1 : 0) - (aHas ? 1 : 0);
+    })[0];
+
+  let dateCol = bestDate ? bestDate.col : null;
   const hasDateCandidate = !!dateCol;
 
-  // If we did NOT find a real date column, default X to the first column (category/sequence label)
-  if (!dateCol) {
-    dateCol = cols[0];
-  }
+  // If we did NOT find a real date column, default X to the first column (sequence/category label)
+  if (!dateCol) dateCol = cols[0];
 
-  // Pick the best numeric column EXCLUDING the chosen x/date column
-  const bestNumNotX = scored
-    .filter(s => s.col !== dateCol)
-    .sort((a, b) => b.n - a.n)[0];
+  // ---- Pick value column (prefer measurement-like, avoid index-like) ----
+  const candidates = profiles
+    .filter(p => p.col !== dateCol)
+    .filter(p => p.numericFrac > 0.4)
+    .sort((a, b) => {
+      const score = (p) => {
+        let s = 0;
 
-  let valueCol = bestNumNotX && bestNumNotX.n >= 0.4 ? bestNumNotX.col : null;
+        // numeric quality
+        s += p.numericFrac * 2;
 
-  // If still nothing numeric found, last-resort fallback (prevents nulls)
+        // avoid date-like
+        s -= p.dateFrac * 3;
+
+        // avoid index-like columns hard
+        if (p.looksIndexLike) s -= 3;
+
+        // mild preference for continuous measures (not purely integer IDs)
+        s += (1 - p.intFrac) * 0.8;
+
+        // prefer variability (avoid flat or IDs)
+        s += Math.min(1, p.sd / 10) * 0.7;
+
+        // name hints (tie-breakers)
+        if (p.nameLooksLikeMeasure) s += 0.5;
+        if (p.nameLooksLikeId) s -= 0.8;
+
+        return s;
+      };
+
+      return score(b) - score(a);
+    });
+
+  let valueCol = candidates.length ? candidates[0].col : null;
+
+  // last-resort fallback to avoid null
   if (!valueCol) valueCol = dateCol;
 
   return { dateCol, valueCol, hasDateCandidate };
 }
+
 
 
 function updateMrToggleVisibility() {
@@ -644,8 +756,12 @@ if (targetToggleBtn) {
 }
 
 const debouncedRegen = debounce(() => {
-  if (rawRows && rawRows.length) generateButton.click();
+  if (rawRows && rawRows.length) {
+    lastGenerateWasManual = false;
+    generateButton.click();
+  }
 }, 250);
+
 
 if (baselineInput) {
   baselineInput.addEventListener("input", debouncedRegen);
@@ -4276,7 +4392,9 @@ function validateNumeratorNotGreaterThanDenom(numerArr, denomArr) {
   return null;
 }
 
-function handleValidationResult(result) {
+let lastGenerateWasManual = false;
+
+function handleValidationResult(result, { manual = true } = {}) {
   if (!result) return true;
 
   if (result.level === "error") {
@@ -4284,14 +4402,28 @@ function handleValidationResult(result) {
     return false;
   }
 
-  // warn
+  // Warnings:
+  // - If user clicked Generate, ask (confirm)
+  // - If auto-regenerate, show inline message but do NOT interrupt
+  if (!manual) {
+    if (typeof showChartMessage === "function") {
+      showChartMessage(result.message.replace(/\n\nGenerate the chart anyway\?/g, ""));
+    } else {
+      // fallback
+      console.warn(result.message);
+    }
+    return true;
+  }
+
   return confirm(result.message);
 }
 
 
 // ---- Generate chart button ----
 generateButton.addEventListener("click", () => {
+  lastGenerateWasManual = true;
   clearError();
+
 
   if (summaryDiv) summaryDiv.innerHTML = "";
   if (capabilityDiv) capabilityDiv.innerHTML = "";
@@ -4407,11 +4539,9 @@ if (chartType === "run") {
   // -----------------------------
   const cValues = points.map(p => p.y);
 
-  // Block: non-numeric or negative
-  if (!handleValidationResult(validateNonNegativeNumbers(cValues, "C chart count"))) return;
+ if (!handleValidationResult(validateNonNegativeNumbers(cValues, "C chart count"), { manual: lastGenerateWasManual })) return;
+ if (!handleValidationResult(warnIfNonInteger(cValues, "C chart count"), { manual: lastGenerateWasManual })) return;
 
-  // Warn: non-integers (allow user to continue)
-  if (!handleValidationResult(warnIfNonInteger(cValues, "C chart count"))) return;
 
   drawCChart(points, baselineCount, labels);
 
