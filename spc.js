@@ -5467,11 +5467,15 @@ function answerSpcQuestion(question) {
 },
 
     {
-      keywords: ["what does stable mean", "what is stable", ["stable", "mean"]],
-      answer:
-        "Stable means the chart shows only routine ups and downs — no clear signal that the system has changed. " +
-        "If a chart is stable, the best way to improve results is usually to change the system, not chase individual high/low points."
-    },
+  keywords: ["what does stable mean", "what is stable", ["stable", "mean"]],
+  answer:
+    "**Stable** means the chart shows routine (common-cause) variation — no clear special-cause signal that the system has changed.\n\n" +
+    "If a chart is stable:\n" +
+    "• avoid reacting to individual high/low points (“tampering”)\n" +
+    "• if performance isn’t good enough, the usual answer is to **change the system** (process design), not chase noise\n\n" +
+    "If a chart is not stable, treat that as a prompt to investigate what changed (process, staffing, demand, definitions/coding, measurement)."
+},
+
     {
   keywords: ["control limits", "how do control limits work", ["control", "limits"]],
   answer:
@@ -5506,76 +5510,118 @@ function answerSpcQuestion(question) {
         "• Rare events where you care about time/opportunities between events: T or G chart."
     },
     {
-      keywords: ["what is a run chart", "what is run chart", "run chart", ["what", "run chart"]],
-      answer:
-        "A run chart shows your data over time with a median line. It’s a simple way to look for non-random patterns like a sustained shift or a sustained trend. " +
-        "It’s often a good starting point when you’re early in an improvement project."
-    },
+  keywords: ["what is a run chart", "what is run chart", "run chart", ["what", "run chart"]],
+  answer:
+    "A **run chart** plots your data over time with a **median** line. It’s a simple first step for spotting non-random patterns.\n\n" +
+    "Common run-chart signals include:\n" +
+    "• a **shift** (many points in a row on one side of the median)\n" +
+    "• a **trend** (several points going up or down in a row)\n\n" +
+    "Run charts are often a good starting point early in improvement work, or when you have limited data. If you have enough data, an XmR chart adds control limits for stronger signals."
+},
+
  	   {
-	      keywords: ["what is an xmr chart", "xmr chart", "moving range chart", ["what", "xmr"]],
-	      answer:
-	        "Use an XmR chart when you record one number each time (for example, a weekly average waiting time). " +
-	        "The X chart shows your values over time. The moving range (MR) looks at the change between consecutive points and helps estimate how much routine variation you normally have. " +
-	        "Using this, the chart draws a centre line (mean) and control limits (statistical boundaries for expected routine variation). " +
-	        "If you see points or patterns beyond the limits, that can be a special-cause signal — a prompt to investigate what changed in the real world (process, staffing, demand, measurement). " +
-	        "These rules are guides, not proof, so always interpret the chart alongside knowledge of your service."
-	    },
+  keywords: ["what is an xmr chart", "xmr chart", "moving range chart", ["what", "xmr"]],
+  answer:
+    "Use an **XmR chart** when you record **one number each time** (for example, a weekly average waiting time).\n\n" +
+    "What you see:\n" +
+    "• The **X chart** shows your values over time.\n" +
+    "• The **moving range (MR)** looks at the change between consecutive points and helps estimate routine variation.\n\n" +
+    "Using this, the chart draws a **centre line (mean)** and **control limits** (statistical boundaries for expected routine/common-cause variation).\n\n" +
+    "Points or patterns beyond the limits may be a **special-cause signal** — a prompt to investigate what changed in the real world (process, staffing, demand, coding/definitions, measurement). These rules are guides, not proof."
+},
+
 
 
     // Chart type explainers (keywords tightened to reduce false matches)
     {
-      keywords: ["c chart", "c-chart", ["count", "chart"], ["counts", "chart"]],
-      answer:
-        "A C chart is for counting how many times something happened in each time period (for example, incidents per week). " +
-        "It works best when each time period is broadly comparable (like similar time windows or similar-sized services). " +
-        "Points outside the limits suggest something may have changed."
-    },
-    {
-      keywords: ["p chart", "p-chart", ["percentage", "chart"], ["proportion", "chart"], ["out of", "total"]],
-      answer:
-        "A P chart is for percentages or proportions — a number out of a total each time (for example, % of patients seen within 4 hours). " +
-        "It takes the changing total into account, so weeks with smaller or larger totals are handled fairly. " +
-        "Points outside the limits suggest something may have changed."
-    },
-    {
-      keywords: ["u chart", "u-chart", ["rate", "chart"], ["per", "1000"], ["per", "bed day"]],
-      answer:
-        "A U chart is for rates when the ‘out of how many’ changes over time (for example, falls per 1,000 bed days). " +
-        "It uses both the count and the size of the opportunity each time. " +
-        "Points outside the limits suggest something may have changed."
-    },
-    {
-      keywords: ["xbar s", "x̄–s", "xbars", "xbar-s", ["xbar", "s"]],
-      answer:
-        "An X̄–S chart is used when you collect several measurements at each time point (for example, a small sample each week). " +
-        "The X̄ chart looks for changes in the average, and the S chart looks for changes in how spread-out the data are. " +
-        "You usually look at both charts together."
-    },
-    {
-      keywords: ["t chart", "t-chart", ["time", "between"], ["days", "between"]],
-      answer:
-        "A T chart is for rare events and looks at the time between events (for example, days between incidents). " +
-        "If your aim is to avoid the event, longer gaps are usually better. If your aim is to increase the event, shorter gaps are better."
-    },
-    {
-      keywords: ["g chart", "g-chart", ["opportunit", "between"], ["cases", "between"]],
-      answer:
-        "A G chart is for rare events and looks at the number of opportunities between events (for example, number of patients between pressure ulcers). " +
-        "If your aim is to avoid the event, larger numbers are usually better. If your aim is to increase the event, smaller numbers are better."
-    },
+  keywords: ["c chart", "c-chart", ["count", "chart"], ["counts", "chart"]],
+  answer:
+    "**C chart (counts)** — use this when you are counting how many times something happened in each time period (e.g., incidents per week).\n\n" +
+    "Good fit when:\n" +
+    "• each time period is broadly comparable (similar time window and similar “volume of opportunity”)\n\n" +
+    "If the amount of work/opportunity varies a lot (e.g., bed-days, inspections, patient-days change), a **U chart (rate)** is often a better choice.\n\n" +
+    "Signals:\n" +
+    "• points beyond control limits (or clear runs/trends) suggest a possible **special-cause signal** and are prompts to investigate."
+},
 
     {
-      keywords: ["target", "what is a target", ["use", "target"]],
-      answer:
-        "A target is the performance level you are aiming for. In SPC, targets are most useful when they help decision-making (for example, “are we reliably meeting the standard?”). " +
-        "Be careful not to treat every week above/below target as ‘good’ or ‘bad’ — first check whether the system is stable."
-    },
+  keywords: ["p chart", "p-chart", ["percentage", "chart"], ["proportion", "chart"], ["out of", "total"]],
+  answer:
+    "**P chart (proportion)** — use this when you have a **numerator out of a denominator** each time (e.g., % compliant, 5 out of 100 patients).\n\n" +
+    "You provide:\n" +
+    "• **Numerator (d):** how many had the characteristic (e.g., number compliant)\n" +
+    "• **Denominator (n):** how many in total (e.g., total patients)\n\n" +
+    "A P chart adjusts the limits when totals change, so weeks with small or large denominators are handled fairly.\n\n" +
+    "If you are counting multiple defects per item (e.g., multiple errors per record), a **U chart (rate of defects per opportunity)** may be a better fit."
+},
+
     {
-      keywords: ["capability", ["meet", "target"]],
-      answer:
-        "Capability is a rough check of how often a stable system is likely to meet your target, given the usual variation you see. " +
-        "It works best when the chart is stable and the day-to-day variation is fairly consistent."
-    }
+  keywords: ["u chart", "u-chart", ["rate", "chart"], ["per", "1000"], ["per", "bed day"]],
+  answer:
+    "**U chart (rate)** — use this when you are counting events/defects but the amount of opportunity varies over time (e.g., falls per 1,000 bed-days; errors per 100 records).\n\n" +
+    "You provide:\n" +
+    "• **Count (c):** number of events/defects\n" +
+    "• **Opportunities (n):** size of exposure (e.g., bed-days, patient-days, inspections)\n\n" +
+    "The chart uses both values to calculate a rate and control limits.\n\n" +
+    "Signals (points beyond limits or clear runs/trends) may indicate **special-cause variation** — prompts to investigate what changed."
+},
+
+    {
+  keywords: ["xbar s", "x̄–s", "xbars", "xbar-s", ["xbar", "s"]],
+  answer:
+    "**X̄–S chart (subgroups)** — use this when you collect **several measurements per time point** (a subgroup), e.g. 5 samples each week.\n\n" +
+    "What it shows:\n" +
+    "• The **X̄ chart** looks for changes in the average (centre line + control limits).\n" +
+    "• The **S chart** looks for changes in variation/spread within subgroups.\n\n" +
+    "Data requirements (typical):\n" +
+    "• at least **2 measurements per subgroup**\n" +
+    "• at least **4 subgroups** to estimate limits sensibly\n\n" +
+    "You usually interpret the X̄ and S charts together: changes in spread can affect how you interpret changes in the average."
+},
+
+    {
+  keywords: ["t chart", "t-chart", ["time", "between"], ["days", "between"]],
+  answer:
+    "**T chart (time between events)** — use this for rare events when you measure the **time gap** between events (e.g., days between serious incidents).\n\n" +
+    "Interpretation depends on your aim:\n" +
+    "• If you want to **avoid** the event, **longer gaps** are usually better.\n" +
+    "• If you want to **increase** the event (less common), **shorter gaps** are better.\n\n" +
+    "Signals (points beyond limits or runs/trends) may indicate a **special-cause signal** — a prompt to investigate what changed."
+},
+
+    {
+  keywords: ["g chart", "g-chart", ["opportunit", "between"], ["cases", "between"]],
+  answer:
+    "**G chart (opportunities between events)** — use this for rare events when you measure the **number of opportunities** between events (e.g., patients between pressure ulcers; procedures between harms).\n\n" +
+    "Interpretation depends on your aim:\n" +
+    "• If you want to **avoid** the event, **larger numbers** are usually better.\n" +
+    "• If you want to **increase** the event, **smaller numbers** are better.\n\n" +
+    "Signals (points beyond limits or runs/trends) may indicate a **special-cause signal** — a prompt to investigate what changed."
+},
+
+
+    {
+  keywords: ["target", "what is a target", ["use", "target"]],
+  answer:
+    "A **target** is the performance level you are aiming for.\n\n" +
+    "In SPC, targets are most useful when they support decisions, for example:\n" +
+    "• “Are we reliably meeting the standard?”\n" +
+    "• “If the system stays as it is, how often will we miss?”\n\n" +
+    "Caution:\n" +
+    "• Don’t treat every point above/below target as ‘good’ or ‘bad’.\n" +
+    "• First check whether the system is **stable**. If it isn’t stable, investigation usually comes before judging performance against a target."
+},
+
+    {
+  keywords: ["capability", ["meet", "target"]],
+  answer:
+    "**Capability** is a rough way to estimate how often a stable system is likely to meet a target, given the routine variation you see.\n\n" +
+    "It works best when:\n" +
+    "• the chart looks **stable** (no obvious special-cause signals)\n" +
+    "• measurement is consistent over time\n\n" +
+    "If the system is not stable, capability estimates can be misleading — investigate and understand the signals first."
+}
+
   ];
 
   // IMPORTANT: FAQs get first refusal. This fixes your screenshots.
@@ -7052,12 +7098,25 @@ function showHelperAnswer(questionText) {
 
   const ans = answerSpcQuestion(q);
 
-  // Convert plain text into nicely formatted HTML (paragraphs & bullet lists)
-  spcHelperOutput.innerHTML = formatSpcHelperAnswerToHtml(ans);
+  // Use your formatter if present; otherwise fall back safely
+  if (typeof formatSpcHelperAnswerToHtml === "function") {
+    spcHelperOutput.innerHTML = formatSpcHelperAnswerToHtml(ans);
+  } else {
+    spcHelperOutput.innerHTML = `<p>${escapeHtml(ans)}</p>`;
+  }
 
-  // Optional: auto-scroll to top of the answer so users see the start
   spcHelperOutput.scrollTop = 0;
+
+  // Auto-collapse the chips after the first answer to free space for reading
+  if (!spcHelperAutoCollapsedOnce) {
+    setSpcHelperSuggestionsCollapsed(true);
+    spcHelperAutoCollapsedOnce = true;
+  } else {
+    // Also collapse on subsequent answers (keeps focus on reading)
+    setSpcHelperSuggestionsCollapsed(true);
+  }
 }
+
 
 if (aiAskButton && aiQuestionInput) {
   aiAskButton.addEventListener("click", () => {
@@ -7126,7 +7185,34 @@ function toggleHelpSection(forceOpen) {
 }
 
 
+// --- SPC helper: collapse/expand suggested chips for better small-screen UX ---
 let spcHelperHasBeenOpened = false;
+let spcHelperAutoCollapsedOnce = false;
+
+function setSpcHelperSuggestionsCollapsed(collapsed) {
+  const suggestions = document.getElementById("spcHelperSuggestions");
+  const toggleBtn = document.getElementById("spcHelperToggleSuggestions");
+  if (!suggestions || !toggleBtn) return;
+
+  suggestions.style.display = collapsed ? "none" : "";
+  toggleBtn.textContent = collapsed ? "Show suggested questions" : "Hide suggested questions";
+  toggleBtn.setAttribute("aria-expanded", collapsed ? "false" : "true");
+}
+
+// Hook up the toggle button (safe even if elements aren’t present yet)
+function attachSpcHelperSuggestionToggle() {
+  const toggleBtn = document.getElementById("spcHelperToggleSuggestions");
+  if (!toggleBtn || toggleBtn.dataset.bound === "1") return;
+
+  toggleBtn.dataset.bound = "1";
+  toggleBtn.addEventListener("click", () => {
+    const suggestions = document.getElementById("spcHelperSuggestions");
+    if (!suggestions) return;
+
+    const isHidden = suggestions.style.display === "none";
+    setSpcHelperSuggestionsCollapsed(!isHidden);
+  });
+}
 
 function toggleSpcHelper() {
   const panel = document.getElementById("spcHelperPanel");
@@ -7134,10 +7220,18 @@ function toggleSpcHelper() {
 
   const isVisible = panel.classList.toggle("visible");
 
-  // Populate chips / intro once, when the helper is first opened
-  if (isVisible && !spcHelperHasBeenOpened) {
-    if (typeof renderHelperState === "function") renderHelperState();
-    spcHelperHasBeenOpened = true;
+  if (isVisible) {
+    // Populate chips / intro once
+    if (!spcHelperHasBeenOpened) {
+      if (typeof renderHelperState === "function") renderHelperState();
+      spcHelperHasBeenOpened = true;
+    }
+
+    // Ensure toggle button works
+    attachSpcHelperSuggestionToggle();
+
+    // When opening: show suggestions by default for discoverability
+    setSpcHelperSuggestionsCollapsed(false);
   }
 }
 
