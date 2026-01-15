@@ -1368,8 +1368,9 @@ body.pdf-exporting #capability {
         </p>
       </details>
 
-      <details>
+ <details>
   <summary><strong>6. Interpreting the summary</strong></summary>
+
   <p>
     Under the chart, the <strong>Summary</strong> section gives a brief interpretation
     of the pattern, tailored to the selected chart type.
@@ -1380,7 +1381,7 @@ body.pdf-exporting #capability {
   </p>
 
   <ul>
-    <li>The number of data points and which points are used as baseline.</li>
+    <li>The number of data points and which points are used as the baseline.</li>
     <li>The median (run chart), mean and limits (XmR / X̄–S), or centre line
         appropriate to the chart type.</li>
     <li>Possible special-cause signals such as:
@@ -1397,34 +1398,28 @@ body.pdf-exporting #capability {
     Always interpret the pattern in the context of the clinical or operational system.
   </p>
 
-  <p>
-    For further help interpreting charts, rules, and good SPC practice, use the
-    <strong>SPC helper</strong>.
-  </p>
+  <details class="nested-details" style="margin-top:0.75rem;">
+    <summary><strong>Glossary</strong></summary>
+
+    <ul>
+      <li><strong>Centre line</strong> – indicates the “usual” level of performance the data (using the <strong>mean/average</strong> or <strong>median</strong>).</li>
+      <li><strong>Control limits - Upper (UCL) & Lower(LCL)</strong> – statistical boundaries, calculated from historical data, that estimate the range of <strong>routine (common-cause) variation</strong>.</li>
+      <li><strong>Common-cause variation</strong> – normal, expected ups and downs when the system hasn’t fundamentally changed. This represents the range of variability that you might expect from everyday factors that are inherent in the process/system.</li>
+      <li><strong>Special-cause signal</strong> – a pattern that’s unlikely to be routine variation alone (for example, a point beyond limits or a sustained run). This is usually indicative of something 'unusual' happening. Usually requires investigation to understand the cause.</li>
+      <li><strong>Baseline</strong> – a subset of data points that can be used to calculate and 'fix' the centre line and limits. Setting a baseline is useful when you have implemented a change and want to test whether it has had an effect on 'normal' performance.</li>
+      <li><strong>Run/SPC rules</strong> – a statistically significant pattern rule (e.g. many points in a row on one side of the centre line) used to identify special cause variation.</li>
+      <li><strong>Shift</strong> – an indication of a sustained change in performance that is significantly different to previous performance. If the cause of the change is understood (e.g. it was as a result of improvement work), and it is likely to continue to affect ongoing performance then might trigger a split in calculation of control limits.</li>
+      <li><strong>Split</strong> – recalculation of the centre line and control limits at a specific point in time. Usually triggered by a sustained shift in performance.</li>
+      <li><strong>Trend</strong> – several points increasing or decreasing in a row, suggesting a directional change.</li>
+    </ul>
+
+    <p class="hint">
+      If you’re unsure, treat the rules as prompts and combine them with local knowledge.
+      If decisions are high-stakes, consider specialist statistical support.
+    </p>
+  </details>
 </details>
 
-<details>
-  <summary><strong>6A. Glossary (optional)</strong></summary>
-
-  <p class="hint">
-    This is optional. It gives plain-English and technical meanings side-by-side.
-  </p>
-
-  <ul>
-    <li><strong>Centre line</strong> – the “usual” level of the data (often the <strong>mean</strong> or <strong>median</strong>).</li>
-    <li><strong>Control limits (UCL/LCL)</strong> – statistical boundaries that estimate the range of <strong>routine (common-cause) variation</strong>.</li>
-    <li><strong>Common-cause variation</strong> – normal, expected ups and downs when the system hasn’t fundamentally changed.</li>
-    <li><strong>Special-cause signal</strong> – a pattern that’s unlikely to be routine variation alone (for example, a point beyond limits or a sustained run).</li>
-    <li><strong>Baseline</strong> – the set of points used to calculate the centre line and limits. Changing the baseline changes what “normal” means.</li>
-    <li><strong>Run rule</strong> – a simple pattern rule (e.g., many points in a row on one side of the centre line) used as a prompt to investigate.</li>
-    <li><strong>Trend</strong> – several points increasing or decreasing in a row, suggesting a directional change.</li>
-  </ul>
-
-  <p class="hint">
-    If you’re unsure, treat the rules as prompts and combine them with local knowledge. If decisions are high-stakes, consider specialist statistical support.
-  </p>
-</details>
->
 
       <details>
   <summary><strong>7. Copying and downloading charts</strong></summary>
