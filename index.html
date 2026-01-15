@@ -914,19 +914,44 @@ body.pdf-exporting #capability {
 
 <details id="moreChartTypesDetails" class="more-types">
   <summary>More chart types</summary>
+
   <div class="radio-row chart-row" style="margin-top:0.1rem; flex-wrap:wrap;">
-    <label class="radio-pill"><input type="radio" name="chartType" value="c" /> C</label>
-    <label class="radio-pill"><input type="radio" name="chartType" value="p" /> P</label>
-    <label class="radio-pill"><input type="radio" name="chartType" value="u" /> U</label>
-    <label class="radio-pill"><input type="radio" name="chartType" value="xbars" /> X̄–S</label>
-    <label class="radio-pill"><input type="radio" name="chartType" value="t" /> T</label>
-    <label class="radio-pill"><input type="radio" name="chartType" value="g" /> G</label>
+    <label class="radio-pill" title="Counts per time period (e.g., number of incidents per week)">
+      <input type="radio" name="chartType" value="c" />
+      C chart (counts)
+    </label>
+
+    <label class="radio-pill" title="Proportion out of a total (e.g., 5 out of 100, % compliant)">
+      <input type="radio" name="chartType" value="p" />
+      P chart (proportion)
+    </label>
+
+    <label class="radio-pill" title="Rate per opportunity (e.g., infections per 1,000 bed-days)">
+      <input type="radio" name="chartType" value="u" />
+      U chart (rate)
+    </label>
+
+    <label class="radio-pill" title="Subgrouped measurements (multiple values per time point)">
+      <input type="radio" name="chartType" value="xbars" />
+      X̄–S chart (subgroups)
+    </label>
+
+    <label class="radio-pill" title="Time between events (e.g., days between serious incidents)">
+      <input type="radio" name="chartType" value="t" />
+      T chart (time between)
+    </label>
+
+    <label class="radio-pill" title="Opportunities between events (e.g., procedures between harms)">
+      <input type="radio" name="chartType" value="g" />
+      G chart (opportunities between)
+    </label>
   </div>
 
   <div class="hint" style="margin-top:0.1rem;">
     If you’re not sure, use <strong>Help me choose</strong>.
   </div>
 </details>
+
 
 <!-- MR options (only relevant to XmR; JS can hide/show mrToggleRow) -->
 <div id="mrToggleRow" class="mr-compact">

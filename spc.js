@@ -3016,7 +3016,7 @@ function renderAttributeMultiSummary(segmentAnalyses, totalPoints) {
       html += `<li><strong>Signals:</strong> ${a.signals.join("; ")}.</li>`;
     }
 
-    /    // Interpretation (safer wording: clear + cautious)
+     // Interpretation (safer wording: clear + cautious)
     const interpretation = a.isStable
       ? "Based on the selected rules, no clear special-cause signals were detected in this period. This suggests the pattern is consistent with routine (common-cause) variation."
       : "Based on the selected rules, special-cause signals were detected in this period (a pattern unlikely to be routine variation alone).";
@@ -6572,17 +6572,35 @@ function renderChartWizard() {
     `<button type="button" style="margin:0.25rem 0; width:100%; text-align:left;" onclick="${onClick}">${text}</button>`;
 
   // Step screens
-  if (s.step === 0) {
+    if (s.step === 0) {
     chartWizardBody.innerHTML = `
       <p><strong>What are you charting?</strong></p>
-      ${optionButton("A measurement (e.g. time, score, weight, waiting time)", `wizardNext('kind','measurement')`)}
-      ${optionButton("A count (e.g. number of falls, infections, incidents)", `wizardNext('kind','count')`)}
-      ${optionButton("A percentage / proportion (e.g. x out of n, % compliant)", `wizardNext('kind','proportion')`)}
-      ${optionButton("Rare events (time/opportunities between events)", `wizardNext('kind','rare')`)}
+
+      ${optionButton(
+        "A measurement (one number each time) — e.g. waiting time, score, temperature, length of stay",
+        `wizardNext('kind','measurement')`
+      )}
+
+      ${optionButton(
+        "A count per time period — e.g. number of falls per week, complaints per month, infections per day",
+        `wizardNext('kind','count')`
+      )}
+
+      ${optionButton(
+        "A proportion out of a total — e.g. 5 out of 100 compliant, % with a characteristic, pass rate",
+        `wizardNext('kind','proportion')`
+      )}
+
+      ${optionButton(
+        "Rare events — time or opportunities between events (e.g. days between serious incidents; procedures between harms)",
+        `wizardNext('kind','rare')`
+      )}
+
       ${optionButton("Not sure", `finishWizard(computeRecommendation({kind:'unsure'}))`)}
     `;
     return;
   }
+
 
   // Measurement follow-up
   if (s.step === 1 && a.kind === "measurement") {
@@ -6599,13 +6617,21 @@ function renderChartWizard() {
     return;
   }
 
-  // Count follow-up
+    // Count follow-up
   if (s.step === 1 && a.kind === "count") {
     chartWizardBody.innerHTML = `
-      <p><strong>Does the amount of work/opportunity vary each time point?</strong></p>
-      ${optionButton("No / roughly constant each time", `wizardNext('countOpportunity','constant')`)}
-      ${optionButton("Yes, it varies (or I have an opportunities/denominator column)", `wizardNext('countOpportunity','varies')`)}
+      <p><strong>Does the amount of work / opportunity vary at each time point?</strong></p>
+
+      <p class="hint small-hint" style="margin-top:-0.25rem;">
+        If you are counting events per week/month with broadly similar activity each time, treat it as roughly constant.
+        If the volume changes a lot (or you have a denominator like bed-days / patient-days / inspections),
+        the tool will usually recommend a <strong>U chart (rate per opportunity)</strong>.
+      </p>
+
+      ${optionButton("No — roughly similar volume each time (e.g. incidents per week)", `wizardNext('countOpportunity','constant')`)}
+      ${optionButton("Yes — volume varies, or I have a denominator column (e.g. bed-days, patient-days, inspections)", `wizardNext('countOpportunity','varies')`)}
       ${optionButton("Not sure", `wizardNext('countOpportunity','unsure')`)}
+
       <div style="display:flex; gap:0.5rem; justify-content:space-between; margin-top:0.75rem;">
         <button type="button" onclick="wizardBack()">Back</button>
         <button type="button" onclick="finishWizard(computeRecommendation(chartWizardState.answers))">Skip</button>
@@ -6613,6 +6639,7 @@ function renderChartWizard() {
     `;
     return;
   }
+
 
   // Proportion follow-up
   if (s.step === 1 && a.kind === "proportion") {
@@ -6632,12 +6659,17 @@ function renderChartWizard() {
     return;
   }
 
-  // Rare events follow-up
+    // Rare events follow-up
   if (s.step === 1 && a.kind === "rare") {
     chartWizardBody.innerHTML = `
-      <p><strong>Which do you have?</strong></p>
-      ${optionButton("Time between events (e.g. days between incidents)", `wizardNext('rareType','time')`)}
-      ${optionButton("Opportunities between events (e.g. procedures between harms)", `wizardNext('rareType','opportunities')`)}
+      <p><strong>Which best describes your data?</strong></p>
+
+      <p class="hint small-hint" style="margin-top:-0.25rem;">
+        Choose this when the event is uncommon and you’re looking at the gap <em>between</em> events.
+      </p>
+
+      ${optionButton("Time between events — e.g. days between serious incidents, weeks between pressure ulcers", `wizardNext('rareType','time')`)}
+      ${optionButton("Opportunities between events — e.g. procedures between harms, patients seen between infections", `wizardNext('rareType','opportunities')`)}
       ${optionButton("Not sure", `wizardNext('rareType','unsure')`)}
       <div style="display:flex; gap:0.5rem; justify-content:space-between; margin-top:0.75rem;">
         <button type="button" onclick="wizardBack()">Back</button>
