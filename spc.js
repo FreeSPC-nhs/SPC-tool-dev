@@ -170,6 +170,7 @@ const xAxisLabelInput   = document.getElementById("xAxisLabel");
 const yAxisLabelInput   = document.getElementById("yAxisLabel");
 const targetInput       = document.getElementById("targetValue");
 const targetDirectionInput = document.getElementById("targetDirection");
+const targetDirectionSelect = targetDirectionInput;
 const capabilityDiv     = document.getElementById("capability");
 const annotationDateInput  = document.getElementById("annotationDate");
 const annotationLabelInput = document.getElementById("annotationLabel");
