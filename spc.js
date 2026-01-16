@@ -2827,29 +2827,59 @@ function drawTChart(points, baselineCount, labels) {
     showLCL: false
   });
 
-  // Latest period analysis
-  const lastSeg = segmentStarts.length - 1;
-  const start = segmentStarts[lastSeg];
-  const end = segmentEnds[lastSeg];
+    // Build per-period analyses (XmR-style summary, respects splits/baseline)
+  const segmentAnalyses = [];
 
-  lastRareAnalysis = analyzeRareChart({
-    chartType: "t",
-    labels: tLabels.slice(start, end + 1),
-    values: deltas.slice(start, end + 1),
-    cl: cl.slice(start, end + 1),
-    ucl: uclArr.slice(start, end + 1),
-    lcl: lclArr.slice(start, end + 1)
-  });
+  for (let s = 0; s < segmentStarts.length; s++) {
+    const start = segmentStarts[s];
+    const end = segmentEnds[s];
 
-  lastRareAnalysis.periodIndex = lastSeg + 1;
-  lastRareAnalysis.periodCount = segmentStarts.length;
-  lastRareAnalysis.startIndex = start;
-  lastRareAnalysis.endIndex = end;
-  lastRareAnalysis.labelStart = tLabels[start];
-  lastRareAnalysis.labelEnd = tLabels[end];
+    const segBaselineCountUsed =
+      (s === 0 && baselineCount && baselineCount >= 1)
+        ? Math.min(baselineCount, (end - start + 1))
+        : (end - start + 1);
 
-  renderRareChartSummary(lastRareAnalysis);
+    const a = analyzeRareChart({
+      chartType: "t",
+      labels: tLabels.slice(start, end + 1),
+      values: deltas.slice(start, end + 1),
+      cl: cl.slice(start, end + 1),
+      ucl: uclArr.slice(start, end + 1),
+      lcl: lclArr.slice(start, end + 1)
+    });
+
+    // Add metadata for summary formatting (matches your other “multi” summaries)
+    a.periodIndex = s + 1;
+    a.periodCount = segmentStarts.length;
+    a.startIndex = start;
+    a.endIndex = end;
+    a.labelStart = tLabels[start];
+    a.labelEnd = tLabels[end];
+    a.nPoints = (end - start + 1);
+    a.baselineCountUsed = segBaselineCountUsed;
+
+    // Add “stats” like other chart summaries expect
+    // For T: CL is mean gap, UCL from the segment’s constant uclArr
+    const segCL = cl[start];
+    const segUCL = uclArr[start];
+    a.stats = {
+      cl: Number(segCL),
+      ucl: Number(segUCL),
+      lcl: 0
+    };
+
+    a.totalPoints = deltas.length;
+
+    segmentAnalyses.push(a);
+  }
+
+  // Keep helper behaviour the same: store last period in lastRareAnalysis
+  lastRareAnalysis = segmentAnalyses[segmentAnalyses.length - 1];
+
+  // Render new style summary (multi-period)
+  renderRareChartSummary(segmentAnalyses, deltas.length);
 }
+
 
 // -----------------------------
 // G chart: opportunities between events (Geometric limits via percentiles)
@@ -2942,29 +2972,59 @@ function drawGChart(values, baselineCount, labels) {
     showLCL: true
   });
 
-  // Latest period analysis
-  const lastSeg = segmentStarts.length - 1;
-  const start = segmentStarts[lastSeg];
-  const end = segmentEnds[lastSeg];
+    // Build per-period analyses (XmR-style summary, respects splits/baseline)
+  const segmentAnalyses = [];
 
-  lastRareAnalysis = analyzeRareChart({
-    chartType: "g",
-    labels: labels.slice(start, end + 1),
-    values: gVals.slice(start, end + 1),
-    cl: cl.slice(start, end + 1),
-    ucl: uclArr.slice(start, end + 1),
-    lcl: lclArr.slice(start, end + 1)
-  });
+  for (let s = 0; s < segmentStarts.length; s++) {
+    const start = segmentStarts[s];
+    const end = segmentEnds[s];
 
-  lastRareAnalysis.periodIndex = lastSeg + 1;
-  lastRareAnalysis.periodCount = segmentStarts.length;
-  lastRareAnalysis.startIndex = start;
-  lastRareAnalysis.endIndex = end;
-  lastRareAnalysis.labelStart = labels[start];
-  lastRareAnalysis.labelEnd = labels[end];
+    const segBaselineCountUsed =
+      (s === 0 && baselineCount && baselineCount >= 1)
+        ? Math.min(baselineCount, (end - start + 1))
+        : (end - start + 1);
 
-  renderRareChartSummary(lastRareAnalysis);
+    const a = analyzeRareChart({
+      chartType: "g",
+      labels: labels.slice(start, end + 1),
+      values: gVals.slice(start, end + 1),
+      cl: cl.slice(start, end + 1),
+      ucl: uclArr.slice(start, end + 1),
+      lcl: lclArr.slice(start, end + 1)
+    });
+
+    // Add metadata for summary formatting
+    a.periodIndex = s + 1;
+    a.periodCount = segmentStarts.length;
+    a.startIndex = start;
+    a.endIndex = end;
+    a.labelStart = labels[start];
+    a.labelEnd = labels[end];
+    a.nPoints = (end - start + 1);
+    a.baselineCountUsed = segBaselineCountUsed;
+
+    // Add “stats” like other chart summaries expect
+    const segCL = cl[start];
+    const segUCL = uclArr[start];
+    const segLCL = lclArr[start];
+    a.stats = {
+      cl: Number(segCL),
+      ucl: Number(segUCL),
+      lcl: Number(segLCL)
+    };
+
+    a.totalPoints = gVals.length;
+
+    segmentAnalyses.push(a);
+  }
+
+  // Keep helper behaviour the same: store last period in lastRareAnalysis
+  lastRareAnalysis = segmentAnalyses[segmentAnalyses.length - 1];
+
+  // Render new style summary (multi-period)
+  renderRareChartSummary(segmentAnalyses, gVals.length);
 }
+
 
 	
 
@@ -3691,42 +3751,100 @@ function renderAttributeSummary(a) {
 }
 
 
-function renderRareChartSummary(a) {
+function renderRareChartSummary(aOrSegments, totalPointsMaybe) {
+  // Backwards-compatible: accept either a single analysis object OR an array of analyses
+  const segments = Array.isArray(aOrSegments) ? aOrSegments : [aOrSegments];
+  const totalPoints = Number.isFinite(totalPointsMaybe)
+    ? totalPointsMaybe
+    : (Array.isArray(segments) && segments.length && Number.isFinite(segments[segments.length - 1]?.totalPoints))
+      ? segments[segments.length - 1].totalPoints
+      : null;
+
   if (!summaryDiv) return;
+  if (!segments.length || !segments[0]) return;
 
-  const chartName = a.chartType === "t" ? "T chart" : "G chart";
-  const stableLine = a.isStable
-    ? "No clear signal of change (routine variation)."
-    : "A signal of change is present (worth investigating).";
+  const chartType = segments[0].chartType;
+  const chartName = chartType === "t" ? "T chart" : "G chart";
 
-  let html = `<h3>${chartName} summary</h3>`;
-  html += `<ul>`;
-  html += `<li><strong>What this suggests:</strong> ${stableLine}</li>`;
-  html += `<li><strong>Note:</strong> Rare-event charts are skewed, so the limits won’t look symmetrical like an XmR chart.</li>`;
+  const fmt = (v) =>
+    Number.isFinite(v)
+      ? (typeof formatNumber === "function" ? formatNumber(v, 3) : Number(v).toFixed(3))
+      : "—";
 
-  if (!a.isStable && Array.isArray(a.signals) && a.signals.length) {
-    html += `<li><strong>What I can see:</strong> ${a.signals.join("; ")}.</li>`;
+  // XmR-style header
+  let html = `<h3>Summary (${chartName})</h3>`;
+
+  if (Number.isFinite(totalPoints)) {
+    html += `<p>Total number of points: <strong>${totalPoints}</strong>. `;
+    html += `The chart is divided into <strong>${segments.length}</strong> period${segments.length !== 1 ? "s" : ""} `;
+    html += `(based on the baseline and any splits).</p>`;
+  } else {
+    html += `<p>The chart is divided into <strong>${segments.length}</strong> period${segments.length !== 1 ? "s" : ""} `;
+    html += `(based on the baseline and any splits).</p>`;
   }
 
-  if (a.firstOutOfControl) {
-    const ex = a.firstOutOfControl;
-    const exText = ex.type === "aboveUCL"
-      ? "above the upper limit"
-      : "below the lower limit";
-    html += `<li><strong>Example to check:</strong> ${ex.label} is ${exText}.</li>`;
-  }
+  // Rare-event note (keep it plain-English + accurate)
+  html += `<p><strong>Note:</strong> Rare-event charts are often skewed, so the control limits may not look symmetrical like an XmR chart.</p>`;
 
-  html += `<li><strong>Interpreting “better”:</strong> If the event is something you want to avoid, longer gaps are usually better. If it’s something you want more often, shorter gaps are better.</li>`;
+  segments.forEach((a, idx) => {
+    html += `<div class="pdf-avoid-break">`;
+    html += segments.length > 1 ? `<h4>Period ${idx + 1}</h4>` : `<h4>Single period</h4>`;
+    html += `<ul>`;
 
-  html += a.isStable
-    ? `<li><strong>What to do next:</strong> If you need improvement, focus on changing the system rather than reacting to individual points.</li>`
-    : `<li><strong>What to do next:</strong> Look for a real-world explanation (process change, staffing, detection/definition changes). If it was planned, consider a new baseline after it settles.</li>`;
+    // Coverage
+    if (a.startIndex != null && a.endIndex != null && a.labelStart && a.labelEnd) {
+      const n = (a.endIndex - a.startIndex + 1);
+      html += `<li><strong>Coverage:</strong> <strong>points ${a.startIndex + 1}–${a.endIndex + 1}</strong> (${escapeHtml(a.labelStart)} to ${escapeHtml(a.labelEnd)}) – ${n} points.</li>`;
+    } else if (a.nPoints != null) {
+      html += `<li><strong>Coverage:</strong> ${a.nPoints} points.</li>`;
+    }
 
-  html += a.chartType === "t"
-    ? `<li><strong>Data reminder:</strong> This chart uses the time between events (e.g., days between incidents).</li>`
-    : `<li><strong>Data reminder:</strong> This chart uses the number of opportunities between events (values should be 1 or more).</li>`;
+    // Baseline
+    if (a.baselineCountUsed != null) {
+      html += `<li><strong>Baseline for this period:</strong> first ${a.baselineCountUsed} points used to calculate centre line and limits.</li>`;
+    }
 
-  html += `</ul>`;
+    // Stats: centre line + limits
+    if (a.stats && Number.isFinite(a.stats.cl)) {
+      if (chartType === "t") {
+        html += `<li><strong>Centre line (average gap):</strong> ${fmt(a.stats.cl)}; <strong>upper limit:</strong> UCL = ${fmt(a.stats.ucl)}.</li>`;
+      } else {
+        html += `<li><strong>Centre line (average opportunities):</strong> ${fmt(a.stats.cl)}; <strong>control limits:</strong> LCL = ${fmt(a.stats.lcl)}, UCL = ${fmt(a.stats.ucl)}.</li>`;
+      }
+    } else {
+      // Fallback if stats missing
+      html += `<li><strong>Centre line and limits:</strong> (not available).</li>`;
+    }
+
+    // Signals
+    if (!a.isStable && Array.isArray(a.signals) && a.signals.length) {
+      html += `<li><strong>Signals:</strong> ${a.signals.join("; ")}.</li>`;
+    }
+
+    // Interpretation (XmR-style)
+    const interpretation = a.isStable
+      ? "No clear special-cause signals were detected in this period. The pattern is consistent with routine/common variation."
+      : "Special-cause signals were detected in this period (pattern inconsistent with routine variation).";
+
+    html += `<li><strong>Interpretation:</strong> ${interpretation}</li>`;
+
+    // “Better” guidance (rare charts often need this)
+    html += `<li><strong>Interpreting “better”:</strong> If the event is something you want to avoid, longer gaps (or more opportunities between events) are usually better. If it’s something you want more often, shorter gaps may be better.</li>`;
+
+    // “What next” guidance (brief, not bossy)
+    html += a.isStable
+      ? `<li><strong>What to do next:</strong> If performance isn’t good enough, focus on improving the system rather than reacting to individual points.</li>`
+      : `<li><strong>What to do next:</strong> Look for a real-world explanation (process, staffing, demand, detection/definition changes). If it was planned, consider a new baseline after things settle.</li>`;
+
+    // Data reminder
+    html += (chartType === "t")
+      ? `<li><strong>Data reminder:</strong> This chart uses the time between events (e.g., days between incidents).</li>`
+      : `<li><strong>Data reminder:</strong> This chart uses opportunities between events (values should be 1 or more).</li>`;
+
+    html += `</ul>`;
+    html += `</div>`;
+  });
+
   summaryDiv.innerHTML = html;
 }
 
