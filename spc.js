@@ -26,6 +26,15 @@ const columnSelectors   = document.getElementById("columnSelectors");
 const dateSelect        = document.getElementById("dateColumn");
 const valueSelect       = document.getElementById("valueColumn");
 
+// Settings import/export buttons (Section 1: Data)
+const exportSettingsBtn = document.getElementById("exportSettingsBtn");
+const importSettingsBtn = document.getElementById("importSettingsBtn");
+const importSettingsFileInput = document.getElementById("importSettingsFileInput");
+
+// If settings are imported before data is loaded, we store them here and apply after loadRows()
+let pendingImportedSettings = null;
+
+
 
 const IMPLEMENTED_CHARTS = new Set(["run", "xmr", "c", "p", "u", "xbars", "t", "g"]);
 
@@ -209,6 +218,239 @@ const dataEditorHasHeaders = document.getElementById("dataEditorHasHeaders");
 const dataEditorDetectHeadersButton = document.getElementById("dataEditorDetectHeadersButton");
 const dataEditorHeaderStatus = document.getElementById("dataEditorHeaderStatus");
 
+
+
+/* ============================================================
+   SETTINGS EXPORT/IMPORT (settings only — not data)
+   Saves chart configuration so users can reuse it later.
+   ============================================================ */
+
+function downloadTextFile(filename, text) {
+  const blob = new Blob([text], { type: "application/json;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function getCheckedRadioValue(name) {
+  const el = document.querySelector(`input[name="${name}"]:checked`);
+  return el ? el.value : "";
+}
+
+function setCheckedRadioValue(name, value) {
+  if (!value) return;
+  const el = document.querySelector(`input[name="${name}"][value="${value}"]`);
+  if (el) el.checked = true;
+}
+
+function collectToolSettings() {
+  // Core chart choices
+  const chartType = (typeof getSelectedChartType_NoSideEffects === "function")
+    ? getSelectedChartType_NoSideEffects()
+    : (typeof getSelectedChartType === "function" ? getSelectedChartType() : "run");
+
+  const axisType = getCheckedRadioValue("axisType");
+
+  // Inputs (safe reads)
+  const baselinePoints = baselineInput?.value ?? "";
+  const targetValue = targetInput?.value ?? "";
+  const targetDirection = targetDirectionSelect?.value ?? "";
+  const title = chartTitleInput?.value ?? "";
+  const xLabel = xAxisLabelInput?.value ?? "";
+  const yLabel = yAxisLabelInput?.value ?? "";
+
+  const shiftRule = shiftRulePointsInput?.value ?? "";
+  const trendRule = trendRulePointsInput?.value ?? "";
+
+  const flagSpecial = flagSpecialCauseOnChartCheckbox?.checked ?? true;
+  const clampLcl = clampLclAtZeroCheckbox?.checked ?? false;
+
+  // Column selections
+  const selectedColumns = {
+    x: dateSelect?.value ?? "",
+    y: valueSelect?.value ?? "",
+    third: thirdSelect?.value ?? ""
+  };
+
+  return {
+    tool: "Simple SPC Web Tool",
+    settingsVersion: 1,
+    savedAt: new Date().toISOString(),
+
+    chartType,
+    axisType,
+
+    selectedColumns,
+
+    baselinePoints,
+    target: {
+      value: targetValue,
+      direction: targetDirection,
+      enabled: (typeof targetEnabled !== "undefined") ? !!targetEnabled : true
+    },
+
+    labels: { title, xLabel, yLabel },
+
+    rules: {
+      shiftRulePoints: shiftRule,
+      trendRulePoints: trendRule,
+      flagSpecialCauseOnChart: flagSpecial,
+      clampLclAtZero: clampLcl
+    },
+
+    // Keep user work
+    splits: Array.isArray(splits) ? splits.slice() : [],
+    annotations: Array.isArray(annotations) ? annotations.slice() : []
+  };
+}
+
+function applyToolSettings(settings, { silent = true } = {}) {
+  if (!settings || typeof settings !== "object") return;
+
+  // Chart type + axis type
+  if (settings.chartType) setCheckedRadioValue("chartType", settings.chartType);
+  if (settings.axisType) setCheckedRadioValue("axisType", settings.axisType);
+
+  // Update UI labels/third-column visibility to match chart type
+  if (typeof updateUIForChartType === "function" && settings.chartType) {
+    updateUIForChartType(settings.chartType);
+  }
+
+  // Rules
+  if (shiftRulePointsInput && settings.rules?.shiftRulePoints !== undefined) shiftRulePointsInput.value = settings.rules.shiftRulePoints;
+  if (trendRulePointsInput && settings.rules?.trendRulePoints !== undefined) trendRulePointsInput.value = settings.rules.trendRulePoints;
+
+  if (flagSpecialCauseOnChartCheckbox && settings.rules?.flagSpecialCauseOnChart !== undefined) {
+    flagSpecialCauseOnChartCheckbox.checked = !!settings.rules.flagSpecialCauseOnChart;
+  }
+  if (clampLclAtZeroCheckbox && settings.rules?.clampLclAtZero !== undefined) {
+    clampLclAtZeroCheckbox.checked = !!settings.rules.clampLclAtZero;
+  }
+
+  // Baseline + target
+  if (baselineInput && settings.baselinePoints !== undefined) baselineInput.value = settings.baselinePoints;
+
+  if (targetInput && settings.target?.value !== undefined) targetInput.value = settings.target.value;
+  if (targetDirectionSelect && settings.target?.direction) targetDirectionSelect.value = settings.target.direction;
+
+  if (typeof targetEnabled !== "undefined" && settings.target?.enabled !== undefined) {
+    targetEnabled = !!settings.target.enabled;
+    if (typeof updateTargetToggleBtn === "function") updateTargetToggleBtn();
+    if (typeof updateTargetToggleVisibility === "function") updateTargetToggleVisibility();
+  }
+
+  // Titles/labels
+  if (chartTitleInput && settings.labels?.title !== undefined) chartTitleInput.value = settings.labels.title;
+  if (xAxisLabelInput && settings.labels?.xLabel !== undefined) xAxisLabelInput.value = settings.labels.xLabel;
+  if (yAxisLabelInput && settings.labels?.yLabel !== undefined) yAxisLabelInput.value = settings.labels.yLabel;
+
+  // Splits + annotations
+  if (Array.isArray(settings.splits)) splits = settings.splits.slice();
+  if (Array.isArray(settings.annotations)) annotations = settings.annotations.slice();
+
+  // Columns: only apply if those columns exist in dropdown options
+  // (this avoids breaking when users import settings before loading data)
+  const missing = [];
+
+  function setSelectIfOptionExists(selectEl, value, labelForMissing) {
+    if (!selectEl || !value) return;
+    const exists = Array.from(selectEl.options).some(o => o.value === value && !o.disabled);
+    if (exists) {
+      selectEl.value = value;
+    } else {
+      missing.push(labelForMissing || value);
+    }
+  }
+
+  const cols = settings.selectedColumns || {};
+  setSelectIfOptionExists(dateSelect, cols.x, `X-axis column "${cols.x}"`);
+  setSelectIfOptionExists(valueSelect, cols.y, `Value column "${cols.y}"`);
+  setSelectIfOptionExists(thirdSelect, cols.third, `Third column "${cols.third}"`);
+
+  // Re-run column intelligence for the selected chart type (keeps dropdowns consistent)
+  const chartTypeNow = (typeof getSelectedChartType_NoSideEffects === "function")
+    ? getSelectedChartType_NoSideEffects()
+    : (typeof getSelectedChartType === "function" ? getSelectedChartType() : "run");
+
+  if (rawRows && rawRows.length && typeof applyColumnIntelligence === "function") {
+    applyColumnIntelligence(chartTypeNow);
+  }
+
+  // If columns were missing, tell the user gently (non-blocking)
+  if (missing.length && typeof showError === "function" && !silent) {
+    showError(
+      "Imported settings applied, but some saved columns were not found in your current data. " +
+      "Please reselect: " + missing.join(", ")
+    );
+  }
+
+  // Redraw chart (avoid popups by treating as auto regenerate)
+  if (rawRows && rawRows.length && generateButton) {
+    if (typeof lastGenerateWasManual !== "undefined") lastGenerateWasManual = false;
+    generateButton.click();
+  }
+}
+
+function exportSettingsNow() {
+  const settings = collectToolSettings();
+  const safeDate = new Date().toISOString().slice(0, 10);
+  const filename = `spc-settings-${safeDate}.json`;
+  downloadTextFile(filename, JSON.stringify(settings, null, 2));
+}
+
+function importSettingsFromFile(file) {
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const text = String(reader.result || "");
+      const parsed = JSON.parse(text);
+
+      // Basic sanity check
+      if (!parsed || typeof parsed !== "object" || parsed.settingsVersion !== 1) {
+        alert("That file doesn’t look like an SPC settings file (or it’s from an unsupported version).");
+        return;
+      }
+
+      // If data is already loaded, apply immediately.
+      // If not, store it and apply after the next loadRows().
+      if (rawRows && rawRows.length) {
+        applyToolSettings(parsed, { silent: false });
+      } else {
+        pendingImportedSettings = parsed;
+        alert("Settings loaded. Now upload your CSV data and the tool will apply these settings automatically.");
+      }
+    } catch (e) {
+      alert("Could not read that settings file. Please check it is a valid .json settings export from this tool.");
+    }
+  };
+  reader.readAsText(file);
+}
+
+// Wire up the buttons (safe no-op if buttons aren't present)
+if (exportSettingsBtn) {
+  exportSettingsBtn.addEventListener("click", () => {
+    exportSettingsNow();
+  });
+}
+
+if (importSettingsBtn && importSettingsFileInput) {
+  importSettingsBtn.addEventListener("click", () => {
+    importSettingsFileInput.value = "";
+    importSettingsFileInput.click();
+  });
+
+  importSettingsFileInput.addEventListener("change", () => {
+    const file = importSettingsFileInput.files && importSettingsFileInput.files[0];
+    if (file) importSettingsFromFile(file);
+  });
+}
 
 
 function guessColumns(rows) {
@@ -720,7 +962,15 @@ function loadRows(rows) {
   const hint = document.getElementById("noDataYetHint");
   if (hint) hint.style.display = "none";
 
+    // If user imported settings before loading data, apply them now
+  if (pendingImportedSettings) {
+    const toApply = pendingImportedSettings;
+    pendingImportedSettings = null;
+    applyToolSettings(toApply, { silent: false });
+  }
+
   return true;
+
 }
 
 

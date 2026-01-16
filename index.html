@@ -904,8 +904,26 @@ body.pdf-exporting #capability {
         Expected columns: a date/time column (e.g. <code>Date</code>) and a numeric column (e.g. <code>Value</code>).
       </div>
       <button id="openDataEditorButton" type="button" style="margin-top:0.5rem;">
-        Open data editor (paste/type data)
-      </button>
+  Open data editor (paste/type data)
+</button>
+
+<!-- Settings import/export (settings only — does NOT include data) -->
+<div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.4rem;">
+  <button id="exportSettingsBtn" type="button" class="btn-small-secondary" title="Save your chart choices (not your data) so you can reuse them later">
+    Export settings
+  </button>
+
+  <button id="importSettingsBtn" type="button" class="btn-small-secondary" title="Load previously saved chart settings (your CSV data is still loaded separately)">
+    Import settings
+  </button>
+
+  <input id="importSettingsFileInput" type="file" accept=".json,application/json" style="display:none;" />
+</div>
+
+<div class="hint small-hint" style="margin-top:0.25rem;">
+  <strong>Tip:</strong> Settings save your chart choices (columns, baseline, rules, labels, target, splits/annotations) — not your data.
+</div>
+
     </div>
 
   </div>
