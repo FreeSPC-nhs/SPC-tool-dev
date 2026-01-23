@@ -210,6 +210,10 @@ const spcHelperOutput   = document.getElementById("spcHelperOutput");
 
 const shiftRulePointsInput = document.getElementById("shiftRulePoints");
 const trendRulePointsInput = document.getElementById("trendRulePoints");
+const ruleExplainerBtn = document.getElementById("ruleExplainerBtn");
+const ruleTwoOfThreeOuterThirdCheckbox = document.getElementById("ruleTwoOfThreeOuterThird");
+const ruleFourOfFiveOneSigmaCheckbox = document.getElementById("ruleFourOfFiveOneSigma");
+
 const flagSpecialCauseOnChartCheckbox = document.getElementById("flagSpecialCauseOnChart");
 const lclClampRow = document.getElementById("lclClampRow");
 const clampLclAtZeroCheckbox = document.getElementById("clampLclAtZero");
@@ -301,9 +305,12 @@ function collectToolSettings() {
     rules: {
       shiftRulePoints: shiftRule,
       trendRulePoints: trendRule,
+      ruleTwoOfThreeOuterThird: ruleTwoOfThreeOuterThirdCheckbox?.checked ?? false,
+      ruleFourOfFiveOneSigma: ruleFourOfFiveOneSigmaCheckbox?.checked ?? false,
       flagSpecialCauseOnChart: flagSpecial,
       clampLclAtZero: clampLcl
     },
+
 
     // Keep user work
     splits: Array.isArray(splits) ? splits.slice() : [],
@@ -330,6 +337,13 @@ function applyToolSettings(settings, { silent = true } = {}) {
   if (flagSpecialCauseOnChartCheckbox && settings.rules?.flagSpecialCauseOnChart !== undefined) {
     flagSpecialCauseOnChartCheckbox.checked = !!settings.rules.flagSpecialCauseOnChart;
   }
+  if (ruleTwoOfThreeOuterThirdCheckbox && settings.rules?.ruleTwoOfThreeOuterThird !== undefined) {
+    ruleTwoOfThreeOuterThirdCheckbox.checked = !!settings.rules.ruleTwoOfThreeOuterThird;
+  }
+  if (ruleFourOfFiveOneSigmaCheckbox && settings.rules?.ruleFourOfFiveOneSigma !== undefined) {
+    ruleFourOfFiveOneSigmaCheckbox.checked = !!settings.rules.ruleFourOfFiveOneSigma;
+  }
+
   if (clampLclAtZeroCheckbox && settings.rules?.clampLclAtZero !== undefined) {
     clampLclAtZeroCheckbox.checked = !!settings.rules.clampLclAtZero;
   }
@@ -1037,6 +1051,13 @@ if (clampLclAtZeroCheckbox) {
   clampLclAtZeroCheckbox.addEventListener("change", () => {
     if (rawRows && rawRows.length) generateButton.click();
   });
+}
+
+if (ruleTwoOfThreeOuterThirdCheckbox) {
+  ruleTwoOfThreeOuterThirdCheckbox.addEventListener("change", debouncedRegen);
+}
+if (ruleFourOfFiveOneSigmaCheckbox) {
+  ruleFourOfFiveOneSigmaCheckbox.addEventListener("change", debouncedRegen);
 }
 
 
@@ -2247,9 +2268,12 @@ function getRuleSettings() {
 
   return {
     shiftLength: Number.isFinite(shift) && shift >= 3 ? shift : 8,
-    trendLength: Number.isFinite(trend) && trend >= 3 ? trend : 6
+    trendLength: Number.isFinite(trend) && trend >= 3 ? trend : 6,
+    ruleTwoOfThreeOuterThird: ruleTwoOfThreeOuterThirdCheckbox ? !!ruleTwoOfThreeOuterThirdCheckbox.checked : false,
+    ruleFourOfFiveOneSigma: ruleFourOfFiveOneSigmaCheckbox ? !!ruleFourOfFiveOneSigmaCheckbox.checked : false
   };
 }
+
 
 function shouldFlagSpecialCauseOnChart() {
   return flagSpecialCauseOnChartCheckbox ? !!flagSpecialCauseOnChartCheckbox.checked : true;
@@ -3729,7 +3753,9 @@ function getRuleSettingsSafe() {
   const trend = parseInt(trendRulePointsInput?.value || "6", 10);
   return {
     shiftLength: isFinite(shift) && shift >= 4 ? shift : 8,
-    trendLength: isFinite(trend) && trend >= 4 ? trend : 6
+    trendLength: isFinite(trend) && trend >= 4 ? trend : 6,
+    ruleTwoOfThreeOuterThird: ruleTwoOfThreeOuterThirdCheckbox ? !!ruleTwoOfThreeOuterThirdCheckbox.checked : false,
+          ruleFourOfFiveOneSigma: ruleFourOfFiveOneSigmaCheckbox ? !!ruleFourOfFiveOneSigmaCheckbox.checked : false
   };
 }
 
@@ -7781,6 +7807,24 @@ function openChartSetupForCurrentType() {
 }
 
 
+function toggleRuleExplainerModal(forceOpen) {
+  const modal = document.getElementById("ruleExplainerModal");
+  if (!modal) return;
+
+  const isOpen = modal.classList.contains("visible");
+  const shouldOpen = typeof forceOpen === "boolean" ? forceOpen : !isOpen;
+
+  modal.classList.toggle("visible", shouldOpen);
+  modal.setAttribute("aria-hidden", shouldOpen ? "false" : "true");
+  document.body.classList.toggle("modal-open", shouldOpen);
+
+  if (shouldOpen) {
+    const closeBtn = modal.querySelector(".modal-close");
+    if (closeBtn) closeBtn.focus();
+  }
+}
+
+
 // -----------------------------
 // Chart chooser wizard (Help me choose)
 // -----------------------------
@@ -8048,6 +8092,11 @@ if (chartSetupBtn) {
   }
 })();
 
+if (ruleExplainerBtn) {
+  ruleExplainerBtn.addEventListener("click", () => {
+    toggleRuleExplainerModal(true);
+  });
+}
 
 
 // ---- Existing split dropdown button still works ----
