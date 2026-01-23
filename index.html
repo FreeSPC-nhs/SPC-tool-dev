@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Simple SPC Tool (Run & XmR)</title>
+  <title>Simple SPC Tool</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <!-- Chart.js CDN -->
@@ -1574,6 +1574,37 @@ body.pdf-exporting #capability {
 
       <div style="display:flex; gap:0.5rem; justify-content:flex-end; margin-top:1rem;">
         <button type="button" onclick="toggleChartWizard(false)">Close</button>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- CHART SETUP / INSTRUCTIONS MODAL -->
+<div id="chartSetupModal" class="modal" aria-hidden="true">
+  <div class="modal-backdrop" aria-hidden="true" onclick="toggleChartSetupModal(false)"></div>
+
+  <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="chartSetupTitle">
+    <button type="button" class="modal-close" aria-label="Close chart setup" onclick="toggleChartSetupModal(false)">×</button>
+
+    <section class="panel" style="display:block; margin:0;">
+      <h2 id="chartSetupTitle">Chart setup</h2>
+      <p class="sub" id="chartSetupSubtitle">
+        How to structure your data for this chart.
+      </p>
+
+      <div id="chartSetupBody">
+        <!-- Filled by JS -->
+      </div>
+
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-top:1rem;">
+        <label class="hint small-hint" style="display:flex; align-items:center; gap:0.4rem; margin:0;">
+          <input type="checkbox" id="chartSetupDontShow">
+          Don’t automatically show this again
+        </label>
+
+        <div style="display:flex; gap:0.5rem;">
+          <button type="button" onclick="toggleChartSetupModal(false)">Close</button>
+        </div>
       </div>
     </section>
   </div>

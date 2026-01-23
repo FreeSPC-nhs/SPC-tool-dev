@@ -2381,10 +2381,13 @@ function updateUIForChartType(chartType) {
     },
 
     t: {
-      yLabel: "Event date / time",
-      thirdHint: "T chart plots time between rare events."
-      // no third column required yet
-    },
+          // Labels depend on T chart input mode (event dates vs gaps)
+         yLabel: (tChartInputMode === "gaps") ? "Time between events (e.g. days)" : "Value column not used (T chart uses dates)",
+         thirdHint: (tChartInputMode === "gaps")
+         ? "T chart plots time between rare events (using your numeric gaps)."
+          : "T chart plots time between rare events (calculated from event dates)."
+         },
+
 
     g: {
       yLabel: "Opportunities between events",
@@ -2421,7 +2424,7 @@ function updateUIForChartType(chartType) {
     applyColumnIntelligence(chartType);
   }
 
-  // ---- Optional UX polish: avoid third == y by default ----
+    // ---- Optional UX polish: avoid third == y by default ----
   if (cfg.needsThird && thirdSelect && valueSelect) {
     if (thirdSelect.value && valueSelect.value && thirdSelect.value === valueSelect.value) {
       const alt = Array.from(thirdSelect.options)
@@ -2430,7 +2433,25 @@ function updateUIForChartType(chartType) {
       if (alt) thirdSelect.value = alt;
     }
   }
+
+  // ---- Reset Value column enabled state for non-T charts ----
+  if (valueSelect) {
+    valueSelect.disabled = false;
+    valueSelect.title = "";
+  }
+
+  // ---- T chart UX: enable/disable Value column depending on input mode ----
+  if (chartType === "t" && valueSelect) {
+    const shouldDisableValue = (tChartInputMode === "eventDates");
+    valueSelect.disabled = shouldDisableValue;
+
+    // Soft hint if disabled
+    if (shouldDisableValue) {
+      valueSelect.title = "Not used for T chart when using event dates.";
+    }
+  }
 }
+
 
 
 
@@ -4804,37 +4825,85 @@ generateButton.addEventListener("click", () => {
     const valueCol = valueSelect.value;
     const axisType = getAxisType();
 
-    // --- 1) Build points depending on axis type ---
+        const chartType = getSelectedChartType_NoSideEffects();
+
+    // --- 1) Build points depending on axis type and chart type ---
     let parsedPoints;
 
-    if (axisType === "date") {
-      parsedPoints = rawRows
-        .map((row,idx) => {
-          const d = parseDateValue(row[dateCol]);
-          const y = toNumericValue(row[valueCol]);
-          if (!d || !isFinite(d.getTime()) || !isFinite(y)) return null;
-          return { x: d, y, _rowIndex: idx  };
-        })
-        .filter(Boolean);
+    // Special handling: T chart
+    if (chartType === "t") {
+      // If using event dates, we require date axis and we IGNORE the value column.
+      if (tChartInputMode === "eventDates") {
+        if (axisType !== "date") {
+          showError("T chart (event dates mode) needs Date / time axis.");
+          return;
+        }
+
+        parsedPoints = rawRows
+          .map((row, idx) => {
+            const d = parseDateValue(row[dateCol]);
+            if (!d || !isFinite(d.getTime())) return null;
+
+            // y is not used for event-date mode; keep a harmless constant
+            const labelRaw = row[dateCol];
+            const label =
+              labelRaw !== undefined && labelRaw !== null && String(labelRaw).trim() !== ""
+                ? String(labelRaw)
+                : `Event ${idx + 1}`;
+
+            return { x: d, y: 1, label, _rowIndex: idx };
+          })
+          .filter(Boolean);
+      } else {
+        // gaps mode: use numeric gaps directly from the value column (sequence axis is fine)
+        parsedPoints = rawRows
+          .map((row, idx) => {
+            const gap = toNumericValue(row[valueCol]);
+            if (!isFinite(gap)) return null;
+
+            const rawLabel = row[dateCol];
+            const label =
+              rawLabel !== undefined && rawLabel !== null && String(rawLabel).trim() !== ""
+                ? String(rawLabel)
+                : `Point ${idx + 1}`;
+
+            // Keep x as sequence index; draw step will treat y as the gap value
+            return { x: idx, y: gap, label, _rowIndex: idx };
+          })
+          .filter(Boolean);
+      }
     } else {
-      // sequence/category axis
-      parsedPoints = rawRows
-        .map((row, idx) => {
-          const y = toNumericValue(row[valueCol]);
-          if (!isFinite(y)) return null;
+      // Normal behaviour for non-T charts
+      if (axisType === "date") {
+        parsedPoints = rawRows
+          .map((row,idx) => {
+            const d = parseDateValue(row[dateCol]);
+            const y = toNumericValue(row[valueCol]);
+            if (!d || !isFinite(d.getTime()) || !isFinite(y)) return null;
+            return { x: d, y, _rowIndex: idx  };
+          })
+          .filter(Boolean);
+      } else {
+        // sequence/category axis
+        parsedPoints = rawRows
+          .map((row, idx) => {
+            const y = toNumericValue(row[valueCol]);
+            if (!isFinite(y)) return null;
 
-          const rawLabel = row[dateCol];
-          const label =
-            rawLabel !== undefined &&
-            rawLabel !== null &&
-            String(rawLabel).trim() !== ""
-              ? String(rawLabel)
-              : `Point ${idx + 1}`;
+            const rawLabel = row[dateCol];
+            const label =
+              rawLabel !== undefined &&
+              rawLabel !== null &&
+              String(rawLabel).trim() !== ""
+                ? String(rawLabel)
+                : `Point ${idx + 1}`;
 
-          return { x: idx, y, label,  _rowIndex: idx };
-        })
-        .filter(Boolean);
+            return { x: idx, y, label,  _rowIndex: idx };
+          })
+          .filter(Boolean);
+      }
     }
+
 
     // You can lower this if you want charts from fewer points
     if (parsedPoints.length < 3) {
@@ -4859,8 +4928,6 @@ generateButton.addEventListener("click", () => {
       const n = parseInt(baselineInput.value, 10);
       if (!isNaN(n) && n >= 2) baselineCount = Math.min(n, points.length);
     }
-
-    const chartType = getSelectedChartType_NoSideEffects();
 
 // Guard: chart not implemented yet
 if (!IMPLEMENTED_CHARTS.has(chartType)) {
@@ -4971,12 +5038,56 @@ if (chartType === "run") {
   drawXbarSChart(points, baselineCount, labels);
 
 } else if (chartType === "t") {
-  // T chart needs date axis (uses event dates)
-  if (document.querySelector("input[name='axisType']:checked")?.value !== "date") {
-    showError("T chart needs Date / time axis (it uses event dates).");
-    return;
+  if (tChartInputMode === "eventDates") {
+    // T chart needs date axis (uses event dates)
+    if (document.querySelector("input[name='axisType']:checked")?.value !== "date") {
+      showError("T chart needs Date / time axis (it uses event dates).");
+      return;
+    }
+    drawTChart(points, baselineCount, labels);
+  } else {
+    // Gaps mode: we already have the gaps as point.y values
+    // Reuse the same T chart stats logic by converting gaps into a "fake points" sequence is messy,
+    // so we draw a simple chart using existing chart builders:
+    // We'll compute the exponential limits on the gap series directly here.
+
+    const gaps = points.map(p => p.y);
+    if (gaps.length < 3) {
+      showError("T chart (gaps mode) needs at least 3 valid gap values.");
+      return;
+    }
+
+    // baseline for gaps
+    const base = (baselineCount && baselineCount >= 2) ? gaps.slice(0, baselineCount) : gaps.slice();
+    const cl = base.reduce((a,b)=>a+b,0) / base.length;
+
+    // “3-sigma equivalent” exponential percentiles, matching drawTChart
+    const qLow = 0.00135;
+    const qHigh = 0.99865;
+    const ucl = -cl * Math.log(1 - qHigh);
+    const lcl = 0; // gaps cannot be negative
+
+    // Build arrays for limit lines
+    const clArr  = gaps.map(()=>cl);
+    const uclArr = gaps.map(()=>ucl);
+    const lclArr = gaps.map(()=>lcl);
+
+    // Labels are already set up earlier
+    drawChartWithLimits(
+      labels,
+      gaps,
+      clArr,
+      uclArr,
+      lclArr,
+      {
+        title: chartTitleInput?.value || "T chart (gaps)",
+        yLabel: yAxisInput?.value || "Time between events",
+        xLabel: xAxisInput?.value || "Sequence",
+        chartType: "t"
+      }
+    );
   }
-  drawTChart(points, baselineCount, labels);
+
 
 } else if (chartType === "g") {
   // drawGChart expects a numeric array of values (not {x,y} point objects)
@@ -7526,6 +7637,141 @@ function toggleChartWizard(forceOpen) {
 }
 
 
+/* ============================================================
+   CHART SETUP MODAL (shared instructions + per-chart options)
+   ============================================================ */
+
+let tChartInputMode = (() => {
+  try {
+    return localStorage.getItem("spc_tChartInputMode") || "eventDates";
+  } catch {
+    return "eventDates";
+  }
+})();
+
+function toggleChartSetupModal(forceOpen) {
+  const modal = document.getElementById("chartSetupModal");
+  if (!modal) return;
+
+  const isOpen = modal.classList.contains("visible");
+  const shouldOpen = typeof forceOpen === "boolean" ? forceOpen : !isOpen;
+
+  modal.classList.toggle("visible", shouldOpen);
+  modal.setAttribute("aria-hidden", shouldOpen ? "false" : "true");
+  document.body.classList.toggle("modal-open", shouldOpen);
+
+  if (shouldOpen) {
+    const closeBtn = modal.querySelector(".modal-close");
+    if (closeBtn) closeBtn.focus();
+  }
+}
+
+function shouldAutoShowChartSetupModal() {
+  try {
+    return localStorage.getItem("spc_hideChartSetupModal") !== "true";
+  } catch {
+    return true;
+  }
+}
+
+function setAutoShowChartSetupModal(shouldShow) {
+  try {
+    localStorage.setItem("spc_hideChartSetupModal", shouldShow ? "false" : "true");
+  } catch {}
+}
+
+function renderChartSetupModal(chartType) {
+  const body = document.getElementById("chartSetupBody");
+  const subtitle = document.getElementById("chartSetupSubtitle");
+  const dontShow = document.getElementById("chartSetupDontShow");
+  if (!body || !subtitle) return;
+
+  // wire the "don't show" checkbox each render
+  if (dontShow) {
+    dontShow.checked = !shouldAutoShowChartSetupModal();
+    dontShow.onchange = () => setAutoShowChartSetupModal(!dontShow.checked);
+  }
+
+  // default content
+  subtitle.textContent = "How to structure your data for this chart.";
+
+  if (chartType === "t") {
+    subtitle.textContent = "T chart: time between rare events.";
+
+    const checkedDates = tChartInputMode === "eventDates" ? "checked" : "";
+    const checkedGaps  = tChartInputMode === "gaps" ? "checked" : "";
+
+    body.innerHTML = `
+      <div class="hint">
+        A <strong>T chart</strong> is for rare events. It plots the <strong>time between events</strong>.
+      </div>
+
+      <p style="margin-top:0.75rem;"><strong>How is your data set up?</strong></p>
+
+      <label style="display:block; margin:0.25rem 0;">
+        <input type="radio" name="tChartInputMode" value="eventDates" ${checkedDates}>
+        <strong>I have event dates</strong> (one row per event)
+      </label>
+      <div class="hint small-hint" style="margin-top:0.15rem; margin-bottom:0.5rem;">
+        Put the event date/time in <em>Date / X-axis column</em>. The <em>Value / Y-axis column</em> is not used.
+        This is the recommended setup.
+      </div>
+
+      <label style="display:block; margin:0.25rem 0;">
+        <input type="radio" name="tChartInputMode" value="gaps" ${checkedGaps}>
+        <strong>I already have the gaps</strong> (time between events as numbers)
+      </label>
+      <div class="hint small-hint" style="margin-top:0.15rem;">
+        Put the gap values (e.g. days between events) in <em>Value / Y-axis column</em>.
+        The tool will plot those directly.
+      </div>
+
+      <hr style="margin:0.9rem 0;">
+
+      <div class="hint">
+        <strong>Tip:</strong> If your date format isn't being recognised, you can switch the T chart to
+        “I already have the gaps” and enter numeric gaps instead.
+      </div>
+    `;
+
+    // wire radio changes
+    body.querySelectorAll("input[name='tChartInputMode']").forEach(r => {
+      r.addEventListener("change", () => {
+        tChartInputMode = r.value;
+        try { localStorage.setItem("spc_tChartInputMode", tChartInputMode); } catch {}
+
+        // Update labels/enable/disable fields immediately
+        if (typeof updateUIForChartType === "function") {
+          updateUIForChartType("t");
+        }
+
+        // If a chart already exists, regenerate so the new mode applies
+        if (rawRows && rawRows.length && generateButton) {
+          generateButton.click();
+        }
+      });
+    });
+
+    return;
+  }
+
+  // fallback for other chart types (we’ll expand these later)
+  body.innerHTML = `
+    <div class="hint">
+      Chart setup guidance for this chart type isn’t written yet.
+      For now, use the column labels shown in “Choose columns”, or click “Help & guidance”.
+    </div>
+  `;
+}
+
+function maybeShowChartSetupModal(chartType) {
+  if (!shouldAutoShowChartSetupModal()) return;
+  renderChartSetupModal(chartType);
+  toggleChartSetupModal(true);
+}
+
+
+
 // -----------------------------
 // Chart chooser wizard (Help me choose)
 // -----------------------------
@@ -8312,6 +8558,7 @@ function wireAutoRedrawControls() {
     if (typeof updateUIForChartType === "function") {
       updateUIForChartType(radio.value);
     }
+    maybeShowChartSetupModal(radio.value);
 
     if (typeof updateMrToggleVisibility === "function") {
       updateMrToggleVisibility();
