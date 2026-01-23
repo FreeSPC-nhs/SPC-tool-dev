@@ -150,6 +150,7 @@ const thirdSelect = document.getElementById("thirdColumn");
 
 // Chart chooser / extra columns
 const helpChooseChartBtn   = document.getElementById("helpChooseChartBtn");
+const chartSetupBtn        = document.getElementById("chartSetupBtn");
 const extraColumnsWrap     = document.getElementById("extraColumns");
 const extraColumns_PU      = document.getElementById("extraColumns_PU");
 const extraColumns_XbarS   = document.getElementById("extraColumns_XbarS");
@@ -7770,6 +7771,14 @@ function maybeShowChartSetupModal(chartType) {
   toggleChartSetupModal(true);
 }
 
+function openChartSetupForCurrentType() {
+  const chartType = (typeof getSelectedChartType_NoSideEffects === "function")
+    ? getSelectedChartType_NoSideEffects()
+    : (document.querySelector("input[name='chartType']:checked")?.value || "run");
+
+  renderChartSetupModal(chartType);
+  toggleChartSetupModal(true);
+}
 
 
 // -----------------------------
@@ -8020,6 +8029,12 @@ if (helpChooseChartBtn) {
   helpChooseChartBtn.addEventListener("click", () => {
     toggleChartWizard(true);
     startChartWizard();
+  });
+}
+
+if (chartSetupBtn) {
+  chartSetupBtn.addEventListener("click", () => {
+    openChartSetupForCurrentType();
   });
 }
 
