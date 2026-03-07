@@ -4247,6 +4247,71 @@ function findTrendSignals(values, trendLength) {
   return null;
 }
 
+function zoneThresholdsFromBand(cl, ucl, lcl) {
+  if (!isFinite(cl) || !isFinite(ucl) || !isFinite(lcl)) {
+    return {
+      oneUp: NaN,
+      oneDown: NaN,
+      twoUp: NaN,
+      twoDown: NaN
+    };
+  }
+
+  const oneUp = cl + (ucl - cl) / 3;
+  const twoUp = cl + 2 * (ucl - cl) / 3;
+  const oneDown = cl - (cl - lcl) / 3;
+  const twoDown = cl - 2 * (cl - lcl) / 3;
+
+  return { oneUp, oneDown, twoUp, twoDown };
+}
+
+function detectKofNRule(values, upperThreshArr, lowerThreshArr, windowSize, minCount) {
+  const n = values.length;
+  const flags = new Array(n).fill(false);
+  const hits = [];
+
+  for (let start = 0; start <= n - windowSize; start++) {
+    const end = start + windowSize - 1;
+
+    let aboveIdx = [];
+    for (let i = start; i <= end; i++) {
+      const v = values[i];
+      const thr = upperThreshArr[i];
+      if (isFinite(v) && isFinite(thr) && v > thr) {
+        aboveIdx.push(i);
+      }
+    }
+
+    if (aboveIdx.length >= minCount) {
+      aboveIdx.forEach(i => { flags[i] = true; });
+      hits.push({ start, end, side: "above", indices: aboveIdx.slice() });
+    }
+
+    let belowIdx = [];
+    for (let i = start; i <= end; i++) {
+      const v = values[i];
+      const thr = lowerThreshArr[i];
+      if (isFinite(v) && isFinite(thr) && v < thr) {
+        belowIdx.push(i);
+      }
+    }
+
+    if (belowIdx.length >= minCount) {
+      belowIdx.forEach(i => { flags[i] = true; });
+      hits.push({ start, end, side: "below", indices: belowIdx.slice() });
+    }
+  }
+
+  return { flags, hits };
+}
+
+function detectTwoOfThreeOuterThird(values, twoUpArr, twoDownArr) {
+  return detectKofNRule(values, twoUpArr, twoDownArr, 3, 2);
+}
+
+function detectFourOfFiveOneSigma(values, oneUpArr, oneDownArr) {
+  return detectKofNRule(values, oneUpArr, oneDownArr, 5, 4);
+}
 
 function analyzeLimits({ labels, values, cl, ucl, lcl }) {
   const out = [];
@@ -4320,10 +4385,55 @@ function analyzeAttributeChart({ chartType, labels, values, cl, ucl, lcl }) {
     }
   }
 
+  // 4) Zone rules
+  let zone23Flags = new Array(n).fill(false);
+  let zone45Flags = new Array(n).fill(false);
+
+  if ((rs.allowZone23 || rs.allowZone45) && ucl !== undefined && lcl !== undefined) {
+    const oneUp = new Array(n).fill(NaN);
+    const oneDown = new Array(n).fill(NaN);
+    const twoUp = new Array(n).fill(NaN);
+    const twoDown = new Array(n).fill(NaN);
+
+    for (let i = 0; i < n; i++) {
+      const z = zoneThresholdsFromBand(clArr[i], uclArr[i], lclArr[i]);
+      oneUp[i] = z.oneUp;
+      oneDown[i] = z.oneDown;
+      twoUp[i] = z.twoUp;
+      twoDown[i] = z.twoDown;
+    }
+
+    if (rs.allowZone23) {
+      const res23 = detectTwoOfThreeOuterThird(values, twoUp, twoDown);
+      zone23Flags = res23.flags || zone23Flags;
+
+      if (res23.hits && res23.hits.length) {
+        const h = res23.hits[0];
+        const aLab = labels?.[h.start] ?? `point ${h.start + 1}`;
+        const bLab = labels?.[h.end] ?? `point ${h.end + 1}`;
+        signals.push(`Zone: 2 of 3 points in the outer third (from ${aLab} to ${bLab})`);
+      }
+    }
+
+    if (rs.allowZone45) {
+      const res45 = detectFourOfFiveOneSigma(values, oneUp, oneDown);
+      zone45Flags = res45.flags || zone45Flags;
+
+      if (res45.hits && res45.hits.length) {
+        const h = res45.hits[0];
+        const aLab = labels?.[h.start] ?? `point ${h.start + 1}`;
+        const bLab = labels?.[h.end] ?? `point ${h.end + 1}`;
+        signals.push(`Zone: 4 of 5 points beyond 1-sigma (from ${aLab} to ${bLab})`);
+      }
+    }
+  }
+
   // Flags for chart colouring
   const beyondFlags = new Array(n).fill(false);
   outOfControl.forEach(o => {
-    if (typeof o.i === "number" && o.i >= 0 && o.i < n) beyondFlags[o.i] = true;
+    if (typeof o.i === "number" && o.i >= 0 && o.i < n) {
+      beyondFlags[o.i] = true;
+    }
   });
 
   const shiftFlags = new Array(n).fill(false);
@@ -4342,7 +4452,12 @@ function analyzeAttributeChart({ chartType, labels, values, cl, ucl, lcl }) {
 
   const specialFlags = new Array(n).fill(false);
   for (let i = 0; i < n; i++) {
-    specialFlags[i] = beyondFlags[i] || shiftFlags[i] || trendFlags[i];
+    specialFlags[i] =
+      beyondFlags[i] ||
+      shiftFlags[i] ||
+      trendFlags[i] ||
+      zone23Flags[i] ||
+      zone45Flags[i];
   }
 
   return {
@@ -4362,11 +4477,14 @@ function analyzeAttributeChart({ chartType, labels, values, cl, ucl, lcl }) {
       beyond: beyondFlags,
       shift: shiftFlags,
       trend: trendFlags,
+      zone23: zone23Flags,
+      zone45: zone45Flags,
       special: specialFlags
     },
     firstOutOfControl: outOfControl.length ? outOfControl[0] : null
   };
 }
+
 
 function analyzeRareChart({ chartType, labels, values, cl, ucl, lcl }) {
   // Rare charts use the same engine, but the policy layer decides
