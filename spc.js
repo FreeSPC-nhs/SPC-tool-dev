@@ -211,11 +211,20 @@ const spcHelperOutput   = document.getElementById("spcHelperOutput");
 const shiftRulePointsInput = document.getElementById("shiftRulePoints");
 const trendRulePointsInput = document.getElementById("trendRulePoints");
 const ruleExplainerBtn = document.getElementById("ruleExplainerBtn");
+
+const advancedRulesDetails = document.getElementById("advancedRulesDetails");
+const enableAdvancedTrendCheckbox = document.getElementById("enableAdvancedTrend");
+const advancedTrendRow = document.getElementById("advancedTrendRow");
+
 const ruleTwoOfThreeOuterThirdCheckbox = document.getElementById("ruleTwoOfThreeOuterThird");
 const ruleFourOfFiveOneSigmaCheckbox = document.getElementById("ruleFourOfFiveOneSigma");
+const zoneRulesSection = document.getElementById("zoneRulesSection");
+const advancedContinuousCaution = document.getElementById("advancedContinuousCaution");
+
 const enableRareRunTrendCheckbox = document.getElementById("enableRareRunTrend");
 const rareRulesRow = document.getElementById("rareRulesRow");
 
+const conservativeRulesMessage = document.getElementById("conservativeRulesMessage");
 
 const flagSpecialCauseOnChartCheckbox = document.getElementById("flagSpecialCauseOnChart");
 const lclClampRow = document.getElementById("lclClampRow");
@@ -308,6 +317,8 @@ function collectToolSettings() {
     rules: {
       shiftRulePoints: shiftRule,
       trendRulePoints: trendRule,
+      enableAdvancedTrend: enableAdvancedTrendCheckbox?.checked ?? false,
+      enableRareRunTrend: enableRareRunTrendCheckbox?.checked ?? false,
       ruleTwoOfThreeOuterThird: ruleTwoOfThreeOuterThirdCheckbox?.checked ?? false,
       ruleFourOfFiveOneSigma: ruleFourOfFiveOneSigmaCheckbox?.checked ?? false,
       flagSpecialCauseOnChart: flagSpecial,
@@ -334,15 +345,29 @@ function applyToolSettings(settings, { silent = true } = {}) {
   }
 
   // Rules
-  if (shiftRulePointsInput && settings.rules?.shiftRulePoints !== undefined) shiftRulePointsInput.value = settings.rules.shiftRulePoints;
-  if (trendRulePointsInput && settings.rules?.trendRulePoints !== undefined) trendRulePointsInput.value = settings.rules.trendRulePoints;
+    if (shiftRulePointsInput && settings.rules?.shiftRulePoints !== undefined) {
+    shiftRulePointsInput.value = settings.rules.shiftRulePoints;
+  }
+  if (trendRulePointsInput && settings.rules?.trendRulePoints !== undefined) {
+    trendRulePointsInput.value = settings.rules.trendRulePoints;
+  }
+
+  if (enableAdvancedTrendCheckbox && settings.rules?.enableAdvancedTrend !== undefined) {
+    enableAdvancedTrendCheckbox.checked = !!settings.rules.enableAdvancedTrend;
+  }
+
+  if (enableRareRunTrendCheckbox && settings.rules?.enableRareRunTrend !== undefined) {
+    enableRareRunTrendCheckbox.checked = !!settings.rules.enableRareRunTrend;
+  }
 
   if (flagSpecialCauseOnChartCheckbox && settings.rules?.flagSpecialCauseOnChart !== undefined) {
     flagSpecialCauseOnChartCheckbox.checked = !!settings.rules.flagSpecialCauseOnChart;
   }
+
   if (ruleTwoOfThreeOuterThirdCheckbox && settings.rules?.ruleTwoOfThreeOuterThird !== undefined) {
     ruleTwoOfThreeOuterThirdCheckbox.checked = !!settings.rules.ruleTwoOfThreeOuterThird;
   }
+
   if (ruleFourOfFiveOneSigmaCheckbox && settings.rules?.ruleFourOfFiveOneSigma !== undefined) {
     ruleFourOfFiveOneSigmaCheckbox.checked = !!settings.rules.ruleFourOfFiveOneSigma;
   }
@@ -1044,6 +1069,9 @@ if (shiftRulePointsInput) {
 if (trendRulePointsInput) {
   trendRulePointsInput.addEventListener("input", debouncedRegen);
   trendRulePointsInput.addEventListener("change", debouncedRegen);
+}
+if (enableAdvancedTrendCheckbox) {
+  enableAdvancedTrendCheckbox.addEventListener("change", debouncedRegen);
 }
 if (flagSpecialCauseOnChartCheckbox) {
   flagSpecialCauseOnChartCheckbox.addEventListener("change", () => {
@@ -2320,6 +2348,10 @@ function getRuleSettings() {
   return {
     shiftLength: Number.isFinite(shift) && shift >= 3 ? shift : 8,
     trendLength: Number.isFinite(trend) && trend >= 3 ? trend : 6,
+
+    enableAdvancedTrend: enableAdvancedTrendCheckbox ? !!enableAdvancedTrendCheckbox.checked : false,
+    enableRareRunTrend: enableRareRunTrendCheckbox ? !!enableRareRunTrendCheckbox.checked : false,
+
     ruleTwoOfThreeOuterThird: ruleTwoOfThreeOuterThirdCheckbox ? !!ruleTwoOfThreeOuterThirdCheckbox.checked : false,
     ruleFourOfFiveOneSigma: ruleFourOfFiveOneSigmaCheckbox ? !!ruleFourOfFiveOneSigmaCheckbox.checked : false
   };
@@ -2412,31 +2444,56 @@ function findTrendRanges(values, length) {
 
 function updateRuleUIForChartType(chartType) {
   const policy = getRulePolicy(chartType);
+  const isRare = isRareChartType(chartType);
+  const isAdvancedContinuous = isAdvancedContinuousChartType(chartType);
 
-  // T/G advanced row
+  // Advanced section is only useful when there is something advanced to show
+  const showAdvancedSection =
+    isRare ||
+    policy.trend === "optional" ||
+    policy.zone23 === "optional" ||
+    policy.zone45 === "optional";
+
+  if (advancedRulesDetails) {
+    advancedRulesDetails.style.display = showAdvancedSection ? "block" : "none";
+    if (!showAdvancedSection) advancedRulesDetails.open = false;
+  }
+
+  // Advanced trend for X-MR / XbarS / Run only
+  if (advancedTrendRow) {
+    advancedTrendRow.style.display = (policy.trend === "optional") ? "block" : "none";
+  }
+
+  if (enableAdvancedTrendCheckbox) {
+    enableAdvancedTrendCheckbox.disabled = !(policy.trend === "optional");
+    if (policy.trend !== "optional") enableAdvancedTrendCheckbox.checked = false;
+    enableAdvancedTrendCheckbox.title =
+      policy.trend === "optional" ? "" : "Trend rule is not offered for this chart type.";
+  }
+
+  if (trendRulePointsInput) {
+    const allowTrendInput = (policy.trend === "optional") || (policy.trend === "warn");
+    trendRulePointsInput.disabled = !allowTrendInput;
+    trendRulePointsInput.title = allowTrendInput ? "" : "Trend rule is not offered for this chart type.";
+  }
+
+  // Rare chart advanced row
   if (rareRulesRow) {
-    rareRulesRow.style.display = isRareChartType(chartType) ? "block" : "none";
+    rareRulesRow.style.display = isRare ? "block" : "none";
   }
 
   if (enableRareRunTrendCheckbox) {
-    const isRare = isRareChartType(chartType);
     enableRareRunTrendCheckbox.disabled = !isRare;
     if (!isRare) enableRareRunTrendCheckbox.checked = false;
-    enableRareRunTrendCheckbox.title = isRare
-      ? ""
-      : "Only used for T and G charts.";
+    enableRareRunTrendCheckbox.title = isRare ? "" : "Only used for T and G charts.";
   }
 
-  // Trend length is only relevant where trend is not blocked
-  if (trendRulePointsInput) {
-    const trendBlocked = policy.trend === "blocked";
-    trendRulePointsInput.disabled = trendBlocked;
-    trendRulePointsInput.title = trendBlocked
-      ? "Trend rule is not offered for this chart type."
-      : "";
+  // Zone rules only for X-MR / XbarS
+  const showZoneRules = policy.zone23 === "optional" || policy.zone45 === "optional";
+  if (zoneRulesSection) {
+    zoneRulesSection.style.display = showZoneRules ? "block" : "none";
   }
 
-  // Zone rules
   if (ruleTwoOfThreeOuterThirdCheckbox) {
     const blocked = policy.zone23 === "blocked";
     ruleTwoOfThreeOuterThirdCheckbox.disabled = blocked;
@@ -2453,6 +2510,18 @@ function updateRuleUIForChartType(chartType) {
     ruleFourOfFiveOneSigmaCheckbox.title = blocked
       ? "Zone rules are not available for this chart type because they may create misleading alerts."
       : "";
+  }
+
+  // Show caution text specifically for X-MR
+  if (advancedContinuousCaution) {
+    advancedContinuousCaution.style.display = (chartType === "xmr") ? "block" : "none";
+  }
+
+  // Conservative message for chart types with no advanced offering
+  if (conservativeRulesMessage) {
+    const showConservativeMessage =
+      chartType === "c" || chartType === "p" || chartType === "u";
+    conservativeRulesMessage.style.display = showConservativeMessage ? "block" : "none";
   }
 }
 
@@ -3855,11 +3924,12 @@ function getRuleSettingsSafe() {
   const trend = parseInt(trendRulePointsInput?.value || "6", 10);
 
   return {
-    // Core thresholds
     shiftLength: Number.isFinite(shift) && shift >= 3 ? shift : 8,
     trendLength: Number.isFinite(trend) && trend >= 3 ? trend : 6,
 
-    // Advanced rule toggles already present in the UI
+    enableAdvancedTrend: !!enableAdvancedTrendCheckbox?.checked,
+    enableRareRunTrend: !!enableRareRunTrendCheckbox?.checked,
+
     ruleTwoOfThreeOuterThird: !!ruleTwoOfThreeOuterThirdCheckbox?.checked,
     ruleFourOfFiveOneSigma: !!ruleFourOfFiveOneSigmaCheckbox?.checked
   };
@@ -3955,16 +4025,9 @@ function getEffectiveRuleSettingsForChart(chartType) {
   const raw = getRuleSettingsSafe();
   const policy = getRulePolicy(chartType);
 
-  // Existing rare-chart advanced toggle
-  const rareAdvancedEnabled = isRareChartType(chartType) && !!enableRareRunTrendCheckbox?.checked;
+  const rareAdvancedEnabled = isRareChartType(chartType) && !!raw.enableRareRunTrend;
+  const advancedContinuousEnabled = isAdvancedContinuousChartType(chartType) && !!raw.enableAdvancedTrend;
 
-  // For Stage 1, advanced continuous-chart rules are treated as enabled
-  // only when the corresponding advanced checkbox is explicitly ticked.
-  // This lets X-MR / X̄–S be more permissive than P/U/C/T/G without
-  // exposing inappropriate rules elsewhere.
-  const advancedContinuousChart = isAdvancedContinuousChartType(chartType);
-
-  // Run / shift
   let allowRunShift = false;
   if (policy.runShift === "on") {
     allowRunShift = true;
@@ -3974,26 +4037,22 @@ function getEffectiveRuleSettingsForChart(chartType) {
     allowRunShift = false;
   }
 
-  // Trend
   let allowTrend = false;
   if (policy.trend === "on") {
     allowTrend = true;
   } else if (policy.trend === "warn") {
     allowTrend = rareAdvancedEnabled;
   } else if (policy.trend === "optional") {
-    // For now, optional trend is driven by the existing trend-length control
-    // plus chart policy. A dedicated UI toggle comes in the next stage.
-    allowTrend = advancedContinuousChart;
+    allowTrend = advancedContinuousEnabled;
   } else {
     allowTrend = false;
   }
 
-  // Zone rules
   let allowZone23 = false;
   if (policy.zone23 === "on") {
     allowZone23 = true;
   } else if (policy.zone23 === "optional") {
-    allowZone23 = advancedContinuousChart && !!raw.ruleTwoOfThreeOuterThird;
+    allowZone23 = advancedContinuousEnabled && !!raw.ruleTwoOfThreeOuterThird;
   } else if (policy.zone23 === "warn") {
     allowZone23 = rareAdvancedEnabled && !!raw.ruleTwoOfThreeOuterThird;
   } else {
@@ -4004,7 +4063,7 @@ function getEffectiveRuleSettingsForChart(chartType) {
   if (policy.zone45 === "on") {
     allowZone45 = true;
   } else if (policy.zone45 === "optional") {
-    allowZone45 = advancedContinuousChart && !!raw.ruleFourOfFiveOneSigma;
+    allowZone45 = advancedContinuousEnabled && !!raw.ruleFourOfFiveOneSigma;
   } else if (policy.zone45 === "warn") {
     allowZone45 = rareAdvancedEnabled && !!raw.ruleFourOfFiveOneSigma;
   } else {
@@ -4021,7 +4080,6 @@ function getEffectiveRuleSettingsForChart(chartType) {
     warnTrend: policy.trend === "warn"
   };
 }
-
 
 function findShiftSignals(values, cl, shiftLength) {
   let bestRun = 0;
@@ -8130,6 +8188,136 @@ function toggleRuleExplainerModal(forceOpen) {
   }
 }
 
+function getChartTypeDisplayName(chartType) {
+  const names = {
+    run: "Run chart",
+    xmr: "X-MR chart",
+    c: "C chart",
+    p: "P chart",
+    u: "U chart",
+    xbars: "X̄-S chart",
+    t: "T chart",
+    g: "G chart"
+  };
+  return names[chartType] || "This chart";
+}
+
+function describeRuleStatus(status, labels) {
+  if (status === "on") {
+    return `<li><strong>${labels.name}:</strong> used by default.</li>`;
+  }
+  if (status === "optional") {
+    return `<li><strong>${labels.name}:</strong> available in advanced settings, off by default.</li>`;
+  }
+  if (status === "warn") {
+    return `<li><strong>${labels.name}:</strong> advanced only, off by default, with a warning before use.</li>`;
+  }
+  return `<li><strong>${labels.name}:</strong> not offered for this chart type.</li>`;
+}
+
+function renderRuleExplainerModal(chartType) {
+  const body = document.getElementById("ruleExplainerBody");
+  const subtitle = document.getElementById("ruleExplainerSubtitle");
+  if (!body || !subtitle) return;
+
+  const policy = getRulePolicy(chartType);
+  const chartName = getChartTypeDisplayName(chartType);
+
+  subtitle.textContent =
+    `${chartName}: this tool uses a conservative, chart-aware rule policy designed to reduce false alerts.`;
+
+  let whyText = "";
+  if (chartType === "c" || chartType === "p" || chartType === "u") {
+    whyText =
+      "Attribute charts use a conservative rule set here. Zone rules are blocked because they can create misleading alerts, especially when limits vary or counts are low.";
+  } else if (chartType === "t" || chartType === "g") {
+    whyText =
+      "Rare-event charts are naturally irregular. Run and trend rules can create false signals, so they are advanced-only and warning-gated.";
+  } else if (chartType === "xmr") {
+    whyText =
+      "X-MR charts are continuous, but more fragile than subgrouped charts. Extra pattern rules are available only as advanced options.";
+  } else if (chartType === "xbars") {
+    whyText =
+      "X̄-S charts are the chart family where advanced rule sets are most defensible, but the default remains conservative to reduce false alarms.";
+  } else if (chartType === "run") {
+    whyText =
+      "Run charts do not use control limits. The tool keeps interpretation simple and conservative by default.";
+  } else {
+    whyText =
+      "This tool keeps the default rule set simple and conservative to reduce false alerts.";
+  }
+
+  body.innerHTML = `
+    <div class="hint">
+      <strong>${chartName}</strong>
+    </div>
+
+    <div class="hint" style="margin-top:0.5rem;">
+      ${whyText}
+    </div>
+
+    <hr style="margin:0.9rem 0;">
+
+    <div class="hint">
+      <strong>What this chart checks by default</strong>
+    </div>
+    <ul style="margin-top:0.5rem;">
+      ${describeRuleStatus(policy.beyondLimits, { name: "Beyond limits" })}
+      ${describeRuleStatus(policy.runShift, { name: "Run rule" })}
+      ${describeRuleStatus(policy.trend, { name: "Trend rule" })}
+      ${describeRuleStatus(policy.zone23, { name: "2 of 3 in the outer third" })}
+      ${describeRuleStatus(policy.zone45, { name: "4 of 5 beyond 1-sigma" })}
+    </ul>
+
+    <hr style="margin:0.9rem 0;">
+
+    <div class="hint">
+      <strong>Why some rules are limited</strong>
+    </div>
+    <div class="hint" style="margin-top:0.5rem;">
+      This tool is designed for reliable interpretation in healthcare and public-service settings.
+      It prefers fewer, more trustworthy signals over a noisier rule set that may create false alerts.
+    </div>
+
+    <div class="hint" style="margin-top:0.5rem;">
+      A “signal” can trigger meetings, concern, investigation, or action. To reduce wasted effort and alert fatigue,
+      some rules are restricted to chart types where they are more dependable.
+    </div>
+
+    <hr style="margin:0.9rem 0;">
+
+    <div class="hint">
+      <strong>Plain-English rule definitions</strong>
+    </div>
+
+    <div class="hint" style="margin-top:0.5rem;">
+      <strong>Beyond limits:</strong> a point above the upper limit or below the lower limit.
+    </div>
+
+    <div class="hint" style="margin-top:0.5rem;">
+      <strong>Run rule:</strong> a sustained run of points on one side of the centre line.
+    </div>
+
+    <div class="hint" style="margin-top:0.5rem;">
+      <strong>Trend rule:</strong> a sustained pattern of consecutive increases or decreases.
+    </div>
+
+    <div class="hint" style="margin-top:0.5rem;">
+      <strong>Zone rules:</strong> extra pattern rules based on how far points sit from the centre line.
+      These are the least portable rules, so they are only offered on chart types where they are more defensible.
+    </div>
+  `;
+}
+
+function openRuleExplainerForCurrentChart() {
+  const chartType =
+    (typeof getSelectedChartType_NoSideEffects === "function")
+      ? (getSelectedChartType_NoSideEffects() || "run")
+      : ((typeof getSelectedChartType === "function") ? (getSelectedChartType() || "run") : "run");
+
+  renderRuleExplainerModal(chartType);
+  toggleRuleExplainerModal(true);
+}
 
 // -----------------------------
 // Chart chooser wizard (Help me choose)
@@ -8400,10 +8588,9 @@ if (chartSetupBtn) {
 
 if (ruleExplainerBtn) {
   ruleExplainerBtn.addEventListener("click", () => {
-    toggleRuleExplainerModal(true);
+    openRuleExplainerForCurrentChart();
   });
 }
-
 
 // ---- Existing split dropdown button still works ----
 function applySplitFromSidebarSelection() {

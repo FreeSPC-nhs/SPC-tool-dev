@@ -1163,7 +1163,7 @@ body.pdf-exporting #capability {
       <div class="hint small-hint">Default: 8 points on one side of the centre line.</div>
     </div>
 
-    <div>
+        <div>
       <label>
         Trend length:
         <input type="number" id="trendRulePoints" min="3" step="1" value="6" style="width: 6rem;" />
@@ -1173,19 +1173,63 @@ body.pdf-exporting #capability {
 
     <hr />
 
-    <div class="hint small-hint" style="margin-top:0;">
-      Optional “zone” rules (off by default). These are commonly used with Shewhart charts.
-    </div>
+        <details id="advancedRulesDetails" style="margin-top:0.75rem;">
+      <summary>Advanced detection options</summary>
 
-    <label class="radio-pill" style="display:inline-flex; gap:0.5rem; align-items:center; margin-top:0.35rem;">
-      <input type="checkbox" id="ruleTwoOfThreeOuterThird" />
-      Apply “2 out of 3 in the outer third” rule
-    </label>
+      <div class="panel" style="margin-top:0.75rem; padding:0.75rem;">
+        <div id="advancedTrendRow" style="display:none; margin-top:0;">
+          <label class="radio-pill" style="display:inline-flex; gap:0.5rem; align-items:center;">
+            <input type="checkbox" id="enableAdvancedTrend" />
+            Enable trend rule
+          </label>
+          <div class="hint small-hint" style="margin-top:0.25rem;">
+            Off by default. Trend rules can increase false alerts on some chart types.
+          </div>
 
-    <label class="radio-pill" style="display:inline-flex; gap:0.5rem; align-items:center; margin-top:0.35rem;">
-      <input type="checkbox" id="ruleFourOfFiveOneSigma" />
-      Apply “4 out of 5 beyond 1-sigma” rule
-    </label>
+          <div style="margin-top:0.5rem;">
+            <label>
+              Trend length:
+              <input type="number" id="trendRulePoints" min="3" step="1" value="6" style="width: 6rem;" />
+            </label>
+            <div class="hint small-hint">Default: 6 consecutive increases or decreases.</div>
+          </div>
+        </div>
+
+        <div id="rareRulesRow" style="display:none; margin-top:0.75rem;">
+          <label class="radio-pill" style="display:inline-flex; gap:0.5rem; align-items:center;">
+            <input type="checkbox" id="enableRareRunTrend" />
+            Enable run &amp; trend rules for T/G charts (advanced)
+          </label>
+          <div class="hint small-hint" style="margin-top:0.25rem;">
+            This chart type is naturally irregular. Run and trend rules may generate false signals and are off by default.
+          </div>
+        </div>
+
+        <div id="zoneRulesSection" style="display:none; margin-top:0.75rem;">
+          <div class="hint small-hint" style="margin-top:0;">
+            Optional zone rules (off by default). Use only on chart types where they are supported.
+          </div>
+
+          <label class="radio-pill" style="display:inline-flex; gap:0.5rem; align-items:center; margin-top:0.35rem;">
+            <input type="checkbox" id="ruleTwoOfThreeOuterThird" />
+            Apply “2 out of 3 in the outer third” rule
+          </label>
+
+          <label class="radio-pill" style="display:inline-flex; gap:0.5rem; align-items:center; margin-top:0.35rem;">
+            <input type="checkbox" id="ruleFourOfFiveOneSigma" />
+            Apply “4 out of 5 beyond 1-sigma” rule
+          </label>
+
+          <div id="advancedContinuousCaution" class="hint small-hint" style="display:none; margin-top:0.35rem;">
+            Additional pattern rules can increase false alerts on individuals charts. Use only if you understand the trade-off.
+          </div>
+        </div>
+
+        <div id="conservativeRulesMessage" class="hint small-hint" style="display:none; margin-top:0.75rem;">
+          This chart uses a conservative rule set designed for reliable interpretation.
+        </div>
+      </div>
+    </details>
 
     <hr />
 
@@ -1641,41 +1685,19 @@ body.pdf-exporting #capability {
 
 <!-- RULE EXPLAINER MODAL -->
 <div id="ruleExplainerModal" class="modal" aria-hidden="true">
-  <div class="modal-backdrop" aria-hidden="true"></div>
+  <div class="modal-backdrop" aria-hidden="true" onclick="toggleRuleExplainerModal(false)"></div>
 
   <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="ruleExplainerTitle">
     <button type="button" class="modal-close" aria-label="Close rule explainer" onclick="toggleRuleExplainerModal(false)">×</button>
 
     <section class="panel" style="display:block; margin:0;">
       <h2 id="ruleExplainerTitle">SPC rule explainer</h2>
-      <p class="sub">
-        These are common “special-cause” rules. Not every organisation uses every rule.
-        Use them as prompts to investigate, not as automatic proof of improvement or harm.
+      <p class="sub" id="ruleExplainerSubtitle">
+        This tool uses a conservative, chart-aware rule policy designed to reduce false alerts.
       </p>
 
-      <div class="hint">
-        <strong>Outside limits:</strong> A point above the UCL or below the LCL.
-      </div>
-
-      <div class="hint" style="margin-top:0.5rem;">
-        <strong>Shift:</strong> A run of points on the same side of the centre line (default 8).
-      </div>
-
-      <div class="hint" style="margin-top:0.5rem;">
-        <strong>Trend:</strong> Consecutive increases or decreases (default 6).
-      </div>
-
-      <hr style="margin:0.9rem 0;">
-
-      <div class="hint">
-        <strong>2 out of 3 in the outer third:</strong>
-        In any 3 consecutive points, 2 or more fall in the “outer third” of the control band on the same side.
-        (For XmR this corresponds roughly to ≥2σ on the same side.)
-      </div>
-
-      <div class="hint" style="margin-top:0.5rem;">
-        <strong>4 out of 5 beyond 1-sigma:</strong>
-        In any 5 consecutive points, 4 or more are beyond the 1σ line on the same side.
+      <div id="ruleExplainerBody">
+        <!-- Filled by JS -->
       </div>
 
       <div style="display:flex; justify-content:flex-end; margin-top:1rem;">
@@ -1684,7 +1706,6 @@ body.pdf-exporting #capability {
     </section>
   </div>
 </div>
-
 
 <div id="dataEditorOverlay">
   <div class="data-editor-dialog">
