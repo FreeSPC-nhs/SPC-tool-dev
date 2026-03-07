@@ -3145,8 +3145,42 @@ function drawXbarSChart(points, baselineCount, labels) {
     }
   }
 
-  const pointColoursX = xbarVals.map((v, i) => (v > uclXArr[i] || v < lclXArr[i]) ? "#d73027" : "#003f87");
-  const pointColoursS = sVals.map((v, i) => (v > uclSArr[i] || v < lclSArr[i]) ? "#d73027" : "#003f87");
+    const flagOnChart =
+    (typeof shouldFlagSpecialCauseOnChart === "function")
+      ? shouldFlagSpecialCauseOnChart()
+      : true;
+
+  const axX = analyzeAttributeChart({
+    chartType: "xbars",
+    labels: subgroupLabels,
+    values: xbarVals,
+    cl: clX,
+    ucl: uclXArr,
+    lcl: lclXArr
+  });
+
+  const axS = analyzeAttributeChart({
+    chartType: "xbars",
+    labels: subgroupLabels,
+    values: sVals,
+    cl: clS,
+    ucl: uclSArr,
+    lcl: lclSArr
+  });
+
+  const pointColoursX = xbarVals.map((v, i) => {
+    if (!flagOnChart) return "#003f87";
+    if (axX.flags?.beyond?.[i]) return "#d73027";
+    if (axX.flags?.special?.[i]) return "#ff8c00";
+    return "#003f87";
+  });
+
+  const pointColoursS = sVals.map((v, i) => {
+    if (!flagOnChart) return "#003f87";
+    if (axS.flags?.beyond?.[i]) return "#d73027";
+    if (axS.flags?.special?.[i]) return "#ff8c00";
+    return "#003f87";
+  });
 
   // Draw as a combined chart (your existing approach)
   drawXbarSCombinedChart({
@@ -6609,10 +6643,23 @@ function drawXmRChart(points, baselineCount, labels) {
       // - beyond limits = red
       // - shift/trend = orange
       // - otherwise blue
+            // Policy-aware analysis for this segment
+      const segAnalysis = analyzeAttributeChart({
+        chartType: "xmr",
+        labels: segLabels,
+        values: segPts.map(p => p.y),
+        cl: mean,
+        ucl: ucl,
+        lcl: lcl
+      });
+
+      const beyondHere = !!segAnalysis.flags?.beyond?.[i];
+      const specialHere = !!segAnalysis.flags?.special?.[i];
+
       if (flagOnChart) {
-        if (segPts[i].beyondLimits) {
+        if (beyondHere) {
           pointColours[globalIdx] = "#d73027";
-        } else if (runFlags[i] || trendFlags[i]) {
+        } else if (specialHere) {
           pointColours[globalIdx] = "#ff8c00";
         }
       }
