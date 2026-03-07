@@ -3278,7 +3278,26 @@ function drawTChart(points, baselineCount, labels) {
     }
   }
 
-  const pointColours = deltas.map((v, i) => (beyond[i] ? "#d73027" : "#003f87"));
+    const flagOnChart =
+    (typeof shouldFlagSpecialCauseOnChart === "function")
+      ? shouldFlagSpecialCauseOnChart()
+      : true;
+
+  const analysisForColour = analyzeRareChart({
+    chartType: "t",
+    labels: tLabels,
+    values: deltas,
+    cl,
+    ucl: uclArr,
+    lcl: lclArr
+  });
+
+  const pointColours = deltas.map((v, i) => {
+    if (!flagOnChart) return "#003f87";
+    if (analysisForColour.flags?.beyond?.[i]) return "#d73027";
+    if (analysisForColour.flags?.special?.[i]) return "#ff8c00";
+    return "#003f87";
+  });
 
   drawSimpleSPCChart({
     labels: tLabels,
@@ -3423,7 +3442,26 @@ function drawGChart(values, baselineCount, labels) {
     }
   }
 
-  const pointColours = gVals.map((v, i) => (beyond[i] ? "#d73027" : "#003f87"));
+  const flagOnChart =
+    (typeof shouldFlagSpecialCauseOnChart === "function")
+      ? shouldFlagSpecialCauseOnChart()
+      : true;
+
+  const analysisForColour = analyzeRareChart({
+    chartType: "g",
+    labels,
+    values: gVals,
+    cl,
+    ucl: uclArr,
+    lcl: lclArr
+  });
+
+  const pointColours = gVals.map((v, i) => {
+    if (!flagOnChart) return "#003f87";
+    if (analysisForColour.flags?.beyond?.[i]) return "#d73027";
+    if (analysisForColour.flags?.special?.[i]) return "#ff8c00";
+    return "#003f87";
+  });
 
   drawSimpleSPCChart({
     labels,
@@ -4081,6 +4119,88 @@ function getEffectiveRuleSettingsForChart(chartType) {
   };
 }
 
+function findShiftWindow(values, cl, shiftLength) {
+  let run = 0;
+  let side = 0;
+
+  for (let i = 0; i < values.length; i++) {
+    const v = values[i];
+    if (!isFinite(v) || !isFinite(cl)) {
+      run = 0;
+      side = 0;
+      continue;
+    }
+
+    const s = v > cl ? 1 : (v < cl ? -1 : 0);
+    if (s === 0) {
+      run = 0;
+      side = 0;
+      continue;
+    }
+
+    if (s === side) run += 1;
+    else {
+      side = s;
+      run = 1;
+    }
+
+    if (run >= shiftLength) {
+      return {
+        start: i - shiftLength + 1,
+        end: i,
+        side
+      };
+    }
+  }
+
+  return null;
+}
+
+function findTrendWindow(values, trendLength) {
+  let inc = 1;
+  let dec = 1;
+
+  for (let i = 1; i < values.length; i++) {
+    const a = values[i - 1];
+    const b = values[i];
+
+    if (!isFinite(a) || !isFinite(b)) {
+      inc = 1;
+      dec = 1;
+      continue;
+    }
+
+    if (b > a) {
+      inc += 1;
+      dec = 1;
+    } else if (b < a) {
+      dec += 1;
+      inc = 1;
+    } else {
+      inc = 1;
+      dec = 1;
+    }
+
+    if (inc >= trendLength) {
+      return {
+        start: i - trendLength + 1,
+        end: i,
+        direction: "up"
+      };
+    }
+
+    if (dec >= trendLength) {
+      return {
+        start: i - trendLength + 1,
+        end: i,
+        direction: "down"
+      };
+    }
+  }
+
+  return null;
+}
+
 function findShiftSignals(values, cl, shiftLength) {
   let bestRun = 0;
   let currentRun = 0;
@@ -4149,7 +4269,7 @@ function analyzeAttributeChart({ chartType, labels, values, cl, ucl, lcl }) {
         shiftLength: 8,
         trendLength: 6,
         allowRunShift: true,
-        allowTrend: true,
+        allowTrend: false,
         allowZone23: false,
         allowZone45: false
       };
@@ -4157,63 +4277,26 @@ function analyzeAttributeChart({ chartType, labels, values, cl, ucl, lcl }) {
   const signals = [];
   const n = values.length;
 
-  // Normalize limits to arrays (some callers pass scalars)
-  const clArr  = Array.isArray(cl)  ? cl  : new Array(n).fill(cl);
+  // Normalize limits to arrays
+  const clArr = Array.isArray(cl) ? cl : new Array(n).fill(cl);
   const uclArr = Array.isArray(ucl) ? ucl : new Array(n).fill(ucl);
   const lclArr = Array.isArray(lcl) ? lcl : new Array(n).fill(lcl);
 
   const clScalar = clArr.find(v => Number.isFinite(v));
 
-  // --- 1) Beyond limits (only if caller supplied limits; Run charts often won't) ---
+  // 1) Beyond limits
   let outOfControl = [];
   if (ucl !== undefined && lcl !== undefined) {
     outOfControl = analyzeLimits({ labels, values, cl: clArr, ucl: uclArr, lcl: lclArr });
 
     const hasAbove = outOfControl.some(o => o.type === "aboveUCL");
     const hasBelow = outOfControl.some(o => o.type === "belowLCL");
+
     if (hasAbove) signals.push("One or more points above the upper limit");
     if (hasBelow) signals.push("One or more points below the lower limit");
   }
 
-  // --- helpers (your existing “where to look” logic) ---
-  function findShiftWindow(values, cl, shiftLength) {
-    let run = 0;
-    let side = 0;
-    for (let i = 0; i < values.length; i++) {
-      const v = values[i];
-      if (!isFinite(v) || !isFinite(cl)) { run = 0; side = 0; continue; }
-      const s = v > cl ? 1 : (v < cl ? -1 : 0);
-      if (s === 0) { run = 0; side = 0; continue; }
-
-      if (s === side) run += 1;
-      else { side = s; run = 1; }
-
-      if (run >= shiftLength) {
-        const start = i - shiftLength + 1;
-        const end = i;
-        return { start, end, side };
-      }
-    }
-    return null;
-  }
-
-  function findTrendWindow(values, trendLength) {
-    let inc = 1, dec = 1;
-    for (let i = 1; i < values.length; i++) {
-      const a = values[i - 1], b = values[i];
-      if (!isFinite(a) || !isFinite(b)) { inc = 1; dec = 1; continue; }
-
-      if (b > a) { inc += 1; dec = 1; }
-      else if (b < a) { dec += 1; inc = 1; }
-      else { inc = 1; dec = 1; }
-
-      if (inc >= trendLength) return { start: i - trendLength + 1, end: i, direction: "up" };
-      if (dec >= trendLength) return { start: i - trendLength + 1, end: i, direction: "down" };
-    }
-    return null;
-  }
-
-  // --- 2) Shift/run (policy gated) ---
+  // 2) Shift / run
   let shiftWindow = null;
   if (rs.allowRunShift && Number.isFinite(clScalar)) {
     shiftWindow = findShiftWindow(values, clScalar, rs.shiftLength);
@@ -4222,15 +4305,10 @@ function analyzeAttributeChart({ chartType, labels, values, cl, ucl, lcl }) {
       const aLab = labels?.[shiftWindow.start] ?? `point ${shiftWindow.start + 1}`;
       const bLab = labels?.[shiftWindow.end] ?? `point ${shiftWindow.end + 1}`;
       signals.push(`Shift: ${rs.shiftLength}+ points in a row ${sideText} the centre line (from ${aLab} to ${bLab})`);
-    } else {
-      const shift = (typeof findShiftSignals === "function")
-        ? findShiftSignals(values, clScalar, rs.shiftLength)
-        : null;
-      if (shift) signals.push(shift);
     }
   }
 
-  // --- 3) Trend (policy gated) ---
+  // 3) Trend
   let trendWindow = null;
   if (rs.allowTrend) {
     trendWindow = findTrendWindow(values, rs.trendLength);
@@ -4239,44 +4317,62 @@ function analyzeAttributeChart({ chartType, labels, values, cl, ucl, lcl }) {
       const aLab = labels?.[trendWindow.start] ?? `point ${trendWindow.start + 1}`;
       const bLab = labels?.[trendWindow.end] ?? `point ${trendWindow.end + 1}`;
       signals.push(`Trend: ${rs.trendLength}+ points steadily ${dirText} (from ${aLab} to ${bLab})`);
-    } else {
-      const trend = (typeof findTrendSignals === "function")
-        ? findTrendSignals(values, rs.trendLength)
-        : null;
-      if (trend) signals.push(trend);
     }
   }
 
-  // Note: Zone rules (2/3, 4/5) will be added next, using rs.allowZone23/allowZone45.
+  // Flags for chart colouring
+  const beyondFlags = new Array(n).fill(false);
+  outOfControl.forEach(o => {
+    if (typeof o.i === "number" && o.i >= 0 && o.i < n) beyondFlags[o.i] = true;
+  });
+
+  const shiftFlags = new Array(n).fill(false);
+  if (shiftWindow) {
+    for (let i = shiftWindow.start; i <= shiftWindow.end; i++) {
+      shiftFlags[i] = true;
+    }
+  }
+
+  const trendFlags = new Array(n).fill(false);
+  if (trendWindow) {
+    for (let i = trendWindow.start; i <= trendWindow.end; i++) {
+      trendFlags[i] = true;
+    }
+  }
+
+  const specialFlags = new Array(n).fill(false);
+  for (let i = 0; i < n; i++) {
+    specialFlags[i] = beyondFlags[i] || shiftFlags[i] || trendFlags[i];
+  }
 
   return {
     chartType,
     isStable: signals.length === 0,
     signals,
     outOfControl,
-
-    // for summaries
     shiftLength: rs.shiftLength,
     trendLength: rs.trendLength,
-
-    // also expose what was allowed (useful for explainer text later)
     rulePolicy: {
       allowRunShift: rs.allowRunShift,
       allowTrend: rs.allowTrend,
       allowZone23: rs.allowZone23,
       allowZone45: rs.allowZone45
     },
-
+    flags: {
+      beyond: beyondFlags,
+      shift: shiftFlags,
+      trend: trendFlags,
+      special: specialFlags
+    },
     firstOutOfControl: outOfControl.length ? outOfControl[0] : null
   };
 }
 
 function analyzeRareChart({ chartType, labels, values, cl, ucl, lcl }) {
-  // Rare charts share the same detection machinery, but must respect rare-chart policy.
-  // (Default: beyond limits only. Run/trend only when deliberately enabled.)
+  // Rare charts use the same engine, but the policy layer decides
+  // whether run/trend are actually allowed.
   return analyzeAttributeChart({ chartType, labels, values, cl, ucl, lcl });
 }
-
 
 function renderAttributeMultiSummary(segmentAnalyses, totalPoints) {
   if (!summaryDiv) return;
