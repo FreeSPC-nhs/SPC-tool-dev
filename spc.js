@@ -213,6 +213,9 @@ const trendRulePointsInput = document.getElementById("trendRulePoints");
 const ruleExplainerBtn = document.getElementById("ruleExplainerBtn");
 const ruleTwoOfThreeOuterThirdCheckbox = document.getElementById("ruleTwoOfThreeOuterThird");
 const ruleFourOfFiveOneSigmaCheckbox = document.getElementById("ruleFourOfFiveOneSigma");
+const enableRareRunTrendCheckbox = document.getElementById("enableRareRunTrend");
+const rareRulesRow = document.getElementById("rareRulesRow");
+
 
 const flagSpecialCauseOnChartCheckbox = document.getElementById("flagSpecialCauseOnChart");
 const lclClampRow = document.getElementById("lclClampRow");
@@ -1060,6 +1063,15 @@ if (ruleFourOfFiveOneSigmaCheckbox) {
   ruleFourOfFiveOneSigmaCheckbox.addEventListener("change", debouncedRegen);
 }
 
+if (enableRareRunTrendCheckbox) {
+  enableRareRunTrendCheckbox.addEventListener("change", () => {
+    const chartType = getSelectedChartType_NoSideEffects();
+    if (!confirmEnableRareRunTrendOnce(chartType)) return;
+
+    // Regenerate to apply new rule settings
+    if (typeof debouncedRegen === "function") debouncedRegen();
+  });
+}
 
 const recalcPrompt = document.getElementById("recalcPrompt");
 const firstRunGuide = document.getElementById("firstRunGuide");
@@ -1794,6 +1806,45 @@ function escapeHtml(str) {
     .replace(/>/g, "&gt;");
 }
 
+function isRareChartType(chartType) {
+  return chartType === "t" || chartType === "g";
+}
+
+function getRareRunTrendEnabled(chartType) {
+  if (!isRareChartType(chartType)) return false;
+  return !!enableRareRunTrendCheckbox?.checked;
+}
+
+function confirmEnableRareRunTrendOnce(chartType) {
+  if (!isRareChartType(chartType)) return true;
+
+  // Only needed if user is trying to enable it
+  if (!enableRareRunTrendCheckbox?.checked) return true;
+
+  const key = `spc_confirmedRareRunTrend_${chartType}`;
+  let alreadyConfirmed = false;
+  try { alreadyConfirmed = localStorage.getItem(key) === "true"; } catch {}
+
+  if (alreadyConfirmed) return true;
+
+  const msg =
+    `Advanced option: Run & trend rules on ${chartType.toUpperCase()} charts\n\n` +
+    `These patterns often happen by chance on T/G charts and can increase false alerts.\n\n` +
+    `Enable anyway?`;
+
+  const ok = confirm(msg);
+
+  if (!ok) {
+    // revert checkbox
+    enableRareRunTrendCheckbox.checked = false;
+    return false;
+  }
+
+  try { localStorage.setItem(key, "true"); } catch {}
+  return true;
+}
+
+
 /* ============================================================
    COLUMN INTELLIGENCE (Levels 1–3)
    Level 3: profileColumns(rows) -> builds columnProfiles
@@ -2359,6 +2410,52 @@ function findTrendRanges(values, length) {
   return ranges;
 }
 
+function updateRuleUIForChartType(chartType) {
+  const policy = getRulePolicy(chartType);
+
+  // T/G advanced row
+  if (rareRulesRow) {
+    rareRulesRow.style.display = isRareChartType(chartType) ? "block" : "none";
+  }
+
+  if (enableRareRunTrendCheckbox) {
+    const isRare = isRareChartType(chartType);
+    enableRareRunTrendCheckbox.disabled = !isRare;
+    if (!isRare) enableRareRunTrendCheckbox.checked = false;
+    enableRareRunTrendCheckbox.title = isRare
+      ? ""
+      : "Only used for T and G charts.";
+  }
+
+  // Trend length is only relevant where trend is not blocked
+  if (trendRulePointsInput) {
+    const trendBlocked = policy.trend === "blocked";
+    trendRulePointsInput.disabled = trendBlocked;
+    trendRulePointsInput.title = trendBlocked
+      ? "Trend rule is not offered for this chart type."
+      : "";
+  }
+
+  // Zone rules
+  if (ruleTwoOfThreeOuterThirdCheckbox) {
+    const blocked = policy.zone23 === "blocked";
+    ruleTwoOfThreeOuterThirdCheckbox.disabled = blocked;
+    if (blocked) ruleTwoOfThreeOuterThirdCheckbox.checked = false;
+    ruleTwoOfThreeOuterThirdCheckbox.title = blocked
+      ? "Zone rules are not available for this chart type because they may create misleading alerts."
+      : "";
+  }
+
+  if (ruleFourOfFiveOneSigmaCheckbox) {
+    const blocked = policy.zone45 === "blocked";
+    ruleFourOfFiveOneSigmaCheckbox.disabled = blocked;
+    if (blocked) ruleFourOfFiveOneSigmaCheckbox.checked = false;
+    ruleFourOfFiveOneSigmaCheckbox.title = blocked
+      ? "Zone rules are not available for this chart type because they may create misleading alerts."
+      : "";
+  }
+}
+
 function updateUIForChartType(chartType) {
   if (!xLabelEl || !yLabelEl || !thirdColumnRow) return;
 
@@ -2464,6 +2561,11 @@ function updateUIForChartType(chartType) {
     valueSelect.disabled = false;
     valueSelect.title = "";
   }
+
+if (typeof updateRuleUIForChartType === "function") {
+  updateRuleUIForChartType(chartType);
+}
+
 
   // ---- T chart UX: enable/disable Value column depending on input mode ----
   if (chartType === "t" && valueSelect) {
@@ -3751,13 +3853,175 @@ let lastRareAnalysis = null;
 function getRuleSettingsSafe() {
   const shift = parseInt(shiftRulePointsInput?.value || "8", 10);
   const trend = parseInt(trendRulePointsInput?.value || "6", 10);
+
   return {
-    shiftLength: isFinite(shift) && shift >= 4 ? shift : 8,
-    trendLength: isFinite(trend) && trend >= 4 ? trend : 6,
-    ruleTwoOfThreeOuterThird: ruleTwoOfThreeOuterThirdCheckbox ? !!ruleTwoOfThreeOuterThirdCheckbox.checked : false,
-          ruleFourOfFiveOneSigma: ruleFourOfFiveOneSigmaCheckbox ? !!ruleFourOfFiveOneSigmaCheckbox.checked : false
+    // Core thresholds
+    shiftLength: Number.isFinite(shift) && shift >= 3 ? shift : 8,
+    trendLength: Number.isFinite(trend) && trend >= 3 ? trend : 6,
+
+    // Advanced rule toggles already present in the UI
+    ruleTwoOfThreeOuterThird: !!ruleTwoOfThreeOuterThirdCheckbox?.checked,
+    ruleFourOfFiveOneSigma: !!ruleFourOfFiveOneSigmaCheckbox?.checked
   };
 }
+
+/* ============================================================
+   RULE POLICY (single source of truth)
+   Status values:
+   - "on"       : always applied / default on
+   - "optional" : available only in advanced mode, off by default
+   - "warn"     : available only after explicit warning/confirm
+   - "blocked"  : not available for this chart type
+   ============================================================ */
+
+const RULE_POLICY = {
+  // Attribute charts: conservative defaults only
+  c: {
+    beyondLimits: "on",
+    runShift: "on",
+    trend: "blocked",
+    zone23: "blocked",
+    zone45: "blocked"
+  },
+  p: {
+    beyondLimits: "on",
+    runShift: "on",
+    trend: "blocked",
+    zone23: "blocked",
+    zone45: "blocked"
+  },
+  u: {
+    beyondLimits: "on",
+    runShift: "on",
+    trend: "blocked",
+    zone23: "blocked",
+    zone45: "blocked"
+  },
+
+  // Rare-event charts: beyond limits by default; run/trend only behind warning
+  t: {
+    beyondLimits: "on",
+    runShift: "warn",
+    trend: "warn",
+    zone23: "blocked",
+    zone45: "blocked"
+  },
+  g: {
+    beyondLimits: "on",
+    runShift: "warn",
+    trend: "warn",
+    zone23: "blocked",
+    zone45: "blocked"
+  },
+
+  // Individuals charts: conservative defaults, advanced pattern rules optional
+  xmr: {
+    beyondLimits: "on",
+    runShift: "on",
+    trend: "optional",
+    zone23: "optional",
+    zone45: "optional"
+  },
+
+  // Subgrouped continuous charts: richest defensible advanced rule set
+  xbars: {
+    beyondLimits: "on",
+    runShift: "on",
+    trend: "optional",
+    zone23: "optional",
+    zone45: "optional"
+  },
+
+  // Run chart: no control limits, run on by default, trend optional
+  run: {
+    beyondLimits: "blocked",
+    runShift: "on",
+    trend: "optional",
+    zone23: "blocked",
+    zone45: "blocked"
+  }
+};
+
+function getRulePolicy(chartType) {
+  return RULE_POLICY[chartType] || RULE_POLICY.run;
+}
+
+function isAdvancedContinuousChartType(chartType) {
+  return chartType === "xmr" || chartType === "xbars" || chartType === "run";
+}
+
+
+function getEffectiveRuleSettingsForChart(chartType) {
+  const raw = getRuleSettingsSafe();
+  const policy = getRulePolicy(chartType);
+
+  // Existing rare-chart advanced toggle
+  const rareAdvancedEnabled = isRareChartType(chartType) && !!enableRareRunTrendCheckbox?.checked;
+
+  // For Stage 1, advanced continuous-chart rules are treated as enabled
+  // only when the corresponding advanced checkbox is explicitly ticked.
+  // This lets X-MR / X̄–S be more permissive than P/U/C/T/G without
+  // exposing inappropriate rules elsewhere.
+  const advancedContinuousChart = isAdvancedContinuousChartType(chartType);
+
+  // Run / shift
+  let allowRunShift = false;
+  if (policy.runShift === "on") {
+    allowRunShift = true;
+  } else if (policy.runShift === "warn") {
+    allowRunShift = rareAdvancedEnabled;
+  } else {
+    allowRunShift = false;
+  }
+
+  // Trend
+  let allowTrend = false;
+  if (policy.trend === "on") {
+    allowTrend = true;
+  } else if (policy.trend === "warn") {
+    allowTrend = rareAdvancedEnabled;
+  } else if (policy.trend === "optional") {
+    // For now, optional trend is driven by the existing trend-length control
+    // plus chart policy. A dedicated UI toggle comes in the next stage.
+    allowTrend = advancedContinuousChart;
+  } else {
+    allowTrend = false;
+  }
+
+  // Zone rules
+  let allowZone23 = false;
+  if (policy.zone23 === "on") {
+    allowZone23 = true;
+  } else if (policy.zone23 === "optional") {
+    allowZone23 = advancedContinuousChart && !!raw.ruleTwoOfThreeOuterThird;
+  } else if (policy.zone23 === "warn") {
+    allowZone23 = rareAdvancedEnabled && !!raw.ruleTwoOfThreeOuterThird;
+  } else {
+    allowZone23 = false;
+  }
+
+  let allowZone45 = false;
+  if (policy.zone45 === "on") {
+    allowZone45 = true;
+  } else if (policy.zone45 === "optional") {
+    allowZone45 = advancedContinuousChart && !!raw.ruleFourOfFiveOneSigma;
+  } else if (policy.zone45 === "warn") {
+    allowZone45 = rareAdvancedEnabled && !!raw.ruleFourOfFiveOneSigma;
+  } else {
+    allowZone45 = false;
+  }
+
+  return {
+    ...raw,
+    allowRunShift,
+    allowTrend,
+    allowZone23,
+    allowZone45,
+    warnRunShift: policy.runShift === "warn",
+    warnTrend: policy.trend === "warn"
+  };
+}
+
 
 function findShiftSignals(values, cl, shiftLength) {
   let bestRun = 0;
@@ -3821,19 +4085,39 @@ function analyzeLimits({ labels, values, cl, ucl, lcl }) {
 }
 
 function analyzeAttributeChart({ chartType, labels, values, cl, ucl, lcl }) {
-  const { shiftLength, trendLength } = getRuleSettingsSafe();
+  const rs = (typeof getEffectiveRuleSettingsForChart === "function")
+    ? getEffectiveRuleSettingsForChart(chartType)
+    : {
+        shiftLength: 8,
+        trendLength: 6,
+        allowRunShift: true,
+        allowTrend: true,
+        allowZone23: false,
+        allowZone45: false
+      };
+
   const signals = [];
+  const n = values.length;
 
-  const clScalar = Array.isArray(cl) ? cl[0] : cl;
+  // Normalize limits to arrays (some callers pass scalars)
+  const clArr  = Array.isArray(cl)  ? cl  : new Array(n).fill(cl);
+  const uclArr = Array.isArray(ucl) ? ucl : new Array(n).fill(ucl);
+  const lclArr = Array.isArray(lcl) ? lcl : new Array(n).fill(lcl);
 
-  // 1) Points beyond limits (already supported)
-  const outOfControl = analyzeLimits({ labels, values, cl, ucl, lcl });
-  const hasAbove = outOfControl.some(o => o.type === "aboveUCL");
-  const hasBelow = outOfControl.some(o => o.type === "belowLCL");
-  if (hasAbove) signals.push("One or more points above the upper limit");
-  if (hasBelow) signals.push("One or more points below the lower limit");
+  const clScalar = clArr.find(v => Number.isFinite(v));
 
-  // 2) Shift + Trend (now with “where to look”)
+  // --- 1) Beyond limits (only if caller supplied limits; Run charts often won't) ---
+  let outOfControl = [];
+  if (ucl !== undefined && lcl !== undefined) {
+    outOfControl = analyzeLimits({ labels, values, cl: clArr, ucl: uclArr, lcl: lclArr });
+
+    const hasAbove = outOfControl.some(o => o.type === "aboveUCL");
+    const hasBelow = outOfControl.some(o => o.type === "belowLCL");
+    if (hasAbove) signals.push("One or more points above the upper limit");
+    if (hasBelow) signals.push("One or more points below the lower limit");
+  }
+
+  // --- helpers (your existing “where to look” logic) ---
   function findShiftWindow(values, cl, shiftLength) {
     let run = 0;
     let side = 0;
@@ -3871,46 +4155,68 @@ function analyzeAttributeChart({ chartType, labels, values, cl, ucl, lcl }) {
     return null;
   }
 
-  const shiftWindow = findShiftWindow(values, clScalar, shiftLength);
-  if (shiftWindow) {
-    const sideText = shiftWindow.side > 0 ? "above" : "below";
-    const aLab = labels?.[shiftWindow.start] ?? `point ${shiftWindow.start + 1}`;
-    const bLab = labels?.[shiftWindow.end] ?? `point ${shiftWindow.end + 1}`;
-    signals.push(`Shift: ${shiftLength}+ points in a row ${sideText} the centre line (from ${aLab} to ${bLab})`);
-  } else {
-    // Keep existing (short) signal as fallback (rarely used now)
-    const shift = findShiftSignals(values, clScalar, shiftLength);
-    if (shift) signals.push(shift);
+  // --- 2) Shift/run (policy gated) ---
+  let shiftWindow = null;
+  if (rs.allowRunShift && Number.isFinite(clScalar)) {
+    shiftWindow = findShiftWindow(values, clScalar, rs.shiftLength);
+    if (shiftWindow) {
+      const sideText = shiftWindow.side > 0 ? "above" : "below";
+      const aLab = labels?.[shiftWindow.start] ?? `point ${shiftWindow.start + 1}`;
+      const bLab = labels?.[shiftWindow.end] ?? `point ${shiftWindow.end + 1}`;
+      signals.push(`Shift: ${rs.shiftLength}+ points in a row ${sideText} the centre line (from ${aLab} to ${bLab})`);
+    } else {
+      const shift = (typeof findShiftSignals === "function")
+        ? findShiftSignals(values, clScalar, rs.shiftLength)
+        : null;
+      if (shift) signals.push(shift);
+    }
   }
 
-  const trendWindow = findTrendWindow(values, trendLength);
-  if (trendWindow) {
-    const dirText = trendWindow.direction === "up" ? "increasing" : "decreasing";
-    const aLab = labels?.[trendWindow.start] ?? `point ${trendWindow.start + 1}`;
-    const bLab = labels?.[trendWindow.end] ?? `point ${trendWindow.end + 1}`;
-    signals.push(`Trend: ${trendLength}+ points steadily ${dirText} (from ${aLab} to ${bLab})`);
-  } else {
-    const trend = findTrendSignals(values, trendLength);
-    if (trend) signals.push(trend);
+  // --- 3) Trend (policy gated) ---
+  let trendWindow = null;
+  if (rs.allowTrend) {
+    trendWindow = findTrendWindow(values, rs.trendLength);
+    if (trendWindow) {
+      const dirText = trendWindow.direction === "up" ? "increasing" : "decreasing";
+      const aLab = labels?.[trendWindow.start] ?? `point ${trendWindow.start + 1}`;
+      const bLab = labels?.[trendWindow.end] ?? `point ${trendWindow.end + 1}`;
+      signals.push(`Trend: ${rs.trendLength}+ points steadily ${dirText} (from ${aLab} to ${bLab})`);
+    } else {
+      const trend = (typeof findTrendSignals === "function")
+        ? findTrendSignals(values, rs.trendLength)
+        : null;
+      if (trend) signals.push(trend);
+    }
   }
+
+  // Note: Zone rules (2/3, 4/5) will be added next, using rs.allowZone23/allowZone45.
 
   return {
     chartType,
     isStable: signals.length === 0,
     signals,
     outOfControl,
-    // Handy to display in summaries / helper if you want
-    shiftLength,
-    trendLength,
+
+    // for summaries
+    shiftLength: rs.shiftLength,
+    trendLength: rs.trendLength,
+
+    // also expose what was allowed (useful for explainer text later)
+    rulePolicy: {
+      allowRunShift: rs.allowRunShift,
+      allowTrend: rs.allowTrend,
+      allowZone23: rs.allowZone23,
+      allowZone45: rs.allowZone45
+    },
+
     firstOutOfControl: outOfControl.length ? outOfControl[0] : null
   };
 }
 
-
 function analyzeRareChart({ chartType, labels, values, cl, ucl, lcl }) {
-  // Same engine, but we’ll word it differently in the summary
-  const a = analyzeAttributeChart({ chartType, labels, values, cl, ucl, lcl });
-  return a;
+  // Rare charts share the same detection machinery, but must respect rare-chart policy.
+  // (Default: beyond limits only. Run/trend only when deliberately enabled.)
+  return analyzeAttributeChart({ chartType, labels, values, cl, ucl, lcl });
 }
 
 
@@ -8621,6 +8927,8 @@ function wireAutoRedrawControls() {
   radio.addEventListener("change", () => {
     if (typeof updateUIForChartType === "function") {
       updateUIForChartType(radio.value);
+      updateRuleUIForChartType(radio.value);
+
     }
     maybeShowChartSetupModal(radio.value);
 
