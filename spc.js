@@ -4432,17 +4432,17 @@ function analyzeAttributeChart({ chartType, labels, values, cl, ucl, lcl }) {
     }
   }
 
-  // 3) Trend
-  let trendWindow = null;
-  if (rs.allowTrend) {
-    trendWindow = findTrendWindow(values, rs.trendLength);
-    if (trendWindow) {
-      const dirText = trendWindow.direction === "up" ? "increasing" : "decreasing";
-      const aLab = labels?.[trendWindow.start] ?? `point ${trendWindow.start + 1}`;
-      const bLab = labels?.[trendWindow.end] ?? `point ${trendWindow.end + 1}`;
-      signals.push(`Trend: ${rs.trendLength}+ points steadily ${dirText} (from ${aLab} to ${bLab})`);
-    }
+ // 3) Trend (only if rule enabled)
+let trendRanges = [];
+
+if (rs.allowTrend) {
+  if (typeof findTrendRanges === "function") {
+    trendRanges = findTrendRanges(values, trendLength) || [];
+  } else {
+    const hasTrend = detectTrend(values, trendLength);
+    if (hasTrend) trendRanges = [{ start: 0, end: 0 }];
   }
+}
 
   // 4) Zone rules
   let zone23Flags = new Array(n).fill(false);
@@ -5058,12 +5058,15 @@ function updateXmRMultiSummary(segments, totalPoints) {
 
     // 3) Trend
     let trendRanges = [];
-    if (typeof findTrendRanges === "function") {
-      trendRanges = findTrendRanges(values, trendLength) || [];
-    } else {
-      const hasTrend = detectTrend(values, trendLength);
-      if (hasTrend) trendRanges = [{ start: 0, end: 0 }]; // placeholder
-    }
+
+if (rs.allowTrend) {
+  if (typeof findTrendRanges === "function") {
+    trendRanges = findTrendRanges(values, trendLength) || [];
+  } else {
+    const hasTrend = detectTrend(values, trendLength);
+    if (hasTrend) trendRanges = [{ start: 0, end: 0 }];
+  }
+}
 
     // 4) Astronomical point (robust outlier)
     // Use baseline of this *period* to set the reference for outlier detection where possible.
@@ -5085,9 +5088,9 @@ function updateXmRMultiSummary(segments, totalPoints) {
       signals.push("a sustained shift (many points on the same side of the mean)");
     }
 
-    if (trendRanges.length > 0) {
-      signals.push("a sustained trend (steady increase or decrease)");
-    }
+    if (rs.allowTrend && trendRanges.length > 0) {
+  signals.push("a sustained trend (steady increase or decrease)");
+}
 
     if (astro.indices && astro.indices.length > 0) {
       signals.push("an unusual outlier (an ‘astronomical’ point)");
