@@ -1787,7 +1787,6 @@ document.body.classList.remove("modal-open");
 
   const firstTab = document.querySelector(".tab-btn");
 if (firstTab) firstTab.click();
-  }
 
   // Keep MR toggle visibility consistent with chart type default
   if (typeof updateMrToggleVisibility === "function") {
