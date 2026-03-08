@@ -4455,17 +4455,17 @@ function analyzeAttributeChart({ chartType, labels, values, cl, ucl, lcl }) {
     }
   }
 
- // 3) Trend (only if rule enabled)
-let trendRanges = [];
-
-if (rs.allowTrend) {
-  if (typeof findTrendRanges === "function") {
-    trendRanges = findTrendRanges(values, trendLength) || [];
-  } else {
-    const hasTrend = detectTrend(values, trendLength);
-    if (hasTrend) trendRanges = [{ start: 0, end: 0 }];
+   // 3) Trend
+  let trendWindow = null;
+  if (rs.allowTrend) {
+    trendWindow = findTrendWindow(values, rs.trendLength);
+    if (trendWindow) {
+      const dirText = trendWindow.direction === "up" ? "increasing" : "decreasing";
+      const aLab = labels?.[trendWindow.start] ?? `point ${trendWindow.start + 1}`;
+      const bLab = labels?.[trendWindow.end] ?? `point ${trendWindow.end + 1}`;
+      signals.push(`Trend: ${rs.trendLength}+ points steadily ${dirText} (from ${aLab} to ${bLab})`);
+    }
   }
-}
 
   // 4) Zone rules
   let zone23Flags = new Array(n).fill(false);
