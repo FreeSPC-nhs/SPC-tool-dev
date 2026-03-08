@@ -5732,7 +5732,7 @@ if (chartType === "run") {
       showUCL: true,
       showLCL: false
     });
-
+}
 
 } else if (chartType === "g") {
   // drawGChart expects a numeric array of values (not {x,y} point objects)
