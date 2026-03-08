@@ -2477,10 +2477,30 @@ function updateRuleUIForChartType(chartType) {
   }
 
   if (trendRulePointsInput) {
-    const allowTrendInput = (policy.trend === "optional") || (policy.trend === "warn");
-    trendRulePointsInput.disabled = !allowTrendInput;
-    trendRulePointsInput.title = allowTrendInput ? "" : "Trend rule is not offered for this chart type.";
+  let trendInputEnabled = false;
+  let trendInputTitle = "";
+
+  if (policy.trend === "optional") {
+    // Run / XmR / XbarS: only enabled when user ticks the advanced trend checkbox
+    trendInputEnabled = !!enableAdvancedTrendCheckbox?.checked;
+    trendInputTitle = trendInputEnabled
+      ? ""
+      : "Tick 'Enable trend rule' to use this setting.";
+  } else if (policy.trend === "warn") {
+    // T / G: only enabled when user explicitly enables rare-chart run/trend rules
+    trendInputEnabled = !!enableRareRunTrendCheckbox?.checked;
+    trendInputTitle = trendInputEnabled
+      ? ""
+      : "Enable run & trend rules for this chart type to use this setting.";
+  } else {
+    // P / U / C and any chart type where trend is blocked
+    trendInputEnabled = false;
+    trendInputTitle = "Trend rule is not offered for this chart type.";
   }
+
+  trendRulePointsInput.disabled = !trendInputEnabled;
+  trendRulePointsInput.title = trendInputTitle;
+}
 
   // Rare chart advanced row
   if (rareRulesRow) {
@@ -9415,6 +9435,21 @@ function wireAutoRedrawControls() {
   if (dateSelect)  dateSelect.addEventListener("change", onColumnChange);
   if (valueSelect) valueSelect.addEventListener("change", onColumnChange);
   if (thirdSelect) thirdSelect.addEventListener("change", onColumnChange);
+
+    const refreshTrendUI = () => {
+    const chartType = getSelectedChartType_NoSideEffects();
+    if (typeof updateRuleUIForChartType === "function") {
+      updateRuleUIForChartType(chartType);
+    }
+  };
+
+  if (enableAdvancedTrendCheckbox) {
+    enableAdvancedTrendCheckbox.addEventListener("change", refreshTrendUI);
+  }
+
+  if (enableRareRunTrendCheckbox) {
+    enableRareRunTrendCheckbox.addEventListener("change", refreshTrendUI);
+  }
 
   // Run once on load so MR toggle visibility matches initial selection
   if (typeof updateMrToggleVisibility === "function") {
