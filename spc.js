@@ -1785,14 +1785,8 @@ document.body.classList.remove("modal-open");
   const toggleBtn = document.getElementById("toggleSidebarButton");
   if (toggleBtn) toggleBtn.textContent = " Hide controls";
 
-  // --- Collapse sidebar <details> to match first load:
-  // Section 1 open, everything else closed
-  const sidebar = document.querySelector("aside.sidebar");
-  if (sidebar) {
-    const details = Array.from(sidebar.querySelectorAll("details"));
-    details.forEach((d, i) => {
-      d.open = (i === 0);
-    });
+  const firstTab = document.querySelector(".tab-btn");
+if (firstTab) firstTab.click();
   }
 
   // Keep MR toggle visibility consistent with chart type default
@@ -9598,6 +9592,30 @@ if (dataEditorDetectHeadersButton) {
   });
 }
 
+function initSidebarTabs() {
+
+const buttons = document.querySelectorAll(".tab-btn");
+const panels = document.querySelectorAll(".tab-panel");
+
+buttons.forEach(btn => {
+
+btn.addEventListener("click", () => {
+
+const target = btn.dataset.tab;
+
+buttons.forEach(b => b.classList.remove("active"));
+panels.forEach(p => p.classList.remove("active"));
+
+btn.classList.add("active");
+document.getElementById(target).classList.add("active");
+
+});
+
+});
+
+}
+
+document.addEventListener("DOMContentLoaded", initSidebarTabs);
 
 async function exportPdfReport() {
   const reportElement = document.getElementById("reportContent");

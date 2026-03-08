@@ -123,6 +123,46 @@ button:disabled {
   margin-bottom: 0.6rem;
 }
 
+.tab-container {
+height: 70vh;
+display: flex;
+flex-direction: column;
+}
+
+.tab-bar {
+display: flex;
+gap: 4px;
+margin-bottom: 6px;
+}
+
+.tab-btn {
+flex: 1;
+border: 1px solid #d8dde0;
+background: #f4f6f8;
+cursor: pointer;
+padding: 6px;
+font-size: 0.85rem;
+}
+
+.tab-btn.active {
+background: #005eb8;
+color: white;
+}
+
+.tab-panels {
+flex: 1;
+overflow-y: auto;
+}
+
+.tab-panel {
+display: none;
+}
+
+.tab-panel.active {
+display: block;
+}
+
+
 /* Keep headings readable */
 .sidebar .field-label {
   display: block;
@@ -887,366 +927,225 @@ body.pdf-exporting #capability {
 <div class="layout">
     <!-- SIDEBAR: all controls -->
     <aside class="sidebar">
+<div class="tab-container">
 
+<div class="tab-bar">
+<button class="tab-btn active" data-tab="tab-data">Data</button>
+<button class="tab-btn" data-tab="tab-chart">Chart</button>
+<button class="tab-btn" data-tab="tab-labels">Labels</button>
+<button class="tab-btn" data-tab="tab-baseline">Baseline</button>
+<button class="tab-btn" data-tab="tab-rules">Rules</button>
+</div>
 
-<!-- Section 1: Data -->
-<details open>
-  <summary>1. Data</summary>
-  <div class="panel">
+<div class="tab-panels">
 
-    <div>
-      <label for="fileInput"><strong>Add data:</strong></label> 
-      <div class="hint small-hint">
-        Upload a csv file or use the data editor to paste/type/edit data directly.
-      </div>
-      <input type="file" id="fileInput" accept=".csv" />
-      <div class="hint small-hint">
-        Expected columns: a date/time column (e.g. <code>Date</code>) and a numeric column (e.g. <code>Value</code>).
-      </div>
-      <button id="openDataEditorButton" type="button" style="margin-top:0.5rem;">
-  Open data editor (paste/type data)
+<!-- TAB 1: DATA -->
+<div id="tab-data" class="tab-panel active">
+
+<div class="panel">
+
+<label for="fileInput"><strong>Add data:</strong></label>
+
+<div class="hint small-hint">
+Upload a csv file or use the data editor to paste/type/edit data directly.
+</div>
+
+<input type="file" id="fileInput" accept=".csv" />
+
+<div class="hint small-hint">
+Expected columns: a date/time column and a numeric column.
+</div>
+
+<button id="openDataEditorButton" type="button">
+Open data editor (paste/type data)
 </button>
 
-<!-- Settings import/export (settings only — does NOT include data) -->
 <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.4rem;">
-  <button id="exportSettingsBtn" type="button" class="btn-small-secondary" title="Save your chart choices (not your data) so you can reuse them later">
-    Export settings
-  </button>
 
-  <button id="importSettingsBtn" type="button" class="btn-small-secondary" title="Load previously saved chart settings (your CSV data is still loaded separately)">
-    Import settings
-  </button>
+<button id="exportSettingsBtn" type="button">
+Export settings
+</button>
 
-  <input id="importSettingsFileInput" type="file" accept=".json,application/json" style="display:none;" />
+<button id="importSettingsBtn" type="button">
+Import settings
+</button>
+
+<input id="importSettingsFileInput" type="file" accept=".json,application/json" style="display:none;" />
+
 </div>
 
-<div class="hint small-hint" style="margin-top:0.25rem;">
-  <strong>Tip:</strong> Settings save your chart choices (columns, baseline, rules, labels, target, splits/annotations) — not your data.
+</div>
 </div>
 
-    </div>
+<!-- TAB 2: CHART -->
+<div id="tab-chart" class="tab-panel">
 
-  </div>
-</details>
+<div class="panel">
 
-<!-- Section 2: Chart selection -->
-<details>
-  <summary>2. Chart selection</summary>
-  <div class="panel">
-
-<div id="noDataYetHint" class="hint">
-  Load data to enable chart and column selection.
-</div>
-
-    <!-- Columns -->
 <strong class="field-label">Chart type:</strong>
 
 <div class="radio-row chart-row">
-  <label class="radio-pill">
-    <input type="radio" name="chartType" value="run" checked />
-    Run chart
-  </label>
 
-  <label class="radio-pill">
-    <input type="radio" name="chartType" value="xmr" />
-    XmR chart
-  </label>
+<label class="radio-pill">
+<input type="radio" name="chartType" value="run" checked />
+Run chart
+</label>
 
-  <div style="display:flex; gap:0.4rem;">
-    <button id="helpChooseChartBtn" type="button" class="help-btn">
-      Help me choose
-    </button>
+<label class="radio-pill">
+<input type="radio" name="chartType" value="xmr" />
+XmR chart
+</label>
 
-    <button id="chartSetupBtn" type="button" class="help-btn">
-      Chart setup
-    </button>
-  </div>
+<button id="helpChooseChartBtn" type="button" class="help-btn">
+Help me choose
+</button>
+
+<button id="chartSetupBtn" type="button" class="help-btn">
+Chart setup
+</button>
+
 </div>
 
-<details id="moreChartTypesDetails" class="more-types">
-  <summary>More chart types</summary>
+<hr>
 
-  <div class="radio-row chart-row" style="margin-top:0.1rem; flex-wrap:wrap;">
-    <label class="radio-pill" title="Counts per time period (e.g., number of incidents per week)">
-      <input type="radio" name="chartType" value="c" />
-      C chart (counts)
-    </label>
-
-    <label class="radio-pill" title="Proportion out of a total (e.g., 5 out of 100, % compliant)">
-      <input type="radio" name="chartType" value="p" />
-      P chart (proportion)
-    </label>
-
-    <label class="radio-pill" title="Rate per opportunity (e.g., infections per 1,000 bed-days)">
-      <input type="radio" name="chartType" value="u" />
-      U chart (rate)
-    </label>
-
-    <label class="radio-pill" title="Subgrouped measurements (multiple values per time point)">
-      <input type="radio" name="chartType" value="xbars" />
-      X̄–S chart (subgroups)
-    </label>
-
-    <label class="radio-pill" title="Time between events (e.g., days between serious incidents)">
-      <input type="radio" name="chartType" value="t" />
-      T chart (time between)
-    </label>
-
-    <label class="radio-pill" title="Opportunities between events (e.g., procedures between harms)">
-      <input type="radio" name="chartType" value="g" />
-      G chart (opportunities between)
-    </label>
-  </div>
-
-  <div class="hint" style="margin-top:0.1rem;">
-    If you’re not sure, use <strong>Help me choose</strong>.
-  </div>
-</details>
-
-
-<!-- MR options (only relevant to XmR; JS can hide/show mrToggleRow) -->
-<div id="mrToggleRow" class="mr-compact">
-  <label class="mr-check">
-    <input type="checkbox" id="showMRCheckbox" checked />
-    <span>Show MR</span>
-  </label>
-
-  <div id="mrDisplayOptions" class="mr-mode">
-    <span class="mr-mode-label">MR display</span>
-
-    <label class="mr-radio">
-      <input type="radio" name="mrDisplayMode" value="last" checked />
-      <span>Current</span>
-    </label>
-
-    <label class="mr-radio">
-      <input type="radio" name="mrDisplayMode" value="all" />
-      <span>All</span>
-    </label>
-
-    <span class="mr-subhint">(includes splits)</span>
-  </div>
-</div>
-
-
-<hr />
 <strong class="field-label">Choose columns:</strong>
 
-<label><span id="xLabel">Date / X-axis column</span>:
-  <select id="dateColumn"></select>
+<label>Date / X-axis column:
+<select id="dateColumn"></select>
 </label>
 
-<label><span id="yLabel">Value / Y-axis column</span>:
-  <select id="valueColumn"></select>
+<label>Value / Y-axis column:
+<select id="valueColumn"></select>
 </label>
 
-<div id="thirdColumnRow" style="display:none; margin-top:0.5rem;">
-  <label><span id="thirdLabel">Denominator / opportunities</span>:
-    <select id="thirdColumn"></select>
-  </label>
-  <div id="thirdHint" class="hint small-hint" style="margin-top:0.25rem;"></div>
+<div id="thirdColumnRow" style="display:none;">
+<label>
+<select id="thirdColumn"></select>
+</label>
+<div id="thirdHint" class="hint small-hint"></div>
 </div>
 
-<hr />
-
+<hr>
 
 <strong class="field-label">X-axis type:</strong>
+
 <div class="radio-row">
-  <label class="radio-pill">
-    <input type="radio" name="axisType" value="date" checked />
-    Date / time
-  </label>
-  <label class="radio-pill">
-    <input type="radio" name="axisType" value="sequence" />
-    Sequence / category
-  </label>
-</div>
 
-<div class="hint small-hint" style="margin-top:0.25rem;">
-  Use <em>Date / time</em> for time-series SPC, or <em>Sequence / category</em> to plot rows in their original order.
-</div>
-
- 
-      </div>
-</details>
-
-
-	<!-- Section 3: Titles & labels -->
-        <details>
-        <summary>3. Titles & labels</summary>
-        <div class="panel">
-	<div>
-  	<label>
-    	Chart title:
-    	<input type="text" id="chartTitle" placeholder="e.g. X-MR Chart – Demonstration data" style="width: 16rem;" />
-  	</label>
-	</div>
-	<div>
-  	<label>
-    	X-axis label:
-   	 <input type="text" id="xAxisLabel" placeholder="Date" style="width: 16rem;" />
- 	 </label>
-	</div>
-	<div>
-  	<label>
-   	 Y-axis label:
-    	<input type="text" id="yAxisLabel" placeholder="Example metric" style="width: 16rem;" />
- 	 </label>
-	</div>
-	</div>
-      </details>
-
-	<!-- Section 4: Baseline and targets -->
-      <details>
-        <summary>4. Baseline &amp; targets</summary>
-        <div class="panel">
-	<strong class="field-label">Set baseline period:</strong>
-	<label>
-  	Use first
-  	<input type="number" id="baselinePoints" min="2" step="1" style="width: 4rem;" />
-  	points as baseline
-	</label>
-	<div class="hint">
- 	 Baseline restricts points used to calculate centre line and limits. Leave blank to use <em>all</em> points to calculate the median/mean and limits.
-	</div>
-	<hr>
-
-	<div>
-	<strong class="field-label">Add target line:</strong>
-	  <label>
-	    Target / goal value:
-	    <input type="number" id="targetValue" step="any" placeholder="e.g. 30" style="width: 10rem;" />
-	  </label>
-	  <div class="hint">
-	    If set, a dashed orange target line will be drawn across the chart.
-	  </div>
-	</div>
-	<div>
-	  <label>
-	    Target direction:
-	    <select id="targetDirection">
-	      <option value="above">At or above target is good</option>
-	      <option value="below">At or below target is good</option>
-	    </select>
-	  </label>
-	</div>
-<label style="display:flex; gap:0.5rem; align-items:center; margin-top:0.25rem;">
-  <button type="button" id="targetToggleBtn" style="margin-top:0.25rem;">
-  Hide target line
-</button>
+<label class="radio-pill">
+<input type="radio" name="axisType" value="date" checked />
+Date / time
 </label>
 
- 	</div>
-      </details>
+<label class="radio-pill">
+<input type="radio" name="axisType" value="sequence" />
+Sequence / category
+</label>
 
+</div>
 
-<!-- Section 5: Rules & interpretation -->
-<details>
-  <summary>5. Rules &amp; interpretation</summary>
-    <div class="panel">
+</div>
+</div>
 
-    <div style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem;">
-      <div class="hint" style="margin:0;">
-        Adjust the rule thresholds used in the summary and (optionally) point highlighting.
-      </div>
+<!-- TAB 3: LABELS -->
+<div id="tab-labels" class="tab-panel">
 
-      <button id="ruleExplainerBtn" type="button" class="help-btn">
-        Rule explainer
-      </button>
-    </div>
+<div class="panel">
 
-    <div style="margin-top:0.75rem;">
-      <label>
-        Shift (run) length:
-        <input type="number" id="shiftRulePoints" min="3" step="1" value="8" style="width: 6rem;" />
-      </label>
-      <div class="hint small-hint">Default: 8 points on one side of the centre line.</div>
-    </div>
+<label>
+Chart title
+<input type="text" id="chartTitle" />
+</label>
 
-        <div>
-      <label>
-        Trend length:
-        <input type="number" id="trendRulePoints" min="3" step="1" value="6" style="width: 6rem;" />
-      </label>
-      <div class="hint small-hint">Default: 6 consecutive increases or decreases. This number is only used when the trend rule is available and turned on.</div>
-    </div>
+<label>
+X-axis label
+<input type="text" id="xAxisLabel" />
+</label>
 
-    <hr />
+<label>
+Y-axis label
+<input type="text" id="yAxisLabel" />
+</label>
 
-        <details id="advancedRulesDetails" style="margin-top:0.75rem;">
-      <summary>Advanced detection options</summary>
+</div>
 
-      <div class="panel" style="margin-top:0.75rem; padding:0.75rem;">
-        <div id="advancedTrendRow" style="display:none; margin-top:0;">
-          <label class="radio-pill" style="display:inline-flex; gap:0.5rem; align-items:center;">
-            <input type="checkbox" id="enableAdvancedTrend" />
-            Enable trend rule
-          </label>
-          <div class="hint small-hint" style="margin-top:0.25rem;">
-            Off by default. Trend rules can increase false alerts on some chart types.
-          </div>
-        </div>
+</div>
 
-        <div id="rareRulesRow" style="display:none; margin-top:0.75rem;">
-          <label class="radio-pill" style="display:inline-flex; gap:0.5rem; align-items:center;">
-            <input type="checkbox" id="enableRareRunTrend" />
-            Enable run &amp; trend rules for T/G charts (advanced)
-          </label>
-          <div class="hint small-hint" style="margin-top:0.25rem;">
-            This chart type is naturally irregular. Run and trend rules may generate false signals and are off by default.
-          </div>
-        </div>
+<!-- TAB 4: BASELINE -->
+<div id="tab-baseline" class="tab-panel">
 
-        <div id="zoneRulesSection" style="display:none; margin-top:0.75rem;">
-          <div class="hint small-hint" style="margin-top:0;">
-            Optional zone rules (off by default). Use only on chart types where they are supported.
-          </div>
+<div class="panel">
 
-          <label class="radio-pill" style="display:inline-flex; gap:0.5rem; align-items:center; margin-top:0.35rem;">
-            <input type="checkbox" id="ruleTwoOfThreeOuterThird" />
-            Apply “2 out of 3 in the outer third” rule
-          </label>
+<label>
+Use first
+<input type="number" id="baselinePoints" min="2" step="1">
+points as baseline
+</label>
 
-          <label class="radio-pill" style="display:inline-flex; gap:0.5rem; align-items:center; margin-top:0.35rem;">
-            <input type="checkbox" id="ruleFourOfFiveOneSigma" />
-            Apply “4 out of 5 beyond 1-sigma” rule
-          </label>
+<hr>
 
-          <div id="advancedContinuousCaution" class="hint small-hint" style="display:none; margin-top:0.35rem;">
-            Additional pattern rules can increase false alerts on individuals charts. Use only if you understand the trade-off.
-          </div>
-        </div>
+<label>
+Target value
+<input type="number" id="targetValue" step="any">
+</label>
 
-        <div id="conservativeRulesMessage" class="hint small-hint" style="display:none; margin-top:0.75rem;">
-          This chart uses a conservative rule set designed for reliable interpretation.
-        </div>
-      </div>
-    </details>
+<label>
+<select id="targetDirection">
+<option value="above">At or above target is good</option>
+<option value="below">At or below target is good</option>
+</select>
+</label>
 
-    <hr />
+<button type="button" id="targetToggleBtn">
+Hide target line
+</button>
 
-    <label class="radio-pill" style="display:inline-flex; gap:0.5rem; align-items:center;">
-      <input type="checkbox" id="flagSpecialCauseOnChart" checked />
-      Flag special-cause signals on the chart
-    </label>
+</div>
 
-    <!-- Only shown when the current XmR LCL would be below 0 -->
-    <div id="lclClampRow" style="display:none; margin-top:0.5rem;">
-      <label class="radio-pill" style="display:inline-flex; gap:0.5rem; align-items:center;">
-        <input type="checkbox" id="clampLclAtZero" />
-        Fix LCL at 0 (when calculated LCL is below 0)
-      </label>
-      <div class="hint small-hint">
-        Useful for measures that cannot go below zero (e.g. counts, times).
-      </div>
-    </div>
+</div>
 
-  </div>
+<!-- TAB 5: RULES -->
+<div id="tab-rules" class="tab-panel">
 
-</details>
+<div class="panel">
 
+<label>
+Shift (run) length
+<input type="number" id="shiftRulePoints" value="8">
+</label>
 
+<label>
+Trend length
+<input type="number" id="trendRulePoints" value="6">
+</label>
 
+<hr>
+
+<label>
+<input type="checkbox" id="enableAdvancedTrend">
+Enable trend rule
+</label>
+
+<label>
+<input type="checkbox" id="enableRareRunTrend">
+Enable run & trend rules for T/G charts
+</label>
+
+<label>
+<input type="checkbox" id="ruleTwoOfThreeOuterThird">
+Apply “2 out of 3 in outer third”
+</label>
+
+<label>
+<input type="checkbox" id="ruleFourOfFiveOneSigma">
+Apply “4 out of 5 beyond 1 sigma”
+</label>
+
+</div>
+
+</div>
+
+</div>
+</div>
     </aside>
 
 <!-- MAIN AREA: charts + analysis -->
