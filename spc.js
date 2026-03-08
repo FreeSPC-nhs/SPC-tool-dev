@@ -5735,34 +5735,61 @@ if (chartType === "run") {
       return;
     }
     drawTChart(points, baselineCount, labels);
-  } else {
-    // Gaps mode: we already have the gaps as point.y values
-    // Reuse the same T chart stats logic by converting gaps into a "fake points" sequence is messy,
-    // so we draw a simple chart using existing chart builders:
-    // We'll compute the exponential limits on the gap series directly here.
-
+    } else {
+    // Gaps mode: values are already "time between events"
     const gaps = points.map(p => p.y);
     if (gaps.length < 3) {
       showError("T chart (gaps mode) needs at least 3 valid gap values.");
       return;
     }
 
-    // baseline for gaps
-    const base = (baselineCount && baselineCount >= 2) ? gaps.slice(0, baselineCount) : gaps.slice();
-    const cl = base.reduce((a,b)=>a+b,0) / base.length;
+    // ---- Segment definition from splits ----
+    let effectiveSplits = Array.isArray(splits) ? splits.slice() : [];
+    effectiveSplits = effectiveSplits
+      .filter(i => Number.isInteger(i) && i >= 0 && i < gaps.length - 1)
+      .sort((a, b) => a - b);
 
-    // “3-sigma equivalent” exponential percentiles, matching drawTChart
-    const qLow = 0.00135;
-    const qHigh = 0.99865;
-    const ucl = -cl * Math.log(1 - qHigh);
-    const lcl = 0; // gaps cannot be negative
+    const segmentStarts = [0];
+    const segmentEnds = [];
+    effectiveSplits.forEach(idx => {
+      segmentEnds.push(idx);
+      segmentStarts.push(idx + 1);
+    });
+    segmentEnds.push(gaps.length - 1);
 
-    // Build arrays for limit lines
-    const clArr  = gaps.map(()=>cl);
-    const uclArr = gaps.map(()=>ucl);
-    const lclArr = gaps.map(()=>lcl);
+    const clArr = new Array(gaps.length).fill(NaN);
+    const uclArr = new Array(gaps.length).fill(NaN);
+    const lclArr = new Array(gaps.length).fill(NaN);
 
-        const pointColours = gaps.map((v, i) => (v > uclArr[i] || v < lclArr[i]) ? "#d73027" : "#003f87");
+    // Build period-specific limits
+    for (let s = 0; s < segmentStarts.length; s++) {
+      const start = segmentStarts[s];
+      const end = segmentEnds[s];
+
+      const segGaps = gaps.slice(start, end + 1);
+
+      const segBaselineCountUsed =
+        (s === 0 && baselineCount && baselineCount >= 2)
+          ? Math.min(baselineCount, segGaps.length)
+          : segGaps.length;
+
+      const base = segGaps.slice(0, segBaselineCountUsed);
+      const cl = base.reduce((a, b) => a + b, 0) / base.length;
+
+      const qHigh = 0.99865;
+      const ucl = -cl * Math.log(1 - qHigh);
+      const lcl = 0;
+
+      for (let i = start; i <= end; i++) {
+        clArr[i] = cl;
+        uclArr[i] = ucl;
+        lclArr[i] = lcl;
+      }
+    }
+
+    const pointColours = gaps.map((v, i) =>
+      (v > uclArr[i] || v < lclArr[i]) ? "#d73027" : "#003f87"
+    );
 
     drawSimpleSPCChart({
       labels,
@@ -5778,7 +5805,51 @@ if (chartType === "run") {
       showUCL: true,
       showLCL: false
     });
-}
+
+    // ---- Build per-period analyses for summary ----
+    const segmentAnalyses = [];
+
+    for (let s = 0; s < segmentStarts.length; s++) {
+      const start = segmentStarts[s];
+      const end = segmentEnds[s];
+
+      const segBaselineCountUsed =
+        (s === 0 && baselineCount && baselineCount >= 2)
+          ? Math.min(baselineCount, (end - start + 1))
+          : (end - start + 1);
+
+      const a = analyzeRareChart({
+        chartType: "t",
+        labels: labels.slice(start, end + 1),
+        values: gaps.slice(start, end + 1),
+        cl: clArr.slice(start, end + 1),
+        ucl: uclArr.slice(start, end + 1),
+        lcl: lclArr.slice(start, end + 1)
+      });
+
+      a.periodIndex = s + 1;
+      a.periodCount = segmentStarts.length;
+      a.startIndex = start;
+      a.endIndex = end;
+      a.labelStart = labels[start];
+      a.labelEnd = labels[end];
+      a.nPoints = (end - start + 1);
+      a.baselineCountUsed = segBaselineCountUsed;
+
+      a.stats = {
+        cl: Number(clArr[start]),
+        ucl: Number(uclArr[start]),
+        lcl: Number(lclArr[start])
+      };
+
+      a.totalPoints = gaps.length;
+
+      segmentAnalyses.push(a);
+    }
+
+    lastRareAnalysis = segmentAnalyses[segmentAnalyses.length - 1];
+    renderRareChartSummary(segmentAnalyses, gaps.length);
+  }
 
 } else if (chartType === "g") {
   // drawGChart expects a numeric array of values (not {x,y} point objects)
