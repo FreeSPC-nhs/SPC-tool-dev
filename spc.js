@@ -1022,10 +1022,15 @@ function loadRows(rows) {
 function showError(msg) {
   if (errorMessage) errorMessage.textContent = msg;
 }
+
+function showChartMessage(msg) {
+  // Safe alias used by some newer validation code
+  showError(msg);
+}
+
 function clearError() {
   if (errorMessage) errorMessage.textContent = "";
 }
-
 
 function getTargetValue() {
   if (!targetEnabled) return null;
@@ -5711,21 +5716,22 @@ if (chartType === "run") {
     const uclArr = gaps.map(()=>ucl);
     const lclArr = gaps.map(()=>lcl);
 
-    // Labels are already set up earlier
-    drawChartWithLimits(
+        const pointColours = gaps.map((v, i) => (v > uclArr[i] || v < lclArr[i]) ? "#d73027" : "#003f87");
+
+    drawSimpleSPCChart({
       labels,
-      gaps,
-      clArr,
-      uclArr,
-      lclArr,
-      {
-        title: chartTitleInput?.value || "T chart (gaps)",
-        yLabel: yAxisInput?.value || "Time between events",
-        xLabel: xAxisInput?.value || "Sequence",
-        chartType: "t"
-      }
-    );
-  }
+      values: gaps,
+      pointColours,
+      cl: clArr,
+      ucl: uclArr,
+      lcl: lclArr,
+      yAxisSuggestedMin: 0,
+      yAxisSuggestedMax: Math.max(...gaps, ...uclArr.filter(isFinite)),
+      chartTitleFallback: chartTitleInput?.value || "T chart (gaps)",
+      yAxisLabelFallback: yAxisLabelInput?.value || "Time between events",
+      showUCL: true,
+      showLCL: false
+    });
 
 
 } else if (chartType === "g") {
@@ -6639,27 +6645,14 @@ function drawXmRChart(points, baselineCount, labels) {
     for (let i = 0; i < segPts.length; i++) {
       const globalIdx = start + i;
 
-      // Colouring:
+            // Colouring:
       // - beyond limits = red
       // - shift/trend = orange
       // - otherwise blue
-            // Policy-aware analysis for this segment
-      const segAnalysis = analyzeAttributeChart({
-        chartType: "xmr",
-        labels: segLabels,
-        values: segPts.map(p => p.y),
-        cl: mean,
-        ucl: ucl,
-        lcl: lcl
-      });
-
-      const beyondHere = !!segAnalysis.flags?.beyond?.[i];
-      const specialHere = !!segAnalysis.flags?.special?.[i];
-
       if (flagOnChart) {
-        if (beyondHere) {
+        if (segPts[i].beyondLimits) {
           pointColours[globalIdx] = "#d73027";
-        } else if (specialHere) {
+        } else if (runFlags[i] || trendFlags[i]) {
           pointColours[globalIdx] = "#ff8c00";
         }
       }
