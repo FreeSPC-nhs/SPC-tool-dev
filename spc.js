@@ -1076,7 +1076,17 @@ if (trendRulePointsInput) {
   trendRulePointsInput.addEventListener("change", debouncedRegen);
 }
 if (enableAdvancedTrendCheckbox) {
-  enableAdvancedTrendCheckbox.addEventListener("change", debouncedRegen);
+  enableAdvancedTrendCheckbox.addEventListener("change", () => {
+    const chartType = getSelectedChartType_NoSideEffects();
+
+    if (typeof updateRuleUIForChartType === "function") {
+      updateRuleUIForChartType(chartType);
+    }
+
+    if (typeof debouncedRegen === "function") {
+      debouncedRegen();
+    }
+  });
 }
 if (flagSpecialCauseOnChartCheckbox) {
   flagSpecialCauseOnChartCheckbox.addEventListener("change", () => {
@@ -1099,13 +1109,23 @@ if (ruleFourOfFiveOneSigmaCheckbox) {
 if (enableRareRunTrendCheckbox) {
   enableRareRunTrendCheckbox.addEventListener("change", () => {
     const chartType = getSelectedChartType_NoSideEffects();
-    if (!confirmEnableRareRunTrendOnce(chartType)) return;
 
-    // Regenerate to apply new rule settings
-    if (typeof debouncedRegen === "function") debouncedRegen();
+    if (!confirmEnableRareRunTrendOnce(chartType)) {
+      if (typeof updateRuleUIForChartType === "function") {
+        updateRuleUIForChartType(chartType);
+      }
+      return;
+    }
+
+    if (typeof updateRuleUIForChartType === "function") {
+      updateRuleUIForChartType(chartType);
+    }
+
+    if (typeof debouncedRegen === "function") {
+      debouncedRegen();
+    }
   });
 }
-
 const recalcPrompt = document.getElementById("recalcPrompt");
 const firstRunGuide = document.getElementById("firstRunGuide");
 const FIRST_RUN_KEY = "spc_first_run_done_v1";
@@ -2451,6 +2471,9 @@ function updateRuleUIForChartType(chartType) {
   const policy = getRulePolicy(chartType);
   const isRare = isRareChartType(chartType);
   const isAdvancedContinuous = isAdvancedContinuousChartType(chartType);
+  const trendRulePointsInput = document.getElementById("trendRulePoints");
+  const enableAdvancedTrendCheckbox = document.getElementById("enableAdvancedTrend");
+  const enableRareRunTrendCheckbox = document.getElementById("enableRareRunTrend");
 
   // Advanced section is only useful when there is something advanced to show
   const showAdvancedSection =
@@ -9439,20 +9462,7 @@ function wireAutoRedrawControls() {
   if (valueSelect) valueSelect.addEventListener("change", onColumnChange);
   if (thirdSelect) thirdSelect.addEventListener("change", onColumnChange);
 
-    const refreshTrendUI = () => {
-    const chartType = getSelectedChartType_NoSideEffects();
-    if (typeof updateRuleUIForChartType === "function") {
-      updateRuleUIForChartType(chartType);
-    }
-  };
-
-  if (enableAdvancedTrendCheckbox) {
-    enableAdvancedTrendCheckbox.addEventListener("change", refreshTrendUI);
-  }
-
-  if (enableRareRunTrendCheckbox) {
-    enableRareRunTrendCheckbox.addEventListener("change", refreshTrendUI);
-  }
+    
 
   // Run once on load so MR toggle visibility matches initial selection
   if (typeof updateMrToggleVisibility === "function") {
