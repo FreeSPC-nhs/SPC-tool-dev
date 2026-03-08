@@ -6591,7 +6591,7 @@ function drawXmRChart(points, baselineCount, labels) {
   // Track whether any raw LCL would be below 0 (so we can show the option conditionally)
   let anyRawLclBelowZero = false;
 
-  // ----- Per-segment XmR -----
+    // ----- Per-segment XmR -----
   for (let s = 0; s < segmentStarts.length; s++) {
     const start = segmentStarts[s];
     const end   = segmentEnds[s];
@@ -6614,50 +6614,45 @@ function drawXmRChart(points, baselineCount, labels) {
       anyRawLclBelowZero = true;
     }
 
+    // Rule-aware analysis for this segment
+    const segValues = segPts.map(p => p.y);
+
+    const segAnalysis = analyzeAttributeChart({
+      chartType: "xmr",
+      labels: labels.slice(start, end + 1),
+      values: segValues,
+      cl: new Array(segValues.length).fill(mean),
+      ucl: new Array(segValues.length).fill(ucl),
+      lcl: new Array(segValues.length).fill(lcl)
+    });
+
     // Store for multi-period summary
     segmentSummaries.push({
       startIndex: start,
       endIndex: end,
       labelStart: labels[start],
       labelEnd: labels[end],
-      result: segResult
+      result: segResult,
+      analysis: segAnalysis
     });
 
-    // Extra rule detection for colouring (shift/trend relative to MEAN within this segment)
-    const segValues = segPts.map(p => p.y);
+    // Fill chart arrays for this segment
+    for (let i = 0; i < segValues.length; i++) {
+      const globalIdx = start + i;
 
-const segAnalysis = analyzeAttributeChart({
-  chartType: "xmr",
-  labels: labels.slice(start, end + 1),
-  values: segValues,
-  cl: new Array(segValues.length).fill(mean),
-  ucl: new Array(segValues.length).fill(ucl),
-  lcl: new Array(segValues.length).fill(lcl)
-});
-
-// Keep analysis with the segment for summaries / later reuse
-segmentSummaries.push({
-  startIndex: start,
-  endIndex: end,
-  labelStart: labels[start],
-  labelEnd: labels[end],
-  result: segResult,
-  analysis: segAnalysis
-});
-
-for (let i = 0; i < segValues.length; i++) {
-  const globalIdx = start + i;
-
-  if (!flagOnChart) {
-    pointColours[globalIdx] = SPC_STYLE.pointNormal;
-  } else if (segAnalysis.flags?.beyond?.[i]) {
-    pointColours[globalIdx] = "#d73027";
-  } else if (segAnalysis.flags?.special?.[i]) {
-    pointColours[globalIdx] = "#ff8c00";
-  } else {
-    pointColours[globalIdx] = SPC_STYLE.pointNormal;
-  }
-}
+      // Colouring:
+      // - beyond limits = red
+      // - other special-cause signals = orange
+      // - otherwise blue
+      if (!flagOnChart) {
+        pointColours[globalIdx] = SPC_STYLE.pointNormal;
+      } else if (segAnalysis.flags?.beyond?.[i]) {
+        pointColours[globalIdx] = "#d73027";
+      } else if (segAnalysis.flags?.special?.[i]) {
+        pointColours[globalIdx] = "#ff8c00";
+      } else {
+        pointColours[globalIdx] = SPC_STYLE.pointNormal;
+      }
 
       // Centre line & limits
       meanLine[globalIdx] = mean;
