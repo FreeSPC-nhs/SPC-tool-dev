@@ -5037,11 +5037,17 @@ function updateXmRMultiSummary(segments, totalPoints) {
   const target = getTargetValue();
   const direction = targetDirectionInput ? targetDirectionInput.value : "above";
 
-  // Use configured thresholds if available (defaults stay 8 and 6)
-  const { shiftLength, trendLength } =
-    (typeof getRuleSettings === "function")
-      ? getRuleSettings()
-      : { shiftLength: 8, trendLength: 6 };
+  // Use configured thresholds + effective rule policy for XmR
+  const rs = (typeof getEffectiveRuleSettingsForChart === "function")
+    ? getEffectiveRuleSettingsForChart("xmr")
+    : {
+        shiftLength: 8,
+        trendLength: 6,
+        allowRunShift: true,
+        allowTrend: false
+      };
+
+  const { shiftLength, trendLength } = rs;
 
   let html = `<h3>Summary (XmR chart)</h3>`;
   html += `<p>Total number of points: <strong>${totalPoints}</strong>. `;
