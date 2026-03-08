@@ -3217,7 +3217,7 @@ function drawXbarSChart(points, baselineCount, labels) {
       lcl: lclXArr.slice(start, end + 1)
     }),
     s: analyzeAttributeChart({
-      chartType: "s",
+      chartType: "xbars",
       labels: subgroupLabels.slice(start, end + 1),
       values: sVals.slice(start, end + 1),
       cl: clS.slice(start, end + 1),
@@ -6626,36 +6626,38 @@ function drawXmRChart(points, baselineCount, labels) {
     // Extra rule detection for colouring (shift/trend relative to MEAN within this segment)
     const segValues = segPts.map(p => p.y);
 
-    const runRanges = (typeof findLongRunRanges === "function")
-      ? findLongRunRanges(segValues, mean, shiftLength)
-      : [];
+const segAnalysis = analyzeAttributeChart({
+  chartType: "xmr",
+  labels: labels.slice(start, end + 1),
+  values: segValues,
+  cl: new Array(segValues.length).fill(mean),
+  ucl: new Array(segValues.length).fill(ucl),
+  lcl: new Array(segValues.length).fill(lcl)
+});
 
-    const trendRanges = (typeof findTrendRanges === "function")
-      ? findTrendRanges(segValues, trendLength)
-      : [];
+// Keep analysis with the segment for summaries / later reuse
+segmentSummaries.push({
+  startIndex: start,
+  endIndex: end,
+  labelStart: labels[start],
+  labelEnd: labels[end],
+  result: segResult,
+  analysis: segAnalysis
+});
 
-    const runFlags = (typeof flagFromRanges === "function")
-      ? flagFromRanges(segValues.length, runRanges)
-      : new Array(segValues.length).fill(false);
+for (let i = 0; i < segValues.length; i++) {
+  const globalIdx = start + i;
 
-    const trendFlags = (typeof flagFromRanges === "function")
-      ? flagFromRanges(segValues.length, trendRanges)
-      : new Array(segValues.length).fill(false);
-
-    for (let i = 0; i < segPts.length; i++) {
-      const globalIdx = start + i;
-
-            // Colouring:
-      // - beyond limits = red
-      // - shift/trend = orange
-      // - otherwise blue
-      if (flagOnChart) {
-        if (segPts[i].beyondLimits) {
-          pointColours[globalIdx] = "#d73027";
-        } else if (runFlags[i] || trendFlags[i]) {
-          pointColours[globalIdx] = "#ff8c00";
-        }
-      }
+  if (!flagOnChart) {
+    pointColours[globalIdx] = SPC_STYLE.pointNormal;
+  } else if (segAnalysis.flags?.beyond?.[i]) {
+    pointColours[globalIdx] = "#d73027";
+  } else if (segAnalysis.flags?.special?.[i]) {
+    pointColours[globalIdx] = "#ff8c00";
+  } else {
+    pointColours[globalIdx] = SPC_STYLE.pointNormal;
+  }
+}
 
       // Centre line & limits
       meanLine[globalIdx] = mean;
