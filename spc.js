@@ -721,6 +721,36 @@ function getNonBlankGridRows() {
   return data2D.filter(row => row.some(cell => String(cell ?? "").trim() !== ""));
 }
 
+function getTrimmedGridData() {
+  if (!dataEditorGrid) return [];
+
+  const data2D = dataEditorGrid.getData();
+
+  // Remove completely blank rows
+  let rows = data2D.filter(row =>
+    Array.isArray(row) && row.some(cell => String(cell ?? "").trim() !== "")
+  );
+
+  if (!rows.length) return [];
+
+  // Find the last non-blank column across all remaining rows
+  let lastUsedCol = -1;
+  rows.forEach(row => {
+    row.forEach((cell, idx) => {
+      if (String(cell ?? "").trim() !== "") {
+        lastUsedCol = Math.max(lastUsedCol, idx);
+      }
+    });
+  });
+
+  if (lastUsedCol < 0) return [];
+
+  // Trim every row to the last used column
+  rows = rows.map(row => row.slice(0, lastUsedCol + 1));
+
+  return rows;
+}
+
 function detectHeadersFromGrid() {
   const rows = getNonBlankGridRows();
 
@@ -4019,6 +4049,36 @@ function stripDuplicateHeaderRow(rows, headers) {
   return rows;
 }
 
+function getTrimmedGridData() {
+  if (!dataEditorGrid) return [];
+
+  const data2D = dataEditorGrid.getData();
+
+  // Remove completely blank rows
+  let rows = data2D.filter(row =>
+    Array.isArray(row) && row.some(cell => String(cell ?? "").trim() !== "")
+  );
+
+  if (!rows.length) return [];
+
+  // Find the last non-blank column across all remaining rows
+  let lastUsedCol = -1;
+  rows.forEach(row => {
+    row.forEach((cell, idx) => {
+      if (String(cell ?? "").trim() !== "") {
+        lastUsedCol = Math.max(lastUsedCol, idx);
+      }
+    });
+  });
+
+  if (lastUsedCol < 0) return [];
+
+  // Trim every row to the last used column
+  rows = rows.map(row => row.slice(0, lastUsedCol + 1));
+
+  return rows;
+}
+
 if (dataEditorApplyButton) {
   dataEditorApplyButton.addEventListener("click", () => {
     let loadedOk = false;
@@ -4029,14 +4089,9 @@ if (dataEditorApplyButton) {
         return;
       }
 
-      const data2D = dataEditorGrid.getData();
+      const rows2D = getTrimmedGridData();
 
-      // Drop fully blank rows
-      const nonBlank = data2D.filter(row =>
-        row.some(cell => String(cell ?? "").trim() !== "")
-      );
-
-      if (nonBlank.length === 0) {
+      if (rows2D.length === 0) {
         showError("Please enter at least one data row.");
         return;
       }
@@ -4044,45 +4099,44 @@ if (dataEditorApplyButton) {
       // Decide if first row is headers (checkbox)
       const useHeaders = !!(dataEditorHasHeaders && dataEditorHasHeaders.checked);
 
-// Safety: warn if checkbox disagrees with auto-detect
-const autoGuess = detectHeadersFromGrid();
-if (useHeaders !== autoGuess) {
-  const msg = useHeaders
-    ? "You have 'First row contains headers' ticked, but the first row looks like DATA.\n\nApply anyway?"
-    : "You have 'First row contains headers' unticked, but the first row looks like HEADERS.\n\nApply anyway?";
+      // Safety: warn if checkbox disagrees with auto-detect
+      const autoGuess = detectHeadersFromGrid();
+      if (useHeaders !== autoGuess) {
+        const msg = useHeaders
+          ? "You have 'First row contains headers' ticked, but the first row looks like DATA.\n\nApply anyway?"
+          : "You have 'First row contains headers' unticked, but the first row looks like HEADERS.\n\nApply anyway?";
 
-  if (!confirm(msg)) {
-    // Keep modal open; let them correct the checkbox
-    renderHeaderStatus();
-    return;
-  }
-}
-
+        if (!confirm(msg)) {
+          // Keep modal open; let them correct the checkbox
+          renderHeaderStatus();
+          return;
+        }
+      }
 
       let headers;
       let body;
 
       if (useHeaders) {
-        headers = nonBlank[0].map((h, i) => {
+        headers = rows2D[0].map((h, i) => {
           const name = String(h ?? "").trim();
           return name || `Column${i + 1}`;
         });
-        body = nonBlank.slice(1); // remove header row from data
+        body = rows2D.slice(1); // remove header row from data
       } else {
-  // No header row: keep the existing column titles from the grid
-  const maxCols = nonBlank.reduce((m, r) => Math.max(m, r.length), 0);
+        // No header row: keep the existing column titles from the grid
+        const maxCols = rows2D.reduce((m, r) => Math.max(m, r.length), 0);
 
-  const cols = (dataEditorGrid && dataEditorGrid.options && Array.isArray(dataEditorGrid.options.columns))
-    ? dataEditorGrid.options.columns
-    : [];
+        const cols = (dataEditorGrid && dataEditorGrid.options && Array.isArray(dataEditorGrid.options.columns))
+          ? dataEditorGrid.options.columns
+          : [];
 
-  headers = Array.from({ length: maxCols }, (_, i) => {
-    const t = (cols[i] && cols[i].title) ? String(cols[i].title).trim() : "";
-    return t || `Column${i + 1}`;
-  });
+        headers = Array.from({ length: maxCols }, (_, i) => {
+          const t = (cols[i] && cols[i].title) ? String(cols[i].title).trim() : "";
+          return t || `Column${i + 1}`;
+        });
 
-  body = nonBlank;
-}
+        body = rows2D;
+      }
 
       const rows = sheetToObjects(headers, body);
 
@@ -4096,7 +4150,7 @@ if (useHeaders !== autoGuess) {
 
       clearError();
 
-      // Reset annotations/splits etc... (keep your existing block)
+      // Reset annotations/splits etc.
       annotations = [];
       if (annotationDateInput) annotationDateInput.value = "";
       if (annotationLabelInput) annotationLabelInput.value = "";
