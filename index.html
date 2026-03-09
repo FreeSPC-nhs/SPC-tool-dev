@@ -135,16 +135,35 @@ gap: 4px;
 margin-bottom: 6px;
 }
 
+.tab-container {
+  height: 72vh;
+  display: flex;
+  flex-direction: column;
+  background: #e8eef1;
+  border: 1px solid #c7d3da;
+  border-radius: 0.75rem;
+  padding: 0.5rem;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.5);
+}
+
+.tab-bar {
+  display: flex;
+  gap: 0.2rem;
+  margin-bottom: 0.4rem;
+  flex-wrap: wrap;
+}
+
 .tab-btn {
-  flex: 1;
+  flex: 1 1 auto;
   border: 1px solid #005eb8;
   background: #005eb8;
   color: #ffffff;
   cursor: pointer;
   padding: 0.45rem 0.7rem;
   font-size: 0.85rem;
-  border-radius: 0.5rem 0.5rem 0 0;
+  border-radius: 0.55rem 0.55rem 0 0;
   font-weight: 600;
+  line-height: 1.1;
 }
 
 .tab-btn:hover {
@@ -154,21 +173,62 @@ margin-bottom: 6px;
 }
 
 .tab-btn.active {
-  background: #003f87;
-  color: #ffffff;
-  border-color: #003f87;
+  background: #ffffff;
+  color: #003f87;
+  border-color: #c7d3da;
+  border-bottom-color: #ffffff;
+  position: relative;
+  top: 1px;
 }
+
 .tab-panels {
-flex: 1;
-overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  background: #ffffff;
+  border: 1px solid #c7d3da;
+  border-radius: 0 0.6rem 0.6rem 0.6rem;
+  padding: 0.75rem;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
 }
 
 .tab-panel {
-display: none;
+  display: none;
 }
 
 .tab-panel.active {
-display: block;
+  display: block;
+}
+
+/* Make cards inside tabs feel integrated, not like separate floating tiles */
+.tab-panel .panel {
+  border: none;
+  box-shadow: none;
+  background: transparent;
+  padding: 0;
+  margin-bottom: 0;
+}
+
+/* Slightly improve section spacing inside tabs */
+.tab-panel hr {
+  border: 0;
+  border-top: 1px solid #d8dde0;
+  margin: 0.9rem 0;
+}
+
+/* Keep the scroll area feeling intentional */
+.tab-panels::-webkit-scrollbar {
+  width: 10px;
+}
+
+.tab-panels::-webkit-scrollbar-thumb {
+  background: #c2ccd3;
+  border-radius: 999px;
+  border: 2px solid #ffffff;
+}
+
+.tab-panels::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 
@@ -797,9 +857,19 @@ body.modal-open {
 }
 
 .help-btn {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.9em;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.85em;
   white-space: nowrap;
+  background: #f6f8fa;
+  color: #003f87;
+  border: 1px solid #b8c7d1;
+  border-radius: 9999px;
+}
+
+.help-btn:hover {
+  background: #e9f0f5;
+  border-color: #8fa8b8;
+  color: #003f87;
 }
 
 .mr-label {
@@ -1007,16 +1077,6 @@ Import settings
     <input type="radio" name="chartType" value="xmr" />
     XmR chart
   </label>
-
-  <div style="display:flex; gap:0.4rem; flex-wrap:wrap;">
-    <button id="helpChooseChartBtn" type="button" class="help-btn">
-      Help me choose
-    </button>
-
-    <button id="chartSetupBtn" type="button" class="help-btn">
-      Chart setup
-    </button>
-  </div>
 </div>
 
 <details id="moreChartTypesDetails" class="more-types">
@@ -1058,6 +1118,16 @@ Import settings
     If you’re not sure, use <strong>Help me choose</strong>.
   </div>
 </details>
+
+<div style="display:flex; gap:0.4rem; flex-wrap:wrap; margin-top:0.5rem; margin-bottom:0.5rem;">
+  <button id="helpChooseChartBtn" type="button" class="help-btn">
+    Help me choose
+  </button>
+
+  <button id="chartSetupBtn" type="button" class="help-btn">
+    Chart setup
+  </button>
+</div>
 
 <!-- MR options -->
 <div id="mrToggleRow" class="mr-compact">
