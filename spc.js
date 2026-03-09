@@ -135,6 +135,15 @@ const baselineOverlayPlugin = {
 // Register once (Chart.js v3/v4)
 if (typeof Chart !== "undefined" && Chart.register) {
   Chart.register(baselineOverlayPlugin);
+
+  // Give charts a little more headroom/footroom so annotation labels stay visible
+  Chart.defaults.layout = Chart.defaults.layout || {};
+  Chart.defaults.layout.padding = {
+    top: 26,
+    right: 8,
+    bottom: 30,
+    left: 8
+  };
 }
 
 
@@ -3936,11 +3945,11 @@ function buildAnnotationConfig(labels) {
     .sort((a, b) => a.xIndex - b.xIndex);
 
   // Lay annotations into lanes so nearby labels do not overlap horizontally.
-  // Alternate lanes above and below so labels stay visible more often.
+  // Alternate lanes above and below, but keep offsets conservative so labels stay inside the chart.
   const laneLastEnd = [];
 
   items.forEach((a) => {
-    const wrapped = wrapAnnotationText(a.label, 28);
+    const wrapped = wrapAnnotationText(a.label, 24);
     const longestLine = wrapped.reduce((m, line) => Math.max(m, line.length), 0);
 
     // Approximate how many x-slots the label occupies visually
@@ -3953,13 +3962,14 @@ function buildAnnotationConfig(labels) {
     laneLastEnd[lane] = a.xIndex + span;
 
     // Alternate above / below:
-    // lane 0 => above, lane 1 => below, lane 2 => further above, lane 3 => further below, etc.
+    // lane 0 => above, lane 1 => below, lane 2 => further above, lane 3 => further below
     const level = Math.floor(lane / 2);
     const placeAbove = lane % 2 === 0;
 
+    // Smaller offsets than before so labels stay visible
     const yAdjust = placeAbove
-      ? -(12 + level * 22)
-      : (12 + level * 22);
+      ? -(8 + level * 16)
+      : (8 + level * 16);
 
     cfg["annot" + a._idx] = {
       type: "line",
@@ -3990,6 +4000,7 @@ function buildAnnotationConfig(labels) {
 
   return cfg;
 }
+
 
 function openDataEditor() {
   if (!dataEditorOverlay || !dataEditorGridEl) return;
