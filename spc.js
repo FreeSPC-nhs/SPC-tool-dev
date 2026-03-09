@@ -3935,8 +3935,8 @@ function buildAnnotationConfig(labels) {
     .filter(a => a.xIndex >= 0)
     .sort((a, b) => a.xIndex - b.xIndex);
 
-  // Lay annotations into vertical lanes so nearby labels do not overlap horizontally.
-  // This is approximate (based on text length), but works much better than only staggering identical dates.
+  // Lay annotations into lanes so nearby labels do not overlap horizontally.
+  // Alternate lanes above and below so labels stay visible more often.
   const laneLastEnd = [];
 
   items.forEach((a) => {
@@ -3952,7 +3952,14 @@ function buildAnnotationConfig(labels) {
     }
     laneLastEnd[lane] = a.xIndex + span;
 
-    const yAdjust = -(12 + lane * 20);
+    // Alternate above / below:
+    // lane 0 => above, lane 1 => below, lane 2 => further above, lane 3 => further below, etc.
+    const level = Math.floor(lane / 2);
+    const placeAbove = lane % 2 === 0;
+
+    const yAdjust = placeAbove
+      ? -(12 + level * 22)
+      : (12 + level * 22);
 
     cfg["annot" + a._idx] = {
       type: "line",
@@ -3974,7 +3981,7 @@ function buildAnnotationConfig(labels) {
         },
         padding: 4,
         cornerRadius: 4,
-        position: "end",
+        position: placeAbove ? "end" : "start",
         yAdjust: yAdjust,
         textAlign: "left"
       }
@@ -8365,48 +8372,116 @@ function showChartContextMenu(clientX, clientY, pointIndex) {
 
   const supportsSplits = ["run", "xmr", "c", "p", "u", "xbars", "t", "g"].includes(chartType);
 
-  // Enable/disable the split buttons based on chart type and whether a point was clicked
+  // Current x-label at the clicked point (if any)
+  const labels = currentChart?.data?.labels || [];
+  const noPoint = (pointIndex === null || pointIndex === undefined);
+  const xLabel = (!noPoint && labels && labels[pointIndex] !== undefined) ? labels[pointIndex] : null;
+  const annsAtPoint = xLabel ? getAnnotationsAtDate(xLabel) : [];
+  const hasAnnotationAtPoint = annsAtPoint.length > 0;
+  const hasAnyAnnotations = Array.isArray(annotations) && annotations.length > 0;
+
+  // ---------- Annotation buttons ----------
+  const addAnnotationBtn = chartContextMenu.querySelector('button[data-action="addAnnotation"]');
+  const editAnnotationBtn = chartContextMenu.querySelector('button[data-action="editAnnotation"]');
+  const deleteAnnotationBtn = chartContextMenu.querySelector('button[data-action="deleteAnnotation"]');
+  const clearAnnotationsBtn = chartContextMenu.querySelector('button[data-action="clearAnnotations"]');
+
+  if (addAnnotationBtn) {
+    if (!addAnnotationBtn.dataset.defaultTitle) {
+      addAnnotationBtn.dataset.defaultTitle = addAnnotationBtn.getAttribute("title") || "";
+    }
+
+    addAnnotationBtn.disabled = noPoint;
+
+    if (noPoint) {
+      addAnnotationBtn.title = "Right-click near a data point to add an annotation.";
+    } else {
+      addAnnotationBtn.title = addAnnotationBtn.dataset.defaultTitle;
+    }
+  }
+
+  if (editAnnotationBtn) {
+    if (!editAnnotationBtn.dataset.defaultTitle) {
+      editAnnotationBtn.dataset.defaultTitle = editAnnotationBtn.getAttribute("title") || "";
+    }
+
+    editAnnotationBtn.disabled = noPoint || !hasAnnotationAtPoint;
+
+    if (noPoint) {
+      editAnnotationBtn.title = "Right-click near a data point to edit an annotation.";
+    } else if (!hasAnnotationAtPoint) {
+      editAnnotationBtn.title = "There is no annotation at this point to edit.";
+    } else {
+      editAnnotationBtn.title = editAnnotationBtn.dataset.defaultTitle;
+    }
+  }
+
+  if (deleteAnnotationBtn) {
+    if (!deleteAnnotationBtn.dataset.defaultTitle) {
+      deleteAnnotationBtn.dataset.defaultTitle = deleteAnnotationBtn.getAttribute("title") || "";
+    }
+
+    deleteAnnotationBtn.disabled = noPoint || !hasAnnotationAtPoint;
+
+    if (noPoint) {
+      deleteAnnotationBtn.title = "Right-click near a data point to delete an annotation.";
+    } else if (!hasAnnotationAtPoint) {
+      deleteAnnotationBtn.title = "There is no annotation at this point to delete.";
+    } else {
+      deleteAnnotationBtn.title = deleteAnnotationBtn.dataset.defaultTitle;
+    }
+  }
+
+  if (clearAnnotationsBtn) {
+    if (!clearAnnotationsBtn.dataset.defaultTitle) {
+      clearAnnotationsBtn.dataset.defaultTitle = clearAnnotationsBtn.getAttribute("title") || "";
+    }
+
+    clearAnnotationsBtn.disabled = !hasAnyAnnotations;
+
+    if (!hasAnyAnnotations) {
+      clearAnnotationsBtn.title = "There are no annotations to clear.";
+    } else {
+      clearAnnotationsBtn.title = clearAnnotationsBtn.dataset.defaultTitle;
+    }
+  }
+
+  // ---------- Split buttons ----------
   const addSplitBtn = chartContextMenu.querySelector('button[data-action="addSplit"]');
   const clearSplitsBtn = chartContextMenu.querySelector('button[data-action="clearSplits"]');
 
-if (addSplitBtn) {
-  // Remember the original tooltip from HTML once
-  if (!addSplitBtn.dataset.defaultTitle) {
-    addSplitBtn.dataset.defaultTitle = addSplitBtn.getAttribute("title") || "";
+  if (addSplitBtn) {
+    if (!addSplitBtn.dataset.defaultTitle) {
+      addSplitBtn.dataset.defaultTitle = addSplitBtn.getAttribute("title") || "";
+    }
+
+    addSplitBtn.disabled = !supportsSplits || noPoint;
+
+    if (!supportsSplits) {
+      addSplitBtn.title = "Splits are not available for this chart type.";
+    } else if (noPoint) {
+      addSplitBtn.title = "Right-click near a data point to add a split.";
+    } else {
+      addSplitBtn.title = addSplitBtn.dataset.defaultTitle;
+    }
   }
 
-  const noPoint = (pointIndex === null || pointIndex === undefined);
-  addSplitBtn.disabled = !supportsSplits || noPoint;
+  if (clearSplitsBtn) {
+    if (!clearSplitsBtn.dataset.defaultTitle) {
+      clearSplitsBtn.dataset.defaultTitle = clearSplitsBtn.getAttribute("title") || "";
+    }
 
-  // Only override tooltip when disabled; otherwise restore the HTML tooltip
-  if (!supportsSplits) {
-    addSplitBtn.title = "Splits are not available for this chart type.";
-  } else if (noPoint) {
-    addSplitBtn.title = "Right-click near a data point to add a split.";
-  } else {
-    addSplitBtn.title = addSplitBtn.dataset.defaultTitle;
+    const hasSplits = Array.isArray(splits) && splits.length > 0;
+    clearSplitsBtn.disabled = !supportsSplits || !hasSplits;
+
+    if (!supportsSplits) {
+      clearSplitsBtn.title = "Splits are not available for this chart type.";
+    } else if (!hasSplits) {
+      clearSplitsBtn.title = "No splits to clear.";
+    } else {
+      clearSplitsBtn.title = clearSplitsBtn.dataset.defaultTitle;
+    }
   }
-}
-
-if (clearSplitsBtn) {
-  // Remember the original tooltip from HTML once
-  if (!clearSplitsBtn.dataset.defaultTitle) {
-    clearSplitsBtn.dataset.defaultTitle = clearSplitsBtn.getAttribute("title") || "";
-  }
-
-  const hasSplits = Array.isArray(splits) && splits.length > 0;
-  clearSplitsBtn.disabled = !supportsSplits || !hasSplits;
-
-  // Only override tooltip when disabled; otherwise restore the HTML tooltip
-  if (!supportsSplits) {
-    clearSplitsBtn.title = "Splits are not available for this chart type.";
-  } else if (!hasSplits) {
-    clearSplitsBtn.title = "No splits to clear.";
-  } else {
-    clearSplitsBtn.title = clearSplitsBtn.dataset.defaultTitle;
-  }
-}
-
 
   chartContextMenu.style.display = "block";
   chartContextMenu.style.left = "0px";
@@ -8426,7 +8501,6 @@ if (clearSplitsBtn) {
   chartContextMenu.style.left = `${x}px`;
   chartContextMenu.style.top = `${y}px`;
 }
-
 
 // Helper: get the nearest chart point index from a mouse event
 function getNearestPointIndexFromEvent(evt) {
