@@ -7726,74 +7726,7 @@ function drawMrChart(allPoints, labels, segments) {
     const uclMR = 3.268 * avgMR;
     const mrLabels = labels.slice(lastSeg.startIndex, lastSeg.endIndex + 1);
 
-    // Keep your dedicated renderer if you have it (ensures consistent layout)
-    if (typeof renderMrChart === "function") {
-      renderMrChart(mrLabels, mr, avgMR, uclMR);
-      return;
-    }
-
-    // Fallback render (if renderMrChart not present)
-    if (mrChart) { mrChart.destroy(); mrChart = null; }
-
-    const datasets = [
-      {
-        label: "Moving range",
-        data: mr,
-        borderColor: BLUE,
-        backgroundColor: BLUE,
-        borderWidth: 2,
-        pointRadius: 3,
-        pointHoverRadius: 4,
-        pointBackgroundColor: BLUE,
-        pointBorderColor: "#ffffff",
-        pointBorderWidth: 1,
-        spanGaps: false,
-        fill: false,
-        tension: 0
-      },
-      {
-        label: "MR average",
-        data: mr.map(() => avgMR),
-        borderColor: RED,
-        borderDash: [6, 4],
-        borderWidth: 2,
-        pointRadius: 0,
-        fill: false,
-        tension: 0
-      },
-      {
-        label: "MR UCL",
-        data: mr.map(() => uclMR),
-        borderColor: GREEN,
-        borderDash: [4, 4],
-        borderWidth: 2,
-        pointRadius: 0,
-        fill: false,
-        tension: 0
-      }
-    ];
-
-    mrChart = new Chart(mrCanvas, {
-      type: "line",
-      data: { labels: mrLabels, datasets },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          title: { display: true, text: "Moving Range (MR)", font: { size: 14, weight: "bold" } },
-          legend: { display: true, position: "bottom" },
-          annotation: { annotations: (typeof buildAnnotationConfig === "function") ? buildAnnotationConfig(mrLabels) : {} }
-        },
-        elements: { point: { radius: 0, hoverRadius: 0 } },
-              scales: (() => {
-        const axisSettings = getAxisSettings();
-        return {
-          x: buildAxisConfig("", axisSettings.x),
-          y: buildAxisConfig("", withoutAxisBounds(axisSettings.y), { beginAtZero: true })
-        };
-      })()
-    });
-
+    renderMrChart(mrLabels, mr, avgMR, uclMR);
     return;
   }
 
@@ -7895,14 +7828,15 @@ function drawMrChart(allPoints, labels, segments) {
             : {}
         }
       },
-      elements: { point: { radius: 0, hoverRadius: 0 } },
-            scales: (() => {
+            elements: { point: { radius: 0, hoverRadius: 0 } },
+      scales: (() => {
         const axisSettings = getAxisSettings();
         return {
           x: buildAxisConfig("", axisSettings.x),
           y: buildAxisConfig("", withoutAxisBounds(axisSettings.y), { beginAtZero: true })
         };
       })()
+    }
   });
 }
 
@@ -7971,16 +7905,17 @@ function renderMrChart(mrLabels, mrValues, avgMR, uclMR) {
             : {}
         }
       },
-      elements: {
+            elements: {
         point: { radius: 0, hoverRadius: 0 }
       },
-            scales: (() => {
+      scales: (() => {
         const axisSettings = getAxisSettings();
         return {
           x: buildAxisConfig("", axisSettings.x),
           y: buildAxisConfig("", withoutAxisBounds(axisSettings.y), { beginAtZero: true })
         };
       })()
+    }
   });
 }
 
