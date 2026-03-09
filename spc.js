@@ -2466,6 +2466,26 @@ function applyColumnIntelligence(chartType) {
       if (alt) thirdSelect.value = alt;
     }
   }
+
+// ---- Auto-adjust axis type if user has not manually chosen ----
+if (!axisTypeManuallyChanged) {
+  const xCol = dateSelect?.value;
+  const p = (typeof getProfile === "function") ? getProfile(xCol) : null;
+
+  const xLooksLikeSequence =
+    !!(p &&
+       p.isNumeric &&
+       p.isMostlyInteger &&
+       p.uniqueRatio >= 0.85 &&
+       !p.repeatsOften &&
+       !p.looksLikeDate);
+
+  if (xLooksLikeSequence) {
+    const seqRadio = document.querySelector("input[name='axisType'][value='sequence']");
+    if (seqRadio) seqRadio.checked = true;
+  }
+}
+
 }
 
 
@@ -5582,6 +5602,8 @@ function validateNumeratorNotGreaterThanDenom(numerArr, denomArr) {
 }
 
 let lastGenerateWasManual = false;
+
+let axisTypeManuallyChanged = false;
 
 function validateColumnSelectionSafety({ chartType, dateCol, valueCol, axisType }) {
   if (!dateCol || !valueCol) return null;
@@ -9692,6 +9714,7 @@ function wireAutoRedrawControls() {
   // Axis type radios (date / sequence)
   document.querySelectorAll("input[name='axisType']").forEach(radio => {
     radio.addEventListener("change", () => {
+      axisTypeManuallyChanged = true;
       if (rawRows && rawRows.length) {
         if (typeof enforceChartTypeSuitabilityAndRegen === "function") {
           enforceChartTypeSuitabilityAndRegen();
