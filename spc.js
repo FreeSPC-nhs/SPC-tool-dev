@@ -721,36 +721,6 @@ function getNonBlankGridRows() {
   return data2D.filter(row => row.some(cell => String(cell ?? "").trim() !== ""));
 }
 
-function getTrimmedGridData() {
-  if (!dataEditorGrid) return [];
-
-  const data2D = dataEditorGrid.getData();
-
-  // Remove completely blank rows
-  let rows = data2D.filter(row =>
-    Array.isArray(row) && row.some(cell => String(cell ?? "").trim() !== "")
-  );
-
-  if (!rows.length) return [];
-
-  // Find the last non-blank column across all remaining rows
-  let lastUsedCol = -1;
-  rows.forEach(row => {
-    row.forEach((cell, idx) => {
-      if (String(cell ?? "").trim() !== "") {
-        lastUsedCol = Math.max(lastUsedCol, idx);
-      }
-    });
-  });
-
-  if (lastUsedCol < 0) return [];
-
-  // Trim every row to the last used column
-  rows = rows.map(row => row.slice(0, lastUsedCol + 1));
-
-  return rows;
-}
-
 function detectHeadersFromGrid() {
   const rows = getNonBlankGridRows();
 
@@ -4049,36 +4019,6 @@ function stripDuplicateHeaderRow(rows, headers) {
   return rows;
 }
 
-function getTrimmedGridData() {
-  if (!dataEditorGrid) return [];
-
-  const data2D = dataEditorGrid.getData();
-
-  // Remove completely blank rows
-  let rows = data2D.filter(row =>
-    Array.isArray(row) && row.some(cell => String(cell ?? "").trim() !== "")
-  );
-
-  if (!rows.length) return [];
-
-  // Find the last non-blank column across all remaining rows
-  let lastUsedCol = -1;
-  rows.forEach(row => {
-    row.forEach((cell, idx) => {
-      if (String(cell ?? "").trim() !== "") {
-        lastUsedCol = Math.max(lastUsedCol, idx);
-      }
-    });
-  });
-
-  if (lastUsedCol < 0) return [];
-
-  // Trim every row to the last used column
-  rows = rows.map(row => row.slice(0, lastUsedCol + 1));
-
-  return rows;
-}
-
 if (dataEditorApplyButton) {
   dataEditorApplyButton.addEventListener("click", () => {
     let loadedOk = false;
@@ -4089,9 +4029,14 @@ if (dataEditorApplyButton) {
         return;
       }
 
-      const rows2D = getTrimmedGridData();
+      const data2D = dataEditorGrid.getData();
 
-      if (rows2D.length === 0) {
+      // Drop fully blank rows
+      const nonBlank = data2D.filter(row =>
+        row.some(cell => String(cell ?? "").trim() !== "")
+      );
+
+      if (nonBlank.length === 0) {
         showError("Please enter at least one data row.");
         return;
       }
@@ -4099,44 +4044,45 @@ if (dataEditorApplyButton) {
       // Decide if first row is headers (checkbox)
       const useHeaders = !!(dataEditorHasHeaders && dataEditorHasHeaders.checked);
 
-      // Safety: warn if checkbox disagrees with auto-detect
-      const autoGuess = detectHeadersFromGrid();
-      if (useHeaders !== autoGuess) {
-        const msg = useHeaders
-          ? "You have 'First row contains headers' ticked, but the first row looks like DATA.\n\nApply anyway?"
-          : "You have 'First row contains headers' unticked, but the first row looks like HEADERS.\n\nApply anyway?";
+// Safety: warn if checkbox disagrees with auto-detect
+const autoGuess = detectHeadersFromGrid();
+if (useHeaders !== autoGuess) {
+  const msg = useHeaders
+    ? "You have 'First row contains headers' ticked, but the first row looks like DATA.\n\nApply anyway?"
+    : "You have 'First row contains headers' unticked, but the first row looks like HEADERS.\n\nApply anyway?";
 
-        if (!confirm(msg)) {
-          // Keep modal open; let them correct the checkbox
-          renderHeaderStatus();
-          return;
-        }
-      }
+  if (!confirm(msg)) {
+    // Keep modal open; let them correct the checkbox
+    renderHeaderStatus();
+    return;
+  }
+}
+
 
       let headers;
       let body;
 
       if (useHeaders) {
-        headers = rows2D[0].map((h, i) => {
+        headers = nonBlank[0].map((h, i) => {
           const name = String(h ?? "").trim();
           return name || `Column${i + 1}`;
         });
-        body = rows2D.slice(1); // remove header row from data
+        body = nonBlank.slice(1); // remove header row from data
       } else {
-        // No header row: keep the existing column titles from the grid
-        const maxCols = rows2D.reduce((m, r) => Math.max(m, r.length), 0);
+  // No header row: keep the existing column titles from the grid
+  const maxCols = nonBlank.reduce((m, r) => Math.max(m, r.length), 0);
 
-        const cols = (dataEditorGrid && dataEditorGrid.options && Array.isArray(dataEditorGrid.options.columns))
-          ? dataEditorGrid.options.columns
-          : [];
+  const cols = (dataEditorGrid && dataEditorGrid.options && Array.isArray(dataEditorGrid.options.columns))
+    ? dataEditorGrid.options.columns
+    : [];
 
-        headers = Array.from({ length: maxCols }, (_, i) => {
-          const t = (cols[i] && cols[i].title) ? String(cols[i].title).trim() : "";
-          return t || `Column${i + 1}`;
-        });
+  headers = Array.from({ length: maxCols }, (_, i) => {
+    const t = (cols[i] && cols[i].title) ? String(cols[i].title).trim() : "";
+    return t || `Column${i + 1}`;
+  });
 
-        body = rows2D;
-      }
+  body = nonBlank;
+}
 
       const rows = sheetToObjects(headers, body);
 
@@ -4150,7 +4096,7 @@ if (dataEditorApplyButton) {
 
       clearError();
 
-      // Reset annotations/splits etc.
+      // Reset annotations/splits etc... (keep your existing block)
       annotations = [];
       if (annotationDateInput) annotationDateInput.value = "";
       if (annotationLabelInput) annotationLabelInput.value = "";
@@ -4203,7 +4149,7 @@ function formatDateOnlyLabel(v) {
   if (/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}$/.test(firstToken)) return firstToken;
 
   // Fallback: try parsing and formatting
-  const d = parseDateFlexible(s);
+  const d = new Date(s);
   if (!isNaN(d.getTime())) return formatYMD_Local(d);
 
   return firstToken;
@@ -5524,11 +5470,11 @@ function parseDateValue(xRaw) {
   }
 
   if (xRaw === null || xRaw === undefined) {
-    return parseDateFlexible(NaN);
+    return new Date(NaN);
   }
 
   const s = String(xRaw).trim();
-  if (!s) return parseDateFlexible(NaN);
+  if (!s) return new Date(NaN);
 
   // ISO style: 2025-10-02 or 2025-10-02T...
   const isoMatch = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
@@ -5536,7 +5482,7 @@ function parseDateValue(xRaw) {
     const y = Number(isoMatch[1]);
     const m = Number(isoMatch[2]);
     const d = Number(isoMatch[3]);
-    return parseDateFlexible(y, m - 1, d);
+    return new Date(y, m - 1, d);
   }
 
   // NHS-style day-first: dd/mm/yyyy or dd-mm-yyyy
@@ -5546,11 +5492,11 @@ function parseDateValue(xRaw) {
     let month = Number(dmMatch[2]);
     let year  = Number(dmMatch[3]);
     if (year < 100) year += 2000; // e.g. 25 -> 2025
-    return parseDateFlexible(year, month - 1, day);
+    return new Date(year, month - 1, day);
   }
 
   // Fallback: let the browser try
-  return parseDateFlexible(s);
+  return new Date(s);
 }
 
 
@@ -5587,49 +5533,6 @@ function toNumericValue(raw) {
 
   const num = Number(s);
   return isFinite(num) ? num : NaN;
-}
-
-function parseDateFlexible(value) {
-  if (value === null || value === undefined) return null;
-
-  const s = String(value).trim();
-
-  if (!s) return null;
-
-  // ISO format (YYYY-MM-DD) – safest case
-  if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
-    const d = parseDateFlexible(s);
-    if (!isNaN(d)) return d;
-  }
-
-  // Excel serial numbers
-  const num = Number(s);
-  if (!isNaN(num) && num > 20000 && num < 60000) {
-    const excelEpoch = parseDateFlexible(Date.UTC(1899, 11, 30));
-    const d = parseDateFlexible(excelEpoch.getTime() + num * 86400000);
-    if (!isNaN(d)) return d;
-  }
-
-  // Slash dates (assume UK if ambiguous)
-  const slashMatch = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
-  if (slashMatch) {
-    let day = Number(slashMatch[1]);
-    let month = Number(slashMatch[2]);
-    let year = Number(slashMatch[3]);
-
-    if (year < 100) year += 2000;
-
-    if (month <= 12 && day <= 31) {
-      const d = parseDateFlexible(year, month - 1, day);
-      if (!isNaN(d)) return d;
-    }
-  }
-
-  // Try native parsing as fallback
-  const fallback = parseDateFlexible(s);
-  if (!isNaN(fallback)) return fallback;
-
-  return null;
 }
 
 /* ============================================================
