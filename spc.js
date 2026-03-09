@@ -852,8 +852,8 @@ if (targetInput) {
   targetInput.addEventListener("input", () => {
     updateTargetToggleVisibility();
 
-    // If user clears the target, redraw to remove the line immediately
-    if (!hasValidTargetInput() && currentChart) {
+    if (rawRows && rawRows.length && generateButton) {
+      lastGenerateWasManual = false;
       generateButton.click();
     }
   });
