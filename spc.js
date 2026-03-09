@@ -3832,41 +3832,197 @@ function setAxisType(type) {
   }
 }
 
+function getAnnotationsAtDate(xVal) {
+  if (!Array.isArray(annotations)) return [];
+  return annotations
+    .map((a, idx) => ({ ...a, _idx: idx }))
+    .filter(a => a.date === xVal);
+}
+
+function editAnnotationAtIndex(idx) {
+  if (!Array.isArray(annotations)) return false;
+  if (!Number.isInteger(idx) || idx < 0 || idx >= annotations.length) return false;
+
+  const current = annotations[idx];
+  const nextText = prompt(`Edit annotation for ${current.date}:`, current.label);
+  if (nextText === null) return false;
+
+  const trimmed = String(nextText).trim();
+  if (!trimmed) {
+    alert("Annotation text cannot be blank.");
+    return false;
+  }
+
+  annotations[idx].label = trimmed;
+  return true;
+}
+
+function deleteAnnotationAtIndex(idx) {
+  if (!Array.isArray(annotations)) return false;
+  if (!Number.isInteger(idx) || idx < 0 || idx >= annotations.length) return false;
+
+  annotations.splice(idx, 1);
+  return true;
+}
+
+function manageAnnotationsAtDate(xVal) {
+  const existing = getAnnotationsAtDate(xVal);
+
+  // No existing annotation here -> simple add flow
+  if (existing.length === 0) {
+    const text = prompt(`Annotation for ${xVal}:`, "");
+    if (!text) return false;
+
+    const trimmed = String(text).trim();
+    if (!trimmed) return false;
+
+    annotations.push({ date: xVal, label: trimmed });
+    return true;
+  }
+
+  // One existing annotation -> offer edit/delete/add
+  if (existing.length === 1) {
+    const a = existing[0];
+    const choice = prompt(
+      `There is already 1 annotation at ${xVal}:\n\n` +
+      `"${a.label}"\n\n` +
+      `Type one of these:\n` +
+      `edit   = change the text\n` +
+      `delete = remove it\n` +
+      `add    = keep it and add another\n` +
+      `cancel = do nothing`,
+      "edit"
+    );
+
+    if (choice === null) return false;
+
+    const action = String(choice).trim().toLowerCase();
+
+    if (action === "edit") {
+      return editAnnotationAtIndex(a._idx);
+    }
+
+    if (action === "delete") {
+      const ok = confirm(`Delete this annotation?\n\n"${a.label}"`);
+      if (!ok) return false;
+      return deleteAnnotationAtIndex(a._idx);
+    }
+
+    if (action === "add") {
+      const text = prompt(`New annotation for ${xVal}:`, "");
+      if (!text) return false;
+
+      const trimmed = String(text).trim();
+      if (!trimmed) return false;
+
+      annotations.push({ date: xVal, label: trimmed });
+      return true;
+    }
+
+    return false;
+  }
+
+  // Multiple existing annotations -> let user choose one by number
+  const numbered = existing
+    .map((a, i) => `${i + 1}. ${a.label}`)
+    .join("\n");
+
+  const choice = prompt(
+    `There are ${existing.length} annotations at ${xVal}:\n\n` +
+    `${numbered}\n\n` +
+    `Type:\n` +
+    `e1 = edit annotation 1\n` +
+    `d1 = delete annotation 1\n` +
+    `add = add another\n` +
+    `cancel = do nothing`,
+    "add"
+  );
+
+  if (choice === null) return false;
+
+  const action = String(choice).trim().toLowerCase();
+
+  if (action === "add") {
+    const text = prompt(`New annotation for ${xVal}:`, "");
+    if (!text) return false;
+
+    const trimmed = String(text).trim();
+    if (!trimmed) return false;
+
+    annotations.push({ date: xVal, label: trimmed });
+    return true;
+  }
+
+  const match = action.match(/^([ed])(\d+)$/);
+  if (!match) return false;
+
+  const mode = match[1];
+  const num = Number(match[2]);
+  if (!Number.isFinite(num) || num < 1 || num > existing.length) return false;
+
+  const chosen = existing[num - 1];
+
+  if (mode === "e") {
+    return editAnnotationAtIndex(chosen._idx);
+  }
+
+  if (mode === "d") {
+    const ok = confirm(`Delete this annotation?\n\n"${chosen.label}"`);
+    if (!ok) return false;
+    return deleteAnnotationAtIndex(chosen._idx);
+  }
+
+  return false;
+}
+
 function buildAnnotationConfig(labels) {
   if (!annotations || annotations.length === 0) {
     return {};
   }
 
   const cfg = {};
-  annotations.forEach((a, idx) => {
-    const xVal = a.date; // 'YYYY-MM-DD' from <input type="date">
-    if (!labels.includes(xVal)) {
-      return; // skip if this date isn't on the x-axis
-    }
 
-    cfg["annot" + idx] = {
-      type: "line",
-      xMin: xVal,
-      xMax: xVal,
-      borderColor: "#000000",
-      borderWidth: 1,
-      borderDash: [2, 2],
-      label: {
-        display: true,
-        content: a.label,
-        backgroundColor: "rgba(255,255,255,0.9)",
-        color: "#000000",
+  // Group annotations by x position so we can stagger labels that share the same date/x-value
+  const grouped = {};
+  annotations.forEach((a, idx) => {
+    const xVal = a.date;
+    if (!labels.includes(xVal)) return; // skip if this date isn't on the x-axis
+    if (!grouped[xVal]) grouped[xVal] = [];
+    grouped[xVal].push({ ...a, _idx: idx });
+  });
+
+  Object.keys(grouped).forEach((xVal) => {
+    const items = grouped[xVal];
+
+    items.forEach((a, localIdx) => {
+      // Stagger labels vertically: alternate above/below and step further out as needed
+      const band = Math.floor(localIdx / 2);
+      const sign = (localIdx % 2 === 0) ? -1 : 1;
+      const yAdjust = sign * (10 + band * 18);
+
+      cfg["annot" + a._idx] = {
+        type: "line",
+        xMin: xVal,
+        xMax: xVal,
         borderColor: "#000000",
-        borderWidth: 0.5,
-        font: {
-          size: 10,
-          weight: "bold"
-        },
-        position: "end",   // near the top of the line
-        yAdjust: -6        // nudge it up a little
-        // no rotation – keep it horizontal so it's easy to read
-      }
-    };
+        borderWidth: 1,
+        borderDash: [2, 2],
+        label: {
+          display: true,
+          content: a.label,
+          backgroundColor: "rgba(255,255,255,0.9)",
+          color: "#000000",
+          borderColor: "#000000",
+          borderWidth: 0.5,
+          font: {
+            size: 10,
+            weight: "bold"
+          },
+          position: "end",
+          yAdjust: yAdjust
+        }
+      };
+    });
   });
 
   return cfg;
@@ -9612,10 +9768,27 @@ if (chartContextMenu) {
 
     try {
       if (action === "addAnnotation") {
-        if (clickedPointIndex === null || clickedPointIndex === undefined) {
-          alert("Right-click near a data point to add an annotation.");
-          return;
-        }
+  if (clickedPointIndex === null || clickedPointIndex === undefined) {
+    alert("Right-click near a data point to add or manage an annotation.");
+    return;
+  }
+
+  const xLabel = labels?.[clickedPointIndex];
+  if (!xLabel) {
+    alert("Could not determine the selected x-position for annotation.");
+    return;
+  }
+
+  // Optional: populate historical inputs if they still exist
+  if (annotationDateInput) annotationDateInput.value = xLabel;
+
+  const changed = manageAnnotationsAtDate(xLabel);
+
+  if (changed && generateButton) {
+    generateButton.click();
+  }
+  return;
+}
 
         const labels = currentChart?.data?.labels || [];
         const xLabel = labels[clickedPointIndex];
