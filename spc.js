@@ -2472,7 +2472,7 @@ if (!axisTypeManuallyChanged) {
   const xCol = dateSelect?.value;
   const p = (typeof getProfile === "function") ? getProfile(xCol) : null;
 
-  const xLooksLikeSequence =
+  const xLooksLikeNumericSequence =
     !!(p &&
        p.isNumeric &&
        p.isMostlyInteger &&
@@ -2480,9 +2480,27 @@ if (!axisTypeManuallyChanged) {
        !p.repeatsOften &&
        !p.looksLikeDate);
 
-  if (xLooksLikeSequence) {
-    const seqRadio = document.querySelector("input[name='axisType'][value='sequence']");
+  const xLooksLikeNonDateLabel =
+    !!(p &&
+       !p.looksLikeDate &&
+       (
+         !p.isNumeric ||
+         p.repeatsOften ||
+         p.uniqueRatio > 0
+       ));
+
+  const shouldUseSequenceAxis =
+    xLooksLikeNumericSequence ||
+    (chartType === "xbars" && xLooksLikeNonDateLabel) ||
+    ((chartType === "run" || chartType === "xmr" || chartType === "c" || chartType === "p" || chartType === "u" || chartType === "g") && xLooksLikeNonDateLabel);
+
+  const seqRadio = document.querySelector("input[name='axisType'][value='sequence']");
+  const dateRadio = document.querySelector("input[name='axisType'][value='date']");
+
+  if (shouldUseSequenceAxis) {
     if (seqRadio) seqRadio.checked = true;
+  } else if (p && p.looksLikeDate) {
+    if (dateRadio) dateRadio.checked = true;
   }
 }
 
