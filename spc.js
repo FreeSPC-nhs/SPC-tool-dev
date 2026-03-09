@@ -3944,16 +3944,14 @@ function buildAnnotationConfig(labels) {
     .filter(a => a.xIndex >= 0)
     .sort((a, b) => a.xIndex - b.xIndex);
 
-  // Lay annotations into lanes so nearby labels do not overlap horizontally.
-  // Alternate lanes above and below, but keep offsets conservative so labels stay inside the chart.
   const laneLastEnd = [];
 
   items.forEach((a) => {
-    const wrapped = wrapAnnotationText(a.label, 24);
-    const longestLine = wrapped.reduce((m, line) => Math.max(m, line.length), 0);
 
-    // Approximate how many x-slots the label occupies visually
-    const span = Math.max(1, Math.ceil(longestLine / 7));
+    const wrapped = wrapAnnotationText(a.label, 24);
+    const longest = wrapped.reduce((m, l) => Math.max(m, l.length), 0);
+
+    const span = Math.max(1, Math.ceil(longest / 7));
 
     let lane = 0;
     while (laneLastEnd[lane] !== undefined && a.xIndex <= laneLastEnd[lane]) {
@@ -3961,15 +3959,12 @@ function buildAnnotationConfig(labels) {
     }
     laneLastEnd[lane] = a.xIndex + span;
 
-    // Alternate above / below:
-    // lane 0 => above, lane 1 => below, lane 2 => further above, lane 3 => further below
     const level = Math.floor(lane / 2);
-    const placeAbove = lane % 2 === 0;
+    const above = lane % 2 === 0;
 
-    // Smaller offsets than before so labels stay visible
-    const yAdjust = placeAbove
-      ? -(8 + level * 16)
-      : (8 + level * 16);
+    const yAdjust = above
+      ? -(6 + level * 14)
+      : (6 + level * 14);
 
     cfg["annot" + a._idx] = {
       type: "line",
@@ -3981,18 +3976,23 @@ function buildAnnotationConfig(labels) {
       label: {
         display: true,
         content: wrapped,
-        backgroundColor: "rgba(255,255,255,0.95)",
+        backgroundColor: "rgba(255,255,255,0.96)",
         color: "#000000",
         borderColor: "#000000",
         borderWidth: 0.5,
+        padding: 4,
+        cornerRadius: 4,
         font: {
           size: 10,
           weight: "bold"
         },
-        padding: 4,
-        cornerRadius: 4,
-        position: placeAbove ? "end" : "start",
+
+        // KEY CHANGE
+        // keep labels anchored inside chart area
+        position: "center",
+
         yAdjust: yAdjust,
+
         textAlign: "left"
       }
     };
@@ -4000,7 +4000,6 @@ function buildAnnotationConfig(labels) {
 
   return cfg;
 }
-
 
 function openDataEditor() {
   if (!dataEditorOverlay || !dataEditorGridEl) return;
