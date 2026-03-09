@@ -3399,17 +3399,17 @@ function drawXbarSChart(points, baselineCount, labels) {
   lastXbarSAnalysis.labelStart = subgroupLabels[start];
   lastXbarSAnalysis.labelEnd = subgroupLabels[end];
 
-  if (summaryDiv) {
-    const xStable = lastXbarSAnalysis.xbar.isStable;
-    const sStable = lastXbarSAnalysis.s.isStable;
-    summaryDiv.innerHTML =
-      `<h3>X̄–S summary (latest period)</h3>
-       <ul>
-         <li><strong>X̄ chart:</strong> ${xStable ? "stable (no clear signal of change)." : ("signal(s): " + lastXbarSAnalysis.xbar.signals.join("; "))}</li>
-         <li><strong>S chart:</strong> ${sStable ? "stable (no clear signal of change)." : ("signal(s): " + lastXbarSAnalysis.s.signals.join("; "))}</li>
-         <li><strong>Tip:</strong> If the S chart is unstable, the X̄ limits may not be reliable until the spread settles.</li>
-       </ul>`;
-  }
+  lastXbarSAnalysis.stats = {
+  subgroupSize: subgrouped[lastSeg]?.values?.length ?? NaN,
+  xbarbar: clX[start],
+  sbar: clS[start],
+  uclX: uclXArr[start],
+  lclX: lclXArr[start],
+  uclS: uclSArr[start],
+  lclS: lclSArr[start]
+};
+
+renderXbarSSummary(lastXbarSAnalysis, subgroupLabels.length);
 }
 
 
@@ -5430,6 +5430,108 @@ const rangeText =
   } else {
     capabilityDiv.innerHTML = "";
   }
+}
+
+function renderXbarSSummary(latestAnalysis, totalSubgroups) {
+  if (!summaryDiv || !latestAnalysis) return;
+
+  const x = latestAnalysis.xbar;
+  const s = latestAnalysis.s;
+
+  const xStable = !!x?.isStable;
+  const sStable = !!s?.isStable;
+
+  const periodIndex = latestAnalysis.periodIndex || 1;
+  const periodCount = latestAnalysis.periodCount || 1;
+  const startIndex = latestAnalysis.startIndex ?? 0;
+  const endIndex = latestAnalysis.endIndex ?? 0;
+  const labelStart = latestAnalysis.labelStart;
+  const labelEnd = latestAnalysis.labelEnd;
+
+  const stats = latestAnalysis.stats || {};
+  const subgroupSizeText = Number.isFinite(stats.subgroupSize)
+    ? `${stats.subgroupSize}`
+    : "not stated";
+
+  const xbarbarText = Number.isFinite(stats.xbarbar)
+    ? stats.xbarbar.toFixed(3)
+    : "not available";
+
+  const sbarText = Number.isFinite(stats.sbar)
+    ? stats.sbar.toFixed(3)
+    : "not available";
+
+  const uclXText = Number.isFinite(stats.uclX)
+    ? stats.uclX.toFixed(3)
+    : "not available";
+
+  const lclXText = Number.isFinite(stats.lclX)
+    ? stats.lclX.toFixed(3)
+    : "not available";
+
+  const uclSText = Number.isFinite(stats.uclS)
+    ? stats.uclS.toFixed(3)
+    : "not available";
+
+  const lclSText = Number.isFinite(stats.lclS)
+    ? stats.lclS.toFixed(3)
+    : "not available";
+
+  const base = `subgroups ${startIndex + 1}–${endIndex + 1}`;
+  const rangeText =
+    (typeof getAxisType === "function" &&
+      getAxisType() === "date" &&
+      labelStart !== undefined &&
+      labelEnd !== undefined)
+      ? `${base} (${formatDateOnlyLabel(labelStart)} to ${formatDateOnlyLabel(labelEnd)})`
+      : base;
+
+  const xSignals = Array.isArray(x?.signals) ? x.signals : [];
+  const sSignals = Array.isArray(s?.signals) ? s.signals : [];
+
+  let overallInterpretation = "";
+  if (xStable && sStable) {
+    overallInterpretation =
+      "Both the subgroup averages (X̄) and within-subgroup variation (S) look stable in the latest period. This suggests a consistent process, though it should still be interpreted in context.";
+  } else if (!xStable && sStable) {
+    overallInterpretation =
+      "The subgroup averages (X̄) show special-cause signals, but the within-subgroup variation (S) looks stable. This suggests that the process level may have shifted while within-group variation stayed broadly consistent.";
+  } else if (xStable && !sStable) {
+    overallInterpretation =
+      "The subgroup averages (X̄) look stable, but the within-subgroup variation (S) shows special-cause signals. This suggests the average level may be steady while consistency within subgroups has changed.";
+  } else {
+    overallInterpretation =
+      "Both the subgroup averages (X̄) and the within-subgroup variation (S) show special-cause signals. This suggests the process level and its consistency may both have changed.";
+  }
+
+  let html = `<h3>X̄–S summary (latest period)</h3>`;
+  html += `<p>Total number of subgroups: <strong>${totalSubgroups}</strong>. `;
+  html += `Showing interpretation for <strong>period ${periodIndex} of ${periodCount}</strong>.</p>`;
+
+  html += `<div class="pdf-avoid-break">`;
+  html += `<ul>`;
+  html += `<li><strong>Coverage:</strong> ${rangeText}.</li>`;
+  html += `<li><strong>Typical subgroup size:</strong> ${subgroupSizeText} measurement${subgroupSizeText === "1" ? "" : "s"} per subgroup.</li>`;
+  html += `<li><strong>X̄ chart centre line:</strong> ${xbarbarText}; limits: LCL = ${lclXText}, UCL = ${uclXText}.</li>`;
+  html += `<li><strong>S chart centre line:</strong> ${sbarText}; limits: LCL = ${lclSText}, UCL = ${uclSText}.</li>`;
+
+  if (xStable) {
+    html += `<li><strong>X̄ chart:</strong> stable (no clear signal of change in subgroup averages).</li>`;
+  } else {
+    html += `<li><strong>X̄ chart:</strong> signal(s): ${xSignals.join("; ")}.</li>`;
+  }
+
+  if (sStable) {
+    html += `<li><strong>S chart:</strong> stable (no clear signal of change in within-subgroup variation).</li>`;
+  } else {
+    html += `<li><strong>S chart:</strong> signal(s): ${sSignals.join("; ")}.</li>`;
+  }
+
+  html += `<li><strong>Interpretation:</strong> ${overallInterpretation}</li>`;
+  html += `</ul>`;
+  html += `</div>`;
+
+  summaryDiv.innerHTML = html;
 }
 
 // Approximate standard normal CDF Φ(z)
