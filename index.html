@@ -760,6 +760,34 @@ body.sidebar-collapsed .main {
   margin: 0.25rem 0;
 }
 
+.context-submenu-wrap {
+  position: relative;
+}
+
+.context-submenu-wrap .submenu-parent {
+  width: 100%;
+  text-align: left;
+}
+
+.context-submenu {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: calc(100% - 2px);
+  min-width: 200px;
+  background: #ffffff;
+  border: 1px solid #c7d3da;
+  border-radius: 0.4rem;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+  padding: 0.25rem;
+  z-index: 1001;
+}
+
+.context-submenu-wrap:hover .context-submenu,
+.context-submenu-wrap:focus-within .context-submenu {
+  display: block;
+}
+
 /* Generate button turns red when changes are pending */
 #generateButton.needs-recalc {
   background: #b00020 !important;
@@ -1884,26 +1912,42 @@ Hide target line
 </div>
 
   <!-- Chart right-click menu -->
-  <div id="chartContextMenu" class="chart-context-menu" style="display:none;">
-    <button type="button" data-action="addAnnotation" title="Add, edit or delete annotations at this point. Annotations show as a vertical line with a small text box to highlight key events on the chart.">Manage annotation at this point…</button>
-    <button type="button" data-action="clearAnnotations" title="Will remove all annotations from the chart">Clear annotations</button>
-    <div class="menu-sep"></div>
-    <button type="button" data-action="addSplit"
-  title="Splits recalculate the central line and control limits from the chosen point onward. Splitting the control limits should only be done where a sustained shift in performance has been identified, investigated, understood and agreed to be representative of the new normal level of performance for the process.">
-  Add split after this point…
-</button>
-<button type="button" data-action="clearSplits"
-  title="Remove all splits and return to a single set of limits.">
-  Clear splits
-</button>
-
-    <div class="menu-sep"></div>
-    <button type="button" data-action="copyCharts" title="Copy the chart (only) to the clipboard.">Copy chart(s)</button>
-    <button type="button" data-action="copyChartsAndAnalysis" title="Copy the chart and the analysis area to the clipboard">Copy chart(s) + analysis</button>
-    <div class="menu-sep"></div>
-    <button type="button" data-action="saveChartsAs" title="Save a copy of the chart as a PNG image file">Save chart(s) as PNG image</button>
-    <button type="button" data-action="downloadPdf" title="Export the chart and analysis to PDF">Download PDF report</button>
+<div id="chartContextMenu" class="chart-context-menu" style="display:none;">
+  <div class="context-submenu-wrap">
+    <button type="button" class="submenu-parent" title="Add, edit or delete annotations for the selected point.">
+      Annotations ▸
+    </button>
+    <div class="context-submenu">
+      <button type="button" data-action="addAnnotation" title="Add a new annotation at this point.">Add annotation…</button>
+      <button type="button" data-action="editAnnotation" title="Edit an existing annotation at this point.">Edit annotation…</button>
+      <button type="button" data-action="deleteAnnotation" title="Delete an existing annotation at this point.">Delete annotation…</button>
+      <div class="menu-sep"></div>
+      <button type="button" data-action="clearAnnotations" title="Remove all annotations from the chart.">Clear all annotations</button>
+    </div>
   </div>
+
+  <div class="menu-sep"></div>
+
+  <button type="button" data-action="addSplit"
+    title="Splits recalculate the central line and control limits from the chosen point onward. Splitting the control limits should only be done where a sustained shift in performance has been identified, investigated, understood and agreed to be representative of the new normal level of performance for the process.">
+    Add split after this point…
+  </button>
+
+  <button type="button" data-action="clearSplits"
+    title="Remove all splits and return to a single set of limits.">
+    Clear splits
+  </button>
+
+  <div class="menu-sep"></div>
+
+  <button type="button" data-action="copyCharts" title="Copy the chart (only) to the clipboard.">Copy chart(s)</button>
+  <button type="button" data-action="copyChartsAndAnalysis" title="Copy the chart and the analysis area to the clipboard">Copy chart(s) + analysis</button>
+
+  <div class="menu-sep"></div>
+
+  <button type="button" data-action="saveChartsAs" title="Save a copy of the chart as a PNG image file">Save chart(s) as PNG image</button>
+  <button type="button" data-action="downloadPdf" title="Export the chart and analysis to PDF">Download PDF report</button>
+</div>
 
   <script src="spc.js"></script>
 </body>
