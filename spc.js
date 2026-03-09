@@ -3399,17 +3399,35 @@ function drawXbarSChart(points, baselineCount, labels) {
   lastXbarSAnalysis.labelStart = subgroupLabels[start];
   lastXbarSAnalysis.labelEnd = subgroupLabels[end];
 
-  lastXbarSAnalysis.stats = {
-  subgroupSize: subgrouped[lastSeg]?.values?.length ?? NaN,
-  xbarbar: clX[start],
-  sbar: clS[start],
-  uclX: uclXArr[start],
-  lclX: lclXArr[start],
-  uclS: uclSArr[start],
-  lclS: lclSArr[start]
-};
+   lastXbarSAnalysis.stats = {
+    subgroupSize: nSub,
+    xbarbar: clX[start],
+    sbar: clS[start],
+    uclX: uclXArr[start],
+    lclX: lclXArr[start],
+    uclS: uclSArr[start],
+    lclS: lclSArr[start]
+  };
 
-renderXbarSSummary(lastXbarSAnalysis, subgroupLabels.length);
+  if (typeof renderXbarSSummary === "function") {
+    renderXbarSSummary(lastXbarSAnalysis, subgroupLabels.length);
+  } else if (summaryDiv) {
+    const xStable = lastXbarSAnalysis.xbar.isStable;
+    const sStable = lastXbarSAnalysis.s.isStable;
+
+    summaryDiv.innerHTML = `
+      <h3>X̄–S summary (latest period)</h3>
+      <ul>
+        <li><strong>Coverage:</strong> subgroups ${start + 1}–${end + 1}.</li>
+        <li><strong>Typical subgroup size:</strong> ${nSub} measurement${nSub === 1 ? "" : "s"} per subgroup.</li>
+        <li><strong>X̄ chart centre line:</strong> ${Number.isFinite(clX[start]) ? clX[start].toFixed(3) : "not available"}; limits: LCL = ${Number.isFinite(lclXArr[start]) ? lclXArr[start].toFixed(3) : "not available"}, UCL = ${Number.isFinite(uclXArr[start]) ? uclXArr[start].toFixed(3) : "not available"}.</li>
+        <li><strong>S chart centre line:</strong> ${Number.isFinite(clS[start]) ? clS[start].toFixed(3) : "not available"}; limits: LCL = ${Number.isFinite(lclSArr[start]) ? lclSArr[start].toFixed(3) : "not available"}, UCL = ${Number.isFinite(uclSArr[start]) ? uclSArr[start].toFixed(3) : "not available"}.</li>
+        <li><strong>X̄ chart:</strong> ${xStable ? "stable (no clear signal of change)." : ("signal(s): " + lastXbarSAnalysis.xbar.signals.join("; "))}</li>
+        <li><strong>S chart:</strong> ${sStable ? "stable (no clear signal of change)." : ("signal(s): " + lastXbarSAnalysis.s.signals.join("; "))}</li>
+        <li><strong>Tip:</strong> If the S chart is unstable, the X̄ limits may not be reliable until the spread settles.</li>
+      </ul>
+    `;
+  }
 }
 
 
