@@ -8663,172 +8663,193 @@ function renderChartSetupModal(chartType) {
   const dontShow = document.getElementById("chartSetupDontShow");
   if (!body || !subtitle) return;
 
-  // wire the "don't show" checkbox each render
   if (dontShow) {
     dontShow.checked = !shouldAutoShowChartSetupModal();
     dontShow.onchange = () => setAutoShowChartSetupModal(!dontShow.checked);
+  }
+
+  function card(title, innerHtml) {
+    return `
+      <div style="border:1px solid #d8dde0; border-radius:0.5rem; padding:0.75rem; margin:0.75rem 0; background:#fafcfd;">
+        <div style="font-weight:700; color:#003087; margin-bottom:0.4rem;">${title}</div>
+        ${innerHtml}
+      </div>
+    `;
+  }
+
+  function exampleTable(headers, rows) {
+    const head = headers.map(h => `<th style="text-align:left; border-bottom:1px solid #d8dde0; padding:0.35rem 0.5rem;">${h}</th>`).join("");
+    const bodyRows = rows.map(r =>
+      `<tr>${r.map(v => `<td style="padding:0.35rem 0.5rem; border-bottom:1px solid #eef2f6;">${v}</td>`).join("")}</tr>`
+    ).join("");
+
+    return `
+      <div style="overflow-x:auto;">
+        <table style="border-collapse:collapse; width:100%; font-size:0.9rem; margin-top:0.35rem;">
+          <thead><tr>${head}</tr></thead>
+          <tbody>${bodyRows}</tbody>
+        </table>
+      </div>
+    `;
   }
 
   subtitle.textContent = "How to structure your data for this chart.";
 
   if (chartType === "run") {
     subtitle.textContent = "Run chart: simple view of values over time.";
-
     body.innerHTML = `
-      <div class="hint">
-        A <strong>Run chart</strong> is a simple way to plot values over time using a <strong>median</strong>.
-      </div>
+      ${card("Use this when...", `
+        <p style="margin:0;">You want a simple chart of a measure over time using a <strong>median</strong>.</p>
+      `)}
 
-      <ul style="margin-top:0.75rem;">
-        <li>Use one column for <strong>time / order</strong> (for example Date, Week or Month).</li>
-        <li>Use one column for the <strong>measure</strong> you want to track.</li>
-      </ul>
+      ${card("You need these columns", `
+        <ul style="margin:0;">
+          <li><strong>Date / X-axis column</strong> → time or order</li>
+          <li><strong>Value / Y-axis column</strong> → the measure you want to track</li>
+        </ul>
+      `)}
 
-      <p><strong>Choose columns like this:</strong></p>
-      <ul>
-        <li><em>Date / X-axis column</em> → time / order</li>
-        <li><em>Value / Y-axis column</em> → the measure</li>
-      </ul>
+      ${card("Example layout", exampleTable(
+        ["Week", "Waiting time"],
+        [["1", "12"], ["2", "10"], ["3", "14"]]
+      ))}
 
-      <div class="hint">
-        Use <strong>Sequence / category</strong> on the X-axis if your first column is 1, 2, 3, 4... rather than real dates.
-      </div>
+      ${card("Common mistake", `
+        <p style="margin:0;">Do not choose a row number or ID column as the value. That can create a chart that looks valid but means nothing.</p>
+      `)}
     `;
     return;
   }
 
   if (chartType === "xmr") {
     subtitle.textContent = "XmR chart: individual measurements over time.";
-
     body.innerHTML = `
-      <div class="hint">
-        An <strong>XmR chart</strong> is for <strong>one measurement per time point</strong>.
-      </div>
+      ${card("Use this when...", `
+        <p style="margin:0;">You have <strong>one measurement per time point</strong> and want a mean plus control limits.</p>
+      `)}
 
-      <ul style="margin-top:0.75rem;">
-        <li>Use one column for <strong>time / order</strong>.</li>
-        <li>Use one numeric column for the <strong>measurement</strong>.</li>
-      </ul>
+      ${card("You need these columns", `
+        <ul style="margin:0;">
+          <li><strong>Date / X-axis column</strong> → date, week, month or sequence</li>
+          <li><strong>Value / Y-axis column</strong> → the numeric measurement</li>
+        </ul>
+      `)}
 
-      <p><strong>Choose columns like this:</strong></p>
-      <ul>
-        <li><em>Date / X-axis column</em> → date, week, month or sequence</li>
-        <li><em>Value / Y-axis column</em> → the measurement value</li>
-      </ul>
+      ${card("Example layout", exampleTable(
+        ["Date", "Length of stay"],
+        [["2024-01-01", "5.2"], ["2024-01-08", "4.8"], ["2024-01-15", "6.1"]]
+      ))}
 
-      <div class="hint">
-        XmR is usually the best choice when you have continuous data and only one value per time period.
-      </div>
+      ${card("Common mistake", `
+        <p style="margin:0;">Use XmR only when there is one value per time point. If each time point has several measurements, use <strong>X̄–S</strong> instead.</p>
+      `)}
     `;
     return;
   }
 
   if (chartType === "c") {
     subtitle.textContent = "C chart: count per time period.";
-
     body.innerHTML = `
-      <div class="hint">
-        A <strong>C chart</strong> is for <strong>counts</strong> per time period, when the opportunity for events is roughly constant.
-      </div>
+      ${card("Use this when...", `
+        <p style="margin:0;">You are plotting a <strong>count</strong> per period and the amount of opportunity is roughly the same each time.</p>
+      `)}
 
-      <ul style="margin-top:0.75rem;">
-        <li>Use one column for <strong>time / order</strong>.</li>
-        <li>Use one numeric column for the <strong>count</strong> in each period.</li>
-      </ul>
+      ${card("You need these columns", `
+        <ul style="margin:0;">
+          <li><strong>Date / X-axis column</strong> → date, week, month or sequence</li>
+          <li><strong>Value / Y-axis column</strong> → count of events</li>
+        </ul>
+      `)}
 
-      <p><strong>Choose columns like this:</strong></p>
-      <ul>
-        <li><em>Date / X-axis column</em> → date, week, month or sequence</li>
-        <li><em>Value / Y-axis column</em> → number of events / incidents / defects</li>
-      </ul>
+      ${card("Example layout", exampleTable(
+        ["Week", "Falls"],
+        [["1", "3"], ["2", "4"], ["3", "2"]]
+      ))}
 
-      <div class="hint">
-        Use a C chart only when each point represents a count over a comparable amount of opportunity.
-      </div>
+      ${card("Common mistake", `
+        <p style="margin:0;">If the denominator changes a lot between points, use a <strong>U chart</strong> instead of a C chart.</p>
+      `)}
     `;
     return;
   }
 
   if (chartType === "p") {
     subtitle.textContent = "P chart: proportion out of a total.";
-
     body.innerHTML = `
-      <div class="hint">
-        A <strong>P chart</strong> is for a <strong>proportion</strong>, such as 5 out of 100 or % compliant.
-      </div>
+      ${card("Use this when...", `
+        <p style="margin:0;">You want to track a <strong>proportion</strong>, such as 5 out of 100 or the percentage meeting a standard.</p>
+      `)}
 
-      <ul style="margin-top:0.75rem;">
-        <li>Use one column for <strong>time / order</strong>.</li>
-        <li>Use one numeric column for the <strong>numerator</strong> (for example number with the defect).</li>
-        <li>Use one numeric column for the <strong>denominator</strong> (for example total number reviewed).</li>
-      </ul>
+      ${card("You need these columns", `
+        <ul style="margin:0;">
+          <li><strong>Date / X-axis column</strong> → time or order</li>
+          <li><strong>Value / Y-axis column</strong> → numerator</li>
+          <li><strong>Third column</strong> → denominator</li>
+        </ul>
+      `)}
 
-      <p><strong>Choose columns like this:</strong></p>
-      <ul>
-        <li><em>Date / X-axis column</em> → date, week, month or sequence</li>
-        <li><em>Value / Y-axis column</em> → numerator</li>
-        <li><em>Third column</em> → denominator</li>
-      </ul>
+      ${card("Example layout", exampleTable(
+        ["Week", "Patients with harm", "Patients reviewed"],
+        [["1", "5", "100"], ["2", "7", "110"], ["3", "6", "95"]]
+      ))}
 
-      <div class="hint">
-        The numerator must not be greater than the denominator.
-      </div>
+      ${card("Common mistake", `
+        <p style="margin:0;">The numerator must not be larger than the denominator.</p>
+      `)}
     `;
     return;
   }
 
   if (chartType === "u") {
     subtitle.textContent = "U chart: rate per opportunity.";
-
     body.innerHTML = `
-      <div class="hint">
-        A <strong>U chart</strong> is for a <strong>rate</strong>, such as incidents per 1,000 bed-days or defects per opportunity.
-      </div>
+      ${card("Use this when...", `
+        <p style="margin:0;">You want to track a <strong>rate</strong>, where the denominator changes from point to point.</p>
+      `)}
 
-      <ul style="margin-top:0.75rem;">
-        <li>Use one column for <strong>time / order</strong>.</li>
-        <li>Use one numeric column for the <strong>count</strong> of events.</li>
-        <li>Use one numeric column for the <strong>opportunities / exposure</strong>.</li>
-      </ul>
+      ${card("You need these columns", `
+        <ul style="margin:0;">
+          <li><strong>Date / X-axis column</strong> → time or order</li>
+          <li><strong>Value / Y-axis column</strong> → count of events</li>
+          <li><strong>Third column</strong> → opportunities / exposure</li>
+        </ul>
+      `)}
 
-      <p><strong>Choose columns like this:</strong></p>
-      <ul>
-        <li><em>Date / X-axis column</em> → date, week, month or sequence</li>
-        <li><em>Value / Y-axis column</em> → count of events</li>
-        <li><em>Third column</em> → denominator / opportunities</li>
-      </ul>
+      ${card("Example layout", exampleTable(
+        ["Month", "Infections", "Bed days"],
+        [["Jan", "2", "1200"], ["Feb", "3", "1350"], ["Mar", "1", "980"]]
+      ))}
 
-      <div class="hint">
-        Use a U chart when the denominator changes from point to point.
-      </div>
+      ${card("Common mistake", `
+        <p style="margin:0;">Use U when the denominator varies. If the denominator is roughly constant, a <strong>C chart</strong> may be more appropriate.</p>
+      `)}
     `;
     return;
   }
 
   if (chartType === "xbars") {
     subtitle.textContent = "X̄–S chart: grouped measurements.";
-
     body.innerHTML = `
-      <div class="hint">
-        An <strong>X̄–S chart</strong> is for <strong>subgrouped continuous data</strong>, where each time point has multiple measurements.
-      </div>
+      ${card("Use this when...", `
+        <p style="margin:0;">You have <strong>multiple measurements within each subgroup</strong> and want to understand both subgroup averages and within-group variation.</p>
+      `)}
 
-      <ul style="margin-top:0.75rem;">
-        <li>Use one column for the <strong>subgroup / group ID</strong> (for example day, batch or week).</li>
-        <li>Use one numeric column for the <strong>measurement values</strong>.</li>
-        <li>Each subgroup should appear on multiple rows.</li>
-      </ul>
+      ${card("You need these columns", `
+        <ul style="margin:0;">
+          <li><strong>Date / X-axis column</strong> → subgroup label or time label</li>
+          <li><strong>Value / Y-axis column</strong> → measurement value</li>
+          <li><strong>Third column</strong> → subgroup ID</li>
+        </ul>
+      `)}
 
-      <p><strong>Choose columns like this:</strong></p>
-      <ul>
-        <li><em>Date / X-axis column</em> → time / order label for the subgroup</li>
-        <li><em>Value / Y-axis column</em> → measurement value</li>
-        <li><em>Third column</em> → subgroup ID</li>
-      </ul>
+      ${card("Example layout", exampleTable(
+        ["Day", "Reading", "Sample_ID"],
+        [["Mon", "10.2", "A"], ["Mon", "10.5", "A"], ["Tue", "9.8", "B"], ["Tue", "10.1", "B"]]
+      ))}
 
-      <div class="hint">
-        Use this chart only when each subgroup has several measurements, not just one.
-      </div>
+      ${card("Common mistake", `
+        <p style="margin:0;">Do not use X̄–S if each subgroup only has one reading. Use <strong>XmR</strong> instead.</p>
+      `)}
     `;
     return;
   }
@@ -8840,36 +8861,36 @@ function renderChartSetupModal(chartType) {
     const checkedGaps  = tChartInputMode === "gaps" ? "checked" : "";
 
     body.innerHTML = `
-      <div class="hint">
-        A <strong>T chart</strong> is for rare events. It plots the <strong>time between events</strong>.
-      </div>
+      ${card("Use this when...", `
+        <p style="margin:0;">You want to track the <strong>time between rare events</strong>.</p>
+      `)}
 
-      <p style="margin-top:0.75rem;"><strong>How is your data set up?</strong></p>
+      ${card("Choose your setup", `
+        <label style="display:block; margin:0.25rem 0;">
+          <input type="radio" name="tChartInputMode" value="eventDates" ${checkedDates}>
+          <strong>I have event dates</strong> (one row per event)
+        </label>
+        <div class="hint small-hint" style="margin-top:0.15rem; margin-bottom:0.5rem;">
+          Put the event date/time in <em>Date / X-axis column</em>. The <em>Value / Y-axis column</em> is not used.
+        </div>
 
-      <label style="display:block; margin:0.25rem 0;">
-        <input type="radio" name="tChartInputMode" value="eventDates" ${checkedDates}>
-        <strong>I have event dates</strong> (one row per event)
-      </label>
-      <div class="hint small-hint" style="margin-top:0.15rem; margin-bottom:0.5rem;">
-        Put the event date/time in <em>Date / X-axis column</em>. The <em>Value / Y-axis column</em> is not used.
-        This is the recommended setup.
-      </div>
+        <label style="display:block; margin:0.25rem 0;">
+          <input type="radio" name="tChartInputMode" value="gaps" ${checkedGaps}>
+          <strong>I already have the gaps</strong> (numeric time between events)
+        </label>
+        <div class="hint small-hint" style="margin-top:0.15rem;">
+          Put the gap values in <em>Value / Y-axis column</em>.
+        </div>
+      `)}
 
-      <label style="display:block; margin:0.25rem 0;">
-        <input type="radio" name="tChartInputMode" value="gaps" ${checkedGaps}>
-        <strong>I already have the gaps</strong> (time between events as numbers)
-      </label>
-      <div class="hint small-hint" style="margin-top:0.15rem;">
-        Put the gap values (for example days between events) in <em>Value / Y-axis column</em>.
-        The tool will plot those directly.
-      </div>
+      ${card("Example layout", exampleTable(
+        ["Event date"],
+        [["01/01/2024"], ["12/01/2024"], ["20/01/2024"]]
+      ))}
 
-      <hr style="margin:0.9rem 0;">
-
-      <div class="hint">
-        <strong>Tip:</strong> If your date format is not being recognised, switch the T chart to
-        “I already have the gaps” and enter numeric gaps instead.
-      </div>
+      ${card("Common mistake", `
+        <p style="margin:0;">Do not use a T chart for event counts per month. Use a <strong>C</strong>, <strong>P</strong> or <strong>U</strong> chart instead.</p>
+      `)}
     `;
 
     body.querySelectorAll("input[name='tChartInputMode']").forEach(r => {
@@ -8892,36 +8913,38 @@ function renderChartSetupModal(chartType) {
 
   if (chartType === "g") {
     subtitle.textContent = "G chart: opportunities between rare events.";
-
     body.innerHTML = `
-      <div class="hint">
-        A <strong>G chart</strong> is for <strong>opportunities between rare events</strong>.
-      </div>
+      ${card("Use this when...", `
+        <p style="margin:0;">You want to track the <strong>number of opportunities between rare events</strong>.</p>
+      `)}
 
-      <ul style="margin-top:0.75rem;">
-        <li>Use one column for <strong>time / order</strong> if you want labels on the X-axis.</li>
-        <li>Use one numeric column for the <strong>number of opportunities between events</strong>.</li>
-      </ul>
+      ${card("You need these columns", `
+        <ul style="margin:0;">
+          <li><strong>Date / X-axis column</strong> → optional label / order column</li>
+          <li><strong>Value / Y-axis column</strong> → number of opportunities between events</li>
+        </ul>
+      `)}
 
-      <p><strong>Choose columns like this:</strong></p>
-      <ul>
-        <li><em>Date / X-axis column</em> → date, week, month or sequence</li>
-        <li><em>Value / Y-axis column</em> → opportunities / cases / procedures between events</li>
-      </ul>
+      ${card("Example layout", exampleTable(
+        ["Week", "Procedures between harms"],
+        [["1", "35"], ["2", "48"], ["3", "27"]]
+      ))}
 
-      <div class="hint">
-        Use G charts when the thing you count between events is an opportunity count rather than elapsed time.
-      </div>
+      ${card("Common mistake", `
+        <p style="margin:0;">Use G when the thing between events is a <strong>count of opportunities</strong>. If it is elapsed time, use a <strong>T chart</strong>.</p>
+      `)}
     `;
     return;
   }
 
   body.innerHTML = `
-    <div class="hint">
-      For this chart, use the column labels shown in <strong>Choose columns</strong>.
-    </div>
+    ${card("Setup guidance", `
+      <p style="margin:0;">Use the column labels shown in <strong>Choose columns</strong>.</p>
+    `)}
   `;
 }
+
+
 function maybeShowChartSetupModal(chartType) {
   if (!shouldAutoShowChartSetupModal()) return;
   renderChartSetupModal(chartType);
