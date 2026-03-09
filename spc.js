@@ -4203,7 +4203,7 @@ function formatDateOnlyLabel(v) {
   if (/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}$/.test(firstToken)) return firstToken;
 
   // Fallback: try parsing and formatting
-  const d = new Date(s);
+  const d = parseDateFlexible(s);
   if (!isNaN(d.getTime())) return formatYMD_Local(d);
 
   return firstToken;
@@ -5524,11 +5524,11 @@ function parseDateValue(xRaw) {
   }
 
   if (xRaw === null || xRaw === undefined) {
-    return new Date(NaN);
+    return parseDateFlexible(NaN);
   }
 
   const s = String(xRaw).trim();
-  if (!s) return new Date(NaN);
+  if (!s) return parseDateFlexible(NaN);
 
   // ISO style: 2025-10-02 or 2025-10-02T...
   const isoMatch = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
@@ -5536,7 +5536,7 @@ function parseDateValue(xRaw) {
     const y = Number(isoMatch[1]);
     const m = Number(isoMatch[2]);
     const d = Number(isoMatch[3]);
-    return new Date(y, m - 1, d);
+    return parseDateFlexible(y, m - 1, d);
   }
 
   // NHS-style day-first: dd/mm/yyyy or dd-mm-yyyy
@@ -5546,11 +5546,11 @@ function parseDateValue(xRaw) {
     let month = Number(dmMatch[2]);
     let year  = Number(dmMatch[3]);
     if (year < 100) year += 2000; // e.g. 25 -> 2025
-    return new Date(year, month - 1, day);
+    return parseDateFlexible(year, month - 1, day);
   }
 
   // Fallback: let the browser try
-  return new Date(s);
+  return parseDateFlexible(s);
 }
 
 
@@ -5587,6 +5587,49 @@ function toNumericValue(raw) {
 
   const num = Number(s);
   return isFinite(num) ? num : NaN;
+}
+
+function parseDateFlexible(value) {
+  if (value === null || value === undefined) return null;
+
+  const s = String(value).trim();
+
+  if (!s) return null;
+
+  // ISO format (YYYY-MM-DD) – safest case
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
+    const d = parseDateFlexible(s);
+    if (!isNaN(d)) return d;
+  }
+
+  // Excel serial numbers
+  const num = Number(s);
+  if (!isNaN(num) && num > 20000 && num < 60000) {
+    const excelEpoch = parseDateFlexible(Date.UTC(1899, 11, 30));
+    const d = parseDateFlexible(excelEpoch.getTime() + num * 86400000);
+    if (!isNaN(d)) return d;
+  }
+
+  // Slash dates (assume UK if ambiguous)
+  const slashMatch = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+  if (slashMatch) {
+    let day = Number(slashMatch[1]);
+    let month = Number(slashMatch[2]);
+    let year = Number(slashMatch[3]);
+
+    if (year < 100) year += 2000;
+
+    if (month <= 12 && day <= 31) {
+      const d = parseDateFlexible(year, month - 1, day);
+      if (!isNaN(d)) return d;
+    }
+  }
+
+  // Try native parsing as fallback
+  const fallback = parseDateFlexible(s);
+  if (!isNaN(fallback)) return fallback;
+
+  return null;
 }
 
 /* ============================================================
