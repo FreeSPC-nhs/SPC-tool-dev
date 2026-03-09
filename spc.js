@@ -11,6 +11,10 @@ let dataModelDirty = false;
 let gridHeaders = ["Date", "Value"];
 let lastGridHeadersKey = ""; // track changes
 
+let chartTitleManuallyEdited = false;
+let xAxisLabelManuallyEdited = false;
+let yAxisLabelManuallyEdited = false;
+
 // ------------------------------------------------------------
 // Column intelligence (Levels 1–3):
 // - Profile columns once per dataset
@@ -961,9 +965,26 @@ function debounce(fn, ms = 80) {
 
 const applyPresentationEditsLiveDebounced = debounce(applyPresentationEditsLive, 60);
 
-if (chartTitleInput) chartTitleInput.addEventListener("input", applyPresentationEditsLiveDebounced);
-if (xAxisLabelInput) xAxisLabelInput.addEventListener("input", applyPresentationEditsLiveDebounced);
-if (yAxisLabelInput) yAxisLabelInput.addEventListener("input", applyPresentationEditsLiveDebounced);
+if (chartTitleInput) {
+  chartTitleInput.addEventListener("input", () => {
+    chartTitleManuallyEdited = true;
+    applyPresentationEditsLiveDebounced();
+  });
+}
+
+if (xAxisLabelInput) {
+  xAxisLabelInput.addEventListener("input", () => {
+    xAxisLabelManuallyEdited = true;
+    applyPresentationEditsLiveDebounced();
+  });
+}
+
+if (yAxisLabelInput) {
+  yAxisLabelInput.addEventListener("input", () => {
+    yAxisLabelManuallyEdited = true;
+    applyPresentationEditsLiveDebounced();
+  });
+}
 
 function handleAxisControlChanged({ livePreview = false } = {}) {
   markDataModelDirty();
@@ -1001,7 +1022,15 @@ function handleAxisControlChanged({ livePreview = false } = {}) {
   el.addEventListener("click", () => handleAxisControlChanged({ livePreview: true }));
 });
 
+if (valueSelect) {
+  valueSelect.addEventListener("change", () => {
+    applyDefaultYBoundsForSelectedColumn();
 
+    if (rawRows && rawRows.length) {
+      markDataModelDirty();
+    }
+  });
+}
 
 function loadRows(rows) {
   if (!rows || rows.length === 0) {
@@ -1010,6 +1039,7 @@ function loadRows(rows) {
   }
 
   rawRows = rows;
+  applyDefaultYBoundsForSelectedColumn();
 
   const firstRow = rows[0];
   const columns = firstRow ? Object.keys(firstRow) : [];
@@ -1141,7 +1171,31 @@ function loadRows(rows) {
 
 }
 
+function getDefaultYBoundsForSelectedColumn() {
+  if (!rawRows || !rawRows.length || !valueSelect || !valueSelect.value) {
+    return { min: "", max: "" };
+  }
 
+  const vals = rawRows
+    .map(row => toNumericValue(row[valueSelect.value]))
+    .filter(v => Number.isFinite(v));
+
+  if (!vals.length) {
+    return { min: "", max: "" };
+  }
+
+  return {
+    min: String(Math.min(...vals)),
+    max: String(Math.max(...vals))
+  };
+}
+
+function applyDefaultYBoundsForSelectedColumn() {
+  const { min, max } = getDefaultYBoundsForSelectedColumn();
+
+  if (yAxisMinInput) yAxisMinInput.value = min;
+  if (yAxisMaxInput) yAxisMaxInput.value = max;
+}
 
 function showError(msg) {
   if (errorMessage) errorMessage.textContent = msg;
@@ -1620,7 +1674,7 @@ function drawSecondarySPCChart({
             scales: (() => {
         const axisSettings = getAxisSettings();
         return {
-          x: buildCategoryXAxisConfig(xLabel, axisSettings.x),
+          x: buildCategoryXAxisConfig(xLabel, axisSettings.x, labels),
           y: buildAxisConfig(yLabel, axisSettings.y, {
             suggestedMin: isFinite(suggestedMin) ? suggestedMin : undefined,
             suggestedMax: isFinite(suggestedMax) ? suggestedMax : undefined
@@ -1735,7 +1789,7 @@ function drawXbarSCombinedChart({
             scales: (() => {
         const axisSettings = getAxisSettings();
         return {
-          x: buildCategoryXAxisConfig(mainLabels.xLabel, axisSettings.x),
+          x: buildCategoryXAxisConfig(mainLabels.xLabel, axisSettings.x, labels),
           y: buildAxisConfig(mainLabels.yLabel, axisSettings.y)
         };
       })()
@@ -1807,6 +1861,10 @@ function resetAll() {
   if (targetInput) targetInput.value = "";
   if (annotationDateInput) annotationDateInput.value = "";
   if (annotationLabelInput) annotationLabelInput.value = "";
+
+  chartTitleManuallyEdited = false;
+  xAxisLabelManuallyEdited = false;
+  yAxisLabelManuallyEdited = false;
 
   // --- Reset axis controls ---
   if (xAxisFontFamilyInput) xAxisFontFamilyInput.value = "";
@@ -4011,11 +4069,26 @@ function buildAxisConfig(axisLabel, settings, extra = {}) {
   return cfg;
 }
 
-function buildCategoryXAxisConfig(axisLabel, settings, extra = {}) {
-  return buildAxisConfig(axisLabel, settings, {
+function buildCategoryXAxisConfig(axisLabel, settings, labels, extra = {}) {
+  const cfg = buildAxisConfig(axisLabel, settings, {
     type: "category",
     ...extra
   });
+
+  cfg.ticks = {
+    ...(cfg.ticks || {}),
+    callback: function(value, index) {
+      if (Array.isArray(labels) && index >= 0 && index < labels.length) {
+        return labels[index];
+      }
+      if (typeof this.getLabelForValue === "function") {
+        return this.getLabelForValue(value);
+      }
+      return value;
+    }
+  };
+
+  return cfg;
 }
 
 
@@ -4037,15 +4110,15 @@ function validateAxisSettings() {
 
 // Get title / axis labels with fallbacks
 function getChartLabels(defaultTitle, defaultX, defaultY) {
-  if (chartTitleInput && !chartTitleInput.value.trim()) {
+  if (chartTitleInput && !chartTitleManuallyEdited) {
     chartTitleInput.value = defaultTitle || "";
   }
 
-  if (xAxisLabelInput && !xAxisLabelInput.value.trim()) {
+  if (xAxisLabelInput && !xAxisLabelManuallyEdited) {
     xAxisLabelInput.value = defaultX || "";
   }
 
-  if (yAxisLabelInput && !yAxisLabelInput.value.trim()) {
+  if (yAxisLabelInput && !yAxisLabelManuallyEdited) {
     yAxisLabelInput.value = defaultY || "";
   }
 
@@ -4055,6 +4128,7 @@ function getChartLabels(defaultTitle, defaultX, defaultY) {
 
   return { title, xLabel, yLabel };
 }
+
 
 function populateAnnotationDateOptions(labels) {
   if (!annotationDateInput) return;
@@ -6790,7 +6864,7 @@ function drawRunChart(points, baselineCount, labels) {
             scales: (() => {
         const axisSettings = getAxisSettings();
         return {
-          x: buildCategoryXAxisConfig(xLabel, axisSettings.x),
+          x: buildCategoryXAxisConfig(xLabel, axisSettings.x, labels),
           y: buildAxisConfig(yLabel, axisSettings.y)
         };
       })()
@@ -7365,7 +7439,7 @@ function drawSimpleSPCChart({
             scales: (() => {
         const axisSettings = getAxisSettings();
         return {
-          x: buildCategoryXAxisConfig(xLabel, axisSettings.x),
+          x: buildCategoryXAxisConfig(xLabel, axisSettings.x, labels),
           y: buildAxisConfig(yLabel, axisSettings.y, {
             suggestedMin: isFinite(yAxisSuggestedMin) ? yAxisSuggestedMin : undefined,
             suggestedMax: isFinite(yAxisSuggestedMax) ? yAxisSuggestedMax : undefined
@@ -7640,7 +7714,7 @@ function drawXmRChart(points, baselineCount, labels) {
             scales: (() => {
         const axisSettings = getAxisSettings();
         return {
-          x: buildCategoryXAxisConfig(xLabel, axisSettings.x),
+          x: buildCategoryXAxisConfig(xLabel, axisSettings.x, labels),
           y: buildAxisConfig(yLabel, axisSettings.y)
         };
       })()
@@ -7846,7 +7920,7 @@ function drawMrChart(allPoints, labels, segments) {
       scales: (() => {
         const axisSettings = getAxisSettings();
         return {
-          x: buildCategoryXAxisConfig("", axisSettings.x),
+          x: buildCategoryXAxisConfig("", axisSettings.x, labels),
           y: buildAxisConfig("", withoutAxisBounds(axisSettings.y), { beginAtZero: true })
         };
       })()
@@ -7925,7 +7999,7 @@ function renderMrChart(mrLabels, mrValues, avgMR, uclMR) {
       scales: (() => {
         const axisSettings = getAxisSettings();
         return {
-          x: buildCategoryXAxisConfig("", axisSettings.x),
+          x: buildCategoryXAxisConfig("", axisSettings.x, labels),
           y: buildAxisConfig("", withoutAxisBounds(axisSettings.y), { beginAtZero: true })
         };
       })()
