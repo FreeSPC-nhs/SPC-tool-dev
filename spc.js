@@ -3947,7 +3947,6 @@ function buildAnnotationConfig(labels) {
   const laneLastEnd = [];
 
   items.forEach((a) => {
-
     const wrapped = wrapAnnotationText(a.label, 24);
     const longest = wrapped.reduce((m, l) => Math.max(m, l.length), 0);
 
@@ -3962,9 +3961,10 @@ function buildAnnotationConfig(labels) {
     const level = Math.floor(lane / 2);
     const above = lane % 2 === 0;
 
+    // Small offsets only
     const yAdjust = above
-      ? -(6 + level * 14)
-      : (6 + level * 14);
+      ? -(4 + level * 10)
+      : (4 + level * 10);
 
     cfg["annot" + a._idx] = {
       type: "line",
@@ -3987,12 +3987,10 @@ function buildAnnotationConfig(labels) {
           weight: "bold"
         },
 
-        // KEY CHANGE
-        // keep labels anchored inside chart area
-        position: "center",
+        // Keep labels near the ends of the annotation line
+        position: above ? "end" : "start",
 
         yAdjust: yAdjust,
-
         textAlign: "left"
       }
     };
