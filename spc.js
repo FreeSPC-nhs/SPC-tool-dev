@@ -5476,7 +5476,15 @@ function parseDateValue(xRaw) {
   const s = String(xRaw).trim();
   if (!s) return new Date(NaN);
 
-  // ISO style: 2025-10-02 or 2025-10-02T...
+  // --- Excel serial date support ---
+  // Excel dates are numbers like 45123
+  const asNumber = Number(s);
+  if (Number.isFinite(asNumber) && asNumber > 20000 && asNumber < 60000) {
+    const excelEpoch = new Date(Date.UTC(1899, 11, 30));
+    return new Date(excelEpoch.getTime() + asNumber * 86400000);
+  }
+
+  // ISO style: 2025-10-02 or 2025-10-02T.
   const isoMatch = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
   if (isoMatch) {
     const y = Number(isoMatch[1]);
@@ -8661,8 +8669,169 @@ function renderChartSetupModal(chartType) {
     dontShow.onchange = () => setAutoShowChartSetupModal(!dontShow.checked);
   }
 
-  // default content
   subtitle.textContent = "How to structure your data for this chart.";
+
+  if (chartType === "run") {
+    subtitle.textContent = "Run chart: simple view of values over time.";
+
+    body.innerHTML = `
+      <div class="hint">
+        A <strong>Run chart</strong> is a simple way to plot values over time using a <strong>median</strong>.
+      </div>
+
+      <ul style="margin-top:0.75rem;">
+        <li>Use one column for <strong>time / order</strong> (for example Date, Week or Month).</li>
+        <li>Use one column for the <strong>measure</strong> you want to track.</li>
+      </ul>
+
+      <p><strong>Choose columns like this:</strong></p>
+      <ul>
+        <li><em>Date / X-axis column</em> → time / order</li>
+        <li><em>Value / Y-axis column</em> → the measure</li>
+      </ul>
+
+      <div class="hint">
+        Use <strong>Sequence / category</strong> on the X-axis if your first column is 1, 2, 3, 4... rather than real dates.
+      </div>
+    `;
+    return;
+  }
+
+  if (chartType === "xmr") {
+    subtitle.textContent = "XmR chart: individual measurements over time.";
+
+    body.innerHTML = `
+      <div class="hint">
+        An <strong>XmR chart</strong> is for <strong>one measurement per time point</strong>.
+      </div>
+
+      <ul style="margin-top:0.75rem;">
+        <li>Use one column for <strong>time / order</strong>.</li>
+        <li>Use one numeric column for the <strong>measurement</strong>.</li>
+      </ul>
+
+      <p><strong>Choose columns like this:</strong></p>
+      <ul>
+        <li><em>Date / X-axis column</em> → date, week, month or sequence</li>
+        <li><em>Value / Y-axis column</em> → the measurement value</li>
+      </ul>
+
+      <div class="hint">
+        XmR is usually the best choice when you have continuous data and only one value per time period.
+      </div>
+    `;
+    return;
+  }
+
+  if (chartType === "c") {
+    subtitle.textContent = "C chart: count per time period.";
+
+    body.innerHTML = `
+      <div class="hint">
+        A <strong>C chart</strong> is for <strong>counts</strong> per time period, when the opportunity for events is roughly constant.
+      </div>
+
+      <ul style="margin-top:0.75rem;">
+        <li>Use one column for <strong>time / order</strong>.</li>
+        <li>Use one numeric column for the <strong>count</strong> in each period.</li>
+      </ul>
+
+      <p><strong>Choose columns like this:</strong></p>
+      <ul>
+        <li><em>Date / X-axis column</em> → date, week, month or sequence</li>
+        <li><em>Value / Y-axis column</em> → number of events / incidents / defects</li>
+      </ul>
+
+      <div class="hint">
+        Use a C chart only when each point represents a count over a comparable amount of opportunity.
+      </div>
+    `;
+    return;
+  }
+
+  if (chartType === "p") {
+    subtitle.textContent = "P chart: proportion out of a total.";
+
+    body.innerHTML = `
+      <div class="hint">
+        A <strong>P chart</strong> is for a <strong>proportion</strong>, such as 5 out of 100 or % compliant.
+      </div>
+
+      <ul style="margin-top:0.75rem;">
+        <li>Use one column for <strong>time / order</strong>.</li>
+        <li>Use one numeric column for the <strong>numerator</strong> (for example number with the defect).</li>
+        <li>Use one numeric column for the <strong>denominator</strong> (for example total number reviewed).</li>
+      </ul>
+
+      <p><strong>Choose columns like this:</strong></p>
+      <ul>
+        <li><em>Date / X-axis column</em> → date, week, month or sequence</li>
+        <li><em>Value / Y-axis column</em> → numerator</li>
+        <li><em>Third column</em> → denominator</li>
+      </ul>
+
+      <div class="hint">
+        The numerator must not be greater than the denominator.
+      </div>
+    `;
+    return;
+  }
+
+  if (chartType === "u") {
+    subtitle.textContent = "U chart: rate per opportunity.";
+
+    body.innerHTML = `
+      <div class="hint">
+        A <strong>U chart</strong> is for a <strong>rate</strong>, such as incidents per 1,000 bed-days or defects per opportunity.
+      </div>
+
+      <ul style="margin-top:0.75rem;">
+        <li>Use one column for <strong>time / order</strong>.</li>
+        <li>Use one numeric column for the <strong>count</strong> of events.</li>
+        <li>Use one numeric column for the <strong>opportunities / exposure</strong>.</li>
+      </ul>
+
+      <p><strong>Choose columns like this:</strong></p>
+      <ul>
+        <li><em>Date / X-axis column</em> → date, week, month or sequence</li>
+        <li><em>Value / Y-axis column</em> → count of events</li>
+        <li><em>Third column</em> → denominator / opportunities</li>
+      </ul>
+
+      <div class="hint">
+        Use a U chart when the denominator changes from point to point.
+      </div>
+    `;
+    return;
+  }
+
+  if (chartType === "xbars") {
+    subtitle.textContent = "X̄–S chart: grouped measurements.";
+
+    body.innerHTML = `
+      <div class="hint">
+        An <strong>X̄–S chart</strong> is for <strong>subgrouped continuous data</strong>, where each time point has multiple measurements.
+      </div>
+
+      <ul style="margin-top:0.75rem;">
+        <li>Use one column for the <strong>subgroup / group ID</strong> (for example day, batch or week).</li>
+        <li>Use one numeric column for the <strong>measurement values</strong>.</li>
+        <li>Each subgroup should appear on multiple rows.</li>
+      </ul>
+
+      <p><strong>Choose columns like this:</strong></p>
+      <ul>
+        <li><em>Date / X-axis column</em> → time / order label for the subgroup</li>
+        <li><em>Value / Y-axis column</em> → measurement value</li>
+        <li><em>Third column</em> → subgroup ID</li>
+      </ul>
+
+      <div class="hint">
+        Use this chart only when each subgroup has several measurements, not just one.
+      </div>
+    `;
+    return;
+  }
 
   if (chartType === "t") {
     subtitle.textContent = "T chart: time between rare events.";
@@ -8691,30 +8860,27 @@ function renderChartSetupModal(chartType) {
         <strong>I already have the gaps</strong> (time between events as numbers)
       </label>
       <div class="hint small-hint" style="margin-top:0.15rem;">
-        Put the gap values (e.g. days between events) in <em>Value / Y-axis column</em>.
+        Put the gap values (for example days between events) in <em>Value / Y-axis column</em>.
         The tool will plot those directly.
       </div>
 
       <hr style="margin:0.9rem 0;">
 
       <div class="hint">
-        <strong>Tip:</strong> If your date format isn't being recognised, you can switch the T chart to
+        <strong>Tip:</strong> If your date format is not being recognised, switch the T chart to
         “I already have the gaps” and enter numeric gaps instead.
       </div>
     `;
 
-    // wire radio changes
     body.querySelectorAll("input[name='tChartInputMode']").forEach(r => {
       r.addEventListener("change", () => {
         tChartInputMode = r.value;
         try { localStorage.setItem("spc_tChartInputMode", tChartInputMode); } catch {}
 
-        // Update labels/enable/disable fields immediately
         if (typeof updateUIForChartType === "function") {
           updateUIForChartType("t");
         }
 
-        // If a chart already exists, regenerate so the new mode applies
         if (rawRows && rawRows.length && generateButton) {
           generateButton.click();
         }
@@ -8724,15 +8890,38 @@ function renderChartSetupModal(chartType) {
     return;
   }
 
-  // fallback for other chart types (we’ll expand these later)
+  if (chartType === "g") {
+    subtitle.textContent = "G chart: opportunities between rare events.";
+
+    body.innerHTML = `
+      <div class="hint">
+        A <strong>G chart</strong> is for <strong>opportunities between rare events</strong>.
+      </div>
+
+      <ul style="margin-top:0.75rem;">
+        <li>Use one column for <strong>time / order</strong> if you want labels on the X-axis.</li>
+        <li>Use one numeric column for the <strong>number of opportunities between events</strong>.</li>
+      </ul>
+
+      <p><strong>Choose columns like this:</strong></p>
+      <ul>
+        <li><em>Date / X-axis column</em> → date, week, month or sequence</li>
+        <li><em>Value / Y-axis column</em> → opportunities / cases / procedures between events</li>
+      </ul>
+
+      <div class="hint">
+        Use G charts when the thing you count between events is an opportunity count rather than elapsed time.
+      </div>
+    `;
+    return;
+  }
+
   body.innerHTML = `
     <div class="hint">
-      Chart setup guidance for this chart type isn’t written yet.
-      For now, use the column labels shown in “Choose columns”, or click “Help & guidance”.
+      For this chart, use the column labels shown in <strong>Choose columns</strong>.
     </div>
   `;
 }
-
 function maybeShowChartSetupModal(chartType) {
   if (!shouldAutoShowChartSetupModal()) return;
   renderChartSetupModal(chartType);
