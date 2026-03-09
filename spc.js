@@ -1854,7 +1854,7 @@ function resetAll() {
   if (splitPointSelect) splitPointSelect.innerHTML = "";
 
   // --- Reset text inputs ---
-    if (baselineInput) baselineInput.value = "";
+  if (baselineInput) baselineInput.value = "";
   if (chartTitleInput) chartTitleInput.value = "";
   if (xAxisLabelInput) xAxisLabelInput.value = "";
   if (yAxisLabelInput) yAxisLabelInput.value = "";
@@ -1868,7 +1868,7 @@ function resetAll() {
 
   // --- Reset axis controls ---
   if (xAxisFontFamilyInput) xAxisFontFamilyInput.value = "";
-  if (xAxisFontSizeInput) xAxisFontSizeInput.value = "";
+  if (xAxisFontSizeInput) xAxisFontSizeInput.value = "11";
   if (typeof setPressed === "function") {
     setPressed(xAxisItalicBtn, false);
     setPressed(xAxisBoldBtn, false);
@@ -1878,7 +1878,7 @@ function resetAll() {
   if (yAxisMaxInput) yAxisMaxInput.value = "";
   if (yAxisFormatInput) yAxisFormatInput.value = "auto";
   if (yAxisFontFamilyInput) yAxisFontFamilyInput.value = "";
-  if (yAxisFontSizeInput) yAxisFontSizeInput.value = "";
+  if (yAxisFontSizeInput) yAxisFontSizeInput.value = "11";
   if (typeof setPressed === "function") {
     setPressed(yAxisItalicBtn, false);
     setPressed(yAxisBoldBtn, false);
@@ -7347,9 +7347,10 @@ function drawSimpleSPCChart({
     currentChart = null;
   }
 
-  const title = (chartTitleInput?.value || "").trim() || chartTitleFallback;
-  const xLabel = (xAxisLabelInput?.value || "").trim() || "Date";
-  const yLabel = (yAxisLabelInput?.value || "").trim() || yAxisLabelFallback;
+  const labelSet = getChartLabels(chartTitleFallback, "Date", yAxisLabelFallback);
+  const title = labelSet.title;
+  const xLabel = labelSet.xLabel;
+  const yLabel = labelSet.yLabel;
 
   const datasets = [
     {
@@ -7777,6 +7778,9 @@ function drawMrChart(allPoints, labels, segments) {
   if (!mrCanvas || !mrPanel) return;
   mrPanel.style.display = "block";
 
+  const strong = mrPanel.querySelector("strong");
+  if (strong) strong.textContent = "Moving Range chart:";
+
   const showAll = (typeof getMrDisplayMode === "function") && (getMrDisplayMode() === "all");
 
   // House style colours (match main chart)
@@ -7803,7 +7807,7 @@ function drawMrChart(allPoints, labels, segments) {
     const lastSeg = segments && segments.length ? segments[segments.length - 1] : null;
     if (!lastSeg) return;
 
-    const pts = (lastSeg.result && lastSeg.result.points) ? lastSeg.result.points : [];
+    const pts = allPoints.slice(lastSeg.startIndex, lastSeg.endIndex + 1);
     const values = pts.map(p => p.y);
     const mr = mrForValues(values);
 
@@ -7847,7 +7851,7 @@ function drawMrChart(allPoints, labels, segments) {
 
   // One pair of lines per period
   (segments || []).forEach((seg, idx) => {
-    const pts = (seg.result && seg.result.points) ? seg.result.points : [];
+    const pts = allPoints.slice(seg.startIndex, seg.endIndex + 1);
     const values = pts.map(p => p.y);
     const mr = mrForValues(values);
 
@@ -7932,6 +7936,11 @@ function drawMrChart(allPoints, labels, segments) {
 // Helper used by "last period only" mode — uses your existing MR canvas/chart variables
 function renderMrChart(mrLabels, mrValues, avgMR, uclMR) {
   if (!mrCanvas) return;
+
+  if (mrPanel) {
+    const strong = mrPanel.querySelector("strong");
+    if (strong) strong.textContent = "Moving Range chart:";
+  }
 
   if (mrChart) {
     mrChart.destroy();

@@ -1297,7 +1297,7 @@ Y-axis label
 
   <label>
     X-axis font size
-    <input type="number" id="xAxisFontSize" min="6" step="1" />
+    <input type="number" id="xAxisFontSize" min="6" step="1" value="11" />
   </label>
 
   <div class="font-toggle-row">
@@ -1348,7 +1348,7 @@ Y-axis label
 
 <label>
   Y-axis font size
-  <input type="number" id="yAxisFontSize" min="6" step="1" />
+  <input type="number" id="yAxisFontSize" min="6" step="1" value="11" />
 </label>
 
 <label>
@@ -1467,6 +1467,16 @@ Hide target line
       </label>
       <div class="hint small-hint" style="margin-top:0.25rem;">
         This chart type is naturally irregular. Run and trend rules may generate false signals and are off by default.
+      </div>
+    </div>
+
+    <div id="lclClampRow" style="display:none; margin-top:0.75rem;">
+      <label class="radio-pill" style="display:inline-flex; gap:0.5rem; align-items:center;">
+        <input type="checkbox" id="clampLclAtZero" />
+        Clamp LCL at zero
+      </label>
+      <div class="hint small-hint" style="margin-top:0.25rem;">
+        Useful when the calculated lower control limit falls below zero for a measure that cannot realistically be negative.
       </div>
     </div>
 
