@@ -1805,6 +1805,14 @@ function validateBeforeGenerate() {
     return false;
   }
 
+  const chartType = (typeof getSelectedChartType_NoSideEffects === "function")
+    ? getSelectedChartType_NoSideEffects()
+    : "run";
+
+  const axisType = (typeof getAxisType === "function")
+    ? getAxisType()
+    : "date";
+
   const dateCol = dateSelect?.value;
   const valueCol = valueSelect?.value;
 
@@ -1813,14 +1821,16 @@ function validateBeforeGenerate() {
     return false;
   }
 
-  // Check at least 3 valid numeric points
+  // Check at least 3 valid numeric points in the selected value column.
+  // (T chart event-dates mode still uses a value selector in the UI for now,
+  // so keep this behaviour consistent until that workflow is changed.)
   let good = 0;
   for (const row of rawRows) {
     const y = toNumericValue(row[valueCol]);
     if (isFinite(y)) good++;
   }
 
-  if (good < 3) {
+  if (good < 3 && !(chartType === "t" && typeof tChartInputMode !== "undefined" && tChartInputMode === "eventDates")) {
     showError(
       "I can’t create a chart yet: I need at least 3 numeric values in the selected value column. " +
       "Check the column selection and make sure the values are numbers (e.g. 12.3 not '12,3' or text)."
@@ -1828,10 +1838,20 @@ function validateBeforeGenerate() {
     return false;
   }
 
-  clearError();
+  // Safety warning for suspicious selections
+  const safetyResult = validateColumnSelectionSafety({
+    chartType,
+    dateCol,
+    valueCol,
+    axisType
+  });
+
+  if (!handleValidationResult(safetyResult, { manual: lastGenerateWasManual })) {
+    return false;
+  }
+
   return true;
 }
-
 
 
 // ---- Helpers ----
@@ -2203,24 +2223,92 @@ function chooseDefaultsForChart(chartType) {
     .slice()
     .sort((a, b) => (getProfile(b)?.intFraction ?? 0) - (getProfile(a)?.intFraction ?? 0));
 
+  // Scoring helper for "measure-like" columns
+  function scoreMeasureColumn(col, { preferCounts = false } = {}) {
+    const p = getProfile(col);
+    if (!p || !p.isNumeric || p.looksLikeDate) return -Infinity;
+
+    const name = String(col || "").toLowerCase();
+
+    let score = 0;
+
+    // Prefer columns that are not the chosen x-axis
+    if (col !== xCol) score += 3;
+    else score -= 4;
+
+    // Prefer columns with some variability / not just repeated IDs
+    if (!p.repeatsOften) score += 1;
+    if (p.uniqueRatio >= 0.6 && p.uniqueRatio <= 1) score += 1;
+
+    // Prefer typical outcome/measure names
+    if (
+      name.includes("value") ||
+      name.includes("measure") ||
+      name.includes("metric") ||
+      name.includes("rate") ||
+      name.includes("score") ||
+      name.includes("count") ||
+      name.includes("result") ||
+      name.includes("time")
+    ) {
+      score += 3;
+    }
+
+    // Penalise likely index / identifier columns
+    if (
+      name.includes("id") ||
+      name.includes("index") ||
+      name.includes("seq") ||
+      name.includes("sequence") ||
+      name.includes("week") ||
+      name.includes("day") ||
+      name.includes("number") ||
+      name.includes("row")
+    ) {
+      score -= 4;
+    }
+
+    // For non-count charts, prefer less "pure count-like" columns slightly
+    if (!preferCounts && !p.isMostlyInteger) score += 1;
+
+    // For count charts, prefer integer-like non-negative columns
+    if (preferCounts) {
+      if (p.isMostlyInteger) score += 2;
+      if (!p.hasNeg) score += 1;
+    }
+
+    return score;
+  }
+
   if (chartType === "run" || chartType === "xmr") {
-    // pick first numeric non-date column
-    const yCol = numericCols[0] || "";
+    const yCol =
+      numericCols
+        .slice()
+        .sort((a, b) => scoreMeasureColumn(b) - scoreMeasureColumn(a))[0] || "";
     return { xCol, yCol, thirdCol: "" };
   }
 
   if (chartType === "c") {
-    // prefer integer-like, non-negative
-    const yCol = countLike.find(c => !(getProfile(c)?.hasNeg)) || numericCols[0] || "";
+    const yCol =
+      countLike
+        .slice()
+        .sort((a, b) => scoreMeasureColumn(b, { preferCounts: true }) - scoreMeasureColumn(a, { preferCounts: true }))[0] ||
+      numericCols[0] ||
+      "";
     return { xCol, yCol, thirdCol: "" };
   }
 
   if (chartType === "g") {
-    // prefer integer-like with min >= 1
-    const yCol = countLike.find(c => {
-      const p = getProfile(c);
-      return !p?.hasNeg && Number.isFinite(p?.min) && p.min >= 1;
-    }) || countLike.find(c => !(getProfile(c)?.hasNeg)) || numericCols[0] || "";
+    const yCol =
+      countLike.find(c => {
+        const p = getProfile(c);
+        return !p?.hasNeg && Number.isFinite(p?.min) && p.min >= 1;
+      }) ||
+      countLike
+        .slice()
+        .sort((a, b) => scoreMeasureColumn(b, { preferCounts: true }) - scoreMeasureColumn(a, { preferCounts: true }))[0] ||
+      numericCols[0] ||
+      "";
     return { xCol, yCol, thirdCol: "" };
   }
 
@@ -2237,18 +2325,16 @@ function chooseDefaultsForChart(chartType) {
       }
     }
 
-    // If no good pair found, fall back to first two numeric cols
     let yCol = best.numer || intCols[0] || numericCols[0] || "";
     let thirdCol = best.denom || intCols.find(c => c !== yCol) || numericCols.find(c => c !== yCol) || "";
 
-    // If the chosen pair is reversed (denom smaller), swap by mean magnitude
-    // (very light heuristic)
     if (yCol && thirdCol) {
       const py = getProfile(yCol);
       const pt = getProfile(thirdCol);
-      if (Number.isFinite(py?.max) && Number.isFinite(pt?.max) && py.max > pt.max) {
-        // likely denom is larger, so swap
-        const tmp = yCol; yCol = thirdCol; thirdCol = tmp;
+      const yMeanish = (Number.isFinite(py?.min) && Number.isFinite(py?.max)) ? (py.min + py.max) / 2 : NaN;
+      const tMeanish = (Number.isFinite(pt?.min) && Number.isFinite(pt?.max)) ? (pt.min + pt.max) / 2 : NaN;
+      if (Number.isFinite(yMeanish) && Number.isFinite(tMeanish) && yMeanish > tMeanish) {
+        [yCol, thirdCol] = [thirdCol, yCol];
       }
     }
 
@@ -2256,45 +2342,69 @@ function chooseDefaultsForChart(chartType) {
   }
 
   if (chartType === "u") {
-    // numerator: count-like; denom: positive opportunities-like
-    const yCol = countLike.find(c => !(getProfile(c)?.hasNeg)) || numericCols[0] || "";
+    // choose count/opportunity pair: numerator count-like, denominator usually larger
+    const intCols = numericCols.filter(c => getProfile(c)?.isMostlyInteger && !getProfile(c)?.hasNeg);
+    let yCol =
+      intCols
+        .slice()
+        .sort((a, b) => scoreMeasureColumn(b, { preferCounts: true }) - scoreMeasureColumn(a, { preferCounts: true }))[0] ||
+      numericCols[0] ||
+      "";
 
-    const denomCandidates = numericCols
-      .filter(c => c !== yCol && !(getProfile(c)?.hasNeg))
-      .sort((a, b) => {
-        // prefer min > 0 and larger typical scale
-        const pa = getProfile(a), pb = getProfile(b);
-        const posa = (Number.isFinite(pa?.min) && pa.min > 0) ? 1 : 0;
-        const posb = (Number.isFinite(pb?.min) && pb.min > 0) ? 1 : 0;
-        if (posa !== posb) return posb - posa;
-        return (pb?.max ?? 0) - (pa?.max ?? 0);
-      });
+    let thirdCol =
+      intCols.find(c => c !== yCol && (getProfile(c)?.max ?? -Infinity) >= (getProfile(yCol)?.max ?? Infinity)) ||
+      intCols.find(c => c !== yCol) ||
+      numericCols.find(c => c !== yCol) ||
+      "";
 
-    const thirdCol = denomCandidates[0] || "";
     return { xCol, yCol, thirdCol };
   }
 
   if (chartType === "xbars") {
-    // subgroup: repeatsOften; measurement: numeric
-    const subgroup = allColumns
-      .filter(c => !getProfile(c)?.looksLikeDate)
-      .sort((a, b) => ((getProfile(b)?.repeatsOften ? 1 : 0) - (getProfile(a)?.repeatsOften ? 1 : 0)))[0] || "";
+    // subgroup: prefer repeated non-date columns
+    const subgroup =
+      allColumns
+        .filter(c => c !== xCol)
+        .filter(c => !getProfile(c)?.looksLikeDate)
+        .sort((a, b) => {
+          const pa = getProfile(a), pb = getProfile(b);
+          const ra = pa?.repeatsOften ? 1 : 0;
+          const rb = pb?.repeatsOften ? 1 : 0;
+          if (ra !== rb) return rb - ra;
+          return (pb?.nonEmpty ?? 0) - (pa?.nonEmpty ?? 0);
+        })[0] || "";
 
-    // measurement value: numeric not equal subgroup
-    const yCol = numericCols.find(c => c !== subgroup) || numericCols[0] || "";
+    const yCol =
+      numericCols
+        .filter(c => c !== subgroup)
+        .sort((a, b) => scoreMeasureColumn(b) - scoreMeasureColumn(a))[0] ||
+      numericCols[0] ||
+      "";
+
     return { xCol, yCol, thirdCol: subgroup };
   }
 
-  // t chart: often event date/time; this tool currently labels y as date/time,
-  // but we keep defaults conservative (xCol + first numeric).
   if (chartType === "t") {
-    const yCol = numericCols[0] || "";
+    // Prefer event date/time in xCol; if there is a separate numeric gap column use it as y,
+    // otherwise keep first numeric fallback.
+    const yCol =
+      numericCols
+        .filter(c => c !== xCol)
+        .sort((a, b) => scoreMeasureColumn(b) - scoreMeasureColumn(a))[0] ||
+      numericCols[0] ||
+      "";
     return { xCol, yCol, thirdCol: "" };
   }
 
-  return { xCol, yCol: numericCols[0] || "", thirdCol: "" };
+  return {
+    xCol,
+    yCol:
+      numericCols
+        .slice()
+        .sort((a, b) => scoreMeasureColumn(b) - scoreMeasureColumn(a))[0] || "",
+    thirdCol: ""
+  };
 }
-
 function applyColumnIntelligence(chartType) {
   // Level 2: filter option lists
   if (dateSelect) {
@@ -5472,6 +5582,85 @@ function validateNumeratorNotGreaterThanDenom(numerArr, denomArr) {
 }
 
 let lastGenerateWasManual = false;
+
+function validateColumnSelectionSafety({ chartType, dateCol, valueCol, axisType }) {
+  if (!dateCol || !valueCol) return null;
+
+  // Hard stop: same column chosen for X and Y
+  if (dateCol === valueCol) {
+    return {
+      level: "error",
+      message: "Please choose different columns for the X-axis and the value."
+    };
+  }
+
+  const xProf = (typeof getProfile === "function") ? getProfile(dateCol) : null;
+  const yProf = (typeof getProfile === "function") ? getProfile(valueCol) : null;
+
+  const warnings = [];
+
+  const xLooksLikeSequence =
+    !!(xProf &&
+       xProf.isNumeric &&
+       xProf.isMostlyInteger &&
+       xProf.uniqueRatio >= 0.85 &&
+       !xProf.repeatsOften &&
+       !xProf.looksLikeDate);
+
+  const yLooksLikeIndex =
+    !!(yProf &&
+       yProf.isNumeric &&
+       yProf.isMostlyInteger &&
+       yProf.uniqueRatio >= 0.85 &&
+       !yProf.repeatsOften &&
+       !yProf.looksLikeDate);
+
+  // T chart (event dates mode): value column is ignored, so only check X
+  if (chartType === "t" && typeof tChartInputMode !== "undefined" && tChartInputMode === "eventDates") {
+    if (xProf && !xProf.looksLikeDate) {
+      return {
+        level: "warning",
+        message:
+          "T chart (event dates mode): the selected X-axis column does not look like a date/time column.\n\n" +
+          "Generate the chart anyway?"
+      };
+    }
+    return null;
+  }
+
+  if (axisType === "date" && xLooksLikeSequence) {
+    warnings.push(
+      "The selected X-axis column looks more like a numeric sequence than a date/time column. " +
+      "Consider switching X-axis type to Sequence / category."
+    );
+  }
+
+  if (yProf && yProf.looksLikeDate) {
+    warnings.push(
+      "The selected value column looks like a date/time field rather than a measurement."
+    );
+  }
+
+  if (yLooksLikeIndex && (xProf?.looksLikeDate || xLooksLikeSequence)) {
+    warnings.push(
+      "The selected value column looks more like an ID / sequence column than an outcome measure. " +
+      "Please check that you have chosen the column you want to chart."
+    );
+  }
+
+  if ((chartType === "run" || chartType === "xmr") && axisType === "date" && xLooksLikeSequence && yLooksLikeIndex) {
+    warnings.push(
+      "Both selected columns look like numeric sequences. This can create a plausible-looking but misleading chart."
+    );
+  }
+
+  if (!warnings.length) return null;
+
+  return {
+    level: "warning",
+    message: warnings.join("\n\n") + "\n\nGenerate the chart anyway?"
+  };
+}
 
 function handleValidationResult(result, { manual = true } = {}) {
   if (!result) return true;
