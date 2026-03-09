@@ -1620,7 +1620,7 @@ function drawSecondarySPCChart({
             scales: (() => {
         const axisSettings = getAxisSettings();
         return {
-          x: buildAxisConfig(xLabel, axisSettings.x),
+          x: buildCategoryXAxisConfig(xLabel, axisSettings.x),
           y: buildAxisConfig(yLabel, axisSettings.y, {
             suggestedMin: isFinite(suggestedMin) ? suggestedMin : undefined,
             suggestedMax: isFinite(suggestedMax) ? suggestedMax : undefined
@@ -1659,24 +1659,7 @@ function drawXbarSCombinedChart({
     populateSplitOptions(labels);
   }
 
-  // Helper: prefer user-entered labels, otherwise fall back per-chart
-  function getAxisLabels(defaultTitle, defaultX, defaultY) {
-    const title = (chartTitleInput && chartTitleInput.value.trim())
-      ? chartTitleInput.value.trim()
-      : defaultTitle;
-
-    const xLabel = (xAxisLabelInput && xAxisLabelInput.value.trim())
-      ? xAxisLabelInput.value.trim()
-      : defaultX;
-
-    // IMPORTANT: y-axis label should differ between X̄ and S charts,
-    // so only use the user y-label if they typed one.
-    const yLabel = (yAxisLabelInput && yAxisLabelInput.value.trim())
-      ? yAxisLabelInput.value.trim()
-      : defaultY;
-
-    return { title, xLabel, yLabel };
-  }
+    // Use shared labels helper so defaults are written into the controls
 
   // -------------------------
   // 1) Main chart: X̄ chart
@@ -1686,7 +1669,7 @@ function drawXbarSCombinedChart({
     currentChart = null;
   }
 
-  const mainLabels = getAxisLabels("X̄ chart", "Subgroup", "X̄");
+  const mainLabels = getChartLabels("X̄ chart", "Subgroup", "X̄");
 
   const mainDatasets = [
     {
@@ -1752,7 +1735,7 @@ function drawXbarSCombinedChart({
             scales: (() => {
         const axisSettings = getAxisSettings();
         return {
-          x: buildAxisConfig(mainLabels.xLabel, axisSettings.x),
+          x: buildCategoryXAxisConfig(mainLabels.xLabel, axisSettings.x),
           y: buildAxisConfig(mainLabels.yLabel, axisSettings.y)
         };
       })()
@@ -1777,7 +1760,7 @@ function drawXbarSCombinedChart({
 
   if (!mrCanvas) return;
 
-  const sLabels = getAxisLabels("S chart", "Subgroup", "S");
+  const sLabels = getChartLabels("S chart", "Subgroup", "S");
 
   // Use your existing helper so the styling matches
   mrChart = drawSecondarySPCChart({
@@ -1817,13 +1800,31 @@ function resetAll() {
   if (splitPointSelect) splitPointSelect.innerHTML = "";
 
   // --- Reset text inputs ---
-  if (baselineInput) baselineInput.value = "";
+    if (baselineInput) baselineInput.value = "";
   if (chartTitleInput) chartTitleInput.value = "";
   if (xAxisLabelInput) xAxisLabelInput.value = "";
   if (yAxisLabelInput) yAxisLabelInput.value = "";
   if (targetInput) targetInput.value = "";
   if (annotationDateInput) annotationDateInput.value = "";
   if (annotationLabelInput) annotationLabelInput.value = "";
+
+  // --- Reset axis controls ---
+  if (xAxisFontFamilyInput) xAxisFontFamilyInput.value = "";
+  if (xAxisFontSizeInput) xAxisFontSizeInput.value = "";
+  if (typeof setPressed === "function") {
+    setPressed(xAxisItalicBtn, false);
+    setPressed(xAxisBoldBtn, false);
+  }
+
+  if (yAxisMinInput) yAxisMinInput.value = "";
+  if (yAxisMaxInput) yAxisMaxInput.value = "";
+  if (yAxisFormatInput) yAxisFormatInput.value = "auto";
+  if (yAxisFontFamilyInput) yAxisFontFamilyInput.value = "";
+  if (yAxisFontSizeInput) yAxisFontSizeInput.value = "";
+  if (typeof setPressed === "function") {
+    setPressed(yAxisItalicBtn, false);
+    setPressed(yAxisBoldBtn, false);
+  }
 
   // --- Reset target direction dropdown ---
   if (targetDirectionInput) targetDirectionInput.value = "above";
@@ -3972,6 +3973,8 @@ function buildTickFormatter(format) {
   };
 }
 
+
+
 function withoutAxisBounds(settings) {
   if (!settings) return settings;
   const copy = { ...settings };
@@ -4008,6 +4011,13 @@ function buildAxisConfig(axisLabel, settings, extra = {}) {
   return cfg;
 }
 
+function buildCategoryXAxisConfig(axisLabel, settings, extra = {}) {
+  return buildAxisConfig(axisLabel, settings, {
+    type: "category",
+    ...extra
+  });
+}
+
 
 function validateAxisSettings() {
   const s = getAxisSettings();
@@ -4027,17 +4037,21 @@ function validateAxisSettings() {
 
 // Get title / axis labels with fallbacks
 function getChartLabels(defaultTitle, defaultX, defaultY) {
-  const title = chartTitleInput && chartTitleInput.value.trim()
-    ? chartTitleInput.value.trim()
-    : defaultTitle;
+  if (chartTitleInput && !chartTitleInput.value.trim()) {
+    chartTitleInput.value = defaultTitle || "";
+  }
 
-  const xLabel = xAxisLabelInput && xAxisLabelInput.value.trim()
-    ? xAxisLabelInput.value.trim()
-    : defaultX;
+  if (xAxisLabelInput && !xAxisLabelInput.value.trim()) {
+    xAxisLabelInput.value = defaultX || "";
+  }
 
-  const yLabel = yAxisLabelInput && yAxisLabelInput.value.trim()
-    ? yAxisLabelInput.value.trim()
-    : defaultY;
+  if (yAxisLabelInput && !yAxisLabelInput.value.trim()) {
+    yAxisLabelInput.value = defaultY || "";
+  }
+
+  const title = chartTitleInput ? chartTitleInput.value.trim() : (defaultTitle || "");
+  const xLabel = xAxisLabelInput ? xAxisLabelInput.value.trim() : (defaultX || "");
+  const yLabel = yAxisLabelInput ? yAxisLabelInput.value.trim() : (defaultY || "");
 
   return { title, xLabel, yLabel };
 }
@@ -6776,7 +6790,7 @@ function drawRunChart(points, baselineCount, labels) {
             scales: (() => {
         const axisSettings = getAxisSettings();
         return {
-          x: buildAxisConfig(xLabel, axisSettings.x),
+          x: buildCategoryXAxisConfig(xLabel, axisSettings.x),
           y: buildAxisConfig(yLabel, axisSettings.y)
         };
       })()
@@ -7351,7 +7365,7 @@ function drawSimpleSPCChart({
             scales: (() => {
         const axisSettings = getAxisSettings();
         return {
-          x: buildAxisConfig(xLabel, axisSettings.x),
+          x: buildCategoryXAxisConfig(xLabel, axisSettings.x),
           y: buildAxisConfig(yLabel, axisSettings.y, {
             suggestedMin: isFinite(yAxisSuggestedMin) ? yAxisSuggestedMin : undefined,
             suggestedMax: isFinite(yAxisSuggestedMax) ? yAxisSuggestedMax : undefined
@@ -7626,7 +7640,7 @@ function drawXmRChart(points, baselineCount, labels) {
             scales: (() => {
         const axisSettings = getAxisSettings();
         return {
-          x: buildAxisConfig(xLabel, axisSettings.x),
+          x: buildCategoryXAxisConfig(xLabel, axisSettings.x),
           y: buildAxisConfig(yLabel, axisSettings.y)
         };
       })()
@@ -7832,7 +7846,7 @@ function drawMrChart(allPoints, labels, segments) {
       scales: (() => {
         const axisSettings = getAxisSettings();
         return {
-          x: buildAxisConfig("", axisSettings.x),
+          x: buildCategoryXAxisConfig("", axisSettings.x),
           y: buildAxisConfig("", withoutAxisBounds(axisSettings.y), { beginAtZero: true })
         };
       })()
@@ -7911,7 +7925,7 @@ function renderMrChart(mrLabels, mrValues, avgMR, uclMR) {
       scales: (() => {
         const axisSettings = getAxisSettings();
         return {
-          x: buildAxisConfig("", axisSettings.x),
+          x: buildCategoryXAxisConfig("", axisSettings.x),
           y: buildAxisConfig("", withoutAxisBounds(axisSettings.y), { beginAtZero: true })
         };
       })()
