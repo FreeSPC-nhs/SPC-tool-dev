@@ -889,7 +889,7 @@ body.modal-open {
 .help-btn:hover {
   background: #e9f0f5;
   border-color: #8fa8b8;
-  color: #003f87;
+  color: #f6f8fa;
 }
 
 .mr-label {
@@ -990,6 +990,29 @@ body.pdf-exporting #capability {
   print-color-adjust: exact;
 }
 
+.font-toggle-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.font-toggle-btn {
+  min-width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.5rem;
+  border: 1px solid #b8c4cc;
+  background: #ffffff;
+  color: #003087;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0;
+}
+
+.font-toggle-btn[aria-pressed="true"] {
+  background: #005eb8;
+  border-color: #005eb8;
+  color: #ffffff;
+}
 
   </style>
 </head>
@@ -1247,50 +1270,41 @@ Y-axis label
 
 <details open>
   <summary>X axis</summary>
-
-  
-  <label>
-    X-axis max ticks
-    <input type="number" id="xAxisMaxTicks" min="2" step="1" />
-  </label>
-
-  <label>
-    X-axis format
-    <select id="xAxisFormat">
-      <option value="auto">Auto</option>
-      <option value="decimal">Decimal</option>
-      <option value="integer">Integer</option>
-      <option value="percent">Percent</option>
-    </select>
-  </label>
-
-  <label>
-    X-axis font family
-    <input type="text" id="xAxisFontFamily" placeholder="e.g. Arial" />
-  </label>
+<label>
+  X-axis font family
+  <select id="xAxisFontFamily">
+    <option value="">Auto / default</option>
+    <option value="Arial">Arial</option>
+    <option value="Arial Narrow">Arial Narrow</option>
+    <option value="Aptos">Aptos</option>
+    <option value="Calibri">Calibri</option>
+    <option value="Cambria">Cambria</option>
+    <option value="Century Gothic">Century Gothic</option>
+    <option value="Georgia">Georgia</option>
+    <option value="Helvetica">Helvetica</option>
+    <option value="Segoe UI">Segoe UI</option>
+    <option value="Tahoma">Tahoma</option>
+    <option value="Trebuchet MS">Trebuchet MS</option>
+    <option value="Verdana">Verdana</option>
+    <option value="Gill Sans">Gill Sans</option>
+    <option value="Lucida Sans Unicode">Lucida Sans Unicode</option>
+    <option value="Book Antiqua">Book Antiqua</option>
+    <option value="Garamond">Garamond</option>
+    <option value="Times New Roman">Times New Roman</option>
+    <option value="Courier New">Courier New</option>
+  </select>
+</label>
 
   <label>
     X-axis font size
     <input type="number" id="xAxisFontSize" min="6" step="1" />
   </label>
 
-  <label>
-    X-axis font style
-    <select id="xAxisFontStyle">
-      <option value="normal">Normal</option>
-      <option value="italic">Italic</option>
-    </select>
-  </label>
+  <div class="font-toggle-row">
+  <button type="button" id="xAxisItalicBtn" class="font-toggle-btn" aria-pressed="false" title="Italic"><em>I</em></button>
+  <button type="button" id="xAxisBoldBtn" class="font-toggle-btn" aria-pressed="false" title="Bold"><strong>B</strong></button>
+</div>
 
-  <label>
-    X-axis font weight
-    <select id="xAxisFontWeight">
-      <option value="normal">Normal</option>
-      <option value="bold">Bold</option>
-      <option value="600">600</option>
-      <option value="700">700</option>
-    </select>
-  </label>
 </details>
 
 <hr>
@@ -1299,57 +1313,50 @@ Y-axis label
   <summary>Y axis</summary>
 
   <label>
-    Y-axis minimum
-    <input type="number" id="yAxisMin" step="any" />
-  </label>
+  Y-axis font family
+  <select id="yAxisFontFamily">
+    <option value="">Auto / default</option>
+    <option value="Arial">Arial</option>
+    <option value="Arial Narrow">Arial Narrow</option>
+    <option value="Aptos">Aptos</option>
+    <option value="Calibri">Calibri</option>
+    <option value="Cambria">Cambria</option>
+    <option value="Century Gothic">Century Gothic</option>
+    <option value="Georgia">Georgia</option>
+    <option value="Helvetica">Helvetica</option>
+    <option value="Segoe UI">Segoe UI</option>
+    <option value="Tahoma">Tahoma</option>
+    <option value="Trebuchet MS">Trebuchet MS</option>
+    <option value="Verdana">Verdana</option>
+    <option value="Gill Sans">Gill Sans</option>
+    <option value="Lucida Sans Unicode">Lucida Sans Unicode</option>
+    <option value="Book Antiqua">Book Antiqua</option>
+    <option value="Garamond">Garamond</option>
+    <option value="Times New Roman">Times New Roman</option>
+    <option value="Courier New">Courier New</option>
+  </select>
+</label>
 
-  <label>
-    Y-axis maximum
-    <input type="number" id="yAxisMax" step="any" />
-  </label>
+<label>
+  Y-axis font size
+  <input type="number" id="yAxisFontSize" min="6" step="1" />
+</label>
 
-  <label>
-    Y-axis max ticks
-    <input type="number" id="yAxisMaxTicks" min="2" step="1" />
-  </label>
+<label>
+  Y-axis format
+  <select id="yAxisFormat">
+    <option value="auto">Auto</option>
+    <option value="decimal">Decimal</option>
+    <option value="integer">Integer</option>
+    <option value="percent">Percent</option>
+  </select>
+</label>
 
-  <label>
-    Y-axis format
-    <select id="yAxisFormat">
-      <option value="auto">Auto</option>
-      <option value="decimal">Decimal</option>
-      <option value="integer">Integer</option>
-      <option value="percent">Percent</option>
-    </select>
-  </label>
+<div class="font-toggle-row">
+  <button type="button" id="yAxisItalicBtn" class="font-toggle-btn" aria-pressed="false" title="Italic"><em>I</em></button>
+  <button type="button" id="yAxisBoldBtn" class="font-toggle-btn" aria-pressed="false" title="Bold"><strong>B</strong></button>
+</div>
 
-  <label>
-    Y-axis font family
-    <input type="text" id="yAxisFontFamily" placeholder="e.g. Arial" />
-  </label>
-
-  <label>
-    Y-axis font size
-    <input type="number" id="yAxisFontSize" min="6" step="1" />
-  </label>
-
-  <label>
-    Y-axis font style
-    <select id="yAxisFontStyle">
-      <option value="normal">Normal</option>
-      <option value="italic">Italic</option>
-    </select>
-  </label>
-
-  <label>
-    Y-axis font weight
-    <select id="yAxisFontWeight">
-      <option value="normal">Normal</option>
-      <option value="bold">Bold</option>
-      <option value="600">600</option>
-      <option value="700">700</option>
-    </select>
-  </label>
 </details>
 
 <div class="hint small-hint" style="margin-top:0.25rem;">
@@ -1360,7 +1367,7 @@ Y-axis label
 
 </div>
 
-<!-- TAB 4: BASELINE -->
+<!-- TAB 5: BASELINE -->
 <div id="tab-baseline" class="tab-panel">
 
 <div class="panel">
@@ -1397,7 +1404,7 @@ Hide target line
 
 </div>
 
-<!-- TAB 5: RULES -->
+<!-- TAB 6: RULES -->
 <div id="tab-rules" class="tab-panel">
 
 <div class="panel">

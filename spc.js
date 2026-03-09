@@ -179,21 +179,18 @@ const chartTitleInput   = document.getElementById("chartTitle");
 const xAxisLabelInput   = document.getElementById("xAxisLabel");
 const yAxisLabelInput   = document.getElementById("yAxisLabel");
 
-const xAxisMaxTicksInput   = document.getElementById("xAxisMaxTicks");
-const xAxisFormatInput     = document.getElementById("xAxisFormat");
 const xAxisFontFamilyInput = document.getElementById("xAxisFontFamily");
 const xAxisFontSizeInput   = document.getElementById("xAxisFontSize");
-const xAxisFontStyleInput  = document.getElementById("xAxisFontStyle");
-const xAxisFontWeightInput = document.getElementById("xAxisFontWeight");
+const xAxisItalicBtn = document.getElementById("xAxisItalicBtn");
+const xAxisBoldBtn   = document.getElementById("xAxisBoldBtn");
 
 const yAxisMinInput        = document.getElementById("yAxisMin");
 const yAxisMaxInput        = document.getElementById("yAxisMax");
-const yAxisMaxTicksInput   = document.getElementById("yAxisMaxTicks");
 const yAxisFormatInput     = document.getElementById("yAxisFormat");
 const yAxisFontFamilyInput = document.getElementById("yAxisFontFamily");
 const yAxisFontSizeInput   = document.getElementById("yAxisFontSize");
-const yAxisFontStyleInput  = document.getElementById("yAxisFontStyle");
-const yAxisFontWeightInput = document.getElementById("yAxisFontWeight");
+const yAxisItalicBtn = document.getElementById("yAxisItalicBtn");
+const yAxisBoldBtn   = document.getElementById("yAxisBoldBtn");
 
 const targetInput       = document.getElementById("targetValue");
 
@@ -340,29 +337,26 @@ function collectToolSettings() {
       enabled: (typeof targetEnabled !== "undefined") ? !!targetEnabled : true
     },
 
-    labels: { title, xLabel, yLabel },
+        labels: { title, xLabel, yLabel },
 
     axes: {
       x: {
-        maxTicksLimit: xAxisMaxTicksInput?.value ?? "",
-        format: xAxisFormatInput?.value ?? "auto",
         font: {
           family: xAxisFontFamilyInput?.value ?? "",
           size: xAxisFontSizeInput?.value ?? "",
-          style: xAxisFontStyleInput?.value ?? "normal",
-          weight: xAxisFontWeightInput?.value ?? "normal"
+          style: isPressed(xAxisItalicBtn) ? "italic" : "normal",
+          weight: isPressed(xAxisBoldBtn) ? "bold" : "normal"
         }
       },
       y: {
         min: yAxisMinInput?.value ?? "",
         max: yAxisMaxInput?.value ?? "",
-        maxTicksLimit: yAxisMaxTicksInput?.value ?? "",
         format: yAxisFormatInput?.value ?? "auto",
         font: {
           family: yAxisFontFamilyInput?.value ?? "",
           size: yAxisFontSizeInput?.value ?? "",
-          style: yAxisFontStyleInput?.value ?? "normal",
-          weight: yAxisFontWeightInput?.value ?? "normal"
+          style: isPressed(yAxisItalicBtn) ? "italic" : "normal",
+          weight: isPressed(yAxisBoldBtn) ? "bold" : "normal"
         }
       }
     },
@@ -447,21 +441,18 @@ function applyToolSettings(settings, { silent = true } = {}) {
   if (yAxisLabelInput && settings.labels?.yLabel !== undefined) yAxisLabelInput.value = settings.labels.yLabel;
 
   // Axes
-  if (xAxisMaxTicksInput && settings.axes?.x?.maxTicksLimit !== undefined) xAxisMaxTicksInput.value = settings.axes.x.maxTicksLimit;
-  if (xAxisFormatInput && settings.axes?.x?.format !== undefined) xAxisFormatInput.value = settings.axes.x.format;
   if (xAxisFontFamilyInput && settings.axes?.x?.font?.family !== undefined) xAxisFontFamilyInput.value = settings.axes.x.font.family;
   if (xAxisFontSizeInput && settings.axes?.x?.font?.size !== undefined) xAxisFontSizeInput.value = settings.axes.x.font.size;
-  if (xAxisFontStyleInput && settings.axes?.x?.font?.style !== undefined) xAxisFontStyleInput.value = settings.axes.x.font.style;
-  if (xAxisFontWeightInput && settings.axes?.x?.font?.weight !== undefined) xAxisFontWeightInput.value = settings.axes.x.font.weight;
-
+ setPressed(xAxisItalicBtn, settings.axes?.x?.font?.style === "italic");
+ setPressed(xAxisBoldBtn, settings.axes?.x?.font?.weight === "bold");
+  
   if (yAxisMinInput && settings.axes?.y?.min !== undefined) yAxisMinInput.value = settings.axes.y.min;
   if (yAxisMaxInput && settings.axes?.y?.max !== undefined) yAxisMaxInput.value = settings.axes.y.max;
-  if (yAxisMaxTicksInput && settings.axes?.y?.maxTicksLimit !== undefined) yAxisMaxTicksInput.value = settings.axes.y.maxTicksLimit;
   if (yAxisFormatInput && settings.axes?.y?.format !== undefined) yAxisFormatInput.value = settings.axes.y.format;
   if (yAxisFontFamilyInput && settings.axes?.y?.font?.family !== undefined) yAxisFontFamilyInput.value = settings.axes.y.font.family;
   if (yAxisFontSizeInput && settings.axes?.y?.font?.size !== undefined) yAxisFontSizeInput.value = settings.axes.y.font.size;
-  if (yAxisFontStyleInput && settings.axes?.y?.font?.style !== undefined) yAxisFontStyleInput.value = settings.axes.y.font.style;
-  if (yAxisFontWeightInput && settings.axes?.y?.font?.weight !== undefined) yAxisFontWeightInput.value = settings.axes.y.font.weight;
+  setPressed(yAxisItalicBtn, settings.axes?.y?.font?.style === "italic");
+  setPressed(yAxisBoldBtn, settings.axes?.y?.font?.weight === "bold");
 
   // Splits + annotations
   if (Array.isArray(settings.splits)) splits = settings.splits.slice();
@@ -898,9 +889,6 @@ function applyPresentationEditsLive() {
     }
 
     currentChart.options.scales.x.ticks.font = cleanFontOptions(axisSettings?.x?.font);
-    currentChart.options.scales.x.ticks.maxTicksLimit = axisSettings?.x?.maxTicksLimit;
-    currentChart.options.scales.x.ticks.callback = buildTickFormatter(axisSettings?.x?.format);
-
   }
 
   // Y axis
@@ -918,18 +906,13 @@ function applyPresentationEditsLive() {
     }
 
     currentChart.options.scales.y.ticks.font = cleanFontOptions(axisSettings?.y?.font);
-    currentChart.options.scales.y.ticks.maxTicksLimit = axisSettings?.y?.maxTicksLimit;
     currentChart.options.scales.y.ticks.callback = buildTickFormatter(axisSettings?.y?.format);
-
-    // Keep min/max in sync for preview too
     currentChart.options.scales.y.min = axisSettings?.y?.min;
     currentChart.options.scales.y.max = axisSettings?.y?.max;
   }
 
-  // Update without animation for a crisp “as you type” feel
   currentChart.update("none");
 }
-
 
 function hasValidTargetInput() {
   if (!targetInput) return false;
@@ -1002,22 +985,20 @@ function handleAxisControlChanged({ livePreview = false } = {}) {
 });
 
 [
-  xAxisMaxTicksInput,
-  yAxisMaxTicksInput,
-  xAxisFormatInput,
   yAxisFormatInput,
   xAxisFontFamilyInput,
   yAxisFontFamilyInput,
   xAxisFontSizeInput,
   yAxisFontSizeInput,
-  xAxisFontStyleInput,
-  yAxisFontStyleInput,
-  xAxisFontWeightInput,
-  yAxisFontWeightInput
+  xAxisItalicBtn,
+  xAxisBoldBtn,
+  yAxisItalicBtn,
+  yAxisBoldBtn
 ].forEach(el => {
   if (!el) return;
   el.addEventListener("input", () => handleAxisControlChanged({ livePreview: true }));
   el.addEventListener("change", () => handleAxisControlChanged({ livePreview: true }));
+  el.addEventListener("click", () => handleAxisControlChanged({ livePreview: true }));
 });
 
 
@@ -1993,6 +1974,32 @@ function validateBeforeGenerate() {
 
 
 // ---- Helpers ----
+
+function isPressed(btn) {
+  return btn?.getAttribute("aria-pressed") === "true";
+}
+
+function setPressed(btn, pressed) {
+  if (!btn) return;
+  btn.setAttribute("aria-pressed", pressed ? "true" : "false");
+}
+
+function wireToggleButton(btn) {
+  if (!btn) return;
+  btn.addEventListener("click", () => {
+    const next = !isPressed(btn);
+    setPressed(btn, next);
+    markDataModelDirty();
+    if (rawRows && rawRows.length && currentChart) {
+      applyPresentationEditsLiveDebounced();
+    }
+  });
+}
+
+wireToggleButton(xAxisItalicBtn);
+wireToggleButton(xAxisBoldBtn);
+wireToggleButton(yAxisItalicBtn);
+wireToggleButton(yAxisBoldBtn);
 
 function getSelectedChartType_NoSideEffects() {
   const radios = document.querySelectorAll("input[name='chartType']");
@@ -3920,25 +3927,22 @@ function parseOptionalNumber(value) {
 function getAxisSettings() {
   return {
     x: {
-      maxTicksLimit: parseOptionalNumber(xAxisMaxTicksInput?.value),
-      format: (xAxisFormatInput?.value || "auto"),
       font: {
         family: (xAxisFontFamilyInput?.value || "").trim(),
         size: parseOptionalNumber(xAxisFontSizeInput?.value),
-        style: (xAxisFontStyleInput?.value || "normal"),
-        weight: (xAxisFontWeightInput?.value || "normal")
+        style: isPressed(xAxisItalicBtn) ? "italic" : "normal",
+        weight: isPressed(xAxisBoldBtn) ? "bold" : "normal"
       }
     },
     y: {
       min: parseOptionalNumber(yAxisMinInput?.value),
       max: parseOptionalNumber(yAxisMaxInput?.value),
-      maxTicksLimit: parseOptionalNumber(yAxisMaxTicksInput?.value),
       format: (yAxisFormatInput?.value || "auto"),
       font: {
         family: (yAxisFontFamilyInput?.value || "").trim(),
         size: parseOptionalNumber(yAxisFontSizeInput?.value),
-        style: (yAxisFontStyleInput?.value || "normal"),
-        weight: (yAxisFontWeightInput?.value || "normal")
+        style: isPressed(yAxisItalicBtn) ? "italic" : "normal",
+        weight: isPressed(yAxisBoldBtn) ? "bold" : "normal"
       }
     }
   };
@@ -3968,6 +3972,14 @@ function buildTickFormatter(format) {
   };
 }
 
+function withoutAxisBounds(settings) {
+  if (!settings) return settings;
+  const copy = { ...settings };
+  delete copy.min;
+  delete copy.max;
+  return copy;
+}
+
 function buildAxisConfig(axisLabel, settings, extra = {}) {
   const cfg = {
     grid: { display: false },
@@ -3977,15 +3989,21 @@ function buildAxisConfig(axisLabel, settings, extra = {}) {
       font: cleanFontOptions(settings?.font)
     },
     ticks: {
-      maxTicksLimit: settings?.maxTicksLimit,
       font: cleanFontOptions(settings?.font),
       callback: buildTickFormatter(settings?.format)
     },
     ...extra
   };
 
-  if (settings && Number.isFinite(settings.min)) cfg.min = settings.min;
-  if (settings && Number.isFinite(settings.max)) cfg.max = settings.max;
+  if (settings && Number.isFinite(settings.min)) {
+    cfg.min = settings.min;
+    delete cfg.suggestedMin;
+  }
+
+  if (settings && Number.isFinite(settings.max)) {
+    cfg.max = settings.max;
+    delete cfg.suggestedMax;
+  }
 
   return cfg;
 }
@@ -6755,16 +6773,13 @@ function drawRunChart(points, baselineCount, labels) {
         annotation: { annotations: buildAnnotationConfig(labels) }
       },
       elements: { point: { radius: 0, hoverRadius: 0 } },
-      scales: {
-        x: {
-          grid: { display: false },
-          title: { display: !!xLabel, text: xLabel }
-        },
-        y: {
-          grid: { display: false },
-          title: { display: !!yLabel, text: yLabel }
-        }
-      }
+            scales: (() => {
+        const axisSettings = getAxisSettings();
+        return {
+          x: buildAxisConfig(xLabel, axisSettings.x),
+          y: buildAxisConfig(yLabel, axisSettings.y)
+        };
+      })()
     }
   });
 
@@ -7770,11 +7785,13 @@ function drawMrChart(allPoints, labels, segments) {
           annotation: { annotations: (typeof buildAnnotationConfig === "function") ? buildAnnotationConfig(mrLabels) : {} }
         },
         elements: { point: { radius: 0, hoverRadius: 0 } },
-        scales: {
-          x: { grid: { display: false } },
-          y: { grid: { display: false }, beginAtZero: true }
-        }
-      }
+              scales: (() => {
+        const axisSettings = getAxisSettings();
+        return {
+          x: buildAxisConfig("", axisSettings.x),
+          y: buildAxisConfig("", withoutAxisBounds(axisSettings.y), { beginAtZero: true })
+        };
+      })()
     });
 
     return;
@@ -7879,11 +7896,13 @@ function drawMrChart(allPoints, labels, segments) {
         }
       },
       elements: { point: { radius: 0, hoverRadius: 0 } },
-      scales: {
-        x: { grid: { display: false } },
-        y: { grid: { display: false }, beginAtZero: true }
-      }
-    }
+            scales: (() => {
+        const axisSettings = getAxisSettings();
+        return {
+          x: buildAxisConfig("", axisSettings.x),
+          y: buildAxisConfig("", withoutAxisBounds(axisSettings.y), { beginAtZero: true })
+        };
+      })()
   });
 }
 
@@ -7955,11 +7974,13 @@ function renderMrChart(mrLabels, mrValues, avgMR, uclMR) {
       elements: {
         point: { radius: 0, hoverRadius: 0 }
       },
-      scales: {
-        x: { grid: { display: false } },
-        y: { grid: { display: false }, beginAtZero: true }
-      }
-    }
+            scales: (() => {
+        const axisSettings = getAxisSettings();
+        return {
+          x: buildAxisConfig("", axisSettings.x),
+          y: buildAxisConfig("", withoutAxisBounds(axisSettings.y), { beginAtZero: true })
+        };
+      })()
   });
 }
 
