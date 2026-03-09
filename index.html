@@ -122,19 +122,6 @@ button:disabled {
   box-sizing: border-box;
   margin-bottom: 0.6rem;
 }
-
-.tab-container {
-height: 70vh;
-display: flex;
-flex-direction: column;
-}
-
-.tab-bar {
-display: flex;
-gap: 4px;
-margin-bottom: 6px;
-}
-
 .tab-container {
   height: 72vh;
   display: flex;
@@ -147,23 +134,24 @@ margin-bottom: 6px;
 }
 
 .tab-bar {
-  display: flex;
-  gap: 0.2rem;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.25rem;
   margin-bottom: 0.4rem;
-  flex-wrap: wrap;
 }
 
 .tab-btn {
-  flex: 1 1 auto;
+  width: 100%;
   border: 1px solid #005eb8;
   background: #005eb8;
   color: #ffffff;
   cursor: pointer;
-  padding: 0.45rem 0.7rem;
+  padding: 0.45rem 0.5rem;
   font-size: 0.85rem;
   border-radius: 0.55rem 0.55rem 0 0;
   font-weight: 600;
   line-height: 1.1;
+  text-align: center;
 }
 
 .tab-btn:hover {
@@ -229,10 +217,7 @@ margin-bottom: 6px;
 
 .tab-panels::-webkit-scrollbar-track {
   background: transparent;
-}
-
-
-/* Keep headings readable */
+}/* Keep headings readable */
 .sidebar .field-label {
   display: block;
   font-size: 0.9rem;
