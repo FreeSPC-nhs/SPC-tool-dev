@@ -1032,6 +1032,7 @@ body.pdf-exporting #capability {
 <button class="tab-btn active" data-tab="tab-data">Data</button>
 <button class="tab-btn" data-tab="tab-chart">Chart</button>
 <button class="tab-btn" data-tab="tab-labels">Labels</button>
+<button class="tab-btn" data-tab="tab-axes">Axes</button>
 <button class="tab-btn" data-tab="tab-baseline">Baseline</button>
 <button class="tab-btn" data-tab="tab-rules">Rules</button>
 </div>
@@ -1232,6 +1233,128 @@ X-axis label
 Y-axis label
 <input type="text" id="yAxisLabel" />
 </label>
+
+</div>
+
+</div>
+
+<!-- TAB 4: AXES -->
+<div id="tab-axes" class="tab-panel">
+
+<div class="panel">
+
+<h3 style="margin-top:0.8rem;">Axes</h3>
+
+<details open>
+  <summary>X axis</summary>
+
+  
+  <label>
+    X-axis max ticks
+    <input type="number" id="xAxisMaxTicks" min="2" step="1" />
+  </label>
+
+  <label>
+    X-axis format
+    <select id="xAxisFormat">
+      <option value="auto">Auto</option>
+      <option value="decimal">Decimal</option>
+      <option value="integer">Integer</option>
+      <option value="percent">Percent</option>
+    </select>
+  </label>
+
+  <label>
+    X-axis font family
+    <input type="text" id="xAxisFontFamily" placeholder="e.g. Arial" />
+  </label>
+
+  <label>
+    X-axis font size
+    <input type="number" id="xAxisFontSize" min="6" step="1" />
+  </label>
+
+  <label>
+    X-axis font style
+    <select id="xAxisFontStyle">
+      <option value="normal">Normal</option>
+      <option value="italic">Italic</option>
+    </select>
+  </label>
+
+  <label>
+    X-axis font weight
+    <select id="xAxisFontWeight">
+      <option value="normal">Normal</option>
+      <option value="bold">Bold</option>
+      <option value="600">600</option>
+      <option value="700">700</option>
+    </select>
+  </label>
+</details>
+
+<hr>
+
+<details open>
+  <summary>Y axis</summary>
+
+  <label>
+    Y-axis minimum
+    <input type="number" id="yAxisMin" step="any" />
+  </label>
+
+  <label>
+    Y-axis maximum
+    <input type="number" id="yAxisMax" step="any" />
+  </label>
+
+  <label>
+    Y-axis max ticks
+    <input type="number" id="yAxisMaxTicks" min="2" step="1" />
+  </label>
+
+  <label>
+    Y-axis format
+    <select id="yAxisFormat">
+      <option value="auto">Auto</option>
+      <option value="decimal">Decimal</option>
+      <option value="integer">Integer</option>
+      <option value="percent">Percent</option>
+    </select>
+  </label>
+
+  <label>
+    Y-axis font family
+    <input type="text" id="yAxisFontFamily" placeholder="e.g. Arial" />
+  </label>
+
+  <label>
+    Y-axis font size
+    <input type="number" id="yAxisFontSize" min="6" step="1" />
+  </label>
+
+  <label>
+    Y-axis font style
+    <select id="yAxisFontStyle">
+      <option value="normal">Normal</option>
+      <option value="italic">Italic</option>
+    </select>
+  </label>
+
+  <label>
+    Y-axis font weight
+    <select id="yAxisFontWeight">
+      <option value="normal">Normal</option>
+      <option value="bold">Bold</option>
+      <option value="600">600</option>
+      <option value="700">700</option>
+    </select>
+  </label>
+</details>
+
+<div class="hint small-hint" style="margin-top:0.25rem;">
+  Leave min/max blank to use the chart's automatic range.
+</div>
 
 </div>
 

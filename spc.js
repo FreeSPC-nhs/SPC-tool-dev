@@ -178,7 +178,26 @@ const baselineInput     = document.getElementById("baselinePoints");
 const chartTitleInput   = document.getElementById("chartTitle");
 const xAxisLabelInput   = document.getElementById("xAxisLabel");
 const yAxisLabelInput   = document.getElementById("yAxisLabel");
+
+const xAxisMaxTicksInput   = document.getElementById("xAxisMaxTicks");
+const xAxisFormatInput     = document.getElementById("xAxisFormat");
+const xAxisFontFamilyInput = document.getElementById("xAxisFontFamily");
+const xAxisFontSizeInput   = document.getElementById("xAxisFontSize");
+const xAxisFontStyleInput  = document.getElementById("xAxisFontStyle");
+const xAxisFontWeightInput = document.getElementById("xAxisFontWeight");
+
+const yAxisMinInput        = document.getElementById("yAxisMin");
+const yAxisMaxInput        = document.getElementById("yAxisMax");
+const yAxisMaxTicksInput   = document.getElementById("yAxisMaxTicks");
+const yAxisFormatInput     = document.getElementById("yAxisFormat");
+const yAxisFontFamilyInput = document.getElementById("yAxisFontFamily");
+const yAxisFontSizeInput   = document.getElementById("yAxisFontSize");
+const yAxisFontStyleInput  = document.getElementById("yAxisFontStyle");
+const yAxisFontWeightInput = document.getElementById("yAxisFontWeight");
+
 const targetInput       = document.getElementById("targetValue");
+
+
 const targetDirectionInput = document.getElementById("targetDirection");
 const targetDirectionSelect = targetDirectionInput;
 const capabilityDiv     = document.getElementById("capability");
@@ -323,6 +342,31 @@ function collectToolSettings() {
 
     labels: { title, xLabel, yLabel },
 
+    axes: {
+      x: {
+        maxTicksLimit: xAxisMaxTicksInput?.value ?? "",
+        format: xAxisFormatInput?.value ?? "auto",
+        font: {
+          family: xAxisFontFamilyInput?.value ?? "",
+          size: xAxisFontSizeInput?.value ?? "",
+          style: xAxisFontStyleInput?.value ?? "normal",
+          weight: xAxisFontWeightInput?.value ?? "normal"
+        }
+      },
+      y: {
+        min: yAxisMinInput?.value ?? "",
+        max: yAxisMaxInput?.value ?? "",
+        maxTicksLimit: yAxisMaxTicksInput?.value ?? "",
+        format: yAxisFormatInput?.value ?? "auto",
+        font: {
+          family: yAxisFontFamilyInput?.value ?? "",
+          size: yAxisFontSizeInput?.value ?? "",
+          style: yAxisFontStyleInput?.value ?? "normal",
+          weight: yAxisFontWeightInput?.value ?? "normal"
+        }
+      }
+    },
+
     rules: {
       shiftRulePoints: shiftRule,
       trendRulePoints: trendRule,
@@ -397,10 +441,27 @@ function applyToolSettings(settings, { silent = true } = {}) {
     if (typeof updateTargetToggleVisibility === "function") updateTargetToggleVisibility();
   }
 
-  // Titles/labels
+    // Titles/labels
   if (chartTitleInput && settings.labels?.title !== undefined) chartTitleInput.value = settings.labels.title;
   if (xAxisLabelInput && settings.labels?.xLabel !== undefined) xAxisLabelInput.value = settings.labels.xLabel;
   if (yAxisLabelInput && settings.labels?.yLabel !== undefined) yAxisLabelInput.value = settings.labels.yLabel;
+
+  // Axes
+  if (xAxisMaxTicksInput && settings.axes?.x?.maxTicksLimit !== undefined) xAxisMaxTicksInput.value = settings.axes.x.maxTicksLimit;
+  if (xAxisFormatInput && settings.axes?.x?.format !== undefined) xAxisFormatInput.value = settings.axes.x.format;
+  if (xAxisFontFamilyInput && settings.axes?.x?.font?.family !== undefined) xAxisFontFamilyInput.value = settings.axes.x.font.family;
+  if (xAxisFontSizeInput && settings.axes?.x?.font?.size !== undefined) xAxisFontSizeInput.value = settings.axes.x.font.size;
+  if (xAxisFontStyleInput && settings.axes?.x?.font?.style !== undefined) xAxisFontStyleInput.value = settings.axes.x.font.style;
+  if (xAxisFontWeightInput && settings.axes?.x?.font?.weight !== undefined) xAxisFontWeightInput.value = settings.axes.x.font.weight;
+
+  if (yAxisMinInput && settings.axes?.y?.min !== undefined) yAxisMinInput.value = settings.axes.y.min;
+  if (yAxisMaxInput && settings.axes?.y?.max !== undefined) yAxisMaxInput.value = settings.axes.y.max;
+  if (yAxisMaxTicksInput && settings.axes?.y?.maxTicksLimit !== undefined) yAxisMaxTicksInput.value = settings.axes.y.maxTicksLimit;
+  if (yAxisFormatInput && settings.axes?.y?.format !== undefined) yAxisFormatInput.value = settings.axes.y.format;
+  if (yAxisFontFamilyInput && settings.axes?.y?.font?.family !== undefined) yAxisFontFamilyInput.value = settings.axes.y.font.family;
+  if (yAxisFontSizeInput && settings.axes?.y?.font?.size !== undefined) yAxisFontSizeInput.value = settings.axes.y.font.size;
+  if (yAxisFontStyleInput && settings.axes?.y?.font?.style !== undefined) yAxisFontStyleInput.value = settings.axes.y.font.style;
+  if (yAxisFontWeightInput && settings.axes?.y?.font?.weight !== undefined) yAxisFontWeightInput.value = settings.axes.y.font.weight;
 
   // Splits + annotations
   if (Array.isArray(settings.splits)) splits = settings.splits.slice();
@@ -814,6 +875,7 @@ function applyPresentationEditsLive() {
   const title = (chartTitleInput?.value || "").trim();
   const xLabel = (xAxisLabelInput?.value || "").trim();
   const yLabel = (yAxisLabelInput?.value || "").trim();
+  const axisSettings = (typeof getAxisSettings === "function") ? getAxisSettings() : null;
 
   // Title
   if (currentChart.options?.plugins?.title) {
@@ -821,19 +883,53 @@ function applyPresentationEditsLive() {
     currentChart.options.plugins.title.text = title;
   }
 
-  // Axes
-  if (currentChart.options?.scales?.x?.title) {
-    currentChart.options.scales.x.title.display = !!xLabel;
-    currentChart.options.scales.x.title.text = xLabel;
+  // X axis
+  if (currentChart.options?.scales?.x) {
+    if (currentChart.options.scales.x.title) {
+      currentChart.options.scales.x.title.display = !!xLabel;
+      currentChart.options.scales.x.title.text = xLabel;
+      if (axisSettings?.x?.font) {
+        currentChart.options.scales.x.title.font = cleanFontOptions(axisSettings.x.font);
+      }
+    }
+
+    if (!currentChart.options.scales.x.ticks) {
+      currentChart.options.scales.x.ticks = {};
+    }
+
+    currentChart.options.scales.x.ticks.font = cleanFontOptions(axisSettings?.x?.font);
+    currentChart.options.scales.x.ticks.maxTicksLimit = axisSettings?.x?.maxTicksLimit;
+    currentChart.options.scales.x.ticks.callback = buildTickFormatter(axisSettings?.x?.format);
+
   }
-  if (currentChart.options?.scales?.y?.title) {
-    currentChart.options.scales.y.title.display = !!yLabel;
-    currentChart.options.scales.y.title.text = yLabel;
+
+  // Y axis
+  if (currentChart.options?.scales?.y) {
+    if (currentChart.options.scales.y.title) {
+      currentChart.options.scales.y.title.display = !!yLabel;
+      currentChart.options.scales.y.title.text = yLabel;
+      if (axisSettings?.y?.font) {
+        currentChart.options.scales.y.title.font = cleanFontOptions(axisSettings.y.font);
+      }
+    }
+
+    if (!currentChart.options.scales.y.ticks) {
+      currentChart.options.scales.y.ticks = {};
+    }
+
+    currentChart.options.scales.y.ticks.font = cleanFontOptions(axisSettings?.y?.font);
+    currentChart.options.scales.y.ticks.maxTicksLimit = axisSettings?.y?.maxTicksLimit;
+    currentChart.options.scales.y.ticks.callback = buildTickFormatter(axisSettings?.y?.format);
+
+    // Keep min/max in sync for preview too
+    currentChart.options.scales.y.min = axisSettings?.y?.min;
+    currentChart.options.scales.y.max = axisSettings?.y?.max;
   }
 
   // Update without animation for a crisp “as you type” feel
   currentChart.update("none");
 }
+
 
 function hasValidTargetInput() {
   if (!targetInput) return false;
@@ -885,6 +981,44 @@ const applyPresentationEditsLiveDebounced = debounce(applyPresentationEditsLive,
 if (chartTitleInput) chartTitleInput.addEventListener("input", applyPresentationEditsLiveDebounced);
 if (xAxisLabelInput) xAxisLabelInput.addEventListener("input", applyPresentationEditsLiveDebounced);
 if (yAxisLabelInput) yAxisLabelInput.addEventListener("input", applyPresentationEditsLiveDebounced);
+
+function handleAxisControlChanged({ livePreview = false } = {}) {
+  markDataModelDirty();
+
+  if (!rawRows || !rawRows.length) return;
+
+  if (livePreview && currentChart) {
+    applyPresentationEditsLiveDebounced();
+  }
+}
+
+[
+  yAxisMinInput,
+  yAxisMaxInput
+].forEach(el => {
+  if (!el) return;
+  el.addEventListener("input", () => handleAxisControlChanged({ livePreview: false }));
+  el.addEventListener("change", () => handleAxisControlChanged({ livePreview: false }));
+});
+
+[
+  xAxisMaxTicksInput,
+  yAxisMaxTicksInput,
+  xAxisFormatInput,
+  yAxisFormatInput,
+  xAxisFontFamilyInput,
+  yAxisFontFamilyInput,
+  xAxisFontSizeInput,
+  yAxisFontSizeInput,
+  xAxisFontStyleInput,
+  yAxisFontStyleInput,
+  xAxisFontWeightInput,
+  yAxisFontWeightInput
+].forEach(el => {
+  if (!el) return;
+  el.addEventListener("input", () => handleAxisControlChanged({ livePreview: true }));
+  el.addEventListener("change", () => handleAxisControlChanged({ livePreview: true }));
+});
 
 
 
@@ -1502,18 +1636,16 @@ function drawSecondarySPCChart({
         }
       },
       elements: { point: { radius: 0, hoverRadius: 0 } },
-      scales: {
-        x: {
-          grid: { display: false },
-          title: { display: !!xLabel, text: xLabel }
-        },
-        y: {
-          grid: { display: false },
-          title: { display: !!yLabel, text: yLabel },
-          suggestedMin: isFinite(suggestedMin) ? suggestedMin : undefined,
-          suggestedMax: isFinite(suggestedMax) ? suggestedMax : undefined
-        }
-      }
+            scales: (() => {
+        const axisSettings = getAxisSettings();
+        return {
+          x: buildAxisConfig(xLabel, axisSettings.x),
+          y: buildAxisConfig(yLabel, axisSettings.y, {
+            suggestedMin: isFinite(suggestedMin) ? suggestedMin : undefined,
+            suggestedMax: isFinite(suggestedMax) ? suggestedMax : undefined
+          })
+        };
+      })()
     }
   });
 }
@@ -1636,16 +1768,13 @@ function drawXbarSCombinedChart({
         }
       },
       elements: { point: { radius: 0, hoverRadius: 0 } },
-      scales: {
-        x: {
-          grid: { display: false },
-          title: { display: !!mainLabels.xLabel, text: mainLabels.xLabel }
-        },
-        y: {
-          grid: { display: false },
-          title: { display: !!mainLabels.yLabel, text: mainLabels.yLabel }
-        }
-      }
+            scales: (() => {
+        const axisSettings = getAxisSettings();
+        return {
+          x: buildAxisConfig(mainLabels.xLabel, axisSettings.x),
+          y: buildAxisConfig(mainLabels.yLabel, axisSettings.y)
+        };
+      })()
     }
   });
 
@@ -3781,7 +3910,101 @@ function drawGChart(values, baselineCount, labels) {
   renderRareChartSummary(segmentAnalyses, gVals.length);
 }
 
+function parseOptionalNumber(value) {
+  const s = String(value ?? "").trim();
+  if (s === "") return undefined;
+  const n = Number(s);
+  return Number.isFinite(n) ? n : undefined;
+}
 
+function getAxisSettings() {
+  return {
+    x: {
+      maxTicksLimit: parseOptionalNumber(xAxisMaxTicksInput?.value),
+      format: (xAxisFormatInput?.value || "auto"),
+      font: {
+        family: (xAxisFontFamilyInput?.value || "").trim(),
+        size: parseOptionalNumber(xAxisFontSizeInput?.value),
+        style: (xAxisFontStyleInput?.value || "normal"),
+        weight: (xAxisFontWeightInput?.value || "normal")
+      }
+    },
+    y: {
+      min: parseOptionalNumber(yAxisMinInput?.value),
+      max: parseOptionalNumber(yAxisMaxInput?.value),
+      maxTicksLimit: parseOptionalNumber(yAxisMaxTicksInput?.value),
+      format: (yAxisFormatInput?.value || "auto"),
+      font: {
+        family: (yAxisFontFamilyInput?.value || "").trim(),
+        size: parseOptionalNumber(yAxisFontSizeInput?.value),
+        style: (yAxisFontStyleInput?.value || "normal"),
+        weight: (yAxisFontWeightInput?.value || "normal")
+      }
+    }
+  };
+}
+
+function cleanFontOptions(font) {
+  const out = {};
+  if (font?.family) out.family = font.family;
+  if (Number.isFinite(font?.size)) out.size = font.size;
+  if (font?.style) out.style = font.style;
+  if (font?.weight) out.weight = font.weight;
+  return out;
+}
+
+function buildTickFormatter(format) {
+  if (!format || format === "auto") return undefined;
+
+  return function(value) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return value;
+
+    if (format === "integer") return String(Math.round(n));
+    if (format === "decimal") return n.toFixed(2);
+    if (format === "percent") return `${(n * 100).toFixed(1)}%`;
+
+    return value;
+  };
+}
+
+function buildAxisConfig(axisLabel, settings, extra = {}) {
+  const cfg = {
+    grid: { display: false },
+    title: {
+      display: !!axisLabel,
+      text: axisLabel,
+      font: cleanFontOptions(settings?.font)
+    },
+    ticks: {
+      maxTicksLimit: settings?.maxTicksLimit,
+      font: cleanFontOptions(settings?.font),
+      callback: buildTickFormatter(settings?.format)
+    },
+    ...extra
+  };
+
+  if (settings && Number.isFinite(settings.min)) cfg.min = settings.min;
+  if (settings && Number.isFinite(settings.max)) cfg.max = settings.max;
+
+  return cfg;
+}
+
+
+function validateAxisSettings() {
+  const s = getAxisSettings();
+
+  if (Number.isFinite(s.y.min) && Number.isFinite(s.y.max) && s.y.min > s.y.max) {
+    if (typeof showError === "function") {
+      showError("Y-axis minimum cannot be greater than Y-axis maximum.");
+    } else if (errorMessage) {
+      errorMessage.textContent = "Y-axis minimum cannot be greater than Y-axis maximum.";
+    }
+    return false;
+  }
+
+  return true;
+}
 	
 
 // Get title / axis labels with fallbacks
@@ -5991,6 +6214,7 @@ generateButton.addEventListener("click", () => {
   if (summaryDiv) summaryDiv.innerHTML = "";
   if (capabilityDiv) capabilityDiv.innerHTML = "";
 
+  if (typeof validateAxisSettings === "function" && !validateAxisSettings()) return;
   if (!validateBeforeGenerate()) return;
 
   try {
@@ -7109,18 +7333,16 @@ function drawSimpleSPCChart({
         }
       },
       elements: { point: { radius: 0, hoverRadius: 0 } },
-      scales: {
-        x: {
-          grid: { display: false },
-          title: { display: !!xLabel, text: xLabel }
-        },
-        y: {
-          grid: { display: false },
-          title: { display: !!yLabel, text: yLabel },
-          suggestedMin: isFinite(yAxisSuggestedMin) ? yAxisSuggestedMin : undefined,
-          suggestedMax: isFinite(yAxisSuggestedMax) ? yAxisSuggestedMax : undefined
-        }
-      }
+            scales: (() => {
+        const axisSettings = getAxisSettings();
+        return {
+          x: buildAxisConfig(xLabel, axisSettings.x),
+          y: buildAxisConfig(yLabel, axisSettings.y, {
+            suggestedMin: isFinite(yAxisSuggestedMin) ? yAxisSuggestedMin : undefined,
+            suggestedMax: isFinite(yAxisSuggestedMax) ? yAxisSuggestedMax : undefined
+          })
+        };
+      })()
     }
   });
 }
@@ -7386,16 +7608,13 @@ function drawXmRChart(points, baselineCount, labels) {
       elements: {
         point: { radius: 0, hoverRadius: 0 }
       },
-      scales: {
-        x: {
-          grid: { display: false },
-          title: { display: !!xLabel, text: xLabel }
-        },
-        y: {
-          grid: { display: false },
-          title: { display: !!yLabel, text: yLabel }
-        }
-      }
+            scales: (() => {
+        const axisSettings = getAxisSettings();
+        return {
+          x: buildAxisConfig(xLabel, axisSettings.x),
+          y: buildAxisConfig(yLabel, axisSettings.y)
+        };
+      })()
     }
   });
 
