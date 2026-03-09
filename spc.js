@@ -9768,94 +9768,71 @@ if (chartContextMenu) {
 
     try {
       if (action === "addAnnotation") {
-  if (clickedPointIndex === null || clickedPointIndex === undefined) {
-    alert("Right-click near a data point to add or manage an annotation.");
-    return;
-  }
-
-  const xLabel = labels?.[clickedPointIndex];
-  if (!xLabel) {
-    alert("Could not determine the selected x-position for annotation.");
-    return;
-  }
-
-  // Optional: populate historical inputs if they still exist
-  if (annotationDateInput) annotationDateInput.value = xLabel;
-
-  const changed = manageAnnotationsAtDate(xLabel);
-
-  if (changed && generateButton) {
-    generateButton.click();
-  }
-  return;
-}
-
-        const labels = currentChart?.data?.labels || [];
-        const xLabel = labels[clickedPointIndex];
-
-        if (!xLabel) {
-          alert("Could not identify the X value for that point.");
+        if (clickedPointIndex === null || clickedPointIndex === undefined) {
+          alert("Right-click near a data point to add or manage an annotation.");
           return;
         }
 
-        const text = prompt(`Annotation for ${xLabel}:`, "");
-        if (!text) return;
+        const labels = currentChart?.data?.labels || [];
+        const xLabel = labels?.[clickedPointIndex];
 
-        // Optional: populate sidebar controls (nice UX)
+        if (!xLabel) {
+          alert("Could not determine the selected x-position for annotation.");
+          return;
+        }
+
+        // Optional: populate historical inputs if they still exist
         if (annotationDateInput) annotationDateInput.value = xLabel;
-        if (annotationLabelInput) annotationLabelInput.value = text;
 
-        // Store + redrawt
-        annotations.push({ date: xLabel, label: text });
+        const changed = manageAnnotationsAtDate(xLabel);
 
-        // Regenerate to show it (your annotations render via buildAnnotationConfig)
+        if (changed && generateButton) {
+          generateButton.click();
+        }
+        return;
+      }
+
+      if (action === "clearAnnotations") {
+        if (!annotations || annotations.length === 0) return;
+
+        const ok = confirm("Clear all annotations?");
+        if (!ok) return;
+
+        annotations.length = 0; // preserves the array reference
+
+        // Optional: clear historical inputs too
+        if (annotationDateInput) annotationDateInput.value = "";
+        if (annotationLabelInput) annotationLabelInput.value = "";
+
         if (generateButton) generateButton.click();
         return;
       }
 
-if (action === "clearAnnotations") {
-  if (!annotations || annotations.length === 0) return;
-
-  const ok = confirm("Clear all annotations?");
-  if (!ok) return;
-
-  annotations.length = 0; // preserves the array reference
-
-  // Optional: clear the sidebar inputs too
-  if (annotationDateInput) annotationDateInput.value = "";
-  if (annotationLabelInput) annotationLabelInput.value = "";
-
-  if (generateButton) generateButton.click();
-  return;
-}
-
-
       if (action === "addSplit") {
-  if (clickedPointIndex === null || clickedPointIndex === undefined) {
-    alert("Right-click near a data point to add a split.");
-    return;
-  }
+        if (clickedPointIndex === null || clickedPointIndex === undefined) {
+          alert("Right-click near a data point to add a split.");
+          return;
+        }
 
-  // Try sidebar-style apply ONLY if the split dropdown exists.
-  // If it fails (e.g. dropdown removed), fall back to direct add.
-  let applied = false;
+        // Try sidebar-style apply ONLY if the split dropdown exists.
+        // If it fails (e.g. dropdown removed), fall back to direct add.
+        let applied = false;
 
-  if (splitPointSelect && typeof applySplitFromSidebarSelection === "function") {
-    splitPointSelect.value = String(clickedPointIndex);
-    applied = (applySplitFromSidebarSelection() === true);
-  }
+        if (splitPointSelect && typeof applySplitFromSidebarSelection === "function") {
+          splitPointSelect.value = String(clickedPointIndex);
+          applied = (applySplitFromSidebarSelection() === true);
+        }
 
-  if (!applied) {
-    // Direct method that does NOT require sidebar UI
-    addSplitAfterIndex(clickedPointIndex);
-  }
+        if (!applied) {
+          // Direct method that does NOT require sidebar UI
+          addSplitAfterIndex(clickedPointIndex);
+        }
 
-  return;
-}
-
+        return;
+      }
 
       if (action === "clearSplits") {
-        // Clear splits immediately + redraw (same effect as your sidebar clear button)
+        // Clear splits immediately + redraw
         splits = [];
         if (splitPointSelect) splitPointSelect.value = "";
 
@@ -9883,10 +9860,10 @@ if (action === "clearAnnotations") {
         return;
       }
 
-	if (action === "downloadPdf") {
-	  exportPdfReport();
-	  return;
-	}
+      if (action === "downloadPdf") {
+        exportPdfReport();
+        return;
+      }
 
     } catch (err) {
       console.error(err);
@@ -9894,6 +9871,7 @@ if (action === "clearAnnotations") {
     }
   });
 }
+
 
 function formatSpcHelperAnswerToHtml(text) {
   const raw = String(text ?? "").replace(/\r\n/g, "\n").trim();
