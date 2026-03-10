@@ -1180,22 +1180,7 @@ function loadRows(rows) {
 }
 
 function getDefaultYBoundsForSelectedColumn() {
-  if (!rawRows || !rawRows.length || !valueSelect || !valueSelect.value) {
-    return { min: "", max: "" };
-  }
-
-  const vals = rawRows
-    .map(row => toNumericValue(row[valueSelect.value]))
-    .filter(v => Number.isFinite(v));
-
-  if (!vals.length) {
-    return { min: "", max: "" };
-  }
-
-  return {
-    min: String(Math.min(...vals)),
-    max: String(Math.max(...vals))
-  };
+  return { min: "", max: "" };
 }
 
 function applyDefaultYBoundsForSelectedColumn() {
@@ -1203,6 +1188,15 @@ function applyDefaultYBoundsForSelectedColumn() {
 
   if (yAxisMinInput) yAxisMinInput.value = min;
   if (yAxisMaxInput) yAxisMaxInput.value = max;
+}
+
+function applyCurrentChartYBoundsToInputs(chart = currentChart) {
+  if (!chart?.scales?.y) return;
+
+  const yScale = chart.scales.y;
+
+  if (yAxisMinInput) yAxisMinInput.value = String(yScale.min);
+  if (yAxisMaxInput) yAxisMaxInput.value = String(yScale.max);
 }
 
 function applyCurrentChartYBoundsToInputs(chart = currentChart) {
@@ -10577,8 +10571,10 @@ function enforceChartTypeSuitabilityAndRegen() {
 // ---- Auto-regenerate when chart type, axis type, or selected columns change ----
 function wireAutoRedrawControls() {
   // Chart type radios (run / xmr)
-  document.querySelectorAll("input[name='chartType']").forEach(radio => {
+   document.querySelectorAll("input[name='chartType']").forEach(radio => {
   radio.addEventListener("change", () => {
+    applyDefaultYBoundsForSelectedColumn();
+
     if (typeof updateUIForChartType === "function") {
       updateUIForChartType(radio.value);
       updateRuleUIForChartType(radio.value);
