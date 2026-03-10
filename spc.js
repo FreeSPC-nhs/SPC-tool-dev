@@ -14,6 +14,7 @@ let lastGridHeadersKey = ""; // track changes
 let chartTitleManuallyEdited = false;
 let xAxisLabelManuallyEdited = false;
 let yAxisLabelManuallyEdited = false;
+let yAxisBoundsManuallyEdited = false;
 
 // ------------------------------------------------------------
 // Column intelligence (Levels 1–3):
@@ -1001,8 +1002,14 @@ function handleAxisControlChanged({ livePreview = false } = {}) {
   yAxisMaxInput
 ].forEach(el => {
   if (!el) return;
-  el.addEventListener("input", () => handleAxisControlChanged({ livePreview: false }));
-  el.addEventListener("change", () => handleAxisControlChanged({ livePreview: false }));
+  el.addEventListener("input", () => {
+    yAxisBoundsManuallyEdited = true;
+    handleAxisControlChanged({ livePreview: false });
+  });
+  el.addEventListener("change", () => {
+    yAxisBoundsManuallyEdited = true;
+    handleAxisControlChanged({ livePreview: false });
+  });
 });
 
 [
@@ -1024,6 +1031,7 @@ function handleAxisControlChanged({ livePreview = false } = {}) {
 
 if (valueSelect) {
   valueSelect.addEventListener("change", () => {
+    yAxisBoundsManuallyEdited = false;
     applyDefaultYBoundsForSelectedColumn();
 
     if (rawRows && rawRows.length) {
@@ -10624,6 +10632,21 @@ function wireAutoRedrawControls() {
   if (dateSelect)  dateSelect.addEventListener("change", onColumnChange);
   if (valueSelect) valueSelect.addEventListener("change", onColumnChange);
   if (thirdSelect) thirdSelect.addEventListener("change", onColumnChange);
+
+  document.querySelectorAll("input[name='chartType']").forEach(radio => {
+    radio.addEventListener("change", () => {
+      yAxisBoundsManuallyEdited = false;
+      applyDefaultYBoundsForSelectedColumn();
+
+      if (!rawRows || !rawRows.length) return;
+
+      if (typeof enforceChartTypeSuitabilityAndRegen === "function") {
+        enforceChartTypeSuitabilityAndRegen();
+      } else if (generateButton) {
+        generateButton.click();
+      }
+    });
+  });
 
     
 
