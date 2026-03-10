@@ -1197,6 +1197,15 @@ function applyDefaultYBoundsForSelectedColumn() {
   if (yAxisMaxInput) yAxisMaxInput.value = max;
 }
 
+function applyCurrentChartYBoundsToInputs(chart = currentChart) {
+  if (!chart?.scales?.y) return;
+
+  const yScale = chart.scales.y;
+
+  if (yAxisMinInput) yAxisMinInput.value = String(yScale.min);
+  if (yAxisMaxInput) yAxisMaxInput.value = String(yScale.max);
+}
+
 function showError(msg) {
   if (errorMessage) errorMessage.textContent = msg;
 }
@@ -6673,6 +6682,8 @@ if (chartType === "run") {
   showError(`Chart type "${chartType}" is not implemented yet.`);
   return;
 }
+
+    applyCurrentChartYBoundsToInputs(currentChart);
 
     // optional: clear dirty flag after successful draw
     if (typeof clearDataModelDirty === "function") clearDataModelDirty();
