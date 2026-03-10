@@ -8005,10 +8005,10 @@ function renderMrChart(mrLabels, mrValues, avgMR, uclMR) {
             elements: {
         point: { radius: 0, hoverRadius: 0 }
       },
-      scales: (() => {
+            scales: (() => {
         const axisSettings = getAxisSettings();
         return {
-          x: buildCategoryXAxisConfig("", axisSettings.x, labels),
+          x: buildCategoryXAxisConfig("", axisSettings.x, mrLabels),
           y: buildAxisConfig("", withoutAxisBounds(axisSettings.y), { beginAtZero: true })
         };
       })()
