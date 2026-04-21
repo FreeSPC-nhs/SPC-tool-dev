@@ -2059,8 +2059,7 @@ Hide target line
 </div>
 
 </div>
-
-  <!-- Chart right-click menu -->
+<!-- Chart right-click menu -->
 <div id="chartContextMenu" class="chart-context-menu" style="display:none;">
   <div class="context-submenu-wrap">
     <button type="button" class="submenu-parent" title="Add, edit or delete annotations for the selected point.">
@@ -2077,31 +2076,32 @@ Hide target line
 
   <div class="menu-sep"></div>
 
-  <button type="button" data-action="addSplit"
-    title="Splits recalculate the central line and control limits from the chosen point onward. Splitting the control limits should only be done where a sustained shift in performance has been identified, investigated, understood and agreed to be representative of the new normal level of performance for the process.">
-    Add split after this point…
-  </button>
-
   <div class="context-submenu-wrap">
-  <button
-    type="button"
-    class="submenu-parent"
-    data-role="clearSplitParent"
-    title="Remove one split without clearing the others.">
-    Clear split ▸
-  </button>
-  <div class="context-submenu" data-role="clearSplitSubmenu">
-    <!-- Filled dynamically in spc.js -->
-  </div>
-</div>
+    <button
+      type="button"
+      class="submenu-parent"
+      data-role="splitsParent"
+      title="Add or remove split points for this chart.">
+      Splits ▸
+    </button>
 
-<button type="button" data-action="clearSplits"
-  title="Remove all splits and return to a single set of limits.">
-  Clear all splits
-</button>
+    <div class="context-submenu" data-role="splitsSubmenu">
+      <button
+        type="button"
+        data-action="addSplit"
+        title="Splits recalculate the central line and control limits from the chosen point onward. Splitting the control limits should only be done where a sustained shift in performance has been identified, investigated, understood and agreed to be representative of the new normal level of performance for the process.">
+        Add split after this point…
+      </button>
+
+      <div class="menu-sep"></div>
+
+      <div data-role="splitDynamicItems">
+        <!-- Filled dynamically in spc.js -->
+      </div>
+    </div>
+  </div>
 
   <div class="menu-sep"></div>
-
   <button type="button" data-action="copyCharts" title="Copy the chart (only) to the clipboard.">Copy chart(s)</button>
   <button type="button" data-action="copyChartsAndAnalysis" title="Copy the chart and the analysis area to the clipboard">Copy chart(s) + analysis</button>
 
