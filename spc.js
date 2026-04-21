@@ -8632,29 +8632,6 @@ function renderHelperState() {
 }
 
 
-function updateMrToggleVisibility() {
-  const chartType = getSelectedChartType ? getSelectedChartType_NoSideEffects() : "run";
-  const mrDisplayOptions = document.getElementById("mrDisplayOptions");
-  const showMR = !!(showMRCheckbox && showMRCheckbox.checked);
-
-  // MR controls only relevant to XmR
-  if (mrToggleRow) {
-    mrToggleRow.style.display = (chartType === "xmr") ? "block" : "none";
-  }
-
-  // MR display radios only shown when XmR + MR enabled
-  if (mrDisplayOptions) {
-    mrDisplayOptions.style.display = (chartType === "xmr" && showMR) ? "block" : "none";
-  }
-
-  // If leaving XmR, hide/destroy MR chart
-  if (chartType !== "xmr") {
-    hideMrPanelNow();
-  }
-}
-
-
-
 
 
 // ===============================
