@@ -1699,7 +1699,7 @@ function drawSecondarySPCChart({
         const axisSettings = getAxisSettings();
         return {
           x: buildCategoryXAxisConfig(xLabel, axisSettings.x, labels),
-          y: buildAxisConfig(yLabel, axisSettings.y, {
+          y: buildAxisConfig(yLabel, withoutAxisBounds(axisSettings.y), {
             suggestedMin: isFinite(suggestedMin) ? suggestedMin : undefined,
             suggestedMax: isFinite(suggestedMax) ? suggestedMax : undefined
           })
