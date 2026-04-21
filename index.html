@@ -1173,15 +1173,15 @@ Import settings
   </button>
 </div>
 
-<!-- MR options -->
+<!-- Secondary chart options (MR for XmR, S chart for X̄–S) -->
 <div id="mrToggleRow" class="mr-compact">
   <label class="mr-check">
     <input type="checkbox" id="showMRCheckbox" checked />
-    <span>Show MR</span>
+    <span id="secondaryChartToggleLabel">Show MR</span>
   </label>
 
   <div id="mrDisplayOptions" class="mr-mode">
-    <span class="mr-mode-label">MR display</span>
+    <span id="mrDisplayModeLabel" class="mr-mode-label">MR display</span>
 
     <label class="mr-radio">
       <input type="radio" name="mrDisplayMode" value="last" checked />
@@ -1193,7 +1193,7 @@ Import settings
       <span>All</span>
     </label>
 
-    <span class="mr-subhint">(includes splits)</span>
+    <span id="mrDisplaySubhint" class="mr-subhint">(includes splits)</span>
   </div>
 </div>
 

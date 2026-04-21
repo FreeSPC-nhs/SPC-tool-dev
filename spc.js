@@ -745,17 +745,31 @@ function updateMrToggleVisibility() {
 
   const chartType = getSelectedChartType_NoSideEffects();
   const mrDisplayOptions = document.getElementById("mrDisplayOptions");
+  const toggleLabel = document.getElementById("secondaryChartToggleLabel");
+  const displayModeLabel = document.getElementById("mrDisplayModeLabel");
+  const displaySubhint = document.getElementById("mrDisplaySubhint");
 
+  const showSecondaryToggle = (chartType === "xmr" || chartType === "xbars");
+  const showMR = !!showMRCheckbox.checked;
+
+  // Show the checkbox row for XmR and X̄–S
   if (mrToggleRow) {
-    mrToggleRow.style.display = (chartType === "xmr") ? "block" : "none";
+    mrToggleRow.style.display = showSecondaryToggle ? "block" : "none";
   }
 
-  if (mrDisplayOptions) {
-    mrDisplayOptions.style.display =
-      (chartType === "xmr" && showMRCheckbox.checked) ? "block" : "none";
-  }
-
-  if (chartType !== "xmr") {
+  // Relabel based on chart type
+  if (chartType === "xmr") {
+    if (toggleLabel) toggleLabel.textContent = "Show MR";
+    if (displayModeLabel) displayModeLabel.textContent = "MR display";
+    if (displaySubhint) displaySubhint.textContent = "(includes splits)";
+    if (mrDisplayOptions) mrDisplayOptions.style.display = showMR ? "flex" : "none";
+  } else if (chartType === "xbars") {
+    if (toggleLabel) toggleLabel.textContent = "Show S chart";
+    if (displayModeLabel) displayModeLabel.textContent = "S chart display";
+    if (displaySubhint) displaySubhint.textContent = "(includes splits)";
+    if (mrDisplayOptions) mrDisplayOptions.style.display = showMR ? "flex" : "none";
+  } else {
+    if (mrDisplayOptions) mrDisplayOptions.style.display = "none";
     hideMrPanelNow();
   }
 }
@@ -826,13 +840,12 @@ if (showMRCheckbox) {
     updateMrToggleVisibility();
     const chartType = getSelectedChartType_NoSideEffects();
 
-    // If you're not on XmR, MR chart isn't relevant anyway
-    if (chartType !== "xmr") {
+    // Secondary chart only relevant for XmR and X̄–S
+    if (chartType !== "xmr" && chartType !== "xbars") {
       hideMrPanelNow();
       return;
     }
 
-    // If you already have a chart, just regenerate to show/hide MR
     if (currentChart) {
       generateButton.click();
     } else {
@@ -847,8 +860,8 @@ document.querySelectorAll("input[name='mrDisplayMode']").forEach(r => {
     updateMrToggleVisibility();
     const chartType = getSelectedChartType ? getSelectedChartType_NoSideEffects() : "run";
 
-    // Only relevant for XmR charts
-    if (chartType !== "xmr") return;
+    // Only relevant for XmR and X̄–S charts
+    if (chartType !== "xmr" && chartType !== "xbars") return;
 
     if (rawRows && rawRows.length && currentChart) {
       generateButton.click();
@@ -1814,6 +1827,15 @@ function drawXbarSCombinedChart({
   if (mrChart) {
     mrChart.destroy();
     mrChart = null;
+  }
+
+  const showSecondary = showMRCheckbox ? showMRCheckbox.checked : true;
+
+  if (!showSecondary) {
+    if (mrPanel) {
+      mrPanel.style.display = "none";
+    }
+    return;
   }
 
   // Show the panel and rename it (optional but avoids confusion)
