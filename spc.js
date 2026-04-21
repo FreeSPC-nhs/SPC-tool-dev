@@ -8739,9 +8739,27 @@ function showChartContextMenu(clientX, clientY, pointIndex) {
     }
   }
 
-  // ---------- Split buttons ----------
+   // ---------- Split submenu ----------
+  const splitsParentBtn = chartContextMenu.querySelector('[data-role="splitsParent"]');
+  const splitsSubmenu = chartContextMenu.querySelector('[data-role="splitsSubmenu"]');
+  const splitDynamicItems = chartContextMenu.querySelector('[data-role="splitDynamicItems"]');
   const addSplitBtn = chartContextMenu.querySelector('button[data-action="addSplit"]');
-  const clearSplitsBtn = chartContextMenu.querySelector('button[data-action="clearSplits"]');
+
+  const hasSplits = Array.isArray(splits) && splits.length > 0;
+
+  if (splitsParentBtn) {
+    if (!splitsParentBtn.dataset.defaultTitle) {
+      splitsParentBtn.dataset.defaultTitle = splitsParentBtn.getAttribute("title") || "";
+    }
+
+    splitsParentBtn.disabled = !supportsSplits;
+
+    if (!supportsSplits) {
+      splitsParentBtn.title = "Splits are not available for this chart type.";
+    } else {
+      splitsParentBtn.title = splitsParentBtn.dataset.defaultTitle;
+    }
+  }
 
   if (addSplitBtn) {
     if (!addSplitBtn.dataset.defaultTitle) {
@@ -8759,58 +8777,65 @@ function showChartContextMenu(clientX, clientY, pointIndex) {
     }
   }
 
-  if (clearSplitsBtn) {
-    if (!clearSplitsBtn.dataset.defaultTitle) {
-      clearSplitsBtn.dataset.defaultTitle = clearSplitsBtn.getAttribute("title") || "";
-    }
-
-    const hasSplits = Array.isArray(splits) && splits.length > 0;
-    clearSplitsBtn.disabled = !supportsSplits || !hasSplits;
+  if (splitDynamicItems) {
+    splitDynamicItems.innerHTML = "";
 
     if (!supportsSplits) {
-      clearSplitsBtn.title = "Splits are not available for this chart type.";
-    } else if (!hasSplits) {
-      clearSplitsBtn.title = "No splits to clear.";
+      const noSupportBtn = document.createElement("button");
+      noSupportBtn.type = "button";
+      noSupportBtn.disabled = true;
+      noSupportBtn.textContent = "Splits not available for this chart type";
+      splitDynamicItems.appendChild(noSupportBtn);
     } else {
-      clearSplitsBtn.title = clearSplitsBtn.dataset.defaultTitle;
-    }
-  }
+      if (hasSplits) {
+        const labels = currentChart?.data?.labels || [];
 
-  const clearSplitParentBtn = chartContextMenu.querySelector('[data-role="clearSplitParent"]');
-  const clearSplitSubmenu = chartContextMenu.querySelector('[data-role="clearSplitSubmenu"]');
+        splits
+          .slice()
+          .sort((a, b) => a - b)
+          .forEach((idx) => {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.dataset.action = "removeSplit";
+            btn.dataset.splitIndex = String(idx);
 
-  if (clearSplitParentBtn && clearSplitSubmenu) {
-    clearSplitSubmenu.innerHTML = "";
+            const label = labels[idx] !== undefined ? labels[idx] : `point ${idx + 1}`;
+            btn.textContent = `Clear split after ${label} (point ${idx + 1})`;
+            btn.title = `Remove the split after ${label}.`;
 
-    const labels = currentChart?.data?.labels || [];
-    const hasSplits = Array.isArray(splits) && splits.length > 0;
+            splitDynamicItems.appendChild(btn);
+          });
 
-    clearSplitParentBtn.disabled = !hasSplits;
+        const sep = document.createElement("div");
+        sep.className = "menu-sep";
+        splitDynamicItems.appendChild(sep);
 
-    if (!hasSplits) {
-      clearSplitParentBtn.title = "There are no splits to clear.";
-      const empty = document.createElement("button");
-      empty.type = "button";
-      empty.disabled = true;
-      empty.textContent = "No splits";
-      clearSplitSubmenu.appendChild(empty);
-    } else {
-      clearSplitParentBtn.title = "Remove one split and keep the others.";
+        const clearAllBtn = document.createElement("button");
+        clearAllBtn.type = "button";
+        clearAllBtn.dataset.action = "clearSplits";
+        clearAllBtn.textContent = "Clear all splits";
+        clearAllBtn.title = "Remove all splits and return to a single set of limits.";
+        splitDynamicItems.appendChild(clearAllBtn);
+      } else {
+        const noSplitsBtn = document.createElement("button");
+        noSplitsBtn.type = "button";
+        noSplitsBtn.disabled = true;
+        noSplitsBtn.textContent = "No splits to clear";
+        noSplitsBtn.title = "There are no splits to clear.";
+        splitDynamicItems.appendChild(noSplitsBtn);
 
-      splits
-        .slice()
-        .sort((a, b) => a - b)
-        .forEach((idx) => {
-          const btn = document.createElement("button");
-          btn.type = "button";
-          btn.setAttribute("data-action", "removeSplit");
-          btn.setAttribute("data-split-index", String(idx));
+        const sep = document.createElement("div");
+        sep.className = "menu-sep";
+        splitDynamicItems.appendChild(sep);
 
-          const label = labels[idx] !== undefined ? labels[idx] : `point ${idx + 1}`;
-          btn.textContent = `After ${label} (point ${idx + 1})`;
-
-          clearSplitSubmenu.appendChild(btn);
-        });
+        const clearAllBtn = document.createElement("button");
+        clearAllBtn.type = "button";
+        clearAllBtn.dataset.action = "clearSplits";
+        clearAllBtn.textContent = "Clear all splits";
+        clearAllBtn.title = "Remove all splits and return to a single set of limits.";
+        clearAllBtn.disabled = true;
+        splitDynamicItems.appendChild(clearAllBtn);
+      }
     }
   }
 
@@ -8888,7 +8913,7 @@ function removeSplitAtIndex(splitAfterIndex) {
   splits.splice(i, 1);
 
   const labels = currentChart?.data?.labels || [];
-  if (labels && labels.length && typeof populateSplitOptions === "function") {
+  if (labels && labels.length) {
     populateSplitOptions(labels);
   }
 
