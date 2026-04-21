@@ -967,7 +967,7 @@ if (targetInput) {
 
 // Call once on load
 updateTargetToggleVisibility();
-	
+updateYAxisInputStep();	
 
 function debounce(fn, ms = 80) {
   let t;
@@ -1037,8 +1037,15 @@ function handleAxisControlChanged({ livePreview = false } = {}) {
   yAxisBoldBtn
 ].forEach(el => {
   if (!el) return;
-  el.addEventListener("input", () => handleAxisControlChanged({ livePreview: true }));
-  el.addEventListener("change", () => handleAxisControlChanged({ livePreview: true }));
+  el.addEventListener("input", () => {
+  if (el === yAxisFormatInput) updateYAxisInputStep();
+  handleAxisControlChanged({ livePreview: true });
+});
+
+el.addEventListener("change", () => {
+  if (el === yAxisFormatInput) updateYAxisInputStep();
+  handleAxisControlChanged({ livePreview: true });
+});
   el.addEventListener("click", () => handleAxisControlChanged({ livePreview: true }));
 });
 
@@ -1201,6 +1208,21 @@ function applyDefaultYBoundsForSelectedColumn() {
 
   if (yAxisMinInput) yAxisMinInput.value = min;
   if (yAxisMaxInput) yAxisMaxInput.value = max;
+}
+
+function updateYAxisInputStep() {
+  if (!yAxisMinInput || !yAxisMaxInput || !yAxisFormatInput) return;
+
+  const format = (yAxisFormatInput.value || "").toLowerCase();
+
+  let stepValue = "1";
+
+  if (format.includes("percent")) {
+    stepValue = "0.1";
+  }
+
+  yAxisMinInput.step = stepValue;
+  yAxisMaxInput.step = stepValue;
 }
 
 function applyCurrentChartYBoundsToInputs(chart = currentChart) {
