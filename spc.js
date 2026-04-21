@@ -8776,6 +8776,44 @@ function showChartContextMenu(clientX, clientY, pointIndex) {
     }
   }
 
+  const clearSplitParentBtn = chartContextMenu.querySelector('[data-role="clearSplitParent"]');
+  const clearSplitSubmenu = chartContextMenu.querySelector('[data-role="clearSplitSubmenu"]');
+
+  if (clearSplitParentBtn && clearSplitSubmenu) {
+    clearSplitSubmenu.innerHTML = "";
+
+    const labels = currentChart?.data?.labels || [];
+    const hasSplits = Array.isArray(splits) && splits.length > 0;
+
+    clearSplitParentBtn.disabled = !hasSplits;
+
+    if (!hasSplits) {
+      clearSplitParentBtn.title = "There are no splits to clear.";
+      const empty = document.createElement("button");
+      empty.type = "button";
+      empty.disabled = true;
+      empty.textContent = "No splits";
+      clearSplitSubmenu.appendChild(empty);
+    } else {
+      clearSplitParentBtn.title = "Remove one split and keep the others.";
+
+      splits
+        .slice()
+        .sort((a, b) => a - b)
+        .forEach((idx) => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.setAttribute("data-action", "removeSplit");
+          btn.setAttribute("data-split-index", String(idx));
+
+          const label = labels[idx] !== undefined ? labels[idx] : `point ${idx + 1}`;
+          btn.textContent = `After ${label} (point ${idx + 1})`;
+
+          clearSplitSubmenu.appendChild(btn);
+        });
+    }
+  }
+
   chartContextMenu.style.display = "block";
   chartContextMenu.style.left = "0px";
   chartContextMenu.style.top = "0px";
@@ -8839,6 +8877,25 @@ function addSplitAfterIndex(splitAfterIndex) {
 
   // redraw with new split
   if (generateButton) generateButton.click();
+}
+
+function removeSplitAtIndex(splitAfterIndex) {
+  if (!Array.isArray(splits) || !splits.length) return false;
+
+  const i = splits.indexOf(splitAfterIndex);
+  if (i === -1) return false;
+
+  splits.splice(i, 1);
+
+  const labels = currentChart?.data?.labels || [];
+  if (labels && labels.length && typeof populateSplitOptions === "function") {
+    populateSplitOptions(labels);
+  }
+
+  if (splitPointSelect) splitPointSelect.value = "";
+
+  if (generateButton) generateButton.click();
+  return true;
 }
 
 // ---- Export helpers ----
@@ -10210,6 +10267,14 @@ if (chartContextMenu) {
           addSplitAfterIndex(clickedPointIndex);
         }
 
+        return;
+      }
+	
+      if (action === "removeSplit") {
+        const splitIdx = Number(btn.getAttribute("data-split-index"));
+        if (!Number.isInteger(splitIdx)) return;
+
+        removeSplitAtIndex(splitIdx);
         return;
       }
 

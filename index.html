@@ -1386,7 +1386,7 @@ Y-axis label
 <label>
 Use first
 <input type="number" id="baselinePoints" min="2" step="1">
-points as baseline
+points as baseline (leave blank if no baseline period)
 </label>
 
 <hr>
@@ -2082,10 +2082,23 @@ Hide target line
     Add split after this point…
   </button>
 
-  <button type="button" data-action="clearSplits"
-    title="Remove all splits and return to a single set of limits.">
-    Clear splits
+  <div class="context-submenu-wrap">
+  <button
+    type="button"
+    class="submenu-parent"
+    data-role="clearSplitParent"
+    title="Remove one split without clearing the others.">
+    Clear split ▸
   </button>
+  <div class="context-submenu" data-role="clearSplitSubmenu">
+    <!-- Filled dynamically in spc.js -->
+  </div>
+</div>
+
+<button type="button" data-action="clearSplits"
+  title="Remove all splits and return to a single set of limits.">
+  Clear all splits
+</button>
 
   <div class="menu-sep"></div>
 
