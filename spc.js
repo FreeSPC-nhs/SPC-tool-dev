@@ -9801,6 +9801,13 @@ function applySplitFromSidebarSelection() {
     populateSplitOptions(labels);
   }
 
+    // If the user has not manually locked the Y-axis bounds,
+  // return to automatic scaling before regenerating.
+  if (!yAxisBoundsManuallyEdited) {
+    if (yAxisMinInput) yAxisMinInput.value = "";
+    if (yAxisMaxInput) yAxisMaxInput.value = "";
+  }
+
   // Redraw whichever chart is currently selected
   if (generateButton) generateButton.click();
 
@@ -10182,6 +10189,11 @@ if (clearSplitsButton) {
 
     if (splitPointSelect) {
       splitPointSelect.value = "";
+    }
+
+    if (!yAxisBoundsManuallyEdited) {
+      if (yAxisMinInput) yAxisMinInput.value = "";
+      if (yAxisMaxInput) yAxisMaxInput.value = "";
     }
 
     if (getSelectedChartType_NoSideEffects() === "xmr") {
