@@ -2601,23 +2601,41 @@ function chooseDefaultsForChart(chartType) {
   }
 
   if (chartType === "u") {
-    // choose count/opportunity pair: numerator count-like, denominator usually larger
-    const intCols = numericCols.filter(c => getProfile(c)?.isMostlyInteger && !getProfile(c)?.hasNeg);
-    let yCol =
-      intCols
-        .slice()
-        .sort((a, b) => scoreMeasureColumn(b, { preferCounts: true }) - scoreMeasureColumn(a, { preferCounts: true }))[0] ||
-      numericCols[0] ||
-      "";
+  // choose count/opportunity pair:
+  // numerator = count-like column
+  // denominator = positive integer-like opportunities column, usually larger
+  const intCols = numericCols.filter(c => {
+    const p = getProfile(c);
+    return p?.isMostlyInteger && !p?.hasNeg;
+  });
 
-    let thirdCol =
-      intCols.find(c => c !== yCol && (getProfile(c)?.max ?? -Infinity) >= (getProfile(yCol)?.max ?? Infinity)) ||
-      intCols.find(c => c !== yCol) ||
-      numericCols.find(c => c !== yCol) ||
-      "";
+  let yCol =
+    intCols
+      .slice()
+      .sort((a, b) =>
+        scoreMeasureColumn(b, { preferCounts: true }) -
+        scoreMeasureColumn(a, { preferCounts: true })
+      )[0] ||
+    numericCols[0] ||
+    "";
 
-    return { xCol, yCol, thirdCol };
-  }
+  const positiveOpportunityCols = intCols.filter(c => {
+    const p = getProfile(c);
+    return c !== yCol && Number.isFinite(p?.min) && p.min > 0;
+  });
+
+  let thirdCol =
+    positiveOpportunityCols.find(c =>
+      (getProfile(c)?.max ?? -Infinity) >= (getProfile(yCol)?.max ?? Infinity)
+    ) ||
+    positiveOpportunityCols[0] ||
+    intCols.find(c => c !== yCol && Number.isFinite(getProfile(c)?.min) && getProfile(c).min > 0) ||
+    intCols.find(c => c !== yCol) ||
+    numericCols.find(c => c !== yCol) ||
+    "";
+
+  return { xCol, yCol, thirdCol };
+}
 
   if (chartType === "xbars") {
     // subgroup: prefer repeated non-date columns
