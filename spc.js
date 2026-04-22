@@ -6612,10 +6612,80 @@ if (chartType === "run") {
   // Block: denominator must be > 0
   if (!handleValidationResult(validateDenominatorPositive(denomArr, chartType === "p" ? "P chart denominator (n)" : "U chart denominator/opportunities (n)"))) return;
 
-  // Extra rule for P: numerator must not exceed denominator
-  if (chartType === "p") {
-    if (!handleValidationResult(validateNumeratorNotGreaterThanDenom(numerArr, denomArr))) return;
+  // Extra UX recovery for P / U:
+  // if the current pair is poor for the chosen chart type,
+  // try the tool's preferred default pair before showing a hard error.
+  if (chartType === "p" || chartType === "u") {
+    const currentNumer = valueSelect?.value || "";
+    const currentDenom = thirdSelect?.value || "";
+
+    const fallback = (typeof chooseDefaultsForChart === "function")
+      ? chooseDefaultsForChart(chartType)
+      : null;
+
+    const fallbackNumer = fallback?.yCol || "";
+    const fallbackDenom = fallback?.thirdCol || "";
+
+    const canTryFallback =
+      fallbackNumer &&
+      fallbackDenom &&
+      fallbackNumer !== fallbackDenom &&
+      (fallbackNumer !== currentNumer || fallbackDenom !== currentDenom);
+
+    let shouldFallback = false;
+
+    if (chartType === "p") {
+      const pPairValidation = validateNumeratorNotGreaterThanDenom(numerArr, denomArr);
+      if (pPairValidation) {
+        if (canTryFallback && valueSelect && thirdSelect) {
+          valueSelect.value = fallbackNumer;
+          thirdSelect.value = fallbackDenom;
+
+          showChartMessage(
+            "I changed the numerator and denominator columns to a more suitable pair for a P chart."
+          );
+
+          if (generateButton) {
+            lastGenerateWasManual = false;
+            generateButton.click();
+          }
+          return;
+        }
+
+        if (!handleValidationResult(pPairValidation)) return;
+      }
+    }
+
+    if (chartType === "u") {
+      const invalidDenominator =
+        denomArr.some(d => !Number.isFinite(d) || d <= 0);
+
+      const sameColumnChosen =
+        currentNumer &&
+        currentDenom &&
+        currentNumer === currentDenom;
+
+      if (invalidDenominator || sameColumnChosen) {
+        shouldFallback = true;
+      }
+
+      if (shouldFallback && canTryFallback && valueSelect && thirdSelect) {
+        valueSelect.value = fallbackNumer;
+        thirdSelect.value = fallbackDenom;
+
+        showChartMessage(
+          "I changed the count and opportunities columns to a more suitable pair for a U chart."
+        );
+
+        if (generateButton) {
+          lastGenerateWasManual = false;
+          generateButton.click();
+        }
+        return;
+      }
+    }
   }
+
 
   // Warn: non-integers (allow user to continue)
   // (Useful for QA cases like 12.5 denominators, etc.)
