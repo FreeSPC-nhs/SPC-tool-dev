@@ -6609,9 +6609,6 @@ if (chartType === "run") {
   // Block: non-numeric or negative numerator
   if (!handleValidationResult(validateNonNegativeNumbers(numerArr, chartType === "p" ? "P chart numerator (d)" : "U chart numerator (c)"))) return;
 
-  // Block: denominator must be > 0
-  if (!handleValidationResult(validateDenominatorPositive(denomArr, chartType === "p" ? "P chart denominator (n)" : "U chart denominator/opportunities (n)"))) return;
-
   // Extra UX recovery for P / U:
   // if the current pair is poor for the chosen chart type,
   // try the tool's preferred default pair before showing a hard error.
@@ -6686,9 +6683,17 @@ if (chartType === "run") {
     }
   }
 
+  // Block: denominator must be > 0
+  if (!handleValidationResult(
+    validateDenominatorPositive(
+      denomArr,
+      chartType === "p"
+        ? "P chart denominator (n)"
+        : "U chart denominator/opportunities (n)"
+    )
+  )) return;
 
   // Warn: non-integers (allow user to continue)
-  // (Useful for QA cases like 12.5 denominators, etc.)
   if (!handleValidationResult(warnIfNonInteger(numerArr, chartType === "p" ? "P chart numerator (d)" : "U chart numerator (c)"))) return;
   if (!handleValidationResult(warnIfNonInteger(denomArr, chartType === "p" ? "P chart denominator (n)" : "U chart denominator/opportunities (n)"))) return;
 
