@@ -8242,26 +8242,11 @@ function answerSpcQuestion(question) {
     return "Please type a question about SPC or your chart (for example: “Is my process stable?”, “What is a run chart?”, or “How do control limits work?”).";
   }
 
-  // --- Safe chart type detection ---
   const chartType =
     (typeof getSelectedChartType_NoSideEffects === "function")
       ? (getSelectedChartType_NoSideEffects() || "run")
       : ((typeof getSelectedChartType === "function") ? (getSelectedChartType() || "run") : "run");
 
-  // --- Keyword matching helper (simple + predictable) ---
-  function matchFaq(items, text) {
-    for (const item of items) {
-      const hit = item.keywords.some(k =>
-        Array.isArray(k)
-          ? k.every(word => text.includes(word))
-          : (typeof k === "string" && text.includes(k))
-      );
-      if (hit) return item.answer;
-    }
-    return null;
-  }
-
-  // Convert internal signal labels into plain English
   function humaniseSignals(signals) {
     if (!Array.isArray(signals) || signals.length === 0) return [];
     return signals.map(s => {
@@ -8272,192 +8257,14 @@ function answerSpcQuestion(question) {
   }
 
   // ============================================================
-  // 1) General SPC FAQ responses FIRST (prevents mis-routing)
+  // 1) General SPC FAQ responses FIRST (from helper library)
   // ============================================================
 
-  const generalFaq = [
-    {
-  keywords: ["what is spc", "define spc", ["what", "spc"]],
-  answer:
-    "Statistical Process Control (SPC) helps you use time-ordered data to understand whether a process is behaving as usual, or whether something has changed.\n\n" +
-    "A control chart shows:\n" +
-    "• your measure over time\n" +
-    "• a centre line (the usual level, often the mean or median)\n" +
-    "• control limits (the range you’d expect from routine/common-cause variation)\n\n" +
-    "If the pattern breaks simple rules (for example, a point outside the limits or a long run on one side), that’s treated as a **special-cause signal** — a prompt to investigate what changed in the real world."
-},
+  const generalFaq = window.SPC_HELPER_LIBRARY?.generalFaq || [];
+  const generalHit = (typeof window.matchSpcFaq === "function")
+    ? window.matchSpcFaq(generalFaq, q)
+    : null;
 
-    {
-  keywords: ["common cause", "special cause", ["common", "special"]],
-  answer:
-    "**Common-cause variation** = the normal ups and downs you expect when the system hasn’t fundamentally changed.\n\n" +
-    "**Special-cause variation** = a signal that something different may be happening (for example, a change in process, staffing, demand, coding/definitions, or measurement).\n\n" +
-    "SPC helps you:\n" +
-    "• avoid over-reacting to normal noise\n" +
-    "• spot real change earlier\n" +
-    "• decide whether you need investigation (special cause) or system redesign (common cause)."
-},
-
-    {
-  keywords: ["what does stable mean", "what is stable", ["stable", "mean"]],
-  answer:
-    "**Stable** means the chart shows routine (common-cause) variation — no clear special-cause signal that the system has changed.\n\n" +
-    "If a chart is stable:\n" +
-    "• avoid reacting to individual high/low points (“tampering”)\n" +
-    "• if performance isn’t good enough, the usual answer is to **change the system** (process design), not chase noise\n\n" +
-    "If a chart is not stable, treat that as a prompt to investigate what changed (process, staffing, demand, definitions/coding, measurement)."
-},
-
-    {
-  keywords: ["control limits", "how do control limits work", ["control", "limits"]],
-  answer:
-    "Control limits are statistical boundaries calculated from your data. They estimate the range you would normally expect from **routine (common-cause) variation**.\n\n" +
-    "Control limits are **not**:\n" +
-    "• targets\n" +
-    "• pass/fail thresholds\n" +
-    "• the same as a clinical standard\n\n" +
-    "A point outside the limits (or a clear run/trend) is a **special-cause signal** — a prompt to investigate what changed."
-},
-
-	{
-  keywords: ["split", "splits", ["when", "split"], ["should", "split"], ["control", "limit", "split"], ["new", "normal"]],
-  answer:
-    "A **split** tells the tool to recalculate the centre line and control limits from a chosen point onward. This lets you compare the *latest* performance to a new baseline (“the new normal”).\n\n" +
-    "Use a split when:\n" +
-    "• you have good evidence of a real process change (e.g., redesigned pathway, policy change, sustained change in circumstances)\n" +
-    "• you expect the change to continue\n\n" +
-    "Avoid splitting just to “make the chart look stable”. If the process is unstable, the first step is usually to investigate and understand local context.\n\n" +
-    "Once the cause is understood and agreed to represent the new normal, recalculating limits can help you monitor the process going forward."
-},
-
-    {
-      keywords: ["how do i choose the right chart", "choose chart", ["choose", "chart"], ["which", "chart"]],
-      answer:
-        "Pick the chart based on what you’re measuring:\n" +
-        "• A single number each time (like average waiting time): usually XmR.\n" +
-        "• A count of events each time (and time periods are comparable): C chart.\n" +
-        "• A percentage/proportion (a number out of a total): P chart.\n" +
-        "• A rate where the ‘out of how many’ changes (per 1,000 bed days etc.): U chart.\n" +
-        "• Measurements collected in small groups at each time point: X̄–S.\n" +
-        "• Rare events where you care about time/opportunities between events: T or G chart."
-    },
-    {
-  keywords: ["what is a run chart", "what is run chart", "run chart", ["what", "run chart"]],
-  answer:
-    "A **run chart** plots your data over time with a **median** line. It’s a simple first step for spotting non-random patterns.\n\n" +
-    "Common run-chart signals include:\n" +
-    "• a **shift** (many points in a row on one side of the median)\n" +
-    "• a **trend** (several points going up or down in a row)\n\n" +
-    "Run charts are often a good starting point early in improvement work, or when you have limited data. If you have enough data, an XmR chart adds control limits for stronger signals."
-},
-
- 	   {
-  keywords: ["what is an xmr chart", "xmr chart", "moving range chart", ["what", "xmr"]],
-  answer:
-    "Use an **XmR chart** when you record **one number each time** (for example, a weekly average waiting time).\n\n" +
-    "What you see:\n" +
-    "• The **X chart** shows your values over time.\n" +
-    "• The **moving range (MR)** looks at the change between consecutive points and helps estimate routine variation.\n\n" +
-    "Using this, the chart draws a **centre line (mean)** and **control limits** (statistical boundaries for expected routine/common-cause variation).\n\n" +
-    "Points or patterns beyond the limits may be a **special-cause signal** — a prompt to investigate what changed in the real world (process, staffing, demand, coding/definitions, measurement). These rules are guides, not proof."
-},
-
-
-
-    // Chart type explainers (keywords tightened to reduce false matches)
-    {
-  keywords: ["c chart", "c-chart", ["count", "chart"], ["counts", "chart"]],
-  answer:
-    "**C chart (counts)** — use this when you are counting how many times something happened in each time period (e.g., incidents per week).\n\n" +
-    "Good fit when:\n" +
-    "• each time period is broadly comparable (similar time window and similar “volume of opportunity”)\n\n" +
-    "If the amount of work/opportunity varies a lot (e.g., bed-days, inspections, patient-days change), a **U chart (rate)** is often a better choice.\n\n" +
-    "Signals:\n" +
-    "• points beyond control limits (or clear runs/trends) suggest a possible **special-cause signal** and are prompts to investigate."
-},
-
-    {
-  keywords: ["p chart", "p-chart", ["percentage", "chart"], ["proportion", "chart"], ["out of", "total"]],
-  answer:
-    "**P chart (proportion)** — use this when you have a **numerator out of a denominator** each time (e.g., % compliant, 5 out of 100 patients).\n\n" +
-    "You provide:\n" +
-    "• **Numerator (d):** how many had the characteristic (e.g., number compliant)\n" +
-    "• **Denominator (n):** how many in total (e.g., total patients)\n\n" +
-    "A P chart adjusts the limits when totals change, so weeks with small or large denominators are handled fairly.\n\n" +
-    "If you are counting multiple defects per item (e.g., multiple errors per record), a **U chart (rate of defects per opportunity)** may be a better fit."
-},
-
-    {
-  keywords: ["u chart", "u-chart", ["rate", "chart"], ["per", "1000"], ["per", "bed day"]],
-  answer:
-    "**U chart (rate)** — use this when you are counting events/defects but the amount of opportunity varies over time (e.g., falls per 1,000 bed-days; errors per 100 records).\n\n" +
-    "You provide:\n" +
-    "• **Count (c):** number of events/defects\n" +
-    "• **Opportunities (n):** size of exposure (e.g., bed-days, patient-days, inspections)\n\n" +
-    "The chart uses both values to calculate a rate and control limits.\n\n" +
-    "Signals (points beyond limits or clear runs/trends) may indicate **special-cause variation** — prompts to investigate what changed."
-},
-
-    {
-  keywords: ["xbar s", "x̄–s", "xbars", "xbar-s", ["xbar", "s"]],
-  answer:
-    "**X̄–S chart (subgroups)** — use this when you collect **several measurements per time point** (a subgroup), e.g. 5 samples each week.\n\n" +
-    "What it shows:\n" +
-    "• The **X̄ chart** looks for changes in the average (centre line + control limits).\n" +
-    "• The **S chart** looks for changes in variation/spread within subgroups.\n\n" +
-    "Data requirements (typical):\n" +
-    "• at least **2 measurements per subgroup**\n" +
-    "• at least **4 subgroups** to estimate limits sensibly\n\n" +
-    "You usually interpret the X̄ and S charts together: changes in spread can affect how you interpret changes in the average."
-},
-
-    {
-  keywords: ["t chart", "t-chart", ["time", "between"], ["days", "between"]],
-  answer:
-    "**T chart (time between events)** — use this for rare events when you measure the **time gap** between events (e.g., days between serious incidents).\n\n" +
-    "Interpretation depends on your aim:\n" +
-    "• If you want to **avoid** the event, **longer gaps** are usually better.\n" +
-    "• If you want to **increase** the event (less common), **shorter gaps** are better.\n\n" +
-    "Signals (points beyond limits or runs/trends) may indicate a **special-cause signal** — a prompt to investigate what changed."
-},
-
-    {
-  keywords: ["g chart", "g-chart", ["opportunit", "between"], ["cases", "between"]],
-  answer:
-    "**G chart (opportunities between events)** — use this for rare events when you measure the **number of opportunities** between events (e.g., patients between pressure ulcers; procedures between harms).\n\n" +
-    "Interpretation depends on your aim:\n" +
-    "• If you want to **avoid** the event, **larger numbers** are usually better.\n" +
-    "• If you want to **increase** the event, **smaller numbers** are better.\n\n" +
-    "Signals (points beyond limits or runs/trends) may indicate a **special-cause signal** — a prompt to investigate what changed."
-},
-
-
-    {
-  keywords: ["target", "what is a target", ["use", "target"]],
-  answer:
-    "A **target** is the performance level you are aiming for.\n\n" +
-    "In SPC, targets are most useful when they support decisions, for example:\n" +
-    "• “Are we reliably meeting the standard?”\n" +
-    "• “If the system stays as it is, how often will we miss?”\n\n" +
-    "Caution:\n" +
-    "• Don’t treat every point above/below target as ‘good’ or ‘bad’.\n" +
-    "• First check whether the system is **stable**. If it isn’t stable, investigation usually comes before judging performance against a target."
-},
-
-    {
-  keywords: ["capability", ["meet", "target"]],
-  answer:
-    "**Capability** is a rough way to estimate how often a stable system is likely to meet a target, given the routine variation you see.\n\n" +
-    "It works best when:\n" +
-    "• the chart looks **stable** (no obvious special-cause signals)\n" +
-    "• measurement is consistent over time\n\n" +
-    "If the system is not stable, capability estimates can be misleading — investigate and understand the signals first."
-}
-
-  ];
-
-  // IMPORTANT: FAQs get first refusal. This fixes your screenshots.
-  const generalHit = matchFaq(generalFaq, q);
   if (generalHit) return generalHit;
 
   // ============================================================
@@ -8772,17 +8579,9 @@ function renderHelperState() {
     `;
   }
 
-  // 2) General chips (always available)
-  const generalQs = [
-    "What is SPC?",
-    "What is the difference between common and special cause variation?",
-    "How do I choose the right chart?",
-    "What is a run chart?",
-    "What is an XmR chart?",
-    "What does stable mean?",
-    "What is a target and how should I use it?",
-    "How do control limits work?"
-  ];
+    // 2) Suggested questions from external helper library
+  const generalQs = window.SPC_HELPER_LIBRARY?.suggestedQuestions?.general || [];
+  const chartQs = window.SPC_HELPER_LIBRARY?.suggestedQuestions?.chart || [];
 
   if (spcHelperChipsGeneral) {
     spcHelperChipsGeneral.innerHTML = generalQs
@@ -8790,16 +8589,6 @@ function renderHelperState() {
       .join("");
     spcHelperChipsGeneral.classList.remove("is-disabled");
   }
-
-  // 3) My chart chips (available only when a chart exists)
-  const chartQs = [
-    "What is my chart telling me?",
-    "Is my process stable?",
-    "Has something changed?",
-    "Is it getting better or worse?",
-    "What decision should I make?",
-    "What about my target?"
-  ];
 
   if (spcHelperChipsChart) {
     spcHelperChipsChart.innerHTML = chartQs
