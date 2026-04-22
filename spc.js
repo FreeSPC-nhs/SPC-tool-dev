@@ -8285,9 +8285,15 @@ function renderHelperState() {
     `;
   }
 
-    // 2) Suggested questions from external helper library
-  const generalQs = window.SPC_HELPER_LIBRARY?.suggestedQuestions?.general || [];
-  const chartQs = window.SPC_HELPER_LIBRARY?.suggestedQuestions?.chart || [];
+  // 2) Suggested questions from external helper library
+  const helperQuestions =
+    (window.SPC_HELPER_LIBRARY &&
+     typeof window.SPC_HELPER_LIBRARY.getSuggestedQuestions === "function")
+      ? window.SPC_HELPER_LIBRARY.getSuggestedQuestions(hasChart)
+      : { general: [], chart: [] };
+
+  const generalQs = helperQuestions.general || [];
+  const chartQs = helperQuestions.chart || [];
 
   if (spcHelperChipsGeneral) {
     spcHelperChipsGeneral.innerHTML = generalQs
