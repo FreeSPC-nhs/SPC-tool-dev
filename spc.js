@@ -2711,10 +2711,47 @@ function applyColumnIntelligence(chartType) {
   }
 
   setIfEmptyOrMissing(dateSelect, defaults.xCol);
+
+// For count-style charts, be a bit more proactive:
+// if the current value column is numeric but clearly a poor fit
+// (e.g. mostly decimal or negative), switch to the better default.
+const currentValueProfile = valueSelect ? getProfile(valueSelect.value) : null;
+const currentThirdProfile = thirdSelect ? getProfile(thirdSelect.value) : null;
+
+const currentValuePoorForCountChart =
+  !!(currentValueProfile &&
+     (chartType === "c" || chartType === "p" || chartType === "u") &&
+     (
+       !currentValueProfile.isMostlyInteger ||
+       currentValueProfile.hasNeg
+     ));
+
+const currentThirdPoorForDenominator =
+  !!(currentThirdProfile &&
+     (chartType === "p" || chartType === "u") &&
+     (
+       !currentThirdProfile.isMostlyInteger ||
+       currentThirdProfile.hasNeg ||
+       (Number.isFinite(currentThirdProfile.min) && currentThirdProfile.min <= 0)
+     ));
+
+if (currentValuePoorForCountChart && defaults.yCol) {
+  valueSelect.value = defaults.yCol;
+} else {
   setIfEmptyOrMissing(valueSelect, defaults.yCol);
-  if (chartType === "p" || chartType === "u" || chartType === "xbars") {
+}
+
+if (chartType === "p" || chartType === "u" || chartType === "xbars") {
+  if (chartType === "p" || chartType === "u") {
+    if (currentThirdPoorForDenominator && defaults.thirdCol) {
+      thirdSelect.value = defaults.thirdCol;
+    } else {
+      setIfEmptyOrMissing(thirdSelect, defaults.thirdCol);
+    }
+  } else {
     setIfEmptyOrMissing(thirdSelect, defaults.thirdCol);
   }
+}
 
   // avoid third == y if needed (light UX polish)
   if ((chartType === "p" || chartType === "u" || chartType === "xbars") && thirdSelect && valueSelect) {
