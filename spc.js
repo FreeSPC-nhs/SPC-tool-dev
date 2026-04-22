@@ -6886,8 +6886,14 @@ if (chartType === "run") {
   return;
 }
 
-    applyCurrentChartYBoundsToInputs(currentChart);
-          updateYAxisInputStep();
+    // Keep Y-axis inputs blank when the user has not manually set bounds.
+// Blank inputs mean "automatic range", which prevents old auto-bounds
+// from becoming fixed limits on the next redraw.
+if (yAxisBoundsManuallyEdited) {
+  applyCurrentChartYBoundsToInputs(currentChart);
+}
+
+updateYAxisInputStep();
 
     // optional: clear dirty flag after successful draw
     if (typeof clearDataModelDirty === "function") clearDataModelDirty();
