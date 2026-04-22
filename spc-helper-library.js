@@ -295,7 +295,116 @@
       answer:
         "In SPC, improvement is more convincing when the chart shows a sustained change in the desired direction, not just one good point.\n\n" +
         "A single good result can happen by chance. A sustained shift or other clear signal is more consistent with real change."
-    }
+    },
+{
+  id: "runchart-median",
+  priority: 6,
+  aliases: ["why does a run chart use the median", "why median run chart"],
+  keywords: [
+    ["run", "chart", "median"],
+    ["why", "median"]
+  ],
+  answer:
+    "Run charts often use the median because it is simple and robust, especially when you are starting improvement work or have limited data.\n\n" +
+    "It gives a practical centre line for judging runs and trends."
+},
+{
+  id: "xmr-mean",
+  priority: 6,
+  aliases: ["why does an xmr chart use the mean", "why mean xmr"],
+  keywords: [
+    ["xmr", "mean"],
+    ["why", "xmr", "mean"]
+  ],
+  answer:
+    "An XmR chart uses the mean together with the moving range to estimate routine variation and calculate control limits.\n\n" +
+    "That gives stronger statistical signals than a simple run chart when the data suit that chart type."
+},
+{
+  id: "should-add-split",
+  priority: 8,
+  aliases: ["should i add a split here", "should i split the chart", "add split"],
+  keywords: [
+    ["add", "split"],
+    ["split", "chart"],
+    ["should", "split"]
+  ],
+  answer:
+    "Usually only add a split when there is good evidence of a real and sustained process change, and you expect the new pattern to continue.\n\n" +
+    "A split should help interpretation, not hide instability or make the chart look better."
+},
+{
+  id: "above-target-solved",
+  priority: 7,
+  aliases: ["we are above target now", "is the problem solved", "above target solved"],
+  keywords: [
+    ["above", "target"],
+    ["problem", "solved"]
+  ],
+  answer:
+    "Not necessarily. Crossing the target once is not the same as showing a stable, sustained level of performance.\n\n" +
+    "A better question is whether the process now looks predictably at or beyond the target, and whether that change is likely to last."
+},
+{
+  id: "below-target-stable",
+  priority: 8,
+  aliases: ["below target but stable", "stable but below target"],
+  keywords: [
+    ["below", "target", "stable"],
+    ["stable", "below", "target"]
+  ],
+  answer:
+    "This usually means the system is delivering a consistent result, but not a good enough one.\n\n" +
+    "That often points toward improvement or redesign work rather than reacting to individual points."
+},
+{
+  id: "caused-improvement",
+  priority: 7,
+  aliases: ["did this cause the improvement", "can i say this caused improvement"],
+  keywords: [
+    ["cause", "improvement"],
+    ["caused", "improvement"]
+  ],
+  answer:
+    "Be cautious. A chart can show that performance changed, and annotations can help link timing to an intervention, but the chart alone does not prove causation.\n\n" +
+    "It is usually better to say the change is consistent with the intervention, supported by local knowledge."
+},
+{
+  id: "case-mix",
+  priority: 6,
+  aliases: ["what if patient case mix changed", "case mix changed"],
+  keywords: [
+    ["case", "mix"],
+    ["patient", "mix"]
+  ],
+  answer:
+    "A real change in the type or complexity of patients can affect the chart, even if the service process stayed the same.\n\n" +
+    "That does not make the chart wrong, but it does affect interpretation."
+},
+{
+  id: "denominator-changed",
+  priority: 6,
+  aliases: ["what if our denominator changed", "denominator changed a lot"],
+  keywords: [
+    ["denominator", "changed"],
+    ["denominator"]
+  ],
+  answer:
+    "If the amount of opportunity changes a lot over time, that affects how the chart should be set up and interpreted.\n\n" +
+    "That is one reason P and U charts are useful: they allow for changing totals or opportunities."
+},
+{
+  id: "rare-event-improvement",
+  priority: 6,
+  aliases: ["what does rare event improvement look like", "rare event improvement"],
+  keywords: [
+    ["rare", "event", "improvement"],
+    ["rare", "event"]
+  ],
+  answer:
+    "For rare-event charts, improvement often means longer times between unwanted events or more opportunities between events.\n\n" +
+    "Because rare-event data can look dramatic, it helps to focus on sustained pattern changes rather than one unusually long gap."
+}
   ];
 
   function scoreFaqItem(item, q) {
