@@ -1217,8 +1217,35 @@ function updateYAxisInputStep() {
 
   let stepValue = "1";
 
-  if (format.includes("percent")) {
-    stepValue = "0.1";
+  // Percent values are stored as proportions:
+  // 0.01 = 1.0%, 0.001 = 0.1%, 0.05 = 5.0%
+  if (format === "percent") {
+    const minRaw = parseFloat(yAxisMinInput.value);
+    const maxRaw = parseFloat(yAxisMaxInput.value);
+
+    let rangeRaw = NaN;
+
+    if (Number.isFinite(minRaw) && Number.isFinite(maxRaw) && maxRaw > minRaw) {
+      rangeRaw = maxRaw - minRaw;
+    } else if (currentChart?.scales?.y) {
+      const yScale = currentChart.scales.y;
+      if (Number.isFinite(yScale.min) && Number.isFinite(yScale.max) && yScale.max > yScale.min) {
+        rangeRaw = yScale.max - yScale.min;
+      }
+    }
+
+    // Default: 1 percentage point
+    stepValue = "0.01";
+
+    // Small percent ranges: use 0.1 percentage point steps
+    if (Number.isFinite(rangeRaw) && rangeRaw <= 0.05) {
+      stepValue = "0.001";
+    }
+
+    // Large percent ranges: use 5 percentage point steps
+    if (Number.isFinite(rangeRaw) && rangeRaw >= 0.25) {
+      stepValue = "0.05";
+    }
   }
 
   yAxisMinInput.step = stepValue;
@@ -6860,6 +6887,7 @@ if (chartType === "run") {
 }
 
     applyCurrentChartYBoundsToInputs(currentChart);
+          updateYAxisInputStep();
 
     // optional: clear dirty flag after successful draw
     if (typeof clearDataModelDirty === "function") clearDataModelDirty();
