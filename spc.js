@@ -4680,9 +4680,6 @@ function toggleDataEditorDeleteHelp() {
 function updateDataEditorWorkbookUi() {
   if (!dataEditorWorkbookBar || !dataEditorSheetSelect || !dataEditorWorkbookStatus) return;
 
-  const statusText = document.getElementById("dataEditorWorkbookStatusText");
-  const helpInline = dataEditorWorkbookStatus.querySelector(".data-editor-help-inline");
-
   const isExcelMode =
     dataEditorSourceMode === "excel" &&
     dataEditorWorkbook &&
@@ -4691,12 +4688,11 @@ function updateDataEditorWorkbookUi() {
 
   dataEditorWorkbookBar.style.display = isExcelMode ? "block" : "none";
 
+  const statusText = document.getElementById("dataEditorWorkbookStatusText");
+
   if (!isExcelMode) {
     dataEditorSheetSelect.innerHTML = "";
-
     if (statusText) statusText.innerHTML = "";
-    if (helpInline) helpInline.style.display = "none";
-
     return;
   }
 
@@ -4715,10 +4711,6 @@ function updateDataEditorWorkbookUi() {
   if (statusText) {
     statusText.innerHTML =
       `Workbook loaded. You can switch worksheet here, trim rows/columns in the grid, and then click <strong>Apply data</strong>.`;
-  }
-
-  if (helpInline) {
-    helpInline.style.display = "inline-flex";
   }
 }
 

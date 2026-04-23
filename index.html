@@ -457,11 +457,15 @@ body.sidebar-collapsed .main {
   flex-wrap: wrap;
 }
 
-#dataEditorWorkbookStatus{
+.data-editor-intro-hint{
   display: flex;
-  align-items: center;
+  align-items: baseline;
   flex-wrap: wrap;
-  gap: 0.2rem;
+  gap: 0.35rem;
+}
+
+.data-editor-intro-hint .data-editor-help-inline{
+  margin-left: 0;
 }
 
 .data-editor-help-inline{
@@ -2095,22 +2099,12 @@ Hide target line
   <div class="data-editor-dialog">
     <h2>Data editor</h2>
 
-    <p class="hint">
-      Paste data directly into the grid, or use this editor to review Excel worksheets before importing.
-      You can switch worksheets, delete unwanted rows/columns, and then click
-      <strong>Apply data</strong>.
-    </p>
-
-    <div id="dataEditorWorkbookBar" class="data-editor-workbook-bar" style="display:none;">
-      <div class="data-editor-workbook-row">
-        <label for="dataEditorSheetSelect" class="data-editor-sheet-label">
-          <strong>Worksheet:</strong>
-        </label>
-        <select id="dataEditorSheetSelect"></select>
-      </div>
-
-      <div id="dataEditorWorkbookStatus" class="data-editor-status" aria-live="polite">
-  <span id="dataEditorWorkbookStatusText"></span>
+    <p class="hint data-editor-intro-hint">
+  <span>
+    Paste data directly into the grid, or use this editor to review Excel worksheets before importing.
+    You can switch worksheets, delete unwanted rows/columns, and then click
+    <strong>Apply data</strong>.
+  </span>
 
   <span class="data-editor-help-inline">
     <button
@@ -2134,6 +2128,18 @@ Hide target line
       • You can also insert rows/columns the same way
     </div>
   </span>
+</p>
+
+    <div id="dataEditorWorkbookBar" class="data-editor-workbook-bar" style="display:none;">
+      <div class="data-editor-workbook-row">
+        <label for="dataEditorSheetSelect" class="data-editor-sheet-label">
+          <strong>Worksheet:</strong>
+        </label>
+        <select id="dataEditorSheetSelect"></select>
+      </div>
+
+     <div id="dataEditorWorkbookStatus" class="data-editor-status" aria-live="polite">
+  <span id="dataEditorWorkbookStatusText"></span>
 </div>
     </div>
 
