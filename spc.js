@@ -269,8 +269,9 @@ const dataEditorHeaderStatus = document.getElementById("dataEditorHeaderStatus")
 
 
 /* ============================================================
-   SETTINGS EXPORT/IMPORT (settings only — not data)
-   Saves chart configuration so users can reuse it later.
+   PROJECT SAVE/LOAD + SETTINGS
+   - "Project" = data + chart settings in one JSON file
+   - Also remains backward-compatible with old settings-only files
    ============================================================ */
 
 function downloadTextFile(filename, text) {
@@ -297,14 +298,12 @@ function setCheckedRadioValue(name, value) {
 }
 
 function collectToolSettings() {
-  // Core chart choices
   const chartType = (typeof getSelectedChartType_NoSideEffects === "function")
     ? getSelectedChartType_NoSideEffects()
     : (typeof getSelectedChartType === "function" ? getSelectedChartType() : "run");
 
   const axisType = getCheckedRadioValue("axisType");
 
-  // Inputs (safe reads)
   const baselinePoints = baselineInput?.value ?? "";
   const targetValue = targetInput?.value ?? "";
   const targetDirection = targetDirectionSelect?.value ?? "";
@@ -318,7 +317,6 @@ function collectToolSettings() {
   const flagSpecial = flagSpecialCauseOnChartCheckbox?.checked ?? true;
   const clampLcl = clampLclAtZeroCheckbox?.checked ?? false;
 
-  // Column selections
   const selectedColumns = {
     x: dateSelect?.value ?? "",
     y: valueSelect?.value ?? "",
@@ -342,7 +340,7 @@ function collectToolSettings() {
       enabled: (typeof targetEnabled !== "undefined") ? !!targetEnabled : true
     },
 
-        labels: { title, xLabel, yLabel },
+    labels: { title, xLabel, yLabel },
 
     axes: {
       x: {
@@ -377,8 +375,6 @@ function collectToolSettings() {
       clampLclAtZero: clampLcl
     },
 
-
-    // Keep user work
     splits: Array.isArray(splits) ? splits.slice() : [],
     annotations: Array.isArray(annotations) ? annotations.slice() : []
   };
@@ -387,17 +383,14 @@ function collectToolSettings() {
 function applyToolSettings(settings, { silent = true } = {}) {
   if (!settings || typeof settings !== "object") return;
 
-  // Chart type + axis type
   if (settings.chartType) setCheckedRadioValue("chartType", settings.chartType);
   if (settings.axisType) setCheckedRadioValue("axisType", settings.axisType);
 
-  // Update UI labels/third-column visibility to match chart type
   if (typeof updateUIForChartType === "function" && settings.chartType) {
     updateUIForChartType(settings.chartType);
   }
 
-  // Rules
-    if (shiftRulePointsInput && settings.rules?.shiftRulePoints !== undefined) {
+  if (shiftRulePointsInput && settings.rules?.shiftRulePoints !== undefined) {
     shiftRulePointsInput.value = settings.rules.shiftRulePoints;
   }
   if (trendRulePointsInput && settings.rules?.trendRulePoints !== undefined) {
@@ -428,7 +421,6 @@ function applyToolSettings(settings, { silent = true } = {}) {
     clampLclAtZeroCheckbox.checked = !!settings.rules.clampLclAtZero;
   }
 
-  // Baseline + target
   if (baselineInput && settings.baselinePoints !== undefined) baselineInput.value = settings.baselinePoints;
 
   if (targetInput && settings.target?.value !== undefined) targetInput.value = settings.target.value;
@@ -440,17 +432,15 @@ function applyToolSettings(settings, { silent = true } = {}) {
     if (typeof updateTargetToggleVisibility === "function") updateTargetToggleVisibility();
   }
 
-    // Titles/labels
   if (chartTitleInput && settings.labels?.title !== undefined) chartTitleInput.value = settings.labels.title;
   if (xAxisLabelInput && settings.labels?.xLabel !== undefined) xAxisLabelInput.value = settings.labels.xLabel;
   if (yAxisLabelInput && settings.labels?.yLabel !== undefined) yAxisLabelInput.value = settings.labels.yLabel;
 
-  // Axes
   if (xAxisFontFamilyInput && settings.axes?.x?.font?.family !== undefined) xAxisFontFamilyInput.value = settings.axes.x.font.family;
   if (xAxisFontSizeInput && settings.axes?.x?.font?.size !== undefined) xAxisFontSizeInput.value = settings.axes.x.font.size;
- setPressed(xAxisItalicBtn, settings.axes?.x?.font?.style === "italic");
- setPressed(xAxisBoldBtn, settings.axes?.x?.font?.weight === "bold");
-  
+  setPressed(xAxisItalicBtn, settings.axes?.x?.font?.style === "italic");
+  setPressed(xAxisBoldBtn, settings.axes?.x?.font?.weight === "bold");
+
   if (yAxisMinInput && settings.axes?.y?.min !== undefined) yAxisMinInput.value = settings.axes.y.min;
   if (yAxisMaxInput && settings.axes?.y?.max !== undefined) yAxisMaxInput.value = settings.axes.y.max;
   if (yAxisFormatInput && settings.axes?.y?.format !== undefined) yAxisFormatInput.value = settings.axes.y.format;
@@ -459,12 +449,9 @@ function applyToolSettings(settings, { silent = true } = {}) {
   setPressed(yAxisItalicBtn, settings.axes?.y?.font?.style === "italic");
   setPressed(yAxisBoldBtn, settings.axes?.y?.font?.weight === "bold");
 
-  // Splits + annotations
   if (Array.isArray(settings.splits)) splits = settings.splits.slice();
   if (Array.isArray(settings.annotations)) annotations = settings.annotations.slice();
 
-  // Columns: only apply if those columns exist in dropdown options
-  // (this avoids breaking when users import settings before loading data)
   const missing = [];
 
   function setSelectIfOptionExists(selectEl, value, labelForMissing) {
@@ -482,7 +469,6 @@ function applyToolSettings(settings, { silent = true } = {}) {
   setSelectIfOptionExists(valueSelect, cols.y, `Value column "${cols.y}"`);
   setSelectIfOptionExists(thirdSelect, cols.third, `Third column "${cols.third}"`);
 
-  // Re-run column intelligence for the selected chart type (keeps dropdowns consistent)
   const chartTypeNow = (typeof getSelectedChartType_NoSideEffects === "function")
     ? getSelectedChartType_NoSideEffects()
     : (typeof getSelectedChartType === "function" ? getSelectedChartType() : "run");
@@ -491,29 +477,80 @@ function applyToolSettings(settings, { silent = true } = {}) {
     applyColumnIntelligence(chartTypeNow);
   }
 
-  // If columns were missing, tell the user gently (non-blocking)
   if (missing.length && typeof showError === "function" && !silent) {
     showError(
-      "Imported settings applied, but some saved columns were not found in your current data. " +
+      "Imported settings/project applied, but some saved columns were not found in your current data. " +
       "Please reselect: " + missing.join(", ")
     );
   }
 
-  // Redraw chart (avoid popups by treating as auto regenerate)
   if (rawRows && rawRows.length && generateButton) {
     if (typeof lastGenerateWasManual !== "undefined") lastGenerateWasManual = false;
     generateButton.click();
   }
 }
 
-function exportSettingsNow() {
-  const settings = collectToolSettings();
-  const safeDate = new Date().toISOString().slice(0, 10);
-  const filename = `spc-settings-${safeDate}.json`;
-  downloadTextFile(filename, JSON.stringify(settings, null, 2));
+function collectProjectFile() {
+  return {
+    tool: "Simple SPC Web Tool",
+    projectVersion: 1,
+    savedAt: new Date().toISOString(),
+    data: {
+      rawRows: Array.isArray(rawRows) ? rawRows : []
+    },
+    settings: collectToolSettings()
+  };
 }
 
-function importSettingsFromFile(file) {
+function exportProjectNow() {
+  const project = collectProjectFile();
+  const safeDate = new Date().toISOString().slice(0, 10);
+  const filename = `spc-project-${safeDate}.json`;
+  downloadTextFile(filename, JSON.stringify(project, null, 2));
+}
+
+function resetAnnotationsAndSplitsForNewData() {
+  annotations = [];
+  if (annotationDateInput) annotationDateInput.value = "";
+  if (annotationLabelInput) annotationLabelInput.value = "";
+
+  splits = [];
+  if (splitPointSelect) splitPointSelect.innerHTML = "";
+}
+
+function loadProjectObject(projectObj) {
+  if (!projectObj || typeof projectObj !== "object") {
+    alert("That file could not be read as an SPC project.");
+    return;
+  }
+
+  const rows = projectObj?.data?.rawRows;
+  const settings = projectObj?.settings;
+
+  if (!Array.isArray(rows) || rows.length === 0) {
+    alert("This project file does not contain any saved data.");
+    return;
+  }
+
+  resetAnnotationsAndSplitsForNewData();
+
+  const ok = loadRows(rows);
+  if (!ok) {
+    alert("The project data could not be loaded.");
+    return;
+  }
+
+  if (settings) {
+    applyToolSettings(settings, { silent: false });
+  } else if (generateButton) {
+    if (typeof lastGenerateWasManual !== "undefined") lastGenerateWasManual = false;
+    generateButton.click();
+  }
+
+  markDataModelDirty();
+}
+
+function importSettingsOrProjectFromFile(file) {
   if (!file) return;
 
   const reader = new FileReader();
@@ -522,31 +559,35 @@ function importSettingsFromFile(file) {
       const text = String(reader.result || "");
       const parsed = JSON.parse(text);
 
-      // Basic sanity check
-      if (!parsed || typeof parsed !== "object" || parsed.settingsVersion !== 1) {
-        alert("That file doesn’t look like an SPC settings file (or it’s from an unsupported version).");
+      // New full project file
+      if (parsed && typeof parsed === "object" && parsed.projectVersion === 1 && parsed.data?.rawRows) {
+        loadProjectObject(parsed);
         return;
       }
 
-      // If data is already loaded, apply immediately.
-      // If not, store it and apply after the next loadRows().
-      if (rawRows && rawRows.length) {
-        applyToolSettings(parsed, { silent: false });
-      } else {
-        pendingImportedSettings = parsed;
-        alert("Settings loaded. Now upload your CSV data and the tool will apply these settings automatically.");
+      // Old settings-only file (backward compatibility)
+      if (parsed && typeof parsed === "object" && parsed.settingsVersion === 1) {
+        if (rawRows && rawRows.length) {
+          applyToolSettings(parsed, { silent: false });
+        } else {
+          pendingImportedSettings = parsed;
+          alert("Settings loaded. Now upload your CSV or Excel data and the tool will apply these settings automatically.");
+        }
+        return;
       }
+
+      alert("That file doesn’t look like a supported SPC project or settings file.");
     } catch (e) {
-      alert("Could not read that settings file. Please check it is a valid .json settings export from this tool.");
+      alert("Could not read that JSON file. Please check it is a valid export from this tool.");
     }
   };
   reader.readAsText(file);
 }
 
-// Wire up the buttons (safe no-op if buttons aren't present)
+// Wire up the buttons
 if (exportSettingsBtn) {
   exportSettingsBtn.addEventListener("click", () => {
-    exportSettingsNow();
+    exportProjectNow();
   });
 }
 
@@ -558,10 +599,81 @@ if (importSettingsBtn && importSettingsFileInput) {
 
   importSettingsFileInput.addEventListener("change", () => {
     const file = importSettingsFileInput.files && importSettingsFileInput.files[0];
-    if (file) importSettingsFromFile(file);
+    if (file) importSettingsOrProjectFromFile(file);
   });
 }
 
+function normalizeWorkbookCellValue(value) {
+  if (value instanceof Date && !isNaN(value.getTime())) {
+    return value.toISOString().slice(0, 10);
+  }
+  return value;
+}
+
+function sheetToRowObjects(worksheet) {
+  if (!worksheet) return [];
+
+  const rows = XLSX.utils.sheet_to_json(worksheet, {
+    defval: "",
+    raw: false
+  });
+
+  return rows.map(row => {
+    const out = {};
+    Object.keys(row).forEach(key => {
+      out[key] = normalizeWorkbookCellValue(row[key]);
+    });
+    return out;
+  });
+}
+
+async function readExcelFileAsRows(file) {
+  const buffer = await file.arrayBuffer();
+  const workbook = XLSX.read(buffer, {
+    type: "array",
+    cellDates: true
+  });
+
+  const sheetNames = workbook.SheetNames || [];
+  if (!sheetNames.length) {
+    throw new Error("No worksheets were found in the Excel file.");
+  }
+
+  let selectedSheetName = sheetNames[0];
+
+  if (sheetNames.length > 1) {
+    const message =
+      "This Excel file contains multiple sheets.\n\n" +
+      "The tool will load the first sheet by default:\n" +
+      selectedSheetName +
+      "\n\n" +
+      "Click OK to continue, or Cancel to stop and reorder/rename sheets in Excel first.";
+    const ok = confirm(message);
+    if (!ok) {
+      return null;
+    }
+  }
+
+  const worksheet = workbook.Sheets[selectedSheetName];
+  const rows = sheetToRowObjects(worksheet);
+
+  if (!rows.length) {
+    throw new Error("The selected worksheet did not contain any data rows.");
+  }
+
+  return rows;
+}
+
+function resetStateAfterDataLoad() {
+  markDataModelDirty();
+
+  annotations = [];
+  if (annotationDateInput) annotationDateInput.value = "";
+  if (annotationLabelInput) annotationLabelInput.value = "";
+
+  splits = [];
+  if (splitPointSelect) splitPointSelect.innerHTML = "";
+}
 
 function guessColumns(rows) {
   if (!rows || rows.length === 0) return { dateCol: null, valueCol: null, hasDateCandidate: false };
@@ -1507,7 +1619,7 @@ if (toggleSidebarButton) {
   });
 }
 
-// ---- CSV upload & column selection ----
+// ---- CSV / Excel upload & column selection ----
 fileInput.addEventListener("change", async () => {
   const file = fileInput.files[0];
   if (!file) return;
@@ -1516,7 +1628,25 @@ fileInput.addEventListener("change", async () => {
   if (summaryDiv) summaryDiv.innerHTML = "";
   if (capabilityDiv) capabilityDiv.innerHTML = "";
 
+  const lowerName = String(file.name || "").toLowerCase();
+  const isExcel = lowerName.endsWith(".xlsx") || lowerName.endsWith(".xls");
+  const isCsv = lowerName.endsWith(".csv");
+
   try {
+    if (isExcel) {
+      const rows = await readExcelFileAsRows(file);
+      if (!rows) return; // user cancelled multi-sheet confirm
+
+      if (!loadRows(rows)) return;
+      resetStateAfterDataLoad();
+      return;
+    }
+
+    if (!isCsv) {
+      showError("Please upload a CSV or Excel file (.csv, .xlsx, .xls).");
+      return;
+    }
+
     const text = await file.text();
     const parsed = parseTabularTextWithHeaderDetection(text);
 
@@ -1525,8 +1655,6 @@ fileInput.addEventListener("change", async () => {
       return;
     }
 
-    // If header detection said "no header", but the first two rows are identical header-like rows
-    // (e.g. Date,Value repeated), treat it as header mode and just remove the duplicate header row.
     if (!parsed.hadHeader && parsed.rows2D && parsed.rows2D.length >= 2) {
       const r0 = parsed.rows2D[0];
       const r1 = parsed.rows2D[1];
@@ -1535,7 +1663,6 @@ fileInput.addEventListener("change", async () => {
       const duplicateHeaderRow = rowsEqualNormalized(r0, r1) && score0 <= 0.2;
 
       if (duplicateHeaderRow) {
-        // Parse as headered CSV so fields are created, then strip the duplicate header row
         const results = Papa.parse(text, { header: true, dynamicTyping: true, skipEmptyLines: true });
 
         if (results.errors && results.errors.length > 0) {
@@ -1549,23 +1676,14 @@ fileInput.addEventListener("change", async () => {
         rows = stripDuplicateHeaderRow(rows, headers);
 
         if (!loadRows(rows)) return;
-
-        // Reset annotations/splits because the data changed
-        annotations = [];
-        if (annotationDateInput) annotationDateInput.value = "";
-        if (annotationLabelInput) annotationLabelInput.value = "";
-        splits = [];
-        if (splitPointSelect) splitPointSelect.innerHTML = "";
+        resetStateAfterDataLoad();
         return;
       }
     }
 
     if (parsed.hadHeader) {
-      // Normal case: CSV has headers (already stripped of duplicate header row inside parser)
       if (!loadRows(parsed.rows)) return;
-
     } else {
-      // No headers detected — ask the user
       const ok = confirm(
         "It looks like your CSV does not include column headings.\n\n" +
         "Click OK to treat the first row as DATA (I will create Column1, Column2...).\n" +
@@ -1590,22 +1708,16 @@ fileInput.addEventListener("change", async () => {
       if (!loadRows(objRows)) return;
     }
 
-	markDataModelDirty();
-
-
-    // Reset annotations and splits because the data changed
-    annotations = [];
-    if (annotationDateInput) annotationDateInput.value = "";
-    if (annotationLabelInput) annotationLabelInput.value = "";
-    splits = [];
-    if (splitPointSelect) splitPointSelect.innerHTML = "";
-
+    resetStateAfterDataLoad();
   } catch (err) {
     console.error(err);
-    showError("Unexpected error reading the CSV file.");
+    showError(
+      isExcel
+        ? "Unexpected error reading the Excel file."
+        : "Unexpected error reading the CSV file."
+    );
   }
 });
-
 
 function getMrDisplayMode() {
   const el = document.querySelector("input[name='mrDisplayMode']:checked");

@@ -1072,10 +1072,10 @@ body.pdf-exporting #capability {
 <label for="fileInput"><strong>Add data:</strong></label>
 
 <div class="hint small-hint">
-Upload a csv file or use the data editor to paste/type/edit data directly.
+Upload a CSV or Excel file, or use the data editor to paste/type/edit data directly.
 </div>
 
-<input type="file" id="fileInput" accept=".csv" />
+<input type="file" id="fileInput" accept=".csv,.xlsx,.xls" />
 
 <div class="hint small-hint">
 Expected columns: a date/time column and a numeric column.
@@ -1088,11 +1088,11 @@ Open data editor (paste/type data)
 <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.4rem;">
 
 <button id="exportSettingsBtn" type="button">
-Export settings
+Save project
 </button>
 
 <button id="importSettingsBtn" type="button">
-Import settings
+Open project
 </button>
 
 <input id="importSettingsFileInput" type="file" accept=".json,application/json" style="display:none;" />
