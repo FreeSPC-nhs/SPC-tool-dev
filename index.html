@@ -457,10 +457,11 @@ body.sidebar-collapsed .main {
   flex-wrap: wrap;
 }
 
-.data-editor-help-wrap{
+.data-editor-help-inline{
   position: relative;
   display: inline-flex;
   align-items: center;
+  margin-left: 0.35rem;
 }
 
 .data-editor-help-btn{
@@ -468,10 +469,11 @@ body.sidebar-collapsed .main {
   border: none !important;
   color: #005eb8 !important;
   padding: 0 !important;
-  font-size: 0.85rem;
+  font-size: 0.78rem;
   font-weight: 600;
   text-decoration: underline;
   cursor: pointer;
+  line-height: 1.2;
 }
 
 .data-editor-help-btn:hover{
@@ -487,8 +489,8 @@ body.sidebar-collapsed .main {
 
 .data-editor-help-popup{
   position: absolute;
-  top: calc(100% + 0.45rem);
-  left: 0;
+  top: calc(100% + 0.35rem);
+  left: -0.25rem;
   min-width: 290px;
   max-width: 340px;
   padding: 0.65rem 0.75rem;
@@ -2099,7 +2101,32 @@ Hide target line
         <select id="dataEditorSheetSelect"></select>
       </div>
 
-      <div id="dataEditorWorkbookStatus" class="data-editor-status" aria-live="polite"></div>
+      <div id="dataEditorWorkbookStatus" class="data-editor-status" aria-live="polite">
+  <span id="dataEditorWorkbookStatusText"></span>
+
+  <span class="data-editor-help-inline">
+    <button
+      id="dataEditorDeleteHelpBtn"
+      type="button"
+      class="data-editor-help-btn"
+      aria-label="How do I delete rows or columns?"
+      aria-expanded="false"
+      aria-controls="dataEditorDeleteHelpPopup">
+      How do I delete rows/columns?
+    </button>
+
+    <div
+      id="dataEditorDeleteHelpPopup"
+      class="data-editor-help-popup"
+      role="tooltip"
+      aria-hidden="true">
+      <strong>Editing tip</strong><br>
+      • Right-click a <strong>row number</strong> to delete a row<br>
+      • Right-click a <strong>column heading</strong> to delete a column<br>
+      • You can also insert rows/columns the same way
+    </div>
+  </span>
+</div>
     </div>
 
         <div class="data-editor-controls">
@@ -2108,29 +2135,6 @@ Hide target line
           <input type="checkbox" id="dataEditorHasHeaders" checked>
           First row contains headers
         </label>
-
-        <div class="data-editor-help-wrap">
-          <button
-            id="dataEditorDeleteHelpBtn"
-            type="button"
-            class="data-editor-help-btn"
-            aria-label="How do I delete rows or columns?"
-            aria-expanded="false"
-            aria-controls="dataEditorDeleteHelpPopup">
-            How do I delete rows/columns?
-          </button>
-
-          <div
-            id="dataEditorDeleteHelpPopup"
-            class="data-editor-help-popup"
-            role="tooltip"
-            aria-hidden="true">
-            <strong>Editing tip</strong><br>
-            • Right-click a <strong>row number</strong> to delete a row<br>
-            • Right-click a <strong>column heading</strong> to delete a column<br>
-            • You can also insert rows/columns the same way
-          </div>
-        </div>
       </div>
 
       <button id="dataEditorDetectHeadersButton" type="button" class="data-editor-secondary">
