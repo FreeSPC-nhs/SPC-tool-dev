@@ -678,14 +678,49 @@ body.sidebar-collapsed .main {
 }
 
 .spc-chip-section {
-  margin-top: 0.15rem;
+  margin-top: 0.2rem;
+  border-top: 1px solid #eef2f6;
+  padding-top: 0.35rem;
 }
 
-.spc-chip-title {
-  font-size: 0.75rem;
-  font-weight: 700;
-  margin: 0.15rem 0 0.25rem;
+.spc-chip-section-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  background: transparent;
+  border: none;
   color: #2b2b2b;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.2rem 0;
+  margin: 0;
+  cursor: pointer;
+  text-align: left;
+}
+
+#spcHelperPanel .spc-chip-section-toggle:hover {
+  background: transparent;
+  color: #003087;
+}
+
+.spc-chip-section-toggle-icon {
+  font-size: 0.8rem;
+  line-height: 1;
+  transition: transform 0.15s ease;
+}
+
+.spc-chip-section-toggle[aria-expanded="false"] .spc-chip-section-toggle-icon {
+  transform: rotate(-90deg);
+}
+
+.spc-chip-section-body {
+  display: block;
+}
+
+.spc-chip-section-body.is-collapsed {
+  display: none;
 }
 
 /* Toggle button that shows/hides suggested question chips */
@@ -2210,17 +2245,39 @@ Hide target line
   </button>
 
   <!-- Suggested questions area (chips live in here) -->
-  <div id="spcHelperSuggestions">
-    <div class="spc-chip-section">
-      <div class="spc-chip-title">General SPC questions</div>
+<div id="spcHelperSuggestions">
+  <div class="spc-chip-section">
+    <button
+      id="spcHelperToggleGeneral"
+      type="button"
+      class="spc-chip-section-toggle"
+      aria-expanded="true"
+      aria-controls="spcHelperGeneralSection">
+      <span>General SPC questions</span>
+      <span class="spc-chip-section-toggle-icon">▾</span>
+    </button>
+
+    <div id="spcHelperGeneralSection" class="spc-chip-section-body">
       <div id="spcHelperChipsGeneral" class="spc-helper-chips" aria-label="General SPC suggested questions"></div>
     </div>
+  </div>
 
-    <div class="spc-chip-section">
-      <div class="spc-chip-title">My chart questions</div>
+  <div class="spc-chip-section">
+    <button
+      id="spcHelperToggleChart"
+      type="button"
+      class="spc-chip-section-toggle"
+      aria-expanded="true"
+      aria-controls="spcHelperChartSection">
+      <span>My chart questions</span>
+      <span class="spc-chip-section-toggle-icon">▾</span>
+    </button>
+
+    <div id="spcHelperChartSection" class="spc-chip-section-body">
       <div id="spcHelperChipsChart" class="spc-helper-chips" aria-label="My chart suggested questions"></div>
     </div>
   </div>
+</div>
 
   <div id="spcHelperOutput" aria-live="polite"></div>
 
