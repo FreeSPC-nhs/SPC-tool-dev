@@ -30,6 +30,8 @@ const fileInput         = document.getElementById("fileInput");
 const columnSelectors   = document.getElementById("columnSelectors");
 const dateSelect        = document.getElementById("dateColumn");
 const valueSelect       = document.getElementById("valueColumn");
+const dateFormatPreferenceSelect = document.getElementById("dateFormatPreference");
+const dateFormatWarning = document.getElementById("dateFormatWarning");
 
 // Settings import/export buttons (Section 1: Data)
 const exportSettingsBtn = document.getElementById("exportSettingsBtn");
@@ -346,6 +348,7 @@ function collectToolSettings() {
     axisType,
 
     selectedColumns,
+    dateFormatPreference: getDateFormatPreference(),
 
     baselinePoints,
     target: {
@@ -478,6 +481,10 @@ function applyToolSettings(settings, { silent = true } = {}) {
     }
   }
 
+  if (dateFormatPreferenceSelect && settings.dateFormatPreference) {
+    dateFormatPreferenceSelect.value = settings.dateFormatPreference;
+  }
+
   const cols = settings.selectedColumns || {};
   setSelectIfOptionExists(dateSelect, cols.x, `X-axis column "${cols.x}"`);
   setSelectIfOptionExists(valueSelect, cols.y, `Value column "${cols.y}"`);
@@ -497,6 +504,8 @@ function applyToolSettings(settings, { silent = true } = {}) {
       "Please reselect: " + missing.join(", ")
     );
   }
+
+  updateDateFormatWarning();
 
   if (rawRows && rawRows.length && generateButton) {
     if (typeof lastGenerateWasManual !== "undefined") lastGenerateWasManual = false;
@@ -1252,6 +1261,29 @@ if (valueSelect) {
   });
 }
 
+if (dateSelect) {
+  dateSelect.addEventListener("change", () => {
+    updateDateFormatWarning();
+  });
+}
+
+if (dateFormatPreferenceSelect) {
+  dateFormatPreferenceSelect.addEventListener("change", () => {
+    updateDateFormatWarning();
+
+    if (rawRows && rawRows.length && generateButton) {
+      lastGenerateWasManual = false;
+      generateButton.click();
+    }
+  });
+}
+
+document.querySelectorAll("input[name='axisType']").forEach(r => {
+  r.addEventListener("change", () => {
+    updateDateFormatWarning();
+  });
+});
+
 function loadRows(rows) {
   if (!rows || rows.length === 0) {
     showError("No rows found in the data.");
@@ -1331,6 +1363,8 @@ function loadRows(rows) {
     });
   }
 
+
+
   // ------------------------------------------------------------
   // Optional: keep your older "guessColumns" logic ONLY as a fallback
   // (i.e., if defaults didn't get set by column intelligence)
@@ -1359,6 +1393,8 @@ function loadRows(rows) {
       if (opts[0]) valueSelect.value = opts[0].value;
     }
   }
+
+  updateDateFormatWarning();
 
   // Optional: if no date-like column, don't nag, but you can keep your tip
   // (only show if you want — comment out if noisy)
@@ -6530,6 +6566,114 @@ function computeTargetCapability(mean, sigma, target, direction) {
   return { prob: p, z };
 }
 
+function getDateFormatPreference() {
+  return (dateFormatPreferenceSelect?.value || "uk").toLowerCase();
+}
+
+function isAmbiguousNumericDateToken(s) {
+  const m = String(s || "").trim().match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+  if (!m) return false;
+
+  const a = Number(m[1]);
+  const b = Number(m[2]);
+
+  return a >= 1 && a <= 12 && b >= 1 && b <= 12;
+}
+
+function detectNumericDateStyle(values) {
+  let seenUkOnly = false;
+  let seenUsOnly = false;
+  let ambiguousCount = 0;
+
+  for (const raw of values || []) {
+    const s = String(raw ?? "").trim();
+    if (!s) continue;
+
+    const m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+    if (!m) continue;
+
+    const a = Number(m[1]);
+    const b = Number(m[2]);
+
+    if (!(a >= 1 && a <= 31 && b >= 1 && b <= 31)) continue;
+
+    if (a > 12 && b <= 12) seenUkOnly = true;   // e.g. 25/01/2024
+    else if (b > 12 && a <= 12) seenUsOnly = true; // e.g. 01/25/2024
+    else if (a <= 12 && b <= 12) ambiguousCount++;
+  }
+
+  if (seenUkOnly && !seenUsOnly) {
+    return { style: "uk", ambiguousCount };
+  }
+  if (seenUsOnly && !seenUkOnly) {
+    return { style: "us", ambiguousCount };
+  }
+  if (seenUkOnly && seenUsOnly) {
+    return { style: "mixed", ambiguousCount };
+  }
+  return { style: "unknown", ambiguousCount };
+}
+
+function updateDateFormatWarning() {
+  if (!dateFormatWarning) return;
+
+  dateFormatWarning.style.display = "none";
+  dateFormatWarning.textContent = "";
+
+  if (!rawRows || !rawRows.length) return;
+  if (!dateSelect || !dateSelect.value) return;
+
+  const col = dateSelect.value;
+  const axisType = getCheckedRadioValue("axisType");
+  if (axisType !== "date") return;
+
+  const values = rawRows
+    .map(r => r?.[col])
+    .filter(v => v !== null && v !== undefined && String(v).trim() !== "");
+
+  if (!values.length) return;
+
+  const result = detectNumericDateStyle(values);
+  const pref = getDateFormatPreference();
+
+  if (result.style === "mixed") {
+    dateFormatWarning.textContent =
+      "Warning: this column appears to contain a mixture of UK-style and US-style numeric dates. Please standardise the dates if possible.";
+    dateFormatWarning.style.display = "block";
+    return;
+  }
+
+  if (result.ambiguousCount > 0) {
+    if (pref === "uk") {
+      dateFormatWarning.textContent =
+        `This column contains ambiguous numeric dates. They will currently be interpreted as UK day-first dates (dd/mm/yyyy).`;
+      dateFormatWarning.style.display = "block";
+      return;
+    }
+
+    if (pref === "us") {
+      dateFormatWarning.textContent =
+        `This column contains ambiguous numeric dates. They will currently be interpreted as US month-first dates (mm/dd/yyyy).`;
+      dateFormatWarning.style.display = "block";
+      return;
+    }
+
+    if (pref === "auto" && result.style === "unknown") {
+      dateFormatWarning.textContent =
+        "This column contains ambiguous numeric dates and the tool cannot confidently auto-detect the style. It will fall back to UK day-first dates unless you choose another option.";
+      dateFormatWarning.style.display = "block";
+      return;
+    }
+
+    if (pref === "iso-only") {
+      dateFormatWarning.textContent =
+        "This column contains numeric slash/hyphen dates. In 'ISO / Excel dates only' mode, ambiguous numeric dates may not be interpreted as dates.";
+      dateFormatWarning.style.display = "block";
+      return;
+    }
+  }
+}
+
 // Parse dates safely, supporting NHS-style dd/mm/yyyy as well as ISO yyyy-mm-dd
 function parseDateValue(xRaw) {
   if (xRaw instanceof Date && !isNaN(xRaw)) {
@@ -6544,34 +6688,71 @@ function parseDateValue(xRaw) {
   if (!s) return new Date(NaN);
 
   // --- Excel serial date support ---
-  // Excel dates are numbers like 45123
   const asNumber = Number(s);
   if (Number.isFinite(asNumber) && asNumber > 20000 && asNumber < 60000) {
     const excelEpoch = new Date(Date.UTC(1899, 11, 30));
     return new Date(excelEpoch.getTime() + asNumber * 86400000);
   }
 
-  // ISO style: 2025-10-02 or 2025-10-02T.
-  const isoMatch = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
-  if (isoMatch) {
-    const y = Number(isoMatch[1]);
-    const m = Number(isoMatch[2]);
-    const d = Number(isoMatch[3]);
-    return new Date(y, m - 1, d);
+  // ISO style: 2025-10-02 or 2025-10-02T...
+  if (/^\d{4}-\d{2}-\d{2}(?:[T\s].*)?$/.test(s)) {
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? new Date(NaN) : d;
   }
 
-  // NHS-style day-first: dd/mm/yyyy or dd-mm-yyyy
-  const dmMatch = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
-  if (dmMatch) {
-    let day   = Number(dmMatch[1]);
-    let month = Number(dmMatch[2]);
-    let year  = Number(dmMatch[3]);
-    if (year < 100) year += 2000; // e.g. 25 -> 2025
-    return new Date(year, month - 1, day);
+  // Numeric slash or hyphen dates
+  const m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})(?:\s+.*)?$/);
+  if (m) {
+    let a = Number(m[1]);
+    let b = Number(m[2]);
+    let y = Number(m[3]);
+
+    if (y < 100) {
+      y += (y >= 50 ? 1900 : 2000);
+    }
+
+    const pref = getDateFormatPreference();
+
+    let styleToUse = pref;
+
+    if (pref === "auto") {
+      if (a > 12 && b <= 12) styleToUse = "uk";
+      else if (b > 12 && a <= 12) styleToUse = "us";
+      else styleToUse = "uk"; // safe fallback for ambiguous cases
+    }
+
+    if (pref === "iso-only") {
+      return new Date(NaN);
+    }
+
+    let day, month;
+    if (styleToUse === "us") {
+      month = a;
+      day = b;
+    } else {
+      day = a;
+      month = b;
+    }
+
+    if (!(month >= 1 && month <= 12 && day >= 1 && day <= 31)) {
+      return new Date(NaN);
+    }
+
+    const d = new Date(y, month - 1, day);
+    if (
+      d.getFullYear() !== y ||
+      d.getMonth() !== month - 1 ||
+      d.getDate() !== day
+    ) {
+      return new Date(NaN);
+    }
+
+    return d;
   }
 
-  // Fallback: let the browser try
-  return new Date(s);
+  // Fallback: native parsing for named-month strings like "02 Jan 2025"
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? new Date(NaN) : d;
 }
 
 

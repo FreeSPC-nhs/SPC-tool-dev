@@ -1439,6 +1439,24 @@ Open project
   Use <em>Date / time</em> for time-series SPC, or <em>Sequence / category</em> to plot rows in their original order.
 </div>
 
+<div id="dateFormatRow" style="margin-top:0.6rem;">
+  <label>
+    Date format for numeric dates
+    <select id="dateFormatPreference">
+      <option value="uk" selected>UK / day-first (dd/mm/yyyy)</option>
+      <option value="us">US / month-first (mm/dd/yyyy)</option>
+      <option value="auto">Auto-detect</option>
+      <option value="iso-only">ISO / Excel dates only</option>
+    </select>
+  </label>
+
+  <div class="hint small-hint" style="margin-top:0.2rem;">
+    Applies to ambiguous numeric dates such as 01/02/2024. ISO dates like 2024-02-01 and Excel dates are handled automatically.
+  </div>
+
+  <div id="dateFormatWarning" class="hint" style="display:none; margin-top:0.3rem; color:#8a3b00;"></div>
+</div>
+
 </div>
 </div>
 <!-- TAB 3: LABELS -->
@@ -1852,8 +1870,17 @@ Hide target line
           </p>
 
           <p>
-            The tool tries to suggest sensible X and Y columns automatically, but you can change them yourself at any time.
-          </p>
+  The tool tries to suggest sensible X and Y columns automatically, but you can change them yourself at any time.
+</p>
+
+<p>
+  If your date column uses numeric dates such as <strong>01/02/2024</strong>, use the
+  <strong>Date format for numeric dates</strong> setting so the tool interprets them correctly.
+</p>
+
+<p class="hint">
+  Default: <strong>UK day-first (dd/mm/yyyy)</strong>.
+</p>
         </details>
 
         <details>
