@@ -266,6 +266,11 @@ button:disabled {
   font-size: 0.8rem;
 }
 
+.chart-disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 /* Override the generic sidebar label rule for these */
 .sidebar .radio-pill {
   display: inline-flex;   /* cancels label { display:block } */
@@ -1402,6 +1407,8 @@ Open project
     If you’re not sure, use <strong>Help me choose</strong>.
   </div>
 </details>
+
+<div id="chartTypeAvailabilityHint" class="hint small-hint" style="margin-top:0.35rem;" aria-live="polite"></div>
 
 <div style="display:flex; gap:0.4rem; flex-wrap:wrap; margin-top:0.5rem; margin-bottom:0.5rem;">
   <button id="helpChooseChartBtn" type="button" class="help-btn">

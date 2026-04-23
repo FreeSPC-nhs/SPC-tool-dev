@@ -261,6 +261,7 @@ const enableRareRunTrendCheckbox = document.getElementById("enableRareRunTrend")
 const rareRulesRow = document.getElementById("rareRulesRow");
 
 const conservativeRulesMessage = document.getElementById("conservativeRulesMessage");
+const chartTypeAvailabilityHint = document.getElementById("chartTypeAvailabilityHint");
 
 const flagSpecialCauseOnChartCheckbox = document.getElementById("flagSpecialCauseOnChart");
 const lclClampRow = document.getElementById("lclClampRow");
@@ -1341,8 +1342,11 @@ function loadRows(rows) {
   // ------------------------------------------------------------
   // LEVELS 1–2: populate dropdowns with filtering + smart defaults
   // ------------------------------------------------------------
-  if (typeof applyColumnIntelligence === "function") {
+    if (typeof applyColumnIntelligence === "function") {
     applyColumnIntelligence(chartTypeNow);
+    if (typeof applyChartTypeAvailability === "function") {
+      applyChartTypeAvailability();
+    }
   } else {
     // Fallback: populate all dropdowns with all columns (old behaviour)
     columns.forEach((col) => {
@@ -3076,6 +3080,210 @@ if (!axisTypeManuallyChanged) {
 
 }
 
+function getChartTypeRadioInput(chartType) {
+  return document.querySelector(`input[name='chartType'][value='${chartType}']`);
+}
+
+function getChartTypeRadioLabel(chartType) {
+  const input = getChartTypeRadioInput(chartType);
+  return input ? input.closest('label') : null;
+}
+
+function getFirstEnabledChartType() {
+  const radios = Array.from(document.querySelectorAll("input[name='chartType']"));
+  const firstEnabled = radios.find(r => !r.disabled);
+  return firstEnabled ? firstEnabled.value : "run";
+}
+
+function countValidNumericPointsForColumn(colName) {
+  if (!rawRows || !rawRows.length || !colName) return 0;
+  let n = 0;
+  for (const row of rawRows) {
+    const y = toNumericValue(row[colName]);
+    if (Number.isFinite(y)) n++;
+  }
+  return n;
+}
+
+function getSelectedOrSuggestedValueColumn(chartType) {
+  const selected = valueSelect?.value || "";
+  if (selected) return selected;
+  if (typeof chooseDefaultsForChart === "function") {
+    return chooseDefaultsForChart(chartType)?.yCol || "";
+  }
+  return "";
+}
+
+function getChartAvailability() {
+  const out = {};
+  const noDataReason = "Load data to assess which chart types are available.";
+
+  for (const chartType of ["run", "xmr", "c", "p", "u", "xbars", "t", "g"]) {
+    out[chartType] = { enabled: true, reason: "" };
+  }
+
+  if (!rawRows || !rawRows.length) {
+    for (const key of Object.keys(out)) {
+      if (key === "run") continue;
+      out[key] = { enabled: false, reason: noDataReason };
+    }
+    return out;
+  }
+
+  const numericNonDateCols = allColumns.filter(c => {
+    const p = getProfile(c);
+    return p?.isNumeric && !p?.looksLikeDate;
+  });
+
+  const countLikeNonNegCols = numericNonDateCols.filter(c => {
+    const p = getProfile(c);
+    return p?.isMostlyInteger && !p?.hasNeg;
+  });
+
+  const positiveCountLikeCols = countLikeNonNegCols.filter(c => {
+    const p = getProfile(c);
+    return Number.isFinite(p?.min) && p.min > 0;
+  });
+
+  const repeatingSubgroupCols = allColumns.filter(c => {
+    const p = getProfile(c);
+    return p && !p.looksLikeDate && p.repeatsOften;
+  });
+
+  const dateLikeCols = allColumns.filter(c => getProfile(c)?.looksLikeDate);
+  const gapLikeCols = numericNonDateCols.filter(c => countValidNumericPointsForColumn(c) >= 3);
+
+  const xmrValueCol = getSelectedOrSuggestedValueColumn("xmr");
+  const xmrValidPoints = countValidNumericPointsForColumn(xmrValueCol);
+  if (xmrValidPoints < 12) {
+    out.xmr = {
+      enabled: false,
+      reason: `Less than 12 data points available in "${xmrValueCol || "the selected value column"}" — this is a minimum requirement for a valid XmR chart.`
+    };
+  }
+
+  if (!countLikeNonNegCols.length) {
+    out.c = {
+      enabled: false,
+      reason: "No non-negative whole-number count column is available yet — C charts need counts per time period."
+    };
+  }
+
+  let hasValidPPair = false;
+  if (countLikeNonNegCols.length >= 2) {
+    for (const numer of countLikeNonNegCols) {
+      for (const denom of countLikeNonNegCols) {
+        if (numer === denom) continue;
+        if (scorePChartPair(numer, denom) > -Infinity) {
+          hasValidPPair = true;
+          break;
+        }
+      }
+      if (hasValidPPair) break;
+    }
+  }
+  if (!hasValidPPair) {
+    out.p = {
+      enabled: false,
+      reason: "No suitable numerator/denominator pair is available yet — P charts need two whole-number columns where the numerator is part of the denominator."
+    };
+  }
+
+  if (countLikeNonNegCols.length < 2 || !positiveCountLikeCols.length) {
+    out.u = {
+      enabled: false,
+      reason: "No suitable count/opportunities pair is available yet — U charts need a whole-number count column plus a positive opportunities column."
+    };
+  }
+
+  if (!numericNonDateCols.length || !repeatingSubgroupCols.length) {
+    out.xbars = {
+      enabled: false,
+      reason: "X̄–S charts need a numeric measurement column and a subgroup column with repeated subgroup labels."
+    };
+  }
+
+  if (!dateLikeCols.length && !gapLikeCols.length) {
+    out.t = {
+      enabled: false,
+      reason: "T charts need either event dates or a numeric time-between-events column."
+    };
+  }
+
+  if (!positiveCountLikeCols.length) {
+    out.g = {
+      enabled: false,
+      reason: "G charts need a whole-number column where all values are at least 1, because they plot opportunities between rare events."
+    };
+  }
+
+  return out;
+}
+
+function applyChartTypeAvailability() {
+  const availability = getChartAvailability();
+  let selectedInput = document.querySelector("input[name='chartType']:checked");
+  let selectedType = selectedInput?.value || "run";
+
+  Object.entries(availability).forEach(([chartType, state]) => {
+    const input = getChartTypeRadioInput(chartType);
+    const label = getChartTypeRadioLabel(chartType);
+    if (!input || !label) return;
+
+    const reason = state.reason || "";
+    input.disabled = !state.enabled;
+    input.title = reason;
+    label.title = reason;
+    label.classList.toggle("chart-disabled", !state.enabled);
+    label.setAttribute("aria-disabled", state.enabled ? "false" : "true");
+  });
+
+  if (selectedInput && selectedInput.disabled) {
+    const fallbackType = availability.run?.enabled ? "run" : getFirstEnabledChartType();
+    const fallbackInput = getChartTypeRadioInput(fallbackType);
+    if (fallbackInput) {
+      fallbackInput.checked = true;
+      selectedInput = fallbackInput;
+      selectedType = fallbackType;
+    }
+  }
+
+  if (chartTypeAvailabilityHint) {
+    const state = availability[selectedType];
+    chartTypeAvailabilityHint.textContent = state?.enabled
+      ? ""
+      : (state.reason || "This chart type is not available for the current data.");
+  }
+
+  return availability;
+}
+
+function refreshChartTypeAvailability() {
+  const availability = applyChartTypeAvailability();
+  const currentType = getSelectedChartType_NoSideEffects();
+  if (rawRows && rawRows.length) {
+    updateUIForChartType(currentType);
+  }
+  return availability;
+}
+
+function isSelectedChartTypeAvailable() {
+  const availability = getChartAvailability();
+  const currentType = getSelectedChartType_NoSideEffects();
+  return !!availability[currentType]?.enabled;
+}
+
+function getSelectedChartTypeUnavailableReason() {
+  const availability = getChartAvailability();
+  const currentType = getSelectedChartType_NoSideEffects();
+  return availability[currentType]?.reason || "";
+}
+
+function syncChartTypeAvailabilityMessage() {
+  if (!chartTypeAvailabilityHint) return;
+  const reason = getSelectedChartTypeUnavailableReason();
+  chartTypeAvailabilityHint.textContent = reason || "";
+}
 
 function getRuleSettings() {
   const shift = shiftRulePointsInput ? parseInt(shiftRulePointsInput.value, 10) : NaN;
@@ -3370,8 +3578,11 @@ function updateUIForChartType(chartType) {
   // Whenever the chart type changes, rebuild dropdown options
   // (filtering) and apply sensible defaults for this chart type.
   // ------------------------------------------------------------
-  if (rawRows && rawRows.length && typeof applyColumnIntelligence === "function") {
+    if (rawRows && rawRows.length && typeof applyColumnIntelligence === "function") {
     applyColumnIntelligence(chartType);
+  }
+  if (typeof syncChartTypeAvailabilityMessage === "function") {
+    syncChartTypeAvailabilityMessage();
   }
 
     // ---- Optional UX polish: avoid third == y by default ----
@@ -10899,36 +11110,23 @@ function countValidNumericPoints() {
 
 function enforceChartTypeSuitabilityAndRegen() {
   if (!rawRows || !rawRows.length) return;
-    updateMrToggleVisibility();
-  const chartType = getSelectedChartType_NoSideEffects();
-  const valueCol = valueSelect?.value;
 
-  let validPoints = 0;
-  if (valueCol) {
-    for (const row of rawRows) {
-      const y = toNumericValue(row[valueCol]);
-      if (isFinite(y)) validPoints++;
-    }
-  }
+  updateMrToggleVisibility();
+  const beforeType = getSelectedChartType_NoSideEffects();
+  const availability = applyChartTypeAvailability();
+  const afterType = getSelectedChartType_NoSideEffects();
 
-  const minXmr = 12;
-
-  if (chartType === "xmr" && validPoints < minXmr) {
-    showError(
-      `XmR charts need at least ${minXmr} valid numeric points. ` +
-      `You currently have ${validPoints}. Switching back to a run chart.`
-    );
-
-    // revert to run chart
-    const runRadio = document.querySelector(
-      "input[name='chartType'][value='run']"
-    );
-    if (runRadio) runRadio.checked = true;
-
+  if (!availability[afterType]?.enabled) {
+    const reason = availability[afterType]?.reason || "This chart type is not available for the current data.";
+    showError(reason);
     return;
   }
 
-  // Suitable → regenerate immediately
+  if (beforeType !== afterType) {
+    const reason = availability[beforeType]?.reason || "The previously selected chart type is not available for the current data.";
+    showError(`${reason} Switched to ${getChartTypeDisplayName(afterType)}.`);
+  }
+
   generateButton.click();
 }
 
