@@ -458,22 +458,15 @@ body.sidebar-collapsed .main {
 }
 
 .data-editor-intro-hint{
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-}
-
-.data-editor-intro-hint .data-editor-help-inline{
-  margin-left: 0;
+  margin-bottom: 0.6rem;
+  line-height: 1.35;
 }
 
 .data-editor-help-inline{
   position: relative;
-  display: inline-flex;
-  align-items: center;
+  display: inline-block;
   margin-left: 0.35rem;
-  flex-shrink: 0;
+  vertical-align: baseline;
 }
 
 .data-editor-help-btn{
@@ -501,8 +494,8 @@ body.sidebar-collapsed .main {
 
 .data-editor-help-popup{
   position: absolute;
-  top: calc(100% + 0.35rem);
-  left: -0.25rem;
+  top: calc(100% + 0.2rem);
+  left: 0;
   min-width: 290px;
   max-width: 340px;
   padding: 0.65rem 0.75rem;
@@ -2087,7 +2080,7 @@ Hide target line
       <div id="ruleExplainerBody">
         <!-- Filled by JS -->
       </div>
-
+	
       <div style="display:flex; justify-content:flex-end; margin-top:1rem;">
         <button type="button" onclick="toggleRuleExplainerModal(false)">Close</button>
       </div>
@@ -2100,12 +2093,9 @@ Hide target line
     <h2>Data editor</h2>
 
     <p class="hint data-editor-intro-hint">
-  <span>
-    Paste data directly into the grid, or use this editor to review Excel worksheets before importing.
-    You can switch worksheets, delete unwanted rows/columns, and then click
-    <strong>Apply data</strong>.
-  </span>
-
+  Paste data directly into the grid, or use this editor to review Excel worksheets before importing.
+  You can switch worksheets, delete unwanted rows/columns, and then click
+  <strong>Apply data</strong>.
   <span class="data-editor-help-inline">
     <button
       id="dataEditorDeleteHelpBtn"
@@ -2117,7 +2107,7 @@ Hide target line
       How do I delete rows/columns?
     </button>
 
-    <div
+    <span
       id="dataEditorDeleteHelpPopup"
       class="data-editor-help-popup"
       role="tooltip"
@@ -2126,7 +2116,7 @@ Hide target line
       • Right-click a <strong>row number</strong> to delete a row<br>
       • Right-click a <strong>column heading</strong> to delete a column<br>
       • You can also insert rows/columns the same way
-    </div>
+    </span>
   </span>
 </p>
 
