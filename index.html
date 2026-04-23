@@ -995,6 +995,34 @@ body.modal-open {
 }
 .data-editor-status strong{ color:#003087; }
 
+.data-editor-workbook-bar {
+  margin: 0.25rem 0 0.5rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid #d8dde0;
+  border-radius: 0.4rem;
+  background: #f8fbfc;
+}
+
+.data-editor-workbook-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.35rem;
+}
+
+.data-editor-sheet-label {
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  white-space: nowrap;
+}
+
+#dataEditorSheetSelect {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+}
+
 /* PDF export: try to keep each period summary together */
 .pdf-avoid-break {
   break-inside: avoid;
@@ -2001,10 +2029,21 @@ Hide target line
     <h2>Data editor</h2>
 
     <p class="hint">
-      Paste data from Excel directly into the grid (you can paste many columns at once).
-      Choose whether the first row contains column headings. When you click
-      <strong>Apply data</strong>, the chart options will update to use this data.
+      Paste data directly into the grid, or use this editor to review Excel worksheets before importing.
+      You can switch worksheets, delete unwanted rows/columns, and then click
+      <strong>Apply data</strong>.
     </p>
+
+    <div id="dataEditorWorkbookBar" class="data-editor-workbook-bar" style="display:none;">
+      <div class="data-editor-workbook-row">
+        <label for="dataEditorSheetSelect" class="data-editor-sheet-label">
+          <strong>Worksheet:</strong>
+        </label>
+        <select id="dataEditorSheetSelect"></select>
+      </div>
+
+      <div id="dataEditorWorkbookStatus" class="data-editor-status" aria-live="polite"></div>
+    </div>
 
     <div class="data-editor-controls">
       <label class="data-editor-checkbox">
@@ -2012,12 +2051,11 @@ Hide target line
         First row contains headers
       </label>
 
-      <!-- Optional: only keep this if you implement auto-detect in JS -->
       <button id="dataEditorDetectHeadersButton" type="button" class="data-editor-secondary">
         Auto-detect
       </button>
     </div>
-    
+
     <div id="dataEditorHeaderStatus" class="data-editor-status" aria-live="polite"></div>
 
     <div id="dataEditorGrid" class="data-editor-grid"></div>

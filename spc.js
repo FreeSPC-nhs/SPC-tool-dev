@@ -265,6 +265,15 @@ let dataEditorGrid = null; // jspreadsheet instance
 const dataEditorHasHeaders = document.getElementById("dataEditorHasHeaders");
 const dataEditorDetectHeadersButton = document.getElementById("dataEditorDetectHeadersButton");
 const dataEditorHeaderStatus = document.getElementById("dataEditorHeaderStatus");
+const dataEditorWorkbookBar = document.getElementById("dataEditorWorkbookBar");
+const dataEditorSheetSelect = document.getElementById("dataEditorSheetSelect");
+const dataEditorWorkbookStatus = document.getElementById("dataEditorWorkbookStatus");
+
+let dataEditorSourceMode = "manual"; // "manual" | "excel"
+let dataEditorWorkbook = null;
+let dataEditorWorkbookSheetNames = [];
+let dataEditorCurrentSheetName = "";
+
 const sheetPickerOverlay = document.getElementById("sheetPickerOverlay");
 const sheetPickerSelect = document.getElementById("sheetPickerSelect");
 const sheetPickerConfirmButton = document.getElementById("sheetPickerConfirmButton");
@@ -683,7 +692,7 @@ function sheetToRowObjects(worksheet) {
   });
 }
 
-async function readExcelFileAsRows(file) {
+async function readExcelWorkbook(file) {
   const buffer = await file.arrayBuffer();
   const workbook = XLSX.read(buffer, {
     type: "array",
@@ -695,24 +704,7 @@ async function readExcelFileAsRows(file) {
     throw new Error("No worksheets were found in the Excel file.");
   }
 
-   let selectedSheetName = sheetNames[0];
-
-  if (sheetNames.length > 1) {
-    const pickedSheet = await openSheetPicker(sheetNames);
-    if (!pickedSheet) {
-      return null;
-    }
-    selectedSheetName = pickedSheet;
-  }
-
-  const worksheet = workbook.Sheets[selectedSheetName];
-  const rows = sheetToRowObjects(worksheet);
-
-  if (!rows.length) {
-    throw new Error("The selected worksheet did not contain any data rows.");
-  }
-
-  return rows;
+  return workbook;
 }
 
 function resetStateAfterDataLoad() {
@@ -956,6 +948,14 @@ function isProbablyHeaderRow(row) {
 
   // If mostly text labels => header row
   return headerish >= datish && headerish > 0;
+}
+
+if (dataEditorSheetSelect) {
+  dataEditorSheetSelect.addEventListener("change", () => {
+    const nextSheet = dataEditorSheetSelect.value;
+    if (!nextSheet || nextSheet === dataEditorCurrentSheetName) return;
+    loadWorkbookSheetIntoDataEditor(nextSheet);
+  });
 }
 
 function getNonBlankGridRows() {
@@ -1684,12 +1684,9 @@ fileInput.addEventListener("change", async () => {
   const isCsv = lowerName.endsWith(".csv");
 
   try {
-    if (isExcel) {
-      const rows = await readExcelFileAsRows(file);
-      if (!rows) return; // user cancelled multi-sheet confirm
-
-      if (!loadRows(rows)) return;
-      resetStateAfterDataLoad();
+        if (isExcel) {
+      const workbook = await readExcelWorkbook(file);
+      openExcelWorkbookInDataEditor(workbook, workbook.SheetNames[0] || "");
       return;
     }
 
@@ -4628,87 +4625,192 @@ function buildAnnotationConfig(labels) {
   return cfg;
 }
 
-function openDataEditor() {
-  if (!dataEditorOverlay || !dataEditorGridEl) return;
+function updateDataEditorWorkbookUi() {
+  if (!dataEditorWorkbookBar || !dataEditorSheetSelect || !dataEditorWorkbookStatus) return;
 
-  const { headers, data } = objectsToSheet(rawRows);
-  gridHeaders = headers;
+  const isExcelMode =
+    dataEditorSourceMode === "excel" &&
+    dataEditorWorkbook &&
+    Array.isArray(dataEditorWorkbookSheetNames) &&
+    dataEditorWorkbookSheetNames.length > 0;
 
-  const headersKey = JSON.stringify(headers);
+  dataEditorWorkbookBar.style.display = isExcelMode ? "block" : "none";
 
-  // If headers changed (name or count), rebuild the grid
+  if (!isExcelMode) {
+    dataEditorSheetSelect.innerHTML = "";
+    dataEditorWorkbookStatus.textContent = "";
+    return;
+  }
+
+  dataEditorSheetSelect.innerHTML = "";
+  dataEditorWorkbookSheetNames.forEach(name => {
+    const opt = document.createElement("option");
+    opt.value = name;
+    opt.textContent = name;
+    dataEditorSheetSelect.appendChild(opt);
+  });
+
+  if (dataEditorCurrentSheetName && dataEditorWorkbookSheetNames.includes(dataEditorCurrentSheetName)) {
+    dataEditorSheetSelect.value = dataEditorCurrentSheetName;
+  }
+
+  dataEditorWorkbookStatus.innerHTML =
+    `Workbook loaded. You can switch worksheet here, trim rows/columns in the grid, and then click <strong>Apply data</strong>.`;
+}
+
+function worksheetToEditorGrid(worksheet) {
+  if (!worksheet) {
+    return {
+      headers: ["Column1", "Column2"],
+      data: [["", ""]]
+    };
+  }
+
+  const rows2D = XLSX.utils.sheet_to_json(worksheet, {
+    header: 1,
+    raw: false,
+    defval: "",
+    blankrows: false
+  });
+
+  const maxCols = rows2D.reduce((m, r) => Math.max(m, Array.isArray(r) ? r.length : 0), 0);
+  const safeColCount = Math.max(2, maxCols || 0);
+
+  const headers = Array.from({ length: safeColCount }, (_, i) => `Column${i + 1}`);
+
+  const data = rows2D.length
+    ? rows2D.map(row => {
+        const arr = Array.isArray(row) ? row.slice() : [];
+        while (arr.length < safeColCount) arr.push("");
+        return arr.map(v => normalizeWorkbookCellValue(v));
+      })
+    : [Array.from({ length: safeColCount }, () => "")];
+
+  return { headers, data };
+}
+
+function renderDataEditorGrid(headers, data) {
+  if (!dataEditorGridEl) return;
+
+  gridHeaders = Array.isArray(headers) && headers.length ? headers.slice() : ["Column1", "Column2"];
+  const headersKey = JSON.stringify(gridHeaders);
+
   const mustRebuild = !dataEditorGrid || headersKey !== lastGridHeadersKey;
 
   if (mustRebuild) {
-    // If one already exists, destroy it cleanly
     if (dataEditorGrid) {
       try { dataEditorGrid.destroy(); } catch (e) { console.warn("Grid destroy failed:", e); }
       dataEditorGrid = null;
     }
 
-    // Clear container to avoid duplicated UI remnants
     dataEditorGridEl.innerHTML = "";
 
-dataEditorGrid = jspreadsheet(dataEditorGridEl, {
-  data,
-  columns: headers.map(h => ({ title: h, width: 180 })),
-  minDimensions: [Math.max(headers.length, 10), Math.max(20, data.length + 10)],
+    dataEditorGrid = jspreadsheet(dataEditorGridEl, {
+      data,
+      columns: gridHeaders.map(h => ({ title: h, width: 180 })),
+      minDimensions: [Math.max(gridHeaders.length, 10), Math.max(20, data.length + 10)],
 
-  allowInsertRow: true,
-  allowDeleteRow: true,
-  allowInsertColumn: true,
-  allowDeleteColumn: true,
+      allowInsertRow: true,
+      allowDeleteRow: true,
+      allowInsertColumn: true,
+      allowDeleteColumn: true,
 
-  onpaste: function(instance, pasteData, startCol, startRow) {
-    if (!pasteData || typeof pasteData !== "string") return;
+      onpaste: function(instance, pasteData, startCol, startRow) {
+        if (!pasteData || typeof pasteData !== "string") return;
 
-    const rows = pasteData.split(/\r?\n/).filter(r => r.length > 0);
-    const colCount = rows.reduce((m, r) => Math.max(m, r.split("\t").length), 0);
-    const rowCount = rows.length;
+        const rows = pasteData.split(/\r?\n/).filter(r => r.length > 0);
+        const colCount = rows.reduce((m, r) => Math.max(m, r.split("\t").length), 0);
+        const rowCount = rows.length;
 
-    const currentCols = instance.options.columns.length;
-    const currentRows = instance.getData().length;
+        const currentCols = instance.options.columns.length;
+        const currentRows = instance.getData().length;
 
-    const neededCols = startCol + colCount;
-    const neededRows = startRow + rowCount;
+        const neededCols = startCol + colCount;
+        const neededRows = startRow + rowCount;
 
-    if (neededCols > currentCols) {
-      const addN = neededCols - currentCols;
-      instance.insertColumn(addN, currentCols);
-      for (let i = currentCols; i < neededCols; i++) {
-        instance.setHeader(i, `Column${i + 1}`);
+        if (neededCols > currentCols) {
+          const addN = neededCols - currentCols;
+          instance.insertColumn(addN, currentCols);
+          for (let i = currentCols; i < neededCols; i++) {
+            instance.setHeader(i, `Column${i + 1}`);
+          }
+        }
+
+        if (neededRows > currentRows) {
+          const addN = neededRows - currentRows;
+          instance.insertRow(addN);
+        }
+
+        setTimeout(() => {
+          if (dataEditorHasHeaders) dataEditorHasHeaders.checked = detectHeadersFromGrid();
+          renderHeaderStatus();
+        }, 0);
       }
-    }
-
-    if (neededRows > currentRows) {
-      const addN = neededRows - currentRows;
-      instance.insertRow(addN);
-    }
-
-    // After paste completes, re-run auto-detect + update the status line
-    setTimeout(() => {
-      if (dataEditorHasHeaders) dataEditorHasHeaders.checked = detectHeadersFromGrid();
-      renderHeaderStatus();
-    }, 0);
-  }
-});
-
-if (dataEditorHasHeaders) {
-  dataEditorHasHeaders.checked = detectHeadersFromGrid();
-}
-renderHeaderStatus();
-
-
+    });
 
     lastGridHeadersKey = headersKey;
-  } else {
-    // Headers unchanged: just update data
+  } else if (dataEditorGrid && typeof dataEditorGrid.setData === "function") {
     dataEditorGrid.setData(data);
+
+    if (dataEditorGrid.options && Array.isArray(dataEditorGrid.options.columns)) {
+      gridHeaders.forEach((h, i) => {
+        if (dataEditorGrid.options.columns[i]) {
+          dataEditorGrid.options.columns[i].title = h;
+        }
+        if (typeof dataEditorGrid.setHeader === "function") {
+          dataEditorGrid.setHeader(i, h);
+        }
+      });
+    }
   }
+
+  if (dataEditorHasHeaders) dataEditorHasHeaders.checked = detectHeadersFromGrid();
+  renderHeaderStatus();
+}
+
+function loadWorkbookSheetIntoDataEditor(sheetName) {
+  if (!dataEditorWorkbook || !sheetName) return;
+
+  const worksheet = dataEditorWorkbook.Sheets[sheetName];
+  const { headers, data } = worksheetToEditorGrid(worksheet);
+
+  dataEditorCurrentSheetName = sheetName;
+  updateDataEditorWorkbookUi();
+  renderDataEditorGrid(headers, data);
+}
+
+function openExcelWorkbookInDataEditor(workbook, initialSheetName) {
+  if (!dataEditorOverlay || !dataEditorGridEl || !workbook) return;
+
+  dataEditorSourceMode = "excel";
+  dataEditorWorkbook = workbook;
+  dataEditorWorkbookSheetNames = Array.isArray(workbook.SheetNames) ? workbook.SheetNames.slice() : [];
+  dataEditorCurrentSheetName =
+    initialSheetName && dataEditorWorkbookSheetNames.includes(initialSheetName)
+      ? initialSheetName
+      : (dataEditorWorkbookSheetNames[0] || "");
+
+  updateDataEditorWorkbookUi();
+  loadWorkbookSheetIntoDataEditor(dataEditorCurrentSheetName);
 
   dataEditorOverlay.style.display = "flex";
 }
 
+function openDataEditor() {
+  if (!dataEditorOverlay || !dataEditorGridEl) return;
+
+  dataEditorSourceMode = "manual";
+  dataEditorWorkbook = null;
+  dataEditorWorkbookSheetNames = [];
+  dataEditorCurrentSheetName = "";
+
+  updateDataEditorWorkbookUi();
+
+  const { headers, data } = objectsToSheet(rawRows);
+  renderDataEditorGrid(headers, data);
+
+  dataEditorOverlay.style.display = "flex";
+}
 
 function closeDataEditor() {
   if (dataEditorOverlay) {
@@ -4724,7 +4826,13 @@ if (openDataEditorButton) {
 
 if (dataEditorCancelButton) {
   dataEditorCancelButton.addEventListener("click", () => {
-    closeDataEditor();
+    dataEditorSourceMode = "manual";
+    dataEditorWorkbook = null;
+    dataEditorWorkbookSheetNames = [];
+    dataEditorCurrentSheetName = "";
+    updateDataEditorWorkbookUi();
+
+    dataEditorOverlay.style.display = "none";
   });
 }
 
@@ -4886,14 +4994,20 @@ if (useHeaders !== autoGuess) {
       if (!loadRows(rows)) return;
       loadedOk = true;
 
-      clearError();
+            clearError();
 
-      // Reset annotations/splits etc... (keep your existing block)
+      // Reset annotations/splits etc...
       annotations = [];
       if (annotationDateInput) annotationDateInput.value = "";
       if (annotationLabelInput) annotationLabelInput.value = "";
       splits = [];
       if (splitPointSelect) splitPointSelect.innerHTML = "";
+
+      dataEditorSourceMode = "manual";
+      dataEditorWorkbook = null;
+      dataEditorWorkbookSheetNames = [];
+      dataEditorCurrentSheetName = "";
+      updateDataEditorWorkbookUi();
 
       try { closeDataEditor(); } catch (uiErr) { console.warn("closeDataEditor failed:", uiErr); }
 
