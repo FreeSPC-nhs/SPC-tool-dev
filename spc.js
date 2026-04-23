@@ -239,6 +239,10 @@ const spcHelperIntro    = document.getElementById("spcHelperIntro");
 const spcHelperChipsGeneral = document.getElementById("spcHelperChipsGeneral");
 const spcHelperChipsChart   = document.getElementById("spcHelperChipsChart");
 const spcHelperOutput   = document.getElementById("spcHelperOutput");
+const spcHelperToggleGeneral = document.getElementById("spcHelperToggleGeneral");
+const spcHelperToggleChart = document.getElementById("spcHelperToggleChart");
+const spcHelperGeneralSection = document.getElementById("spcHelperGeneralSection");
+const spcHelperChartSection = document.getElementById("spcHelperChartSection");
 
 const shiftRulePointsInput = document.getElementById("shiftRulePoints");
 const trendRulePointsInput = document.getElementById("trendRulePoints");
@@ -8775,6 +8779,26 @@ function renderMrChart(mrLabels, mrValues, avgMR, uclMR) {
 
 // ---- AI helper function  -----
 
+function setHelperSectionExpanded(toggleEl, bodyEl, expanded) {
+  if (!toggleEl || !bodyEl) return;
+  toggleEl.setAttribute("aria-expanded", expanded ? "true" : "false");
+  bodyEl.classList.toggle("is-collapsed", !expanded);
+}
+
+function toggleHelperSection(toggleEl, bodyEl) {
+  if (!toggleEl || !bodyEl) return;
+  const isExpanded = toggleEl.getAttribute("aria-expanded") === "true";
+  setHelperSectionExpanded(toggleEl, bodyEl, !isExpanded);
+}
+
+function updateHelperSectionDefaults(hasChart) {
+  // Default behavior:
+  // - no chart: General open, My chart collapsed
+  // - has chart: General collapsed, My chart open
+  setHelperSectionExpanded(spcHelperToggleGeneral, spcHelperGeneralSection, !hasChart);
+  setHelperSectionExpanded(spcHelperToggleChart, spcHelperChartSection, !!hasChart);
+}
+
 function answerSpcQuestion(question) {
   if (window.SPC_HELPER_LIBRARY && typeof window.SPC_HELPER_LIBRARY.answerQuestion === "function") {
     return window.SPC_HELPER_LIBRARY.answerQuestion(question);
@@ -8833,9 +8857,9 @@ function renderHelperState() {
     if (!hasChart) spcHelperChipsChart.classList.add("is-disabled");
     else spcHelperChipsChart.classList.remove("is-disabled");
   }
+
+  updateHelperSectionDefaults(hasChart);
 }
-
-
 
 
 // ===============================
@@ -10775,6 +10799,31 @@ function attachSpcHelperSuggestionToggle() {
   });
 }
 
+function attachSpcHelperSectionToggles() {
+  const generalBtn = document.getElementById("spcHelperToggleGeneral");
+  const chartBtn = document.getElementById("spcHelperToggleChart");
+  const generalBody = document.getElementById("spcHelperGeneralSection");
+  const chartBody = document.getElementById("spcHelperChartSection");
+
+  if (generalBtn && generalBody && generalBtn.dataset.bound !== "1") {
+    generalBtn.dataset.bound = "1";
+    generalBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleHelperSection(generalBtn, generalBody);
+    });
+  }
+
+  if (chartBtn && chartBody && chartBtn.dataset.bound !== "1") {
+    chartBtn.dataset.bound = "1";
+    chartBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleHelperSection(chartBtn, chartBody);
+    });
+  }
+}
+
 function toggleSpcHelper() {
   const panel = document.getElementById("spcHelperPanel");
   if (!panel) return;
@@ -10788,8 +10837,12 @@ function toggleSpcHelper() {
       spcHelperHasBeenOpened = true;
     }
 
-    // Ensure toggle button works
+        // Ensure toggle buttons work
     attachSpcHelperSuggestionToggle();
+    attachSpcHelperSectionToggles();
+
+    // Re-render helper state when opening so defaults reflect the current chart state
+    if (typeof renderHelperState === "function") renderHelperState();
 
     // When opening: show suggestions by default for discoverability
     setSpcHelperSuggestionsCollapsed(false);
