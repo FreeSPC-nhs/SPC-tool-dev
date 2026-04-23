@@ -450,6 +450,63 @@ body.sidebar-collapsed .main {
   margin: 0.5rem 0 0.25rem 0;
 }
 
+.data-editor-controls-left{
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.data-editor-help-wrap{
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.data-editor-help-btn{
+  background: transparent !important;
+  border: none !important;
+  color: #005eb8 !important;
+  padding: 0 !important;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.data-editor-help-btn:hover{
+  color: #003f87 !important;
+  background: transparent !important;
+}
+
+.data-editor-help-btn:focus{
+  outline: 2px solid #ffb81c;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.data-editor-help-popup{
+  position: absolute;
+  top: calc(100% + 0.45rem);
+  left: 0;
+  min-width: 290px;
+  max-width: 340px;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #c7d3da;
+  border-radius: 0.45rem;
+  background: #ffffff;
+  color: #222;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+  font-size: 0.82rem;
+  line-height: 1.35;
+  z-index: 1100;
+  display: none;
+}
+
+.data-editor-help-popup.show{
+  display: block;
+}
+
 /* Make this label not full-width (overrides global label display) */
 .data-editor-checkbox{
   display: inline-flex;
@@ -2045,11 +2102,36 @@ Hide target line
       <div id="dataEditorWorkbookStatus" class="data-editor-status" aria-live="polite"></div>
     </div>
 
-    <div class="data-editor-controls">
-      <label class="data-editor-checkbox">
-        <input type="checkbox" id="dataEditorHasHeaders" checked>
-        First row contains headers
-      </label>
+        <div class="data-editor-controls">
+      <div class="data-editor-controls-left">
+        <label class="data-editor-checkbox">
+          <input type="checkbox" id="dataEditorHasHeaders" checked>
+          First row contains headers
+        </label>
+
+        <div class="data-editor-help-wrap">
+          <button
+            id="dataEditorDeleteHelpBtn"
+            type="button"
+            class="data-editor-help-btn"
+            aria-label="How do I delete rows or columns?"
+            aria-expanded="false"
+            aria-controls="dataEditorDeleteHelpPopup">
+            How do I delete rows/columns?
+          </button>
+
+          <div
+            id="dataEditorDeleteHelpPopup"
+            class="data-editor-help-popup"
+            role="tooltip"
+            aria-hidden="true">
+            <strong>Editing tip</strong><br>
+            • Right-click a <strong>row number</strong> to delete a row<br>
+            • Right-click a <strong>column heading</strong> to delete a column<br>
+            • You can also insert rows/columns the same way
+          </div>
+        </div>
+      </div>
 
       <button id="dataEditorDetectHeadersButton" type="button" class="data-editor-secondary">
         Auto-detect

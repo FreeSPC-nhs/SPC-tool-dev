@@ -268,6 +268,8 @@ const dataEditorHeaderStatus = document.getElementById("dataEditorHeaderStatus")
 const dataEditorWorkbookBar = document.getElementById("dataEditorWorkbookBar");
 const dataEditorSheetSelect = document.getElementById("dataEditorSheetSelect");
 const dataEditorWorkbookStatus = document.getElementById("dataEditorWorkbookStatus");
+const dataEditorDeleteHelpBtn = document.getElementById("dataEditorDeleteHelpBtn");
+const dataEditorDeleteHelpPopup = document.getElementById("dataEditorDeleteHelpPopup");
 
 let dataEditorSourceMode = "manual"; // "manual" | "excel"
 let dataEditorWorkbook = null;
@@ -948,6 +950,33 @@ function isProbablyHeaderRow(row) {
 
   // If mostly text labels => header row
   return headerish >= datish && headerish > 0;
+}
+
+if (dataEditorDeleteHelpBtn && dataEditorDeleteHelpPopup) {
+  dataEditorDeleteHelpBtn.addEventListener("mouseenter", showDataEditorDeleteHelp);
+  dataEditorDeleteHelpBtn.addEventListener("mouseleave", hideDataEditorDeleteHelp);
+
+  dataEditorDeleteHelpBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleDataEditorDeleteHelp();
+  });
+
+  dataEditorDeleteHelpBtn.addEventListener("focus", showDataEditorDeleteHelp);
+  dataEditorDeleteHelpBtn.addEventListener("blur", hideDataEditorDeleteHelp);
+
+  dataEditorDeleteHelpPopup.addEventListener("mouseenter", showDataEditorDeleteHelp);
+  dataEditorDeleteHelpPopup.addEventListener("mouseleave", hideDataEditorDeleteHelp);
+
+  document.addEventListener("click", (e) => {
+    const clickedInsideHelp =
+      dataEditorDeleteHelpBtn.contains(e.target) ||
+      dataEditorDeleteHelpPopup.contains(e.target);
+
+    if (!clickedInsideHelp) {
+      hideDataEditorDeleteHelp();
+    }
+  });
 }
 
 if (dataEditorSheetSelect) {
@@ -4625,6 +4654,29 @@ function buildAnnotationConfig(labels) {
   return cfg;
 }
 
+function showDataEditorDeleteHelp() {
+  if (!dataEditorDeleteHelpBtn || !dataEditorDeleteHelpPopup) return;
+  dataEditorDeleteHelpPopup.classList.add("show");
+  dataEditorDeleteHelpBtn.setAttribute("aria-expanded", "true");
+  dataEditorDeleteHelpPopup.setAttribute("aria-hidden", "false");
+}
+
+function hideDataEditorDeleteHelp() {
+  if (!dataEditorDeleteHelpBtn || !dataEditorDeleteHelpPopup) return;
+  dataEditorDeleteHelpPopup.classList.remove("show");
+  dataEditorDeleteHelpBtn.setAttribute("aria-expanded", "false");
+  dataEditorDeleteHelpPopup.setAttribute("aria-hidden", "true");
+}
+
+function toggleDataEditorDeleteHelp() {
+  if (!dataEditorDeleteHelpPopup) return;
+  if (dataEditorDeleteHelpPopup.classList.contains("show")) {
+    hideDataEditorDeleteHelp();
+  } else {
+    showDataEditorDeleteHelp();
+  }
+}
+
 function updateDataEditorWorkbookUi() {
   if (!dataEditorWorkbookBar || !dataEditorSheetSelect || !dataEditorWorkbookStatus) return;
 
@@ -4826,6 +4878,8 @@ if (openDataEditorButton) {
 
 if (dataEditorCancelButton) {
   dataEditorCancelButton.addEventListener("click", () => {
+    hideDataEditorDeleteHelp();
+
     dataEditorSourceMode = "manual";
     dataEditorWorkbook = null;
     dataEditorWorkbookSheetNames = [];
@@ -5003,6 +5057,7 @@ if (useHeaders !== autoGuess) {
       splits = [];
       if (splitPointSelect) splitPointSelect.innerHTML = "";
 
+      hideDataEditorDeleteHelp();
       dataEditorSourceMode = "manual";
       dataEditorWorkbook = null;
       dataEditorWorkbookSheetNames = [];
