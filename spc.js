@@ -7006,6 +7006,50 @@ function toNumericValue(raw) {
   return isFinite(num) ? num : NaN;
 }
 
+function formatColumnName(colName, fallbackLabel = "this column") {
+  return colName ? `"${colName}"` : fallbackLabel;
+}
+
+function getSuggestedAlternativeColumn(currentCol, candidates = []) {
+  const filtered = (candidates || []).filter(c => c && c !== currentCol);
+  return filtered.length ? filtered[0] : "";
+}
+
+function buildAlternativeSuggestionText(alternativeCol, purposeText) {
+  if (!alternativeCol) return "";
+  return ` Try ${formatColumnName(alternativeCol)} instead${purposeText ? ` as the ${purposeText}` : ""}.`;
+}
+
+function getCountLikeColumnCandidates({ requirePositive = false } = {}) {
+  return allColumns.filter(col => {
+    const p = getProfile(col);
+    if (!p || !p.isNumeric || p.looksLikeDate || !p.isMostlyInteger || p.hasNeg) return false;
+    if (requirePositive) {
+      return Number.isFinite(p.min) && p.min > 0;
+    }
+    return true;
+  });
+}
+
+function getContinuousMeasureCandidates(excludeCols = []) {
+  return allColumns.filter(col => {
+    const p = getProfile(col);
+    if (!p || !p.isNumeric || p.looksLikeDate) return false;
+    if (excludeCols.includes(col)) return false;
+    if (p.looksIndexLike) return false;
+    return true;
+  });
+}
+
+function getRepeatingSubgroupCandidates(excludeCols = []) {
+  return allColumns.filter(col => {
+    const p = getProfile(col);
+    if (!p || p.looksLikeDate) return false;
+    if (excludeCols.includes(col)) return false;
+    return !!p.repeatsOften;
+  });
+}
+
 /* ============================================================
    VALIDATION HELPERS (P / U / C charts)
    - "error" => block chart generation
@@ -7016,56 +7060,120 @@ function isIntegerish(n) {
   return Number.isFinite(n) && Math.abs(n - Math.round(n)) < 1e-9;
 }
 
-function validateNonNegativeNumbers(arr, label) {
+function validateNonNegativeNumbers(arr, label, options = {}) {
+  const {
+    columnName = "",
+    alternativeColumn = "",
+    purposeText = ""
+  } = options;
+
   for (let i = 0; i < arr.length; i++) {
     const v = Number(arr[i]);
     if (!Number.isFinite(v)) {
-      return { level: "error", message: `${label} has a non-numeric value at row ${i + 1}.` };
+      return {
+        level: "error",
+        message:
+          `${label} uses ${formatColumnName(columnName, "the selected column")}, ` +
+          `but it contains a non-numeric value at row ${i + 1}.` +
+          buildAlternativeSuggestionText(alternativeColumn, purposeText)
+      };
     }
     if (v < 0) {
-      return { level: "error", message: `${label} has a negative value at row ${i + 1}.` };
-    }
-  }
-  return null;
-}
-
-function warnIfNonInteger(arr, label) {
-  for (let i = 0; i < arr.length; i++) {
-    const v = Number(arr[i]);
-    if (Number.isFinite(v) && !isIntegerish(v)) {
       return {
-        level: "warn",
+        level: "error",
         message:
-          `${label} has a non-integer value at row ${i + 1} (${v}). ` +
-          `Counts/denominators are usually whole numbers.\n\nGenerate the chart anyway?`
+          `${label} uses ${formatColumnName(columnName, "the selected column")}, ` +
+          `but it contains a negative value at row ${i + 1}.` +
+          buildAlternativeSuggestionText(alternativeColumn, purposeText)
       };
     }
   }
   return null;
 }
 
-function validateDenominatorPositive(arr, label) {
+function warnIfNonInteger(arr, label, options = {}) {
+  const {
+    columnName = "",
+    alternativeColumn = "",
+    purposeText = ""
+  } = options;
+
   for (let i = 0; i < arr.length; i++) {
     const v = Number(arr[i]);
-    if (!Number.isFinite(v)) {
-      return { level: "error", message: `${label} has a non-numeric value at row ${i + 1}.` };
-    }
-    if (v <= 0) {
-      return { level: "error", message: `${label} must be > 0 at row ${i + 1}.` };
+    if (Number.isFinite(v) && !isIntegerish(v)) {
+      return {
+        level: "warn",
+        message:
+          `${label} uses ${formatColumnName(columnName, "the selected column")}, ` +
+          `but row ${i + 1} has a non-integer value (${v}). ` +
+          `Counts and denominators are usually whole numbers.` +
+          buildAlternativeSuggestionText(alternativeColumn, purposeText) +
+          `\n\nGenerate the chart anyway?`
+      };
     }
   }
   return null;
 }
 
-function validateNumeratorNotGreaterThanDenom(numerArr, denomArr) {
-  for (let i = 0; i < numerArr.length; i++) {
-    const d = Number(numerArr[i]);
-    const n = Number(denomArr[i]);
-    if (Number.isFinite(d) && Number.isFinite(n) && d > n) {
+function validateDenominatorPositive(arr, label, options = {}) {
+  const {
+    columnName = "",
+    alternativeColumn = "",
+    purposeText = ""
+  } = options;
+
+  for (let i = 0; i < arr.length; i++) {
+    const v = Number(arr[i]);
+    if (!Number.isFinite(v)) {
       return {
         level: "error",
         message:
-          `P chart invalid at row ${i + 1}: numerator (d=${d}) is greater than denominator (n=${n}).`
+          `${label} uses ${formatColumnName(columnName, "the selected column")}, ` +
+          `but it contains a non-numeric value at row ${i + 1}.` +
+          buildAlternativeSuggestionText(alternativeColumn, purposeText)
+      };
+    }
+    if (v <= 0) {
+      return {
+        level: "error",
+        message:
+          `${label} uses ${formatColumnName(columnName, "the selected column")}, ` +
+          `but row ${i + 1} has value ${v}. Denominators/opportunities must be greater than 0.` +
+          buildAlternativeSuggestionText(alternativeColumn, purposeText)
+      };
+    }
+  }
+  return null;
+}
+
+function validateNumeratorNotGreaterThanDenom(numArr, denomArr, options = {}) {
+  const {
+    numeratorColumn = "",
+    denominatorColumn = "",
+    alternativeNumerator = "",
+    alternativeDenominator = ""
+  } = options;
+
+  for (let i = 0; i < numArr.length; i++) {
+    const num = Number(numArr[i]);
+    const den = Number(denomArr[i]);
+
+    if (Number.isFinite(num) && Number.isFinite(den) && num > den) {
+      let suggestion = "";
+      if (alternativeNumerator || alternativeDenominator) {
+        const parts = [];
+        if (alternativeNumerator) parts.push(`numerator ${formatColumnName(alternativeNumerator)}`);
+        if (alternativeDenominator) parts.push(`denominator ${formatColumnName(alternativeDenominator)}`);
+        suggestion = ` Try ${parts.join(" and ")} instead.`;
+      }
+
+      return {
+        level: "error",
+        message:
+          `P chart setup uses numerator ${formatColumnName(numeratorColumn, "the selected numerator column")} ` +
+          `and denominator ${formatColumnName(denominatorColumn, "the selected denominator column")}, ` +
+          `but row ${i + 1} has numerator ${num} greater than denominator ${den}.` +
+          suggestion
       };
     }
   }
@@ -7313,11 +7421,11 @@ if (thirdColumnRow && thirdColumnRow.style.display !== "none") {
   const thirdCol = thirdSelect ? thirdSelect.value : "";
 
   if (!thirdCol) {
-    showChartMessage("Please choose the required third column for this chart type.");
+    showChartMessage(`Please choose the required third column for this ${getChartTypeDisplayName(chartType)}. For example, use a denominator for a P chart or opportunities for a U chart.`);
     return;
   }
   if (thirdCol === yCol) {
-    showChartMessage("The third column should be different from the main value column.");
+    showChartMessage(`The third column is currently set to ${formatColumnName(thirdCol)} but it should be different from the main value column ${formatColumnName(yCol)}.`);
     return;
   }
 }
@@ -7346,17 +7454,33 @@ if (chartType === "run") {
   // VALIDATION: C chart (counts)
   // -----------------------------
   const cValues = points.map(p => p.y);
+  const cColumn = valueSelect?.value || "";
+  const cAlternative = getSuggestedAlternativeColumn(cColumn, getCountLikeColumnCandidates());
 
- if (!handleValidationResult(validateNonNegativeNumbers(cValues, "C chart count"), { manual: lastGenerateWasManual })) return;
- if (!handleValidationResult(warnIfNonInteger(cValues, "C chart count"), { manual: lastGenerateWasManual })) return;
+ if (!handleValidationResult(
+      validateNonNegativeNumbers(cValues, "C chart count", {
+        columnName: cColumn,
+        alternativeColumn: cAlternative,
+        purposeText: "count column"
+      }),
+      { manual: lastGenerateWasManual }
+    )) return;
 
+ if (!handleValidationResult(
+      warnIfNonInteger(cValues, "C chart count", {
+        columnName: cColumn,
+        alternativeColumn: cAlternative,
+        purposeText: "count column"
+      }),
+      { manual: lastGenerateWasManual }
+    )) return;
 
   drawCChart(points, baselineCount, labels);
 
 } else if (chartType === "p" || chartType === "u") {
   // P/U require a third column (denominator/opportunities)
   if (!thirdSelect || !thirdSelect.value) {
-    showError("This chart type needs a third column (denominator/opportunities).");
+    showError(`The ${getChartTypeDisplayName(chartType)} needs a third column. Please choose ${chartType === "p" ? "a denominator (total)" : "an opportunities column"} before generating the chart.`);
     return;
   }
 
@@ -7384,21 +7508,32 @@ if (chartType === "run") {
   const denomArr = pointsWithNOrdered.map(p => p.n);
 
   // Block: non-numeric or negative numerator
-  if (!handleValidationResult(validateNonNegativeNumbers(numerArr, chartType === "p" ? "P chart numerator (d)" : "U chart numerator (c)"))) return;
+    const currentNumer = valueSelect?.value || "";
+  const currentDenom = thirdSelect?.value || "";
+  const fallback = (typeof chooseDefaultsForChart === "function")
+    ? chooseDefaultsForChart(chartType)
+    : null;
+
+  const fallbackNumer = fallback?.yCol || "";
+  const fallbackDenom = fallback?.thirdCol || "";
+
+  if (!handleValidationResult(
+    validateNonNegativeNumbers(
+      numerArr,
+      chartType === "p" ? "P chart numerator (d)" : "U chart numerator (c)",
+      {
+        columnName: currentNumer,
+        alternativeColumn: fallbackNumer && fallbackNumer !== currentNumer ? fallbackNumer : "",
+        purposeText: chartType === "p" ? "numerator column" : "count column"
+      }
+    )
+  )) return;
 
   // Extra UX recovery for P / U:
   // if the current pair is poor for the chosen chart type,
   // try the tool's preferred default pair before showing a hard error.
   if (chartType === "p" || chartType === "u") {
-    const currentNumer = valueSelect?.value || "";
-    const currentDenom = thirdSelect?.value || "";
-
-    const fallback = (typeof chooseDefaultsForChart === "function")
-      ? chooseDefaultsForChart(chartType)
-      : null;
-
-    const fallbackNumer = fallback?.yCol || "";
-    const fallbackDenom = fallback?.thirdCol || "";
+    
 
     const canTryFallback =
       fallbackNumer &&
@@ -7409,7 +7544,12 @@ if (chartType === "run") {
     let shouldFallback = false;
 
     if (chartType === "p") {
-      const pPairValidation = validateNumeratorNotGreaterThanDenom(numerArr, denomArr);
+      const pPairValidation = validateNumeratorNotGreaterThanDenom(numerArr, denomArr, {
+  numeratorColumn: currentNumer,
+  denominatorColumn: currentDenom,
+  alternativeNumerator: fallbackNumer && fallbackNumer !== currentNumer ? fallbackNumer : "",
+  alternativeDenominator: fallbackDenom && fallbackDenom !== currentDenom ? fallbackDenom : ""
+});
       if (pPairValidation) {
         if (canTryFallback && valueSelect && thirdSelect) {
           valueSelect.value = fallbackNumer;
@@ -7461,18 +7601,44 @@ if (chartType === "run") {
   }
 
   // Block: denominator must be > 0
-  if (!handleValidationResult(
+    if (!handleValidationResult(
     validateDenominatorPositive(
       denomArr,
       chartType === "p"
         ? "P chart denominator (n)"
-        : "U chart denominator/opportunities (n)"
+        : "U chart denominator/opportunities (n)",
+      {
+        columnName: currentDenom,
+        alternativeColumn: fallbackDenom && fallbackDenom !== currentDenom ? fallbackDenom : "",
+        purposeText: chartType === "p" ? "denominator column" : "opportunities column"
+      }
     )
   )) return;
 
   // Warn: non-integers (allow user to continue)
-  if (!handleValidationResult(warnIfNonInteger(numerArr, chartType === "p" ? "P chart numerator (d)" : "U chart numerator (c)"))) return;
-  if (!handleValidationResult(warnIfNonInteger(denomArr, chartType === "p" ? "P chart denominator (n)" : "U chart denominator/opportunities (n)"))) return;
+    if (!handleValidationResult(
+    warnIfNonInteger(
+      numerArr,
+      chartType === "p" ? "P chart numerator (d)" : "U chart numerator (c)",
+      {
+        columnName: currentNumer,
+        alternativeColumn: fallbackNumer && fallbackNumer !== currentNumer ? fallbackNumer : "",
+        purposeText: chartType === "p" ? "numerator column" : "count column"
+      }
+    )
+  )) return;
+
+  if (!handleValidationResult(
+    warnIfNonInteger(
+      denomArr,
+      chartType === "p" ? "P chart denominator (n)" : "U chart denominator/opportunities (n)",
+      {
+        columnName: currentDenom,
+        alternativeColumn: fallbackDenom && fallbackDenom !== currentDenom ? fallbackDenom : "",
+        purposeText: chartType === "p" ? "denominator column" : "opportunities column"
+      }
+    )
+  )) return;
 
   // Draw chart
   if (chartType === "p") {
