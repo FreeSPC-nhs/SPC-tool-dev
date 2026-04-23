@@ -412,6 +412,23 @@ body.sidebar-collapsed .main {
   z-index: 1000;
 }
 
+#sheetPickerOverlay {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 1000;
+}
+
+#sheetPickerSelect {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+
 .data-editor-dialog {
   background: #ffffff;
   max-width: 900px;
@@ -2012,6 +2029,23 @@ Hide target line
   </div>
 </div>
 
+<!-- Excel sheet picker modal -->
+<div id="sheetPickerOverlay">
+  <div class="data-editor-dialog" style="max-width:520px;">
+    <h2 style="margin-top:0;">Choose worksheet</h2>
+    <p class="hint" style="margin-bottom:0.75rem;">
+      This Excel file contains more than one worksheet. Choose which one to import.
+    </p>
+
+    <label for="sheetPickerSelect"><strong>Worksheet:</strong></label>
+    <select id="sheetPickerSelect"></select>
+
+    <div class="data-editor-buttons">
+      <button type="button" id="sheetPickerCancelButton" class="data-editor-secondary">Cancel</button>
+      <button type="button" id="sheetPickerConfirmButton">Load sheet</button>
+    </div>
+  </div>
+</div>
 
 <!-- SPC Helper (rule-based "AI") -->
 <div id="spcHelperPanel">

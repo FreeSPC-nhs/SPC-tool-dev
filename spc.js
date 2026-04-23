@@ -265,7 +265,10 @@ let dataEditorGrid = null; // jspreadsheet instance
 const dataEditorHasHeaders = document.getElementById("dataEditorHasHeaders");
 const dataEditorDetectHeadersButton = document.getElementById("dataEditorDetectHeadersButton");
 const dataEditorHeaderStatus = document.getElementById("dataEditorHeaderStatus");
-
+const sheetPickerOverlay = document.getElementById("sheetPickerOverlay");
+const sheetPickerSelect = document.getElementById("sheetPickerSelect");
+const sheetPickerConfirmButton = document.getElementById("sheetPickerConfirmButton");
+const sheetPickerCancelButton = document.getElementById("sheetPickerCancelButton");
 
 
 /* ============================================================
@@ -603,6 +606,59 @@ if (importSettingsBtn && importSettingsFileInput) {
   });
 }
 
+function openSheetPicker(sheetNames) {
+  return new Promise((resolve) => {
+    if (!sheetPickerOverlay || !sheetPickerSelect || !sheetPickerConfirmButton || !sheetPickerCancelButton) {
+      resolve(sheetNames[0] || null);
+      return;
+    }
+
+    sheetPickerSelect.innerHTML = "";
+    (sheetNames || []).forEach(name => {
+      const opt = document.createElement("option");
+      opt.value = name;
+      opt.textContent = name;
+      sheetPickerSelect.appendChild(opt);
+    });
+
+    sheetPickerOverlay.style.display = "flex";
+    sheetPickerSelect.focus();
+
+    function cleanup(result) {
+      sheetPickerOverlay.style.display = "none";
+      sheetPickerConfirmButton.removeEventListener("click", onConfirm);
+      sheetPickerCancelButton.removeEventListener("click", onCancel);
+      sheetPickerOverlay.removeEventListener("click", onOverlayClick);
+      document.removeEventListener("keydown", onKeyDown);
+      resolve(result);
+    }
+
+    function onConfirm() {
+      cleanup(sheetPickerSelect.value || sheetNames[0] || null);
+    }
+
+    function onCancel() {
+      cleanup(null);
+    }
+
+    function onOverlayClick(e) {
+      if (e.target === sheetPickerOverlay) {
+        cleanup(null);
+      }
+    }
+
+    function onKeyDown(e) {
+      if (e.key === "Escape") cleanup(null);
+      if (e.key === "Enter") cleanup(sheetPickerSelect.value || sheetNames[0] || null);
+    }
+
+    sheetPickerConfirmButton.addEventListener("click", onConfirm);
+    sheetPickerCancelButton.addEventListener("click", onCancel);
+    sheetPickerOverlay.addEventListener("click", onOverlayClick);
+    document.addEventListener("keydown", onKeyDown);
+  });
+}
+
 function normalizeWorkbookCellValue(value) {
   if (value instanceof Date && !isNaN(value.getTime())) {
     return value.toISOString().slice(0, 10);
@@ -639,19 +695,14 @@ async function readExcelFileAsRows(file) {
     throw new Error("No worksheets were found in the Excel file.");
   }
 
-  let selectedSheetName = sheetNames[0];
+   let selectedSheetName = sheetNames[0];
 
   if (sheetNames.length > 1) {
-    const message =
-      "This Excel file contains multiple sheets.\n\n" +
-      "The tool will load the first sheet by default:\n" +
-      selectedSheetName +
-      "\n\n" +
-      "Click OK to continue, or Cancel to stop and reorder/rename sheets in Excel first.";
-    const ok = confirm(message);
-    if (!ok) {
+    const pickedSheet = await openSheetPicker(sheetNames);
+    if (!pickedSheet) {
       return null;
     }
+    selectedSheetName = pickedSheet;
   }
 
   const worksheet = workbook.Sheets[selectedSheetName];
