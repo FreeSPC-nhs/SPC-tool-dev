@@ -10638,6 +10638,12 @@ if (resetButton) {
 // Allow Escape key to close the SPC helper
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
+    const helpModal = document.getElementById("helpModal");
+    if (helpModal && helpModal.classList.contains("visible")) {
+      toggleHelpSection(false);
+      return;
+    }
+
     if (spcHelperPanel && spcHelperPanel.classList.contains("visible")) {
       spcHelperPanel.classList.remove("visible");
     }

@@ -896,30 +896,124 @@ body.sidebar-collapsed .main {
 .modal-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(0,0,0,0.45);
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(3px);
 }
 
 .modal-dialog {
   position: relative;
-  background: #fff;
-  margin: 5vh auto;
+  background: #ffffff;
+  margin: 3vh auto;
   width: min(980px, calc(100% - 2rem));
-  max-height: 90vh;
-  overflow: auto;
-  border-radius: 12px;
-  padding: 1rem;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  max-height: 92vh;
+  overflow: hidden;
+  border-radius: 16px;
+  border: 1px solid #d8dde0;
+  box-shadow: 0 18px 45px rgba(0,0,0,0.22);
+}
+
+.modal-shell {
+  display: flex;
+  flex-direction: column;
+  max-height: 92vh;
+}
+
+.modal-header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.1rem 1.25rem 0.9rem 1.25rem;
+  background: #ffffff;
+  border-bottom: 1px solid #e5eaed;
+}
+
+.modal-header-text h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #111;
+}
+
+.modal-header-text .sub {
+  margin: 0.45rem 0 0 0;
+  font-size: 0.92rem;
+  color: #5a5a5a;
 }
 
 .modal-close {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.75rem;
-  font-size: 1.75rem;
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+  margin: 0;
+  border: none;
+  border-radius: 9999px;
+  background: #005eb8;
+  color: #ffffff;
+  font-size: 1.8rem;
   line-height: 1;
-  border: 0;
-  background: transparent;
+  font-weight: 700;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+
+.modal-close:hover {
+  background: #003f87;
+}
+
+.modal-close:focus {
+  outline: 3px solid #ffb81c;
+  outline-offset: 2px;
+}
+
+.modal-body {
+  overflow: auto;
+  padding: 1rem 1.25rem 1.25rem 1.25rem;
+}
+
+.modal-body details {
+  border: 1px solid #d8dde0;
+  border-radius: 0.65rem;
+  background: #ffffff;
+  padding: 0.8rem 0.9rem;
+  margin: 0 0 0.75rem 0;
+}
+
+.modal-body summary {
+  cursor: pointer;
+  font-size: 0.98rem;
+  color: #111;
+}
+
+.modal-body summary strong {
+  font-weight: 700;
+}
+
+.modal-body details[open] {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.modal-body p,
+.modal-body li {
+  line-height: 1.45;
+}
+
+.modal-body ul,
+.modal-body ol {
+  margin-top: 0.45rem;
+}
+
+.modal-note {
+  padding: 0.75rem 0.9rem;
+  border-radius: 0.6rem;
+  background: #f6f8fa;
+  border: 1px solid #d8dde0;
+  margin: 0.6rem 0 0.4rem 0;
 }
 
 body.modal-open {
@@ -1685,326 +1779,211 @@ Hide target line
 
   </div> <!-- end .layout -->
 
-  <!-- HELP SECTION -->
+ <!-- HELP SECTION -->
 <div id="helpModal" class="modal" aria-hidden="true">
-  <div class="modal-backdrop" aria-hidden="true"></div>
+  <div class="modal-backdrop" aria-hidden="true" onclick="toggleHelpSection(false)"></div>
 
   <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="helpModalTitle">
-    <button type="button" class="modal-close" aria-label="Close help" onclick="toggleHelpSection(false)">×</button>
+    <div class="modal-shell">
+      <div class="modal-header">
+        <div class="modal-header-text">
+          <h2 id="helpModalTitle">Help &amp; guidance</h2>
+          <p class="sub">
+            A practical guide to loading data, building charts, interpreting SPC signals, and saving your work.
+          </p>
+        </div>
 
-    <section id="helpSection" class="panel" style="display:block; margin:0;">
-      <h2 id="helpModalTitle">Help &amp; guidance</h2>
-      <p class="sub">
-        This section explains how to use the Simple SPC Web Tool and how to interpret the charts.
-      </p>
+        <button type="button" class="modal-close" aria-label="Close help" onclick="toggleHelpSection(false)">×</button>
+      </div>
 
-      <details open>
-        <summary><strong>1. What this tool does</strong></summary>
-        <p>
-          This tool helps you create <strong>Statistical Process Control (SPC)</strong> charts directly in your browser.
-          All calculations happen in your browser. The data are <strong>not</strong> uploaded to a server.
-          This tool has been designed for learning, improvement work, and rapid analysis — not as a regulated statistical package.
-          It supports:
-        </p>
-        <ul>
-          <li><strong>Run charts</strong> – values over time with a median line and simple run/trend rules.</li>
-          <li><strong>XmR charts</strong> – Individuals (X) chart with mean and control limits plus a Moving Range (MR) chart.</li>
-          <li><strong>X̄–S charts</strong> – X̄ and S charts for grouped data (multiple measurements per subgroup).</li>
-          <li><strong>P / U charts</strong> – for proportions or rates.</li>
-          <li><strong>T / G charts</strong> – for rare events.</li>
-        </ul>
-        <p>
-          The control panel on the left side of the screen allows you to upload data, select options for how to present it,
-          and use some advanced options for refining your charts.
-        </p>
-      </details>
+      <div class="modal-body">
+        <details open>
+          <summary><strong>1. What this tool does</strong></summary>
+          <p>
+            This tool helps you create <strong>Statistical Process Control (SPC)</strong> charts directly in your browser.
+            All calculations happen locally in your browser. Your data are <strong>not uploaded to a server</strong>.
+          </p>
+          <p>
+            It is designed for learning, improvement work, service monitoring, and rapid analysis. It is not intended to replace
+            a regulated statistical package.
+          </p>
+          <ul>
+            <li><strong>Run charts</strong> – values over time with a median line and simple run/trend rules.</li>
+            <li><strong>XmR charts</strong> – Individuals (X) chart with mean and control limits plus an optional Moving Range (MR) chart.</li>
+            <li><strong>X̄–S charts</strong> – for grouped continuous data with multiple observations per subgroup.</li>
+            <li><strong>P / U charts</strong> – for proportions or rates.</li>
+            <li><strong>T / G charts</strong> – for rare events.</li>
+          </ul>
+        </details>
 
-      <details>
-        <summary><strong>2. Preparing and loading your data</strong></summary>
-        <ul>
-          <li>Your data should have at least two columns:
+        <details>
+          <summary><strong>2. Quick start</strong></summary>
+          <ol>
+            <li>Load data using CSV, Excel, or the Data editor.</li>
+            <li>Select the chart type and choose the relevant columns.</li>
+            <li>Click <strong>Generate / Recalculate</strong> if the chart does not update automatically.</li>
+            <li>Add titles, labels, targets, splits, or annotations if needed.</li>
+            <li>Review the summary text and chart signals.</li>
+            <li>Save the project if you want to return to it later.</li>
+          </ol>
+        </details>
+
+        <details>
+          <summary><strong>3. Preparing and loading your data</strong></summary>
+          <p>Your data usually need at least:</p>
+          <ul>
+            <li>a <strong>time or order column</strong> (for example month, week, date, or sequence)</li>
+            <li>a <strong>value column</strong> (the measure you want to plot)</li>
+          </ul>
+
+          <div class="modal-note">
+            <strong>You can now load data in three ways:</strong>
             <ul>
-              <li>a <strong>time/order column</strong> (e.g. date, month, or sequence number), and</li>
-              <li>a <strong>numeric column</strong> (e.g. waiting time, rate, count, score).</li>
+              <li><strong>Upload a CSV file</strong></li>
+              <li><strong>Upload an Excel workbook</strong> (<code>.xlsx</code> or <code>.xls</code>)</li>
+              <li><strong>Paste or edit data directly</strong> in the Data editor</li>
             </ul>
-          </li>
-          <li>Click <strong>“Upload CSV file”</strong> to choose a .csv file, or use the
-            <strong>“Open data editor (paste/type data)”</strong> button to paste directly from Excel.</li>
-          <li>Once loaded, use the <strong>“Choose columns”</strong> dropdowns to specify:
-            <ul>
-              <li><strong>Date / X-axis column</strong></li>
-              <li><strong>Value / Y-axis column</strong></li>
-            </ul>
-          </li>
-        </ul>
-        <p class="hint">
-          If the chart does not appear, check that the value column contains valid numbers and that there are no
-          unexpected headers or blank rows in the middle of the data.
-        </p>
-      </details>
+          </div>
 
-      <details>
-  <summary><strong>3. X-axis type &amp; chart type</strong></summary>
+          <p>
+            If you upload an Excel workbook, the tool opens the <strong>Data editor</strong> so you can inspect the worksheet before importing it.
+            You can switch between worksheets, trim unwanted rows or columns, and then click <strong>Apply data</strong>.
+          </p>
 
-  <h3 style="margin-top:0.4rem;">X-axis type</h3>
-  <ul>
-    <li><strong>Date / time</strong> – recommended for usual time-series SPC
-      (e.g. daily, weekly or monthly measures).</li>
-    <li><strong>Sequence / category</strong> – use when you want each row in the
-      order it appears (e.g. individual patients, samples or tests), even if the
-      X-value is not a date.</li>
-  </ul>
+          <p>
+            The tool tries to suggest sensible X and Y columns automatically, but you can change them yourself at any time.
+          </p>
+        </details>
 
-  <h3 style="margin-top:0.8rem;">Chart type</h3>
-  <p>
-    The tool supports several SPC chart types. If you are unsure which to use,
-    click <strong>“Help me choose a chart”</strong> to open the chart selection wizard.
-  </p>
+        <details>
+          <summary><strong>4. Using the Data editor</strong></summary>
+          <p>The Data editor is useful when:</p>
+          <ul>
+            <li>you want to paste data from Excel</li>
+            <li>your Excel workbook contains multiple sheets</li>
+            <li>your worksheet contains extra rows or columns that need trimming</li>
+          </ul>
 
-  <ul>
-    <li><strong>Run chart</strong>
-      <ul>
-        <li>Simple view of data over time using the median.</li>
-        <li>Useful as a first look or when data are limited.</li>
-      </ul>
-    </li>
+          <ul>
+            <li>Use the <strong>Worksheet</strong> selector to switch between sheets in an uploaded Excel file.</li>
+            <li>Tick or untick <strong>First row contains headers</strong> depending on whether the top row is headings or data.</li>
+            <li>Use <strong>Auto-detect</strong> as a quick suggestion, but always sense-check it.</li>
+            <li><strong>Right-click a row number</strong> to delete or insert rows.</li>
+            <li><strong>Right-click a column heading</strong> to delete or insert columns.</li>
+            <li>You can select multiple rows or columns before deleting them.</li>
+          </ul>
 
-    <li><strong>XmR chart</strong>
-      <ul>
-        <li>For continuous data with one observation per time point.</li>
-        <li>Shows a mean with upper and lower control limits.</li>
-        <li>Includes an optional <strong>Moving Range (MR)</strong> chart.</li>
-      </ul>
-    </li>
+          <p class="hint">
+            Tip: the Data editor lets you clean a worksheet inside the tool before applying it to the chart.
+          </p>
+        </details>
 
-    <li><strong>X̄–S chart</strong>
-      <ul>
-        <li>Confirming and understanding variation within and between subgroups.</li>
-        <li>Use when you have multiple measurements per subgroup (e.g. samples per day).</li>
-      </ul>
-    </li>
+        <details>
+          <summary><strong>5. X-axis type and chart type</strong></summary>
+          <p>
+            Choose the chart type that matches the kind of data you have:
+          </p>
+          <ul>
+            <li><strong>Run chart</strong> – a simple starting point for values over time.</li>
+            <li><strong>XmR chart</strong> – one continuous observation per time point.</li>
+            <li><strong>X̄–S chart</strong> – grouped continuous measurements with several values per subgroup.</li>
+            <li><strong>P chart</strong> – proportions with numerator and denominator.</li>
+            <li><strong>U chart</strong> – rates with changing opportunity.</li>
+            <li><strong>T / G charts</strong> – rare events.</li>
+          </ul>
+          <p>
+            If you are unsure, use the <strong>Help me choose a chart</strong> option.
+          </p>
+        </details>
 
-    <li><strong>P chart</strong>
-      <ul>
-        <li>For proportions (e.g. percentage of patients with a defect).</li>
-        <li>Requires a numerator and denominator.</li>
-      </ul>
-    </li>
+        <details>
+          <summary><strong>6. Baseline, splits, targets and annotations</strong></summary>
+          <ul>
+            <li><strong>Baseline</strong> lets you calculate the initial centre line and limits using an earlier reference period.</li>
+            <li><strong>Splits</strong> let you recalculate the centre line and limits from a chosen point onward.</li>
+            <li><strong>Targets</strong> show the level you want to achieve, but they are not the same as control limits.</li>
+            <li><strong>Annotations</strong> let you mark events that may help explain a change in the pattern.</li>
+          </ul>
+          <p>
+            In general:
+          </p>
+          <ul>
+            <li>use a <strong>baseline</strong> to compare against an earlier period</li>
+            <li>use a <strong>split</strong> when a later period should be treated as a new system</li>
+          </ul>
+        </details>
 
-    <li><strong>U chart</strong>
-      <ul>
-        <li>For rates (e.g. defects per opportunity).</li>
-        <li>Requires a count and a number of opportunities.</li>
-      </ul>
-    </li>
+        <details>
+          <summary><strong>7. Interpreting the summary</strong></summary>
+          <p>
+            The summary underneath the chart helps explain what the tool has found.
+          </p>
+          <ul>
+            <li><strong>Common-cause variation</strong> means the process looks stable within its current level of performance.</li>
+            <li><strong>Special-cause variation</strong> means the pattern suggests something may have changed.</li>
+            <li>A process can be <strong>stable but still poor</strong> if the level of performance is consistently below what you need.</li>
+          </ul>
+          <p>
+            Look for sustained changes, not just one good or bad point. Use local knowledge to interpret what was happening at that time.
+          </p>
+        </details>
 
-    <li><strong>T chart</strong>
-      <ul>
-        <li>For time between rare events.</li>
-      </ul>
-    </li>
+        <details>
+          <summary><strong>8. Saving and reopening your work</strong></summary>
+          <p>
+            You can now save the whole chart as a <strong>project file</strong>.
+          </p>
+          <ul>
+            <li><strong>Save project</strong> stores the current data and chart settings together in one <code>.json</code> file.</li>
+            <li><strong>Open project</strong> restores that saved chart so you can continue working on it later.</li>
+          </ul>
+          <p>
+            Project files can preserve things like:
+          </p>
+          <ul>
+            <li>selected columns</li>
+            <li>chart type</li>
+            <li>titles and labels</li>
+            <li>rules and targets</li>
+            <li>splits and annotations</li>
+          </ul>
+        </details>
 
-    <li><strong>G chart</strong>
-      <ul>
-        <li>For opportunities between rare events.</li>
-      </ul>
-    </li>
-  </ul>
+        <details>
+          <summary><strong>9. Copying and downloading charts</strong></summary>
+          <ul>
+            <li>Use the download buttons to export the chart as an image or PDF.</li>
+            <li>Use the chart options to adjust appearance before exporting.</li>
+            <li>Right-click on the chart to see additional chart actions.</li>
+          </ul>
+        </details>
 
-  <p class="hint">
-    If you are new to SPC, start with a Run chart or XmR chart unless the wizard
-    suggests otherwise.
-  </p>
-</details>
+        <details>
+          <summary><strong>10. Data privacy</strong></summary>
+          <p>The tool runs entirely in your browser:</p>
+          <ul>
+            <li>data are not sent to a server</li>
+            <li>uploaded files are processed locally in your browser session</li>
+            <li>once you close or refresh the page, unsaved work is no longer retained unless you saved a project file</li>
+          </ul>
+          <p class="hint">
+            Always follow your local information governance guidance before using real patient-identifiable data.
+          </p>
+        </details>
 
-
-      <details>
-        <summary><strong>4. Baseline, splits and target</strong></summary>
-
-        <h3 style="margin-top:0.4rem;">Baseline</h3>
-        <p>
-          The <strong>“Use first N points as baseline”</strong> box lets you restrict which points are used to calculate
-          the median (run chart) or mean and limits (XmR).
-          Leave this blank to use all points.
-        </p>
-
-        <h3 style="margin-top:0.8rem;">Splitting control limits</h3>
-        <p>
-          Splits allow you to recalculate the mean and control limits from a chosen point onwards.
-          This is useful when you make a clear change to the system (for example, introducing a new pathway)
-          and want to assess performance after that change.
-        </p>
-        <p>
-          Splits are added from the chart menu by <strong>right-clicking on the chart</strong>.
-        </p>
-        <p class="hint">
-          Use splits sparingly and only when there is good evidence of a real process change.
-          Avoid using splits simply to make a chart appear more stable.
-        </p>
-
-        <h3 style="margin-top:0.8rem;">Target / goal</h3>
-        <p>
-          You can enter a <strong>Target / goal value</strong> and choose whether “at or above” or “at or below”
-          the target is desirable. The chart will show a dashed target line.
-        </p>
-        <p class="hint">
-          In XmR mode, the summary panel will show an approximate process capability against this target
-          <em>if</em> the process looks stable (no obvious special-cause signals).
-        </p>
-      </details>
-
-      <details>
-        <summary><strong>5. Annotations</strong></summary>
-        <p>
-          Annotations are used to mark important events, such as new interventions,
-          policy changes or data definition changes.
-        </p>
-        <p>
-          Annotations are added from the chart menu by <strong>right-clicking on the chart</strong>.
-        </p>
-        <p class="hint">
-          Keep annotation labels short and factual to avoid cluttering the chart.
-        </p>
-      </details>
-
- <details>
-  <summary><strong>6. Interpreting the summary</strong></summary>
-
-  <p>
-    Under the chart, the <strong>Summary</strong> section gives a brief interpretation
-    of the pattern, tailored to the selected chart type.
-  </p>
-
-  <p>
-    Depending on the chart, it may comment on:
-  </p>
-
-  <ul>
-    <li>The number of data points and which points are used as the baseline.</li>
-    <li>The median (run chart), mean and limits (XmR / X̄–S), or centre line
-        appropriate to the chart type.</li>
-    <li>Possible special-cause signals such as:
-      <ul>
-        <li>points beyond control limits,</li>
-        <li>long runs on one side of the centre line,</li>
-        <li>clear upward or downward trends.</li>
-      </ul>
-    </li>
-  </ul>
-
-  <p class="hint">
-    These rules are intended as prompts, not absolute answers.
-    Always interpret the pattern in the context of the clinical or operational system.
-  </p>
-</details>
-
-
-<details >
-    <summary><strong>7. Glossary</strong></summary>
-
-    <ul>
-      <li><strong>Centre line</strong> – indicates the “usual” level of performance the data (using the <strong>mean/average</strong> or <strong>median</strong>).</li>
-      <li><strong>Control limits - Upper (UCL) & Lower(LCL)</strong> – statistical boundaries, calculated from historical data, that estimate the range of <strong>routine (common-cause) variation</strong>.</li>
-      <li><strong>Common-cause variation</strong> – normal, expected ups and downs when the system hasn’t fundamentally changed. This represents the range of variability that you might expect from everyday factors that are inherent in the process/system.</li>
-      <li><strong>Special-cause signal</strong> – a pattern that’s unlikely to be routine variation alone (for example, a point beyond limits or a sustained run). This is usually indicative of something 'unusual' happening. Usually requires investigation to understand the cause.</li>
-      <li><strong>Baseline</strong> – a subset of data points that can be used to calculate and 'fix' the centre line and limits. Setting a baseline is useful when you have implemented a change and want to test whether it has had an effect on 'normal' performance.</li>
-      <li><strong>Run/SPC rules</strong> – a statistically significant pattern rule (e.g. many points in a row on one side of the centre line) used to identify special cause variation.</li>
-      <li><strong>Shift</strong> – an indication of a sustained change in performance that is significantly different to previous performance. If the cause of the change is understood (e.g. it was as a result of improvement work), and it is likely to continue to affect ongoing performance then might trigger a split in calculation of control limits.</li>
-      <li><strong>Split</strong> – recalculation of the centre line and control limits at a specific point in time. Usually triggered by a sustained shift in performance.</li>
-      <li><strong>Trend</strong> – several points increasing or decreasing in a row, suggesting a directional change.</li>
-    </ul>
-
-    <p class="hint">
-      If you’re unsure, treat the rules as prompts and combine them with local knowledge.
-      If decisions are high-stakes, consider specialist statistical support.
-    </p>
-  </details>
-
-
-      <details>
-  <summary><strong>8. Copying and downloading charts</strong></summary>
-  <p>
-    Additional options are available from the chart menu by
-    <strong>right-clicking on the chart</strong>.
-  </p>
-
-  <ul>
-    <li><strong>Copy chart image</strong> – copies the chart to the clipboard
-        for pasting into slides, emails or documents.</li>
-    <li><strong>Copy chart and analysis</strong> – copies the chart together with
-        the summary text.</li>
-    <li><strong>Save chart as PNG</strong> – downloads the chart image to your computer.</li>
-    <li><strong>Download PDF report</strong> – exports the chart and summary into a
-        simple PDF layout.</li>
-  </ul>
-
-  <p class="hint">
-    When copying or exporting charts, make sure axes labels, annotations and context
-    are clear to someone who was not involved in the analysis.
-  </p>
-</details>
-
-<details>
-  <summary><strong>9. Saving and reusing chart settings (optional)</strong></summary>
-
-  <p>
-    You can save your <strong>chart settings</strong> so you can quickly recreate the
-    same chart layout later. This is useful if you update the same chart regularly
-    (for example, weekly or monthly reporting).
-  </p>
-
-  <ul>
-    <li>
-      <strong>Export settings</strong> saves a small <code>.json</code> file containing
-      your chart choices (such as chart type, selected columns, baseline, rules,
-      targets, labels, splits and annotations).
-    </li>
-    <li>
-      <strong>Import settings</strong> reloads a previously saved settings file and
-      reapplies those choices to the tool.
-    </li>
-  </ul>
-
-  <p>
-    <strong>Important:</strong> the settings file does <strong>not</strong> include your data.
-  You still need to load your data as usual — either by uploading a CSV file
-  <strong>or by pasting data from Excel into the data editor</strong>.
-  </p>
-
-  <p class="hint">
-    It doesn’t matter how the data is loaded: as long as the column names match,
-    the saved settings will be applied in the same way.
-    If your data has different column names, the tool may not be able to
-    reselect everything automatically. If this happens, you’ll be prompted to
-    choose the correct columns.
-  </p>
-</details>
-
-      <details>
-        <summary><strong>10. Data privacy</strong></summary>
-        <p>The tool runs entirely in your browser:</p>
-        <ul>
-          <li>Data are not sent to a server.</li>
-          <li>Once you close the page, your data are no longer available to the tool.</li>
-        </ul>
-        <p class="hint">
-          Always follow your local information governance guidance before using real patient-identifiable data.
-        </p>
-      </details>
-
-      <details>
-        <summary><strong>11. About the tool</strong></summary>
-        <p>
-          This tool was developed by Jem Ramazanoglu –
-          <a href="mailto:j.ramazanoglu@nhs.net">j.ramazanoglu@nhs.net</a>
-          as a free resource to support Quality Improvement in the NHS.
-        </p>
-        <p class="hint">
-          Feedback and suggestions are very welcome.
-        </p>
-      </details>
-
-    </section>
+        <details>
+          <summary><strong>11. About the tool</strong></summary>
+          <p>
+            This tool was developed by Jem Ramazanoglu –
+            <a href="mailto:j.ramazanoglu@nhs.net">j.ramazanoglu@nhs.net</a>
+            as a free resource to support Quality Improvement in the NHS.
+          </p>
+          <p class="hint">
+            Feedback and suggestions are very welcome.
+          </p>
+        </details>
+      </div>
+    </div>
   </div>
 </div>
 
