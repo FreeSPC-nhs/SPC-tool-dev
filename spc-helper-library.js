@@ -499,7 +499,7 @@
     }
 
     if (latest.isStable) {
-      return "Looking at the current XmR chart, I cannot see a clear special-cause signal. The process looks broadly stable in its current form.";
+      return "Looking at the current XmR chart, I cannot see a clear special-cause signal. This suggests the process is behaving broadly consistently in its current form, but it should still be monitored and interpreted with local context.";
     }
 
     return "Yes — this XmR chart shows evidence that something may have changed. The pattern is not fully explained by routine variation alone, so it would be worth investigating what changed in the system or the data around that time.";
@@ -517,7 +517,7 @@
         : `Looking at the chart (points ${start}–${end})`;
 
       if (a.isStable) {
-        return `${periodText}, this XmR chart looks stable overall. I cannot see a clear special-cause signal using the current rule settings.`;
+        return `${periodText}, I cannot see a clear special-cause signal using the current rule settings. This suggests the process is behaving broadly consistently, but ongoing monitoring is recommended.`;
       }
 
       const sigs = joinNice(signalTextList(a.signals));

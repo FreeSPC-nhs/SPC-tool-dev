@@ -6639,7 +6639,7 @@ const rangeText =
         border-radius:0.25rem;
         max-width:32rem;
       ">
-        <strong>Process not stable in the last period:</strong> special-cause signals are present.
+        <strong>Special-cause signals detected in the last period:</strong> capability estimates may be unreliable until these signals are understood.
         Focus on understanding and addressing these causes before relying on capability estimates.
       </div>
     `;
@@ -6708,7 +6708,7 @@ function renderXbarSSummary(latestAnalysis, totalSubgroups) {
   let overallInterpretation = "";
   if (xStable && sStable) {
     overallInterpretation =
-      "Both the subgroup averages (X̄) and within-subgroup variation (S) look stable in the latest period. This suggests a consistent process, though it should still be interpreted in context.";
+      "Both the subgroup averages (X̄) and within-subgroup variation (S) look stable in the latest period. No clear special-cause signals were detected in the latest X̄–S period. This suggests the process may be behaving consistently, but it should still be monitored and interpreted with local context.";
   } else if (!xStable && sStable) {
     overallInterpretation =
       "The subgroup averages (X̄) show special-cause signals, but the within-subgroup variation (S) looks stable. This suggests that the process level may have shifted while within-group variation stayed broadly consistent.";
