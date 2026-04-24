@@ -229,6 +229,7 @@ const xAxisBoldBtn   = document.getElementById("xAxisBoldBtn");
 const yAxisMinInput        = document.getElementById("yAxisMin");
 const yAxisMaxInput        = document.getElementById("yAxisMax");
 const yAxisFormatInput     = document.getElementById("yAxisFormat");
+const yAxisDecimalsInput = document.getElementById("yAxisDecimals");
 const yAxisFontFamilyInput = document.getElementById("yAxisFontFamily");
 const yAxisFontSizeInput   = document.getElementById("yAxisFontSize");
 const yAxisItalicBtn = document.getElementById("yAxisItalicBtn");
@@ -1268,6 +1269,7 @@ function handleAxisControlChanged({ livePreview = false } = {}) {
 
 [
   yAxisFormatInput,
+  yAxisDecimalsInput,
   xAxisFontFamilyInput,
   yAxisFontFamilyInput,
   xAxisFontSizeInput,
@@ -1279,12 +1281,16 @@ function handleAxisControlChanged({ livePreview = false } = {}) {
 ].forEach(el => {
   if (!el) return;
   el.addEventListener("input", () => {
-  if (el === yAxisFormatInput) updateYAxisInputStep();
+  if (el === yAxisFormatInput && typeof updateYAxisInputStep === "function") {
+  updateYAxisInputStep();
+}
   handleAxisControlChanged({ livePreview: true });
 });
 
 el.addEventListener("change", () => {
-  if (el === yAxisFormatInput) updateYAxisInputStep();
+  if (el === yAxisFormatInput && typeof updateYAxisInputStep === "function") {
+  updateYAxisInputStep();
+}
   handleAxisControlChanged({ livePreview: true });
 });
   el.addEventListener("click", () => handleAxisControlChanged({ livePreview: true }));
@@ -4628,21 +4634,49 @@ function cleanFontOptions(font) {
   return out;
 }
 
-function buildTickFormatter(format) {
-  if (!format || format === "auto") return undefined;
+function getAutoDecimalPlaces(value) {
+  const n = Math.abs(Number(value));
 
+  if (!Number.isFinite(n)) return 2;
+  if (n > 100) return 0;
+  if (n >= 10) return 1;
+  if (n >= 1) return 2;
+  return 3;
+}
+
+function getConfiguredDecimalPlaces(value) {
+  const choice = yAxisDecimalsInput?.value || "auto";
+
+  if (choice === "auto") {
+    return getAutoDecimalPlaces(value);
+  }
+
+  const dp = Number(choice);
+  return Number.isFinite(dp) ? dp : getAutoDecimalPlaces(value);
+}
+
+function formatSPCNumber(value, fallback = "—") {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return fallback;
+
+  return n.toFixed(getConfiguredDecimalPlaces(n));
+}
+
+function buildTickFormatter(format) {
   return function(value) {
     const n = Number(value);
     if (!Number.isFinite(n)) return value;
 
-    if (format === "integer") return String(Math.round(n));
-    if (format === "decimal") return n.toFixed(2);
-    if (format === "percent") return `${(n * 100).toFixed(1)}%`;
+    const dp = getConfiguredDecimalPlaces(n);
 
-    return value;
+    if (!format || format === "auto") return n.toFixed(dp);
+    if (format === "integer") return String(Math.round(n));
+    if (format === "decimal") return n.toFixed(dp);
+    if (format === "percent") return `${(n * 100).toFixed(dp)}%`;
+
+    return n.toFixed(dp);
   };
 }
-
 
 
 function withoutAxisBounds(settings) {
