@@ -1352,9 +1352,13 @@ function loadRows(rows) {
   allColumns = columns.slice();
 
   // Clear dropdowns safely
-  if (dateSelect) dateSelect.innerHTML = "";
-  if (valueSelect) valueSelect.innerHTML = "";
-  if (thirdSelect) thirdSelect.innerHTML = "";
+if (dateSelect) dateSelect.innerHTML = "";
+if (valueSelect) valueSelect.innerHTML = "";
+if (thirdSelect) thirdSelect.innerHTML = "";
+if (thirdColumnRow) thirdColumnRow.style.display = "none";
+if (thirdHintEl) thirdHintEl.textContent = "";
+if (splitPointSelect) splitPointSelect.innerHTML = "";
+
 
   // (Optional extra selects - keep safe; these may exist in older versions)
   if (typeof numeratorSelect !== "undefined" && numeratorSelect) numeratorSelect.innerHTML = "";
@@ -2256,6 +2260,8 @@ function resetAll() {
   const xmrRadio = document.querySelector("input[name='chartType'][value='xmr']");
   if (runRadio) runRadio.checked = true;
   if (xmrRadio) xmrRadio.checked = false;
+const moreChartTypesDetails = document.getElementById("moreChartTypesDetails");
+if (moreChartTypesDetails) moreChartTypesDetails.open = false;
 
   // MR toggle default (match first load)
   const showMRCheckbox = document.getElementById("showMRCheckbox");
