@@ -2234,6 +2234,8 @@ function resetAll() {
   if (yAxisMinInput) yAxisMinInput.value = "";
   if (yAxisMaxInput) yAxisMaxInput.value = "";
   if (yAxisFormatInput) yAxisFormatInput.value = "auto";
+  if (yAxisDecimalsInput) yAxisDecimalsInput.value = "auto";
+  if (dateFormatPreferenceSelect) dateFormatPreferenceSelect.selectedIndex = 0;
   if (yAxisFontFamilyInput) yAxisFontFamilyInput.value = "";
   if (yAxisFontSizeInput) yAxisFontSizeInput.value = "11";
   if (typeof setPressed === "function") {
@@ -2274,6 +2276,10 @@ function resetAll() {
 
   // --- Clear any error message ---
   if (errorMessage) errorMessage.textContent = "";
+
+if (typeof updateColumnCheckWarning === "function") {
+  updateColumnCheckWarning("run");
+}
 
   // --- Clear summary & capability output ---
   if (summaryDiv) summaryDiv.innerHTML = "";
@@ -2327,6 +2333,10 @@ if (firstTab) firstTab.click();
   if (typeof updateMrToggleVisibility === "function") {
     updateMrToggleVisibility();
   }
+  
+if (typeof updateDateFormatWarning === "function") {
+  updateDateFormatWarning();
+}
 clearFirstRunFlag();
 if (typeof setGenerateNeedsRecalc === "function") setGenerateNeedsRecalc(false);
 
