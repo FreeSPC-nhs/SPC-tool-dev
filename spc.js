@@ -77,9 +77,9 @@ const SPC_LEGEND = {
   labels: {
     usePointStyle: true,
     pointStyle: "line",
-    boxWidth: 40,
-    boxHeight: 8,
-    padding: 12,
+    boxWidth: 55,
+    boxHeight: 12,
+    padding: 14,
 
     generateLabels(chart) {
       const defaultLabels = Chart.defaults.plugins.legend.labels.generateLabels(chart);
@@ -92,7 +92,7 @@ const SPC_LEGEND = {
           pointStyle: "line",
           strokeStyle: dataset.borderColor || label.strokeStyle,
           fillStyle: "transparent",
-          lineWidth: dataset.borderWidth || 2,
+          lineWidth: Math.max(dataset.borderWidth || 2, 3),
           lineDash: dataset.borderDash || [],
           lineCap: "round"
         };
