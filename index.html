@@ -1241,6 +1241,10 @@ body.modal-open {
   page-break-inside: avoid;
 }
 
+.hidden {
+  display: none !important;
+}
+
 /* PDF export: ensure capability text renders */
 body.pdf-exporting #capability {
   position: static !important;
@@ -2402,7 +2406,7 @@ Hide target line
   <div class="menu-sep"></div>
 
   <button type="button" data-action="saveChartsAs" title="Save a copy of the chart as a PNG image file">Save chart(s) as PNG image</button>
-  <button type="button" data-action="downloadPdf" title="Export the chart and analysis to PDF">Download PDF report</button>
+  <button type="button" data-action="downloadPdf" class="hidden" title="Export the chart and analysis to PDF">Download PDF report</button>
 </div>
 
   <script src="spc-helper-library.js"></script>
