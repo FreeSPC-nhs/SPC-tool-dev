@@ -38,6 +38,11 @@ const exportSettingsBtn = document.getElementById("exportSettingsBtn");
 const importSettingsBtn = document.getElementById("importSettingsBtn");
 const importSettingsFileInput = document.getElementById("importSettingsFileInput");
 
+function updateSaveChartButtonState() {
+  if (!exportSettingsBtn) return;
+  exportSettingsBtn.disabled = !currentChart;
+}
+
 // If settings are imported before data is loaded, we store them here and apply after loadRows()
 let pendingImportedSettings = null;
 
@@ -1717,6 +1722,11 @@ function markDataModelDirty() {
 function clearDataModelDirty() {
   dataModelDirty = false;
   setGenerateNeedsRecalc(false);
+
+  if (typeof updateSaveChartButtonState === "function") {
+    updateSaveChartButtonState();
+  }
+
   // don’t clearError() automatically; user may still want to see tips
 }
 
@@ -2304,6 +2314,8 @@ if (typeof updateColumnCheckWarning === "function") {
     currentChart.destroy();
     currentChart = null;
   }
+
+  updateSaveChartButtonState();
 
   // --- Destroy MR chart ---
   if (mrChart) {
@@ -11470,6 +11482,8 @@ const resetButton = document.getElementById("resetButton");
 if (resetButton) {
   resetButton.addEventListener("click", resetAll);
 }
+
+updateSaveChartButtonState();
 
 // Allow Escape key to close the SPC helper
 document.addEventListener("keydown", (e) => {
