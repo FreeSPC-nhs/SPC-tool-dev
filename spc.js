@@ -1333,6 +1333,7 @@ if (dateFormatPreferenceSelect) {
 document.querySelectorAll("input[name='axisType']").forEach(r => {
   r.addEventListener("change", () => {
     updateDateFormatWarning();
+    updateDateControlsState();
   });
 });
 
@@ -2363,7 +2364,13 @@ if (firstTab) firstTab.click();
 if (typeof updateDateFormatWarning === "function") {
   updateDateFormatWarning();
 }
+
+if (typeof updateDateControlsState === "function") {
+  updateDateControlsState();
+}
+
 clearFirstRunFlag();
+
 if (typeof setGenerateNeedsRecalc === "function") setGenerateNeedsRecalc(false);
 
   console.log("All elements reset.");
@@ -7045,6 +7052,16 @@ function updateDateFormatWarning() {
   }
 }
 
+function updateDateControlsState() {
+  const axisType = document.querySelector("input[name='axisType']:checked")?.value;
+
+  const isDateMode = axisType === "date";
+
+  if (dateFormatPreferenceSelect) {
+    dateFormatPreferenceSelect.disabled = !isDateMode;
+  }
+}
+
 // Parse dates safely, supporting NHS-style dd/mm/yyyy as well as ISO yyyy-mm-dd
 function parseDateValue(xRaw) {
   if (xRaw instanceof Date && !isNaN(xRaw)) {
@@ -11494,6 +11511,7 @@ if (resetButton) {
 }
 
 updateSaveChartButtonState();
+updateDateControlsState();
 
 // Allow Escape key to close the SPC helper
 document.addEventListener("keydown", (e) => {
