@@ -11682,76 +11682,91 @@ document.getElementById(target).classList.add("active");
 document.addEventListener("DOMContentLoaded", initSidebarTabs);
 
 async function exportPdfReport() {
-  const reportElement = document.getElementById("reportContent");
-  if (!reportElement) {
-    alert("Report content not found.");
-    return;
-  }
   if (!currentChart) {
     alert("Please generate a chart first.");
     return;
   }
 
-  // Wait for fonts (helps missing-text issues in html2canvas)
-  if (document.fonts && document.fonts.ready) {
-    await document.fonts.ready;
-  }
-
-  const prevScrollY = window.scrollY;
-  window.scrollTo(0, 0);
- let restoreExportLayout = null;
-
-  // Temporarily simplify capability markup for export (fix blank text)
-  const capEl = document.getElementById("capability");
-  const capBackupHTML = capEl ? capEl.innerHTML : null;
-  const capText = capEl ? (capEl.innerText || "").trim() : "";
-
-  if (capEl && capText) {
-    capEl.innerHTML = `
-      <div style="
-        border: 1px solid #c9b200;
-        background: #fff3a6;
-        border-radius: 4px;
-        padding: 14px;
-      ">
-        ${capText.split("\n").map(line => `<div>${line}</div>`).join("")}
-      </div>
-    `;
-  }
-
-  const opt = {
-    margin: [10, 16, 10, 16], // extra L/R helps avoid clipping
-    filename: "spc-report.pdf",
-    image: { type: "jpeg", quality: 0.98 },
-    html2canvas: {
-      scale: 2,
-      scrollX: 0,
-      scrollY: 0,
-      windowWidth: document.documentElement.scrollWidth,
-      windowHeight: document.documentElement.scrollHeight
-    },
-    jsPDF: { unit: "mm", format: "a4", orientation: "landscape" },
-    pagebreak: {
-      mode: ["css", "legacy"],
-      avoid: [".pdf-avoid-break"]
-    }
-  };
-
-  document.body.classList.add("pdf-exporting");
+  let restoreExportLayout = null;
 
   try {
     restoreExportLayout = await prepareChartsForExport();
-    await html2pdf().set(opt).from(reportElement).save();
+
+    const composite = buildCompositeCanvas({ includeSummaryText: true });
+    if (!composite) {
+      alert("Could not build the PDF export image.");
+      return;
+    }
+
+    const { jsPDF } = window.jspdf || {};
+    if (!jsPDF) {
+      alert("PDF export library not available.");
+      return;
+    }
+
+    const pdf = new jsPDF({
+      orientation: "landscape",
+      unit: "mm",
+      format: "a4"
+    });
+
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+
+    const margin = 8;
+    const usableWidth = pageWidth - margin * 2;
+    const usableHeight = pageHeight - margin * 2;
+
+    const scale = usableWidth / composite.width;
+    const pageCanvasHeight = Math.floor(usableHeight / scale);
+
+    let sourceY = 0;
+    let pageNumber = 0;
+
+    while (sourceY < composite.height) {
+      const sliceHeight = Math.min(pageCanvasHeight, composite.height - sourceY);
+
+      const pageCanvas = document.createElement("canvas");
+      pageCanvas.width = composite.width;
+      pageCanvas.height = sliceHeight;
+
+      const ctx = pageCanvas.getContext("2d");
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+
+      ctx.drawImage(
+        composite,
+        0,
+        sourceY,
+        composite.width,
+        sliceHeight,
+        0,
+        0,
+        composite.width,
+        sliceHeight
+      );
+
+      if (pageNumber > 0) pdf.addPage();
+
+      const imgData = pageCanvas.toDataURL("image/png");
+      const renderedHeight = sliceHeight * scale;
+
+      pdf.addImage(
+        imgData,
+        "PNG",
+        margin,
+        margin,
+        usableWidth,
+        renderedHeight
+      );
+
+      sourceY += sliceHeight;
+      pageNumber += 1;
+    }
+
+    pdf.save("spc-report.pdf");
   } finally {
-    document.body.classList.remove("pdf-exporting");
-
     if (restoreExportLayout) restoreExportLayout();
-
-    // restore capability HTML
-    if (capEl && capBackupHTML != null) capEl.innerHTML = capBackupHTML;
-
-    // restore scroll
-    window.scrollTo(0, prevScrollY);
   }
 }
 
