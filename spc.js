@@ -9898,7 +9898,65 @@ function renderSummaryToCanvas(ctx, x, y, maxWidth) {
   return cursorY - y;
 }
 
+async function prepareChartsForExport() {
+  if (document.fonts && document.fonts.ready) {
+    await document.fonts.ready;
+  }
 
+  const mainContainer = chartCanvas?.parentElement;
+  const mrContainer = mrChartCanvas?.parentElement;
+
+  const backups = {
+    mainWidth: mainContainer?.style.width || "",
+    mainHeight: mainContainer?.style.height || "",
+    mrWidth: mrContainer?.style.width || "",
+    mrHeight: mrContainer?.style.height || ""
+  };
+
+  if (mainContainer) {
+    mainContainer.style.width = "1200px";
+    mainContainer.style.height = "560px";
+  }
+
+  if (mrContainer) {
+    mrContainer.style.width = "1200px";
+    mrContainer.style.height = "360px";
+  }
+
+  if (currentChart) {
+    currentChart.resize(1200, 560);
+    currentChart.update("none");
+  }
+
+  if (mrChart) {
+    mrChart.resize(1200, 360);
+    mrChart.update("none");
+  }
+
+  await new Promise(requestAnimationFrame);
+
+  return function restoreChartsAfterExport() {
+    if (mainContainer) {
+      mainContainer.style.width = backups.mainWidth;
+      mainContainer.style.height = backups.mainHeight;
+    }
+
+    if (mrContainer) {
+      mrContainer.style.width = backups.mrWidth;
+      mrContainer.style.height = backups.mrHeight;
+    }
+
+    if (currentChart) {
+      currentChart.resize();
+      currentChart.update("none");
+    }
+
+    if (mrChart) {
+      mrChart.resize();
+      mrChart.update("none");
+    }
+  };
+}
 
 // Build one combined image from multiple canvases (stacked vertically).
 // Optionally add summary text under the charts.
@@ -11064,24 +11122,51 @@ if (chartContextMenu) {
       }
 
       if (action === "copyCharts") {
-        const composite = buildCompositeCanvas({ includeSummaryText: false });
-        await copyCanvasToClipboard(composite);
-        alert("Chart image copied to clipboard.");
-        return;
-      }
+  let restoreExportLayout = null;
 
-      if (action === "copyChartsAndAnalysis") {
-        const composite = buildCompositeCanvas({ includeSummaryText: true });
-        await copyCanvasToClipboard(composite);
-        alert("Chart + analysis image copied to clipboard.");
-        return;
-      }
+  try {
+    restoreExportLayout = await prepareChartsForExport();
 
-      if (action === "saveChartsAs") {
-        const composite = buildCompositeCanvas({ includeSummaryText: false });
-        downloadCanvasAsPng(composite, "spc-charts.png");
-        return;
-      }
+    const composite = buildCompositeCanvas({ includeSummaryText: false });
+    await copyCanvasToClipboard(composite);
+    alert("Chart image copied to clipboard.");
+  } finally {
+    if (restoreExportLayout) restoreExportLayout();
+  }
+
+  return;
+}
+
+if (action === "copyChartsAndAnalysis") {
+  let restoreExportLayout = null;
+
+  try {
+    restoreExportLayout = await prepareChartsForExport();
+
+    const composite = buildCompositeCanvas({ includeSummaryText: true });
+    await copyCanvasToClipboard(composite);
+    alert("Chart + analysis image copied to clipboard.");
+  } finally {
+    if (restoreExportLayout) restoreExportLayout();
+  }
+
+  return;
+}
+
+     if (action === "saveChartsAs") {
+  let restoreExportLayout = null;
+
+  try {
+    restoreExportLayout = await prepareChartsForExport();
+
+    const composite = buildCompositeCanvas({ includeSummaryText: true });
+    downloadCanvasAsPng(composite, "spc-charts.png");
+  } finally {
+    if (restoreExportLayout) restoreExportLayout();
+  }
+
+  return;
+}
 
       if (action === "downloadPdf") {
         exportPdfReport();
@@ -11614,6 +11699,7 @@ async function exportPdfReport() {
 
   const prevScrollY = window.scrollY;
   window.scrollTo(0, 0);
+ let restoreExportLayout = null;
 
   // Temporarily simplify capability markup for export (fix blank text)
   const capEl = document.getElementById("capability");
@@ -11654,9 +11740,12 @@ async function exportPdfReport() {
   document.body.classList.add("pdf-exporting");
 
   try {
+    restoreExportLayout = await prepareChartsForExport();
     await html2pdf().set(opt).from(reportElement).save();
   } finally {
     document.body.classList.remove("pdf-exporting");
+
+    if (restoreExportLayout) restoreExportLayout();
 
     // restore capability HTML
     if (capEl && capBackupHTML != null) capEl.innerHTML = capBackupHTML;

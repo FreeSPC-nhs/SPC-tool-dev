@@ -1246,6 +1246,31 @@ body.pdf-exporting #capability {
   print-color-adjust: exact;
 }
 
+body.pdf-exporting #reportContent {
+  width: 1200px;
+  max-width: 1200px;
+  margin: 0 auto;
+  background: #ffffff;
+}
+
+body.pdf-exporting .chart-container {
+  width: 1200px !important;
+  height: 560px !important;
+  overflow: visible !important;
+}
+
+body.pdf-exporting #mrPanel .chart-container {
+  height: 360px !important;
+}
+
+body.pdf-exporting #summary,
+body.pdf-exporting #capability {
+  max-width: 1120px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.35;
+}
+
 .font-toggle-row {
   display: flex;
   gap: 0.5rem;
