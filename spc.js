@@ -298,6 +298,7 @@ const rareRulesRow = document.getElementById("rareRulesRow");
 
 const conservativeRulesMessage = document.getElementById("conservativeRulesMessage");
 const chartTypeAvailabilityHint = document.getElementById("chartTypeAvailabilityHint");
+const columnCheckWarning = document.getElementById("columnCheckWarning");
 
 const flagSpecialCauseOnChartCheckbox = document.getElementById("flagSpecialCauseOnChart");
 const lclClampRow = document.getElementById("lclClampRow");
@@ -3533,8 +3534,58 @@ function updateRuleUIForChartType(chartType) {
   }
 }
 
+function updateColumnCheckWarning(chartType) {
+  if (!columnCheckWarning) return;
+
+  const warnings = {
+    c: `
+      <strong>Check your selected columns.</strong>
+      For a C chart, the value column should be a count of events/defects per time period.
+      Do not use a denominator column here.
+    `,
+    p: `
+      <strong>Check your selected columns.</strong>
+      For a P chart, the value column should be the numerator, e.g. number of cases/events,
+      and the third column should be the denominator, e.g. total patients/episodes.
+    `,
+    u: `
+      <strong>Check your selected columns.</strong>
+      For a U chart, the value column should be the numerator, e.g. number of defects/events,
+      and the third column should be the opportunities/denominator, e.g. bed days, attendances, or procedures.
+    `,
+    xbars: `
+      <strong>Check your selected columns.</strong>
+      For an X̄–S chart, the value column should contain the individual measurements,
+      and the third column should identify the subgroup, e.g. day, week, batch, or sample.
+    `,
+     t: `
+      <strong>Check your selected columns.</strong>
+      For a T chart, the event/date column should identify when each event occurred.
+      The tool will use this to calculate time between events, so check the selected date/event column carefully.
+    `,
+    g: `
+      <strong>Check your selected columns.</strong>
+      For a G chart, the value column should usually represent the number of opportunities,
+      cases, or observations between rare events. Check this is not a rate or percentage.
+    `
+  };
+
+  const message = warnings[chartType];
+
+  if (!message) {
+    columnCheckWarning.style.display = "none";
+    columnCheckWarning.innerHTML = "";
+    return;
+  }
+
+  columnCheckWarning.innerHTML = message;
+  columnCheckWarning.style.display = "block";
+}
+
 function updateUIForChartType(chartType) {
   if (!xLabelEl || !yLabelEl || !thirdColumnRow) return;
+
+updateColumnCheckWarning(chartType);
 
   // ---- Default UI state (safe baseline) ----
   xLabelEl.textContent = "Date / X-axis column";

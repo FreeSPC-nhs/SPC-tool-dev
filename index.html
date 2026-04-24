@@ -97,6 +97,17 @@ button:disabled {
       font-size: 0.9rem;
     }
 
+.column-check-warning {
+  margin: 0.4rem 0 0.6rem 0;
+  padding: 0.55rem 0.65rem;
+  border-left: 4px solid #ffb81c;
+  background: #fff4ce;
+  color: #4d3700;
+  border-radius: 0.35rem;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
 .layout {
   display: flex;
   gap: 2rem;
@@ -1447,6 +1458,14 @@ Open project
 <hr />
 
 <strong class="field-label">Choose columns:</strong>
+
+<div
+  id="columnCheckWarning"
+  class="column-check-warning"
+  style="display:none;"
+  role="status"
+  aria-live="polite"
+></div>
 
 <label><span id="xLabel">Date / X-axis column</span>:
   <select id="dateColumn"></select>
