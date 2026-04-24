@@ -367,6 +367,12 @@ canvas {
   border-color: #03AC13;
 }
 
+.section-divider {
+  border: 0;
+  border-top: 1px solid #d5dbe1;
+  margin: 1rem 0 0.75rem 0;
+}
+
 
 /* Toggle button */
 .sidebar-toggle {
@@ -1360,47 +1366,45 @@ body.pdf-exporting #capability {
 <!-- TAB 1: DATA -->
 <div id="tab-data" class="tab-panel active">
 
-<div class="panel">
+  <div class="panel">
 
-<label for="fileInput"><strong>Add data:</strong></label>
+    <label for="fileInput"><strong>Add data:</strong></label>
 
-<div class="hint small-hint">
-Upload a CSV or Excel file, or use the data editor to paste/type/edit data directly.
+    <div class="hint small-hint">
+      Upload a CSV or Excel file, or use the data editor to paste/type/edit data directly.
+    </div>
+
+    <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" />
+
+    <div class="hint small-hint">
+      Expected columns: a date/time column and a numeric column.
+    </div>
+
+    <button id="openDataEditorButton" type="button">
+      Open data editor (paste/type data)
+    </button>
+
+    <hr class="section-divider" />
+
+    <div class="helper-note">
+      Save your work to come back later, or open a saved chart. Files are saved as .json.
+    </div>
+
+    <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.4rem;">
+      <button id="exportSettingsBtn" type="button">
+        Save chart
+      </button>
+
+      <button id="importSettingsBtn" type="button">
+        Open saved chart
+      </button>
+    </div>
+
+    <input id="importSettingsFileInput" type="file" accept=".json,application/json" style="display:none;" />
+
+  </div>
+
 </div>
-
-<input type="file" id="fileInput" accept=".csv,.xlsx,.xls" />
-
-<div class="hint small-hint">
-Expected columns: a date/time column and a numeric column.
-</div>
-
-<button id="openDataEditorButton" type="button">
-Open data editor (paste/type data)
-</button>
-
-<div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.4rem;">
-
-<hr />
-
-<div class="helper-note">
-Save your work to come back later, or open a previously saved chart. NB: Files saved in .json format.
-</div>
-
-<button id="exportSettingsBtn" type="button">
-Save chart
-</button>
-
-<button id="importSettingsBtn" type="button">
-Open saved chart
-</button>
-
-<input id="importSettingsFileInput" type="file" accept=".json,application/json" style="display:none;" />
-
-</div>
-
-</div>
-</div>
-
 <!-- TAB 2: CHART -->
 <div id="tab-chart" class="tab-panel">
 
