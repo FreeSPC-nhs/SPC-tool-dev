@@ -419,6 +419,7 @@ function collectToolSettings() {
         min: yAxisMinInput?.value ?? "",
         max: yAxisMaxInput?.value ?? "",
         format: yAxisFormatInput?.value ?? "auto",
+	decimals: yAxisDecimalsInput?.value ?? "auto",
         font: {
           family: yAxisFontFamilyInput?.value ?? "",
           size: yAxisFontSizeInput?.value ?? "",
@@ -508,6 +509,7 @@ function applyToolSettings(settings, { silent = true } = {}) {
   if (yAxisMinInput && settings.axes?.y?.min !== undefined) yAxisMinInput.value = settings.axes.y.min;
   if (yAxisMaxInput && settings.axes?.y?.max !== undefined) yAxisMaxInput.value = settings.axes.y.max;
   if (yAxisFormatInput && settings.axes?.y?.format !== undefined) yAxisFormatInput.value = settings.axes.y.format;
+  if (yAxisDecimalsInput && settings.axes?.y?.decimals !== undefined) yAxisDecimalsInput.value = settings.axes.y.decimals;
   if (yAxisFontFamilyInput && settings.axes?.y?.font?.family !== undefined) yAxisFontFamilyInput.value = settings.axes.y.font.family;
   if (yAxisFontSizeInput && settings.axes?.y?.font?.size !== undefined) yAxisFontSizeInput.value = settings.axes.y.font.size;
   setPressed(yAxisItalicBtn, settings.axes?.y?.font?.style === "italic");
@@ -553,6 +555,7 @@ function applyToolSettings(settings, { silent = true } = {}) {
   }
 
   updateDateFormatWarning();
+  if (typeof updateDateControlsState === "function") updateDateControlsState();
 
   if (rawRows && rawRows.length && generateButton) {
     if (typeof lastGenerateWasManual !== "undefined") lastGenerateWasManual = false;
