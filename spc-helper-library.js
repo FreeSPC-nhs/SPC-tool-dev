@@ -92,6 +92,26 @@
     };
   }
 
+  function describeRulesForCurrentChart(chartType) {
+    switch (chartType) {
+      case "p":
+      case "u":
+      case "c":
+        return "For this chart, the tool uses beyond-limit signals and the run rule. Zone rules are blocked because they may create misleading alerts on attribute charts.";
+      case "t":
+      case "g":
+        return "For this chart, beyond-limit signals are used by default. Run and trend rules are advanced options only, because rare-event charts can naturally look irregular.";
+      case "xmr":
+        return "For this XmR chart, beyond-limit signals and the run rule are used by default. Trend and zone-style rules are advanced options because adding more rules can increase false alerts.";
+      case "xbars":
+        return "For this X̄–S chart, beyond-limit signals and the run rule are used by default. Trend and zone rules are available as advanced options.";
+      case "run":
+        return "For this run chart, the tool uses run-chart rules such as shifts and, where enabled, trends. Control-limit rules do not apply to run charts.";
+      default:
+        return "The tool uses a conservative, chart-aware rule set. Not every rule is available for every chart type.";
+    }
+  }
+
   function getSuggestedQuestions(hasChart) {
     return {
       general: [
@@ -104,7 +124,10 @@
         "What is the difference between a baseline and a split?",
         "How do control limits work?",
         "What should I do if I see a signal?",
-        "What if my process is stable but performance is poor?"
+        "What if my process is stable but performance is poor?",
+	"Why are some SPC rules unavailable?",
+	"Why are T/G run and trend rules off by default?",
+	"Why can’t I use zone rules on P, U, or C charts?"
       ],
       chart: [
         "What is my chart telling me?",
@@ -119,6 +142,65 @@
   }
 
   const FAQ = [
+    {
+      id: "rule-availability",
+      priority: 9,
+      aliases: [
+        "why are some spc rules unavailable",
+        "why are some rules unavailable",
+        "why can't i use some rules",
+        "why are rules blocked"
+      ],
+      keywords: [
+        ["rules", "unavailable"],
+        ["rules", "blocked"],
+        ["some", "rules"]
+      ],
+      answer:
+        "Some SPC rules are only suitable for certain chart types.\n\n" +
+        "This tool uses a conservative, chart-aware rule policy. That means it shows safer default rules first and blocks or hides rules that could create misleading alerts.\n\n" +
+        "This is especially important for healthcare and public-service use, where false signals can lead to wasted effort, unnecessary concern, or alert fatigue."
+    },
+    {
+      id: "tg-run-trend-off",
+      priority: 9,
+      aliases: [
+        "why are tg run and trend rules off by default",
+        "why are t g run trend rules off",
+        "why are rare event run trend rules off",
+        "why are run and trend rules off for t charts",
+        "why are run and trend rules off for g charts"
+      ],
+      keywords: [
+        ["t", "g", "run", "trend"],
+        ["rare", "event", "run", "trend"],
+        ["run", "trend", "off"]
+      ],
+      answer:
+        "T and G charts are rare-event charts. They can naturally look irregular even when the process has not really changed.\n\n" +
+        "For that reason, this tool keeps run and trend rules off by default for T/G charts. You can enable them in advanced settings, but they should be interpreted cautiously because they may create false signals."
+    },
+    {
+      id: "puc-zone-rules-blocked",
+      priority: 9,
+      aliases: [
+        "why can't i use zone rules on p u or c charts",
+        "why are zone rules blocked on p charts",
+        "why are zone rules blocked on u charts",
+        "why are zone rules blocked on c charts",
+        "zone rules p u c"
+      ],
+      keywords: [
+        ["zone", "rules", "p"],
+        ["zone", "rules", "u"],
+        ["zone", "rules", "c"],
+        ["zone", "rules", "blocked"]
+      ],
+      answer:
+        "Zone rules are not available for P, U, or C charts because they can create misleading alerts on these chart types.\n\n" +
+        "P, U, and C charts are based on count, proportion, or rate data. Their limits may vary, and their data may not behave like the continuous data that classic zone rules were designed for.\n\n" +
+        "The safer default is to use beyond-limit signals and run rules, rather than adding extra zone-rule alerts."
+    },
     {
       id: "what-is-spc",
       priority: 8,
@@ -200,7 +282,7 @@
       keywords: [["control", "limit"], ["ucl"], ["lcl"], ["upper", "lower", "limit"]],
       answer:
         "Control limits show the range you would expect from routine common-cause variation. They are not the same as targets, standards, or pass/fail thresholds.\n\n" +
-        "A point outside the limits, or a clear non-random pattern within them, suggests something may have changed and is worth investigating."
+        "A point outside the limits suggests something may have changed and is worth investigating. Some chart types also support selected pattern rules, but the tool only offers those where they are reasonably defensible."
     },
     {
       id: "target",
@@ -623,6 +705,9 @@
       includesAll(q, ["target"]) &&
       (includesAny(q, ["mean", "meaning", "what does", "what about", "tell me"]) || q.includes("target"));
 
+    const asksRulesUsed =
+      includesAny(q, ["which rules", "what rules", "rules used", "rule policy", "why rules", "unavailable", "blocked"]);
+
     const asksDecision =
       includesAll(q, ["what", "should", "i", "do"]) ||
       includesAll(q, ["what", "decision"]) ||
@@ -631,6 +716,7 @@
     const hasChart =
       !!ctx.run || !!ctx.xmr || !!ctx.xbars || !!ctx.attribute || !!ctx.rare;
 
+    if (hasChart && asksRulesUsed) return describeRulesForCurrentChart(ctx.chartType);    
     if (hasChart && asksWhatChartSays) return buildWhatChartTellingMe(ctx);
     if (hasChart && asksChanged && ctx.chartType === "xmr") return buildXmRChangeAnswer(ctx);
     if (hasChart && asksStable) return buildLatestPeriodSummary(ctx);

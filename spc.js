@@ -301,6 +301,22 @@ const advancedContinuousCaution = document.getElementById("advancedContinuousCau
 const enableRareRunTrendCheckbox = document.getElementById("enableRareRunTrend");
 const rareRulesRow = document.getElementById("rareRulesRow");
 
+if (enableRareRunTrendCheckbox) {
+  enableRareRunTrendCheckbox.addEventListener("change", () => {
+    if (!enableRareRunTrendCheckbox.checked) return;
+
+    const ok = window.confirm(
+      "T and G charts are naturally irregular.\n\n" +
+      "Run and trend rules may create false signals on this chart type and are off by default.\n\n" +
+      "Only enable these rules if you understand this trade-off."
+    );
+
+    if (!ok) {
+      enableRareRunTrendCheckbox.checked = false;
+    }
+  });
+}
+
 const conservativeRulesMessage = document.getElementById("conservativeRulesMessage");
 const chartTypeAvailabilityHint = document.getElementById("chartTypeAvailabilityHint");
 const columnCheckWarning = document.getElementById("columnCheckWarning");
