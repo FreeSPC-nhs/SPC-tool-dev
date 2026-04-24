@@ -66,6 +66,41 @@ const SPC_STYLE = {
   targetOrange: "#fdae61"    // matches Run target line 
 };
 
+// -----------------------------
+// Shared legend styling
+// Shows line datasets as line samples in the legend instead of filled boxes
+// -----------------------------
+const SPC_LEGEND = {
+  display: true,
+  position: "bottom",
+  align: "center",
+  labels: {
+    usePointStyle: true,
+    pointStyle: "line",
+    boxWidth: 40,
+    boxHeight: 8,
+    padding: 12,
+
+    generateLabels(chart) {
+      const defaultLabels = Chart.defaults.plugins.legend.labels.generateLabels(chart);
+
+      return defaultLabels.map(label => {
+        const dataset = chart.data.datasets[label.datasetIndex] || {};
+
+        return {
+          ...label,
+          pointStyle: "line",
+          strokeStyle: dataset.borderColor || label.strokeStyle,
+          fillStyle: "transparent",
+          lineWidth: dataset.borderWidth || 2,
+          lineDash: dataset.borderDash || [],
+          lineCap: "round"
+        };
+      });
+    }
+  }
+};
+
 // Helper: build point colours from a boolean “flag” array
 function makePointColoursFromFlags(flags) {
   if (!Array.isArray(flags)) return [];
@@ -1969,7 +2004,7 @@ function drawSecondarySPCChart({
           text: title,
           font: { size: 16, weight: "bold" }
         },
-        legend: { display: true, position: "bottom", align: "center" },
+        legend: SPC_LEGEND,
         annotation: {
           annotations: (typeof buildAnnotationConfig === "function")
             ? buildAnnotationConfig(labels)
@@ -2084,7 +2119,7 @@ function drawXbarSCombinedChart({
           text: mainLabels.title,
           font: { size: 16, weight: "bold" }
         },
-        legend: { display: true, position: "bottom", align: "center" },
+        legend: SPC_LEGEND,
         annotation: {
           annotations: (typeof buildAnnotationConfig === "function")
             ? buildAnnotationConfig(labels)
@@ -7976,7 +8011,7 @@ function drawRunChart(points, baselineCount, labels) {
           text: title,
           font: { size: 16, weight: "bold" }
         },
-        legend: { display: true, position: "bottom", align: "center" },
+        legend: SPC_LEGEND,
         annotation: { annotations: buildAnnotationConfig(labels) }
       },
       elements: { point: { radius: 0, hoverRadius: 0 } },
@@ -8548,7 +8583,7 @@ function drawSimpleSPCChart({
           text: title,
           font: { size: 16, weight: "bold" }
         },
-        legend: { display: true, position: "bottom", align: "center" },
+        legend: SPC_LEGEND,
         annotation: {
           annotations: (typeof buildAnnotationConfig === "function")
             ? buildAnnotationConfig(labels)
@@ -8819,11 +8854,7 @@ function drawXmRChart(points, baselineCount, labels) {
           text: title,
           font: { size: 16, weight: "bold" }
         },
-        legend: {
-          display: true,
-          position: "bottom",
-          align: "center"
-        },
+        legend: SPC_LEGEND,
         annotation: {
           annotations: buildAnnotationConfig(labels)
         }
@@ -9050,7 +9081,7 @@ function drawMrChart(allPoints, labels, segments) {
           text: "Moving Range (MR)",
           font: { size: 14, weight: "bold" }
         },
-        legend: { display: true, position: "bottom" },
+        legend: SPC_LEGEND,
         annotation: {
           annotations: (typeof buildAnnotationConfig === "function")
             ? buildAnnotationConfig(labels)
@@ -9132,7 +9163,7 @@ function renderMrChart(mrLabels, mrValues, avgMR, uclMR) {
           text: "Moving Range (MR)",
           font: { size: 14, weight: "bold" }
         },
-        legend: { display: true, position: "bottom" },
+        legend: SPC_LEGEND,
         annotation: {
           annotations: (typeof buildAnnotationConfig === "function")
             ? buildAnnotationConfig(mrLabels)
