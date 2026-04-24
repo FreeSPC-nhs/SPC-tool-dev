@@ -10659,7 +10659,19 @@ function closeChartWizard() {
 }
 
 function wizardBack() {
-  if (chartWizardState.step > 0) chartWizardState.step -= 1;
+  // If on the results screen, go back to the previous question screen
+  if (chartWizardState.step === 99) {
+    chartWizardState.recommendation = null;
+    chartWizardState.step = 1;
+    renderChartWizard();
+    return;
+  }
+
+  // Otherwise go back one normal step
+  if (chartWizardState.step > 0) {
+    chartWizardState.step -= 1;
+  }
+
   renderChartWizard();
 }
 
@@ -10717,139 +10729,124 @@ function renderChartWizard() {
   const s = chartWizardState;
   const a = s.answers;
 
-  // Helper to render button list
   const optionButton = (text, onClick) =>
-    `<button type="button" style="margin:0.25rem 0; width:100%; text-align:left;" onclick="${onClick}">${text}</button>`;
+    `<button type="button" class="chart-wizard-option" onclick="${onClick}">${text}</button>`;
 
-  // Step screens
-    if (s.step === 0) {
+  const actionButtons = `
+    <div class="chart-wizard-actions">
+      <button type="button" class="chart-wizard-secondary" onclick="wizardBack()">Back</button>
+      <button type="button" onclick="finishWizard(computeRecommendation(chartWizardState.answers))">Skip</button>
+    </div>
+  `;
+
+  if (s.step === 0) {
     chartWizardBody.innerHTML = `
-      <p><strong>What are you charting?</strong></p>
+      <p class="chart-wizard-question">What are you charting?</p>
 
-      ${optionButton(
-        "A measurement (one number each time) — e.g. waiting time, score, temperature, length of stay",
-        `wizardNext('kind','measurement')`
-      )}
-
-      ${optionButton(
-        "A count per time period — e.g. number of falls per week, complaints per month, infections per day",
-        `wizardNext('kind','count')`
-      )}
-
-      ${optionButton(
-        "A proportion out of a total — e.g. 5 out of 100 compliant, % with a characteristic, pass rate",
-        `wizardNext('kind','proportion')`
-      )}
-
-      ${optionButton(
-        "Rare events — time or opportunities between events (e.g. days between serious incidents; procedures between harms)",
-        `wizardNext('kind','rare')`
-      )}
-
-      ${optionButton("Not sure", `finishWizard(computeRecommendation({kind:'unsure'}))`)}
+      <div class="chart-wizard-options">
+        ${optionButton("A measurement — e.g. waiting time, score, temperature, length of stay", `wizardNext('kind','measurement')`)}
+        ${optionButton("A count per time period — e.g. falls per week, complaints per month", `wizardNext('kind','count')`)}
+        ${optionButton("A proportion out of a total — e.g. 5 out of 100, pass rate", `wizardNext('kind','proportion')`)}
+        ${optionButton("Rare events — time or opportunities between events", `wizardNext('kind','rare')`)}
+        ${optionButton("Not sure", `finishWizard(computeRecommendation({kind:'unsure'}))`)}
+      </div>
     `;
     return;
   }
 
-
-  // Measurement follow-up
   if (s.step === 1 && a.kind === "measurement") {
     chartWizardBody.innerHTML = `
-      <p><strong>Do you have one value per time point, or multiple values per time point?</strong></p>
-      ${optionButton("One value each time point", `wizardNext('measurementShape','single')`)}
-      ${optionButton("Multiple values per time point (subgroups/samples)", `wizardNext('measurementShape','subgroups')`)}
-      ${optionButton("Not sure", `wizardNext('measurementShape','unsure')`)}
-      <div style="display:flex; gap:0.5rem; justify-content:space-between; margin-top:0.75rem;">
-        <button type="button" onclick="wizardBack()">Back</button>
-        <button type="button" onclick="finishWizard(computeRecommendation(chartWizardState.answers))">Skip</button>
+      <p class="chart-wizard-question">Do you have one value per time point, or multiple values?</p>
+
+      <div class="chart-wizard-options">
+        ${optionButton("One value each time point", `wizardNext('measurementShape','single')`)}
+        ${optionButton("Multiple values per time point — subgroups or samples", `wizardNext('measurementShape','subgroups')`)}
+        ${optionButton("Not sure", `wizardNext('measurementShape','unsure')`)}
       </div>
+
+      ${actionButtons}
     `;
     return;
   }
 
-    // Count follow-up
   if (s.step === 1 && a.kind === "count") {
     chartWizardBody.innerHTML = `
-      <p><strong>Does the amount of work / opportunity vary at each time point?</strong></p>
+      <p class="chart-wizard-question">Does the amount of work or opportunity vary?</p>
 
-      <p class="hint small-hint" style="margin-top:-0.25rem;">
-        If you are counting events per week/month with broadly similar activity each time, treat it as roughly constant.
-        If the volume changes a lot (or you have a denominator like bed-days / patient-days / inspections),
-        the tool will usually recommend a <strong>U chart (rate per opportunity)</strong>.
+      <p class="hint small-hint">
+        If activity is broadly similar each time, treat it as roughly constant. If volume changes a lot,
+        or you have a denominator such as bed-days or inspections, choose varies.
       </p>
 
-      ${optionButton("No — roughly similar volume each time (e.g. incidents per week)", `wizardNext('countOpportunity','constant')`)}
-      ${optionButton("Yes — volume varies, or I have a denominator column (e.g. bed-days, patient-days, inspections)", `wizardNext('countOpportunity','varies')`)}
-      ${optionButton("Not sure", `wizardNext('countOpportunity','unsure')`)}
-
-      <div style="display:flex; gap:0.5rem; justify-content:space-between; margin-top:0.75rem;">
-        <button type="button" onclick="wizardBack()">Back</button>
-        <button type="button" onclick="finishWizard(computeRecommendation(chartWizardState.answers))">Skip</button>
+      <div class="chart-wizard-options">
+        ${optionButton("No — roughly similar volume each time", `wizardNext('countOpportunity','constant')`)}
+        ${optionButton("Yes — volume varies, or I have a denominator column", `wizardNext('countOpportunity','varies')`)}
+        ${optionButton("Not sure", `wizardNext('countOpportunity','unsure')`)}
       </div>
+
+      ${actionButtons}
     `;
     return;
   }
 
-
-  // Proportion follow-up
   if (s.step === 1 && a.kind === "proportion") {
     chartWizardBody.innerHTML = `
-      <p><strong>Do you have both parts of the proportion?</strong></p>
-      <p class="hint small-hint" style="margin-top:-0.25rem;">
-        For a P chart you need a numerator (e.g. defectives) and a denominator (e.g. total cases) each time point.
+      <p class="chart-wizard-question">Do you have both parts of the proportion?</p>
+
+      <p class="hint small-hint">
+        For a P chart you need a numerator and denominator for each time point.
       </p>
-      ${optionButton("Yes — I have numerator and denominator columns", `wizardNext('proportionHasDenom','yes')`)}
-      ${optionButton("No — I only have the percentage/proportion value", `wizardNext('proportionHasDenom','no')`)}
-      ${optionButton("Not sure", `wizardNext('proportionHasDenom','unsure')`)}
-      <div style="display:flex; gap:0.5rem; justify-content:space-between; margin-top:0.75rem;">
-        <button type="button" onclick="wizardBack()">Back</button>
-        <button type="button" onclick="finishWizard(computeRecommendation(chartWizardState.answers))">Skip</button>
+
+      <div class="chart-wizard-options">
+        ${optionButton("Yes — I have numerator and denominator columns", `wizardNext('proportionHasDenom','yes')`)}
+        ${optionButton("No — I only have the percentage or proportion value", `wizardNext('proportionHasDenom','no')`)}
+        ${optionButton("Not sure", `wizardNext('proportionHasDenom','unsure')`)}
       </div>
+
+      ${actionButtons}
     `;
     return;
   }
 
-    // Rare events follow-up
   if (s.step === 1 && a.kind === "rare") {
     chartWizardBody.innerHTML = `
-      <p><strong>Which best describes your data?</strong></p>
+      <p class="chart-wizard-question">Which best describes your data?</p>
 
-      <p class="hint small-hint" style="margin-top:-0.25rem;">
-        Choose this when the event is uncommon and you’re looking at the gap <em>between</em> events.
+      <p class="hint small-hint">
+        Choose this when the event is uncommon and you are looking at the gap between events.
       </p>
 
-      ${optionButton("Time between events — e.g. days between serious incidents, weeks between pressure ulcers", `wizardNext('rareType','time')`)}
-      ${optionButton("Opportunities between events — e.g. procedures between harms, patients seen between infections", `wizardNext('rareType','opportunities')`)}
-      ${optionButton("Not sure", `wizardNext('rareType','unsure')`)}
-      <div style="display:flex; gap:0.5rem; justify-content:space-between; margin-top:0.75rem;">
-        <button type="button" onclick="wizardBack()">Back</button>
-        <button type="button" onclick="finishWizard(computeRecommendation(chartWizardState.answers))">Skip</button>
+      <div class="chart-wizard-options">
+        ${optionButton("Time between events — e.g. days between incidents", `wizardNext('rareType','time')`)}
+        ${optionButton("Opportunities between events — e.g. procedures between harms", `wizardNext('rareType','opportunities')`)}
+        ${optionButton("Not sure", `wizardNext('rareType','unsure')`)}
       </div>
+
+      ${actionButtons}
     `;
     return;
   }
 
-  // After step 1 follow-ups, we can compute and show results
   if (s.step >= 2 && s.step !== 99) {
     finishWizard(computeRecommendation(s.answers));
     return;
   }
 
-  // Results screen
   if (s.step === 99 && s.recommendation) {
     const rec = s.recommendation;
-    chartWizardBody.innerHTML = `
-      <p><strong>Recommended chart:</strong> ${rec.label}</p>
-      <p class="hint small-hint">${rec.reason}</p>
 
-      <div style="display:flex; gap:0.5rem; justify-content:flex-end; margin-top:1rem;">
-        <button type="button" onclick="wizardBack()">Back</button>
-        <button type="button" onclick="setChartType('${rec.chartType}'); closeChartWizard();">Use this chart</button>
+    chartWizardBody.innerHTML = `
+      <div class="chart-wizard-result">
+        <div class="chart-wizard-result-title">Recommended chart: ${rec.label}</div>
+        <div>${rec.reason}</div>
       </div>
 
-      <hr style="margin:1rem 0;" />
+      <div class="chart-wizard-actions">
+        <button type="button" class="chart-wizard-secondary" onclick="wizardBack()">Back</button>
+        <button type="button" class="wizard-primary" onclick="useWizardChart('${rec.chartType}')">Use this chart</button>
+      </div>
 
-      <p class="hint small-hint">
+      <p class="hint small-hint" style="margin-top:0.75rem;">
         You can still pick a different chart type manually if you prefer.
       </p>
     `;
@@ -10864,6 +10861,19 @@ window.finishWizard = finishWizard;
 window.computeRecommendation = computeRecommendation;
 window.setChartType = setChartType;
 window.closeChartWizard = closeChartWizard;
+window.useWizardChart = useWizardChart;
+
+function useWizardChart(chartType) {
+  setChartType(chartType);
+  closeChartWizard();
+
+  if (rawRows && rawRows.length && generateButton) {
+    lastGenerateWasManual = false;
+    generateButton.click();
+  }
+}
+
+
 
 // Hook wizard start into the existing button/modal
 if (helpChooseChartBtn) {

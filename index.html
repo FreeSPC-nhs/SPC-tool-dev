@@ -594,6 +594,82 @@ body.sidebar-collapsed .main {
   z-index: 900;
 }
 
+/* --- Chart wizard polish --- */
+#chartWizardModal .modal-dialog {
+  width: min(720px, calc(100% - 2rem));
+}
+
+.chart-wizard-panel {
+  display: block;
+  margin: 0;
+  padding: 1.25rem;
+}
+
+.chart-wizard-panel h2 {
+  margin-top: 0;
+  margin-bottom: 0.35rem;
+  color: #003087;
+}
+
+.chart-wizard-question {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0.8rem 0 0.6rem;
+}
+
+.chart-wizard-options {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 0.5rem;
+}
+
+.chart-wizard-option {
+  width: 100%;
+  text-align: left;
+  border: 1px solid #c7d3da !important;
+  background: #ffffff !important;
+  color: #1f2933 !important;
+  border-radius: 0.65rem !important;
+  padding: 0.7rem 0.8rem !important;
+  margin: 0 !important;
+  line-height: 1.3;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+
+.chart-wizard-option:hover {
+  border-color: #005eb8 !important;
+  background: #f0f7ff !important;
+}
+
+.chart-wizard-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  margin-top: 1rem;
+  border-top: 1px solid #e5e9ed;
+  padding-top: 0.85rem;
+}
+
+.chart-wizard-secondary {
+  background: #ffffff !important;
+  color: #005eb8 !important;
+  border: 1px solid #005eb8 !important;
+}
+
+.chart-wizard-result {
+  border-left: 4px solid #005eb8;
+  background: #f0f7ff;
+  padding: 0.85rem;
+  border-radius: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.chart-wizard-result-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #003087;
+  margin-bottom: 0.35rem;
+}
 
 #spcHelperHeader {
   background: #005eb8;
@@ -2144,7 +2220,7 @@ Hide target line
   <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="chartWizardTitle">
     <button type="button" class="modal-close" aria-label="Close chart wizard" onclick="toggleChartWizard(false)">×</button>
 
-    <section class="panel" style="display:block; margin:0;">
+    <section class="panel chart-wizard-panel">
       <h2 id="chartWizardTitle">Help me choose a chart</h2>
       <p class="sub">
         Answer a couple of questions and the tool will pick a chart type and show the extra columns (if needed).
