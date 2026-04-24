@@ -1351,14 +1351,11 @@ function loadRows(rows) {
   // Ensure global column list is updated (used by column intelligence)
   allColumns = columns.slice();
 
-  // Clear dropdowns safely
+// --- Reset dropdowns ---
 if (dateSelect) dateSelect.innerHTML = "";
 if (valueSelect) valueSelect.innerHTML = "";
 if (thirdSelect) thirdSelect.innerHTML = "";
-if (thirdColumnRow) thirdColumnRow.style.display = "none";
-if (thirdHintEl) thirdHintEl.textContent = "";
 if (splitPointSelect) splitPointSelect.innerHTML = "";
-
 
   // (Optional extra selects - keep safe; these may exist in older versions)
   if (typeof numeratorSelect !== "undefined" && numeratorSelect) numeratorSelect.innerHTML = "";
@@ -2209,10 +2206,16 @@ function resetAll() {
   // --- Hide column selectors ---
   if (columnSelectors) columnSelectors.style.display = "none";
 
-  // --- Reset dropdowns ---
+    // --- Reset dropdowns ---
   if (dateSelect) dateSelect.innerHTML = "";
   if (valueSelect) valueSelect.innerHTML = "";
+  if (thirdSelect) thirdSelect.innerHTML = "";
   if (splitPointSelect) splitPointSelect.innerHTML = "";
+
+  // --- Reset optional third-column UI ---
+  if (thirdColumnRow) thirdColumnRow.style.display = "none";
+  if (thirdLabelEl) thirdLabelEl.textContent = "Denominator / opportunities";
+  if (thirdHintEl) thirdHintEl.textContent = "";
 
   // --- Reset text inputs ---
   if (baselineInput) baselineInput.value = "";
@@ -2260,8 +2263,13 @@ function resetAll() {
   const xmrRadio = document.querySelector("input[name='chartType'][value='xmr']");
   if (runRadio) runRadio.checked = true;
   if (xmrRadio) xmrRadio.checked = false;
-const moreChartTypesDetails = document.getElementById("moreChartTypesDetails");
-if (moreChartTypesDetails) moreChartTypesDetails.open = false;
+
+  if (typeof updateUIForChartType === "function") {
+    updateUIForChartType("run");
+  }
+
+  const moreChartTypesDetails = document.getElementById("moreChartTypesDetails");
+  if (moreChartTypesDetails) moreChartTypesDetails.open = false;
 
   // MR toggle default (match first load)
   const showMRCheckbox = document.getElementById("showMRCheckbox");
