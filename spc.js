@@ -7024,17 +7024,31 @@ function updateDateFormatWarning() {
     return;
   }
 
+  if (pref === "uk" && result.style === "us") {
+    dateFormatWarning.textContent =
+      "Warning: these dates look like US month-first dates (mm/dd/yyyy), but UK day-first is selected. Some rows may be ignored. Try switching to US month-first or Auto-detect.";
+    dateFormatWarning.style.display = "block";
+    return;
+  }
+
+  if (pref === "us" && result.style === "uk") {
+    dateFormatWarning.textContent =
+      "Warning: these dates look like UK day-first dates (dd/mm/yyyy), but US month-first is selected. Some rows may be ignored. Try switching to UK day-first or Auto-detect.";
+    dateFormatWarning.style.display = "block";
+    return;
+  }
+
   if (result.ambiguousCount > 0) {
     if (pref === "uk") {
       dateFormatWarning.textContent =
-        `This column contains ambiguous numeric dates. They will currently be interpreted as UK day-first dates (dd/mm/yyyy).`;
+        "This column contains ambiguous numeric dates. They will currently be interpreted as UK day-first dates (dd/mm/yyyy).";
       dateFormatWarning.style.display = "block";
       return;
     }
 
     if (pref === "us") {
       dateFormatWarning.textContent =
-        `This column contains ambiguous numeric dates. They will currently be interpreted as US month-first dates (mm/dd/yyyy).`;
+        "This column contains ambiguous numeric dates. They will currently be interpreted as US month-first dates (mm/dd/yyyy).";
       dateFormatWarning.style.display = "block";
       return;
     }
