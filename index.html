@@ -863,6 +863,13 @@ body.sidebar-collapsed .main {
   background: #003f78;
 }
 
+.helper-note {
+  font-size: 0.78rem;
+  line-height: 1.35;
+  color: #5f6b75;
+  margin: 0.55rem 0 0.45rem 0;
+}
+
 /* --- Chart context menu (right-click) --- */
 .chart-context-menu {
   position: fixed;
@@ -1332,7 +1339,7 @@ body.pdf-exporting #capability {
 <div id="errorMessage" class="error"></div>
 </div>
 
-<p class="sub">Add your data, choose your chart and settings, then click 'Generate / Recalculate' when needed. You can upload CSV or Excel files, clean data in the editor, and save projects to reopen later. Not sure about SPC? Ask the helper.</p>
+<p class="sub">Add your data, choose your chart and settings, then click 'Generate / Recalculate' when needed. You can upload CSV or Excel files, clean data in the editor, and save chart to reopen later. Not sure about SPC? Ask the helper.</p>
 
 <div class="layout">
     <!-- SIDEBAR: all controls -->
@@ -1373,12 +1380,18 @@ Open data editor (paste/type data)
 
 <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.4rem;">
 
+<hr />
+
+<div class="helper-note">
+Save your work to come back later, or open a previously saved chart. NB: Files saved in .json format.
+</div>
+
 <button id="exportSettingsBtn" type="button">
-Save project
+Save chart
 </button>
 
 <button id="importSettingsBtn" type="button">
-Open project
+Open saved chart
 </button>
 
 <input id="importSettingsFileInput" type="file" accept=".json,application/json" style="display:none;" />
@@ -1878,7 +1891,7 @@ Hide target line
     <li>Select your chart type and confirm the X and Y columns</li>
     <li>Click <strong>Generate / Recalculate</strong> if changes do not load automatically</li>
     <li>Add titles, labels, targets, splits, or annotations as needed</li>
-    <li>Right-click the chart for additional options, and use <strong>Save project</strong> if you want to return later</li>
+    <li>Right-click the chart for additional options, and use <strong>Save chart</strong> if you want to return later</li>
   </ol>
 </div>
 
@@ -1947,7 +1960,7 @@ Hide target line
             <li>Click <strong>Generate / Recalculate</strong> if the chart does not update automatically.</li>
             <li>Add titles, labels, targets, splits, or annotations if needed.</li>
             <li>Review the summary text and chart signals.</li>
-            <li>Save the project if you want to return to it later.</li>
+            <li>Save the chart if you want to return to it later.</li>
           </ol>
         </details>
 
@@ -2063,14 +2076,14 @@ Hide target line
         <details>
           <summary><strong>8. Saving and reopening your work</strong></summary>
           <p>
-            You can now save the whole chart as a <strong>project file</strong>.
+            You can now save the whole chart as a <strong>json file</strong>.
           </p>
           <ul>
-            <li><strong>Save project</strong> stores the current data and chart settings together in one <code>.json</code> file.</li>
-            <li><strong>Open project</strong> restores that saved chart so you can continue working on it later.</li>
+            <li><strong>Save chart</strong> stores the current data and chart settings together in one <code>.json</code> file.</li>
+            <li><strong>Open saved chart</strong> restores that saved chart so you can continue working on it later.</li>
           </ul>
           <p>
-            Project files can preserve things like:
+            Chart json files can preserve things like:
           </p>
           <ul>
             <li>selected columns</li>
@@ -2084,9 +2097,10 @@ Hide target line
         <details>
           <summary><strong>9. Copying and downloading charts</strong></summary>
           <ul>
-            <li>Use the download buttons to export the chart as an image or PDF.</li>
+            <li>Right clicking on the chart brings up the menu that allows you to export the chart as an image.</li>
             <li>Use the chart options to adjust appearance before exporting.</li>
-            <li>Right-click on the chart to see additional chart actions.</li>
+            <li>You can also copy the chart(s) and/or analysis to your clipboard for easy pasting into a report or presentation.</li>
+	    <li>Use the show/hide MR/S chart toggle in the Chart tab to toggle whether that is included in your ouput</li>
           </ul>
         </details>
 
@@ -2096,7 +2110,7 @@ Hide target line
           <ul>
             <li>data are not sent to a server</li>
             <li>uploaded files are processed locally in your browser session</li>
-            <li>once you close or refresh the page, unsaved work is no longer retained unless you saved a project file</li>
+            <li>once you close or refresh the page, unsaved work is no longer retained unless you saved a chart json file</li>
           </ul>
           <p class="hint">
             Always follow your local information governance guidance before using real patient-identifiable data.
