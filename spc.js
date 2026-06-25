@@ -54,23 +54,23 @@ const IMPLEMENTED_CHARTS = new Set(["run", "xmr", "c", "p", "u", "xbars", "t", "
 // Shared chart styling (keep charts consistent)
 // -----------------------------
 const SPC_STYLE = {
-  seriesBlue: SPC_STYLE.seriesBlue,
-  pointNormal: SPC_STYLE.seriesBlue,
-  pointSpecial: SPC_STYLE.pointSpecial,
-  pointBeyond: SPC_STYLE.pointBeyond,
-  centreRed: SPC_STYLE.centreRed,
-  limitGreen: SPC_STYLE.limitGreen,
-  targetOrange: SPC_STYLE.targetOrange
+  seriesBlue: "#003f87",
+  pointNormal: "#003f87",
+  pointSpecial: "#ff8c00",
+  pointBeyond: "#d73027",
+  centreRed: "#e41a1c",
+  limitGreen: "#2ca25f",
+  targetOrange: "#fdae61"
 };
 
 const SPC_STYLE_DEFAULT = {
-  seriesBlue: SPC_STYLE.seriesBlue,
-  pointNormal: SPC_STYLE.seriesBlue,
-  pointSpecial: SPC_STYLE.pointSpecial,
-  pointBeyond: SPC_STYLE.pointBeyond,
-  centreRed: SPC_STYLE.centreRed,
-  limitGreen: SPC_STYLE.limitGreen,
-  targetOrange: SPC_STYLE.targetOrange
+  seriesBlue: "#003f87",
+  pointNormal: "#003f87",
+  pointSpecial: "#ff8c00",
+  pointBeyond: "#d73027",
+  centreRed: "#e41a1c",
+  limitGreen: "#2ca25f",
+  targetOrange: "#fdae61"
 };
 
 const SPC_STYLE_COLOUR_BLIND = {
