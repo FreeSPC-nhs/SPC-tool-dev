@@ -54,22 +54,42 @@ const IMPLEMENTED_CHARTS = new Set(["run", "xmr", "c", "p", "u", "xbars", "t", "
 // Shared chart styling (keep charts consistent)
 // -----------------------------
 const SPC_STYLE = {
-  // main series + “normal” points
-  seriesBlue: "#003f87",     // matches Run/XmR main line :contentReference[oaicite:1]{index=1}
-  pointNormal: "#003f87",
-
-  // special-cause points (Run uses orange)
-  pointSpecial: "#ff8c00",   // matches your Run chart special cause colour :contentReference[oaicite:2]{index=2}
-
-  // centre line (Run median uses red)
-  centreRed: "#e41a1c",      // matches Run chart median colour :contentReference[oaicite:3]{index=3}
-
-  // limits (XmR uses green for UCL/LCL)
-  limitGreen: "#2ca25f",     // matches XmR limit colour :contentReference[oaicite:4]{index=4}
-
-  // target (Run/XmR use this orange)
-  targetOrange: "#fdae61"    // matches Run target line 
+  seriesBlue: SPC_STYLE.seriesBlue,
+  pointNormal: SPC_STYLE.seriesBlue,
+  pointSpecial: SPC_STYLE.pointSpecial,
+  pointBeyond: SPC_STYLE.pointBeyond,
+  centreRed: SPC_STYLE.centreRed,
+  limitGreen: SPC_STYLE.limitGreen,
+  targetOrange: SPC_STYLE.targetOrange
 };
+
+const SPC_STYLE_DEFAULT = {
+  seriesBlue: SPC_STYLE.seriesBlue,
+  pointNormal: SPC_STYLE.seriesBlue,
+  pointSpecial: SPC_STYLE.pointSpecial,
+  pointBeyond: SPC_STYLE.pointBeyond,
+  centreRed: SPC_STYLE.centreRed,
+  limitGreen: SPC_STYLE.limitGreen,
+  targetOrange: SPC_STYLE.targetOrange
+};
+
+const SPC_STYLE_COLOUR_BLIND = {
+  seriesBlue: "#0072B2",
+  pointNormal: "#0072B2",
+  pointSpecial: "#D55E00",
+  pointBeyond: "#000000",
+  centreRed: "#000000",
+  limitGreen: "#009E73",
+  targetOrange: "#CC79A7"
+};
+
+function applySpcColourTheme(themeName) {
+  const theme = themeName === "colourBlind"
+    ? SPC_STYLE_COLOUR_BLIND
+    : SPC_STYLE_DEFAULT;
+
+  Object.assign(SPC_STYLE, theme);
+}
 
 // -----------------------------
 // Shared legend styling
@@ -322,8 +342,26 @@ const chartTypeAvailabilityHint = document.getElementById("chartTypeAvailability
 const columnCheckWarning = document.getElementById("columnCheckWarning");
 
 const flagSpecialCauseOnChartCheckbox = document.getElementById("flagSpecialCauseOnChart");
+const colourBlindModeCheckbox = document.getElementById("colourBlindMode");
 const lclClampRow = document.getElementById("lclClampRow");
 const clampLclAtZeroCheckbox = document.getElementById("clampLclAtZero");
+
+const savedSpcTheme = localStorage.getItem("spcColourTheme") || "default";
+applySpcColourTheme(savedSpcTheme);
+
+if (colourBlindModeCheckbox) {
+  colourBlindModeCheckbox.checked = savedSpcTheme === "colourBlind";
+
+  colourBlindModeCheckbox.addEventListener("change", () => {
+    const themeName = colourBlindModeCheckbox.checked ? "colourBlind" : "default";
+    localStorage.setItem("spcColourTheme", themeName);
+    applySpcColourTheme(themeName);
+
+    if (rawRows && rawRows.length && generateButton) {
+      generateButton.click();
+    }
+  });
+}
 
 const dataEditorGridEl = document.getElementById("dataEditorGrid");
 let dataEditorGrid = null; // jspreadsheet instance
@@ -4293,17 +4331,17 @@ function drawXbarSChart(points, baselineCount, labels) {
   });
 
   const pointColoursX = xbarVals.map((v, i) => {
-    if (!flagOnChart) return "#003f87";
-    if (axX.flags?.beyond?.[i]) return "#d73027";
-    if (axX.flags?.special?.[i]) return "#ff8c00";
-    return "#003f87";
+    if (!flagOnChart) return SPC_STYLE.seriesBlue;
+    if (axX.flags?.beyond?.[i]) return SPC_STYLE.pointBeyond;
+    if (axX.flags?.special?.[i]) return SPC_STYLE.pointSpecial;
+    return SPC_STYLE.seriesBlue;
   });
 
   const pointColoursS = sVals.map((v, i) => {
-    if (!flagOnChart) return "#003f87";
-    if (axS.flags?.beyond?.[i]) return "#d73027";
-    if (axS.flags?.special?.[i]) return "#ff8c00";
-    return "#003f87";
+    if (!flagOnChart) return SPC_STYLE.seriesBlue;
+    if (axS.flags?.beyond?.[i]) return SPC_STYLE.pointBeyond;
+    if (axS.flags?.special?.[i]) return SPC_STYLE.pointSpecial;
+    return SPC_STYLE.seriesBlue;
   });
 
   // Draw as a combined chart (your existing approach)
@@ -4469,10 +4507,10 @@ function drawTChart(points, baselineCount, labels) {
   });
 
   const pointColours = deltas.map((v, i) => {
-    if (!flagOnChart) return "#003f87";
-    if (analysisForColour.flags?.beyond?.[i]) return "#d73027";
-    if (analysisForColour.flags?.special?.[i]) return "#ff8c00";
-    return "#003f87";
+    if (!flagOnChart) return SPC_STYLE.seriesBlue;
+    if (analysisForColour.flags?.beyond?.[i]) return SPC_STYLE.pointBeyond;
+    if (analysisForColour.flags?.special?.[i]) return SPC_STYLE.pointSpecial;
+    return SPC_STYLE.seriesBlue;
   });
 
   drawSimpleSPCChart({
@@ -4633,10 +4671,10 @@ function drawGChart(values, baselineCount, labels) {
   });
 
   const pointColours = gVals.map((v, i) => {
-    if (!flagOnChart) return "#003f87";
-    if (analysisForColour.flags?.beyond?.[i]) return "#d73027";
-    if (analysisForColour.flags?.special?.[i]) return "#ff8c00";
-    return "#003f87";
+    if (!flagOnChart) return SPC_STYLE.seriesBlue;
+    if (analysisForColour.flags?.beyond?.[i]) return SPC_STYLE.pointBeyond;
+    if (analysisForColour.flags?.special?.[i]) return SPC_STYLE.pointSpecial;
+    return SPC_STYLE.seriesBlue;
   });
 
   drawSimpleSPCChart({
@@ -7917,7 +7955,7 @@ if (chartType === "run") {
     }
 
     const pointColours = gaps.map((v, i) =>
-      (v > uclArr[i] || v < lclArr[i]) ? "#d73027" : "#003f87"
+      (v > uclArr[i] || v < lclArr[i]) ? SPC_STYLE.pointBeyond : SPC_STYLE.seriesBlue
     );
 
     drawSimpleSPCChart({
@@ -8059,7 +8097,7 @@ function drawRunChart(points, baselineCount, labels) {
 
   // ---- Build piecewise median line + colours ----
   const medianLine = new Array(n).fill(NaN);
-  const pointColours = new Array(n).fill("#003f87");
+  const pointColours = new Array(n).fill(SPC_STYLE.seriesBlue);
 
   // Collect rule hits (optional – useful if your summary wants it)
   const runRangesAll = [];
@@ -8127,7 +8165,7 @@ function drawRunChart(points, baselineCount, labels) {
     for (let i = 0; i < segValues.length; i++) {
       const globalIdx = start + i;
       if (flagOnChart && (runFlags[i] || trendFlags[i])) {
-        pointColours[globalIdx] = "#ff8c00";
+        pointColours[globalIdx] = SPC_STYLE.pointSpecial;
       }
     }
   }
@@ -8141,7 +8179,7 @@ function drawRunChart(points, baselineCount, labels) {
       data: values,
       pointRadius: 4,
       pointBackgroundColor: pointColours,
-      borderColor: "#003f87",
+      borderColor: SPC_STYLE.seriesBlue,
       borderWidth: 2,
       fill: false
     },
@@ -8150,7 +8188,7 @@ function drawRunChart(points, baselineCount, labels) {
       data: medianLine,
       borderDash: [6, 4],
       borderWidth: 2,
-      borderColor: "#e41a1c",
+      borderColor: SPC_STYLE.centreRed,
       pointRadius: 0,
       pointHoverRadius: 0,
       fill: false
@@ -8163,7 +8201,7 @@ function drawRunChart(points, baselineCount, labels) {
       data: values.map(() => target),
       borderDash: [4, 2],
       borderWidth: 2,
-      borderColor: "#fdae61",
+      borderColor: SPC_STYLE.targetOrange,
       pointRadius: 0,
       pointHoverRadius: 0,
       fill: false
@@ -8300,7 +8338,7 @@ function drawCChart(points, baselineCount, labels) {
     }
   }
 
-  const pointColours = values.map((v, i) => (beyond[i] ? "#d73027" : "#003f87"));
+  const pointColours = values.map((v, i) => (beyond[i] ? SPC_STYLE.pointBeyond : SPC_STYLE.seriesBlue));
 
   drawSimpleSPCChart({
     labels,
@@ -8426,7 +8464,7 @@ function drawPChart(pointsWithN, baselineCount, labels) {
     }
   }
 
-  const pointColours = values.map((v, i) => (beyond[i] ? "#d73027" : "#003f87"));
+  const pointColours = values.map((v, i) => (beyond[i] ? SPC_STYLE.pointBeyond : SPC_STYLE.seriesBlue));
 
   drawSimpleSPCChart({
     labels,
@@ -8558,7 +8596,7 @@ function drawUChart(pointsWithN, baselineCount, labels) {
     }
   }
 
-  const pointColours = values.map((v, i) => (beyond[i] ? "#d73027" : "#003f87"));
+  const pointColours = values.map((v, i) => (beyond[i] ? SPC_STYLE.pointBeyond : SPC_STYLE.seriesBlue));
 
   drawSimpleSPCChart({
     labels,
@@ -8832,7 +8870,7 @@ function drawXmRChart(points, baselineCount, labels) {
   const twoSigmaUp   = new Array(n).fill(NaN);
   const twoSigmaDown = new Array(n).fill(NaN);
 
-  const pointColours = new Array(n).fill("#003f87");
+  const pointColours = new Array(n).fill(SPC_STYLE.seriesBlue);
 
   let anySigma = false;
 
@@ -8898,9 +8936,9 @@ function drawXmRChart(points, baselineCount, labels) {
       if (!flagOnChart) {
         pointColours[globalIdx] = SPC_STYLE.pointNormal;
       } else if (segAnalysis.flags?.beyond?.[i]) {
-        pointColours[globalIdx] = "#d73027";
+        pointColours[globalIdx] = SPC_STYLE.pointBeyond;
       } else if (segAnalysis.flags?.special?.[i]) {
-        pointColours[globalIdx] = "#ff8c00";
+        pointColours[globalIdx] = SPC_STYLE.pointSpecial;
       } else {
         pointColours[globalIdx] = SPC_STYLE.pointNormal;
       }
@@ -8937,8 +8975,8 @@ function drawXmRChart(points, baselineCount, labels) {
   datasets.push({
     label: "Value",
     data: values,
-    borderColor: "#003f87",
-    backgroundColor: "#003f87",
+    borderColor: SPC_STYLE.seriesBlue,
+    backgroundColor: SPC_STYLE.seriesBlue,
     pointRadius: 3,
     pointHoverRadius: 4,
     pointBackgroundColor: pointColours,
@@ -8953,21 +8991,21 @@ function drawXmRChart(points, baselineCount, labels) {
     {
       label: "Mean",
       data: meanLine,
-      borderColor: "#d73027",
+      borderColor: SPC_STYLE.pointBeyond,
       borderDash: [6, 4],
       pointRadius: 0
     },
     {
       label: "UCL (3σ)",
       data: uclLine,
-      borderColor: "#2ca25f",
+      borderColor: SPC_STYLE.limitGreen,
       borderDash: [4, 4],
       pointRadius: 0
     },
     {
       label: "LCL (3σ)",
       data: lclLine,
-      borderColor: "#2ca25f",
+      borderColor: SPC_STYLE.limitGreen,
       borderDash: [4, 4],
       pointRadius: 0
     }
@@ -8996,7 +9034,7 @@ function drawXmRChart(points, baselineCount, labels) {
     datasets.push({
       label: "Target",
       data: values.map(() => target),
-      borderColor: "#fdae61",
+      borderColor: SPC_STYLE.targetOrange,
       borderWidth: 2,
       borderDash: [4, 2],
       pointRadius: 0,
@@ -9123,9 +9161,9 @@ function drawMrChart(allPoints, labels, segments) {
   const showAll = (typeof getMrDisplayMode === "function") && (getMrDisplayMode() === "all");
 
   // House style colours (match main chart)
-  const BLUE = "#003f87";
-  const RED = "#d73027";
-  const GREEN = "#2ca25f";
+  const BLUE = SPC_STYLE.seriesBlue;
+  const RED = SPC_STYLE.pointBeyond;
+  const GREEN = SPC_STYLE.limitGreen;
 
   function mrForValues(values) {
     const mr = Array(values.length).fill(null); // MR undefined at first point
@@ -9290,12 +9328,12 @@ function renderMrChart(mrLabels, mrValues, avgMR, uclMR) {
     {
       label: "Moving range",
       data: mrValues,
-      borderColor: "#003f87",
-      backgroundColor: "#003f87",
+      borderColor: SPC_STYLE.seriesBlue,
+      backgroundColor: SPC_STYLE.seriesBlue,
       borderWidth: 2,
       pointRadius: 3,
       pointHoverRadius: 4,
-      pointBackgroundColor: "#003f87",
+      pointBackgroundColor: SPC_STYLE.seriesBlue,
       pointBorderColor: "#ffffff",
       pointBorderWidth: 1,
       spanGaps: false,
@@ -9305,7 +9343,7 @@ function renderMrChart(mrLabels, mrValues, avgMR, uclMR) {
     {
       label: "MR average",
       data: mrValues.map(() => avgMR),
-      borderColor: "#d73027",
+      borderColor: SPC_STYLE.pointBeyond,
       borderDash: [6, 4],
       borderWidth: 2,
       pointRadius: 0,
@@ -9314,7 +9352,7 @@ function renderMrChart(mrLabels, mrValues, avgMR, uclMR) {
     {
       label: "MR UCL",
       data: mrValues.map(() => uclMR),
-      borderColor: "#2ca25f",
+      borderColor: SPC_STYLE.limitGreen,
       borderDash: [4, 4],
       borderWidth: 2,
       pointRadius: 0,
