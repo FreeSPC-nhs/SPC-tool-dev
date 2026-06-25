@@ -463,12 +463,14 @@ body.sidebar-collapsed .main {
   background: #ffffff;
   max-width: 900px;
   width: 90%;
-  max-height: 90vh;
+  max-height: 96vh;
   padding: 1rem;
   border-radius: 0.5rem;
   box-shadow: 0 2px 10px rgba(0,0,0,0.3);
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* Data editor controls row (header checkbox + optional detect button) */
@@ -1051,10 +1053,11 @@ body.sidebar-collapsed .main {
 .modal-dialog {
   position: relative;
   background: #ffffff;
-  margin: 3vh auto;
+  margin: 2vh auto;
   width: min(980px, calc(100% - 2rem));
-  max-height: 92vh;
-  overflow: hidden;
+  max-height: 96vh;
+  overflow-y: auto;
+  overflow-x: hidden;
   border-radius: 16px;
   border: 1px solid #d8dde0;
   box-shadow: 0 18px 45px rgba(0,0,0,0.22);
