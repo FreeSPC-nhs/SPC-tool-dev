@@ -601,6 +601,18 @@ body.sidebar-collapsed .main {
   z-index: 900;
 }
 
+@media (max-width: 650px), (max-height: 520px) {
+
+  #spcHelperPanel {
+    left: 0.5rem;
+    right: 0.5rem;
+    bottom: 0.5rem;
+    width: auto;
+    max-height: 92vh;
+  }
+
+}
+
 /* --- Chart wizard polish --- */
 #chartWizardModal .modal-dialog {
   width: min(720px, calc(100% - 2rem));
