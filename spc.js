@@ -5133,9 +5133,7 @@ const draggableAnnotationLabelsPlugin = {
   id: "draggableAnnotationLabels",
 
   afterInit(chart) {
-    if (chart !== currentChart) return;
-
-    const canvas = chart.canvas;
+       const canvas = chart.canvas;
     if (!canvas) return;
 
     let drag = null;
@@ -5194,7 +5192,7 @@ const draggableAnnotationLabelsPlugin = {
 
         annotations[drag.index].yAdjust = Math.max(
           -220,
-          Math.min(220, drag.startAdjust + deltaY)
+          Math.min(220, drag.startAdjust - deltaY)
         );
 
         redraw();
