@@ -5192,7 +5192,7 @@ const draggableAnnotationLabelsPlugin = {
 
         annotations[drag.index].yAdjust = Math.max(
           -220,
-          Math.min(220, drag.startAdjust - deltaY)
+          Math.min(220, drag.startAdjust + deltaY)
         );
 
         redraw();
