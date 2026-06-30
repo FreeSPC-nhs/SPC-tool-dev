@@ -5108,7 +5108,7 @@ function buildAnnotationConfig(labels) {
         content: wrapped,
         backgroundColor: "rgba(255,255,255,0.96)",
         color: "#000000",
-        borderColor: "#999999",
+        borderColor: "#888888",
         borderWidth: 0.5,
         padding: 6,
         cornerRadius: 6,
