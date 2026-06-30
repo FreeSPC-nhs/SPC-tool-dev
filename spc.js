@@ -5190,8 +5190,8 @@ const draggableAnnotationLabelsPlugin = {
       if (drag) {
         const deltaY = event.clientY - drag.startY;
 
-        const chartTopLimit = chart.chartArea.top + 18;
-const chartBottomLimit = chart.chartArea.bottom - 18;
+        const chartTopLimit = chart.chartArea.top ;
+const chartBottomLimit = chart.chartArea.bottom;
 
 const proposedAdjust = drag.startAdjust + deltaY;
 
