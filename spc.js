@@ -5163,13 +5163,19 @@ const draggableAnnotationLabelsPlugin = {
         const x = xScale.getPixelForValue(a.date);
         const yAdjust = Number.isFinite(a.yAdjust) ? a.yAdjust : 0;
 
-        const isAbove = yAdjust <= 0;
-        const y = isAbove
-          ? chartArea.top + Math.abs(yAdjust) + 14
-          : chartArea.bottom - Math.abs(yAdjust) - 14;
+        const annotationConfig = buildAnnotationConfig(chart.data.labels);
+const thisConfig = annotationConfig["annot" + i];
+const labelConfig = thisConfig && thisConfig.label ? thisConfig.label : {};
 
-        const width = Math.max(70, longest * 6.5 + 16);
-        const height = wrapped.length * 13 + 12;
+const actualYAdjust = Number.isFinite(labelConfig.yAdjust) ? labelConfig.yAdjust : yAdjust;
+const position = labelConfig.position || "end";
+
+const y = position === "start"
+  ? chartArea.bottom + actualYAdjust
+  : chartArea.top + actualYAdjust;
+
+const width = Math.max(80, longest * 7 + 20);
+const height = Math.max(28, wrapped.length * 15 + 18);
 
         if (
           e.x >= x - width / 2 &&
@@ -5229,6 +5235,16 @@ const draggableAnnotationLabelsPlugin = {
 
 if (typeof Chart !== "undefined" && Chart.register) {
   Chart.register(draggableAnnotationLabelsPlugin);
+
+  Chart.defaults.events = [
+    "mousemove",
+    "mouseout",
+    "click",
+    "touchstart",
+    "touchmove",
+    "mousedown",
+    "mouseup"
+  ];
 }
 
 function showDataEditorDeleteHelp() {
