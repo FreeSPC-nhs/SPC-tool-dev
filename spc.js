@@ -5190,10 +5190,30 @@ const draggableAnnotationLabelsPlugin = {
       if (drag) {
         const deltaY = event.clientY - drag.startY;
 
-        annotations[drag.index].yAdjust = Math.max(
-          -220,
-          Math.min(220, drag.startAdjust + deltaY)
-        );
+        const chartTopLimit = chart.chartArea.top + 18;
+const chartBottomLimit = chart.chartArea.bottom - 18;
+
+const proposedAdjust = drag.startAdjust + deltaY;
+
+const annotationConfig = buildAnnotationConfig(chart.data.labels);
+const thisConfig = annotationConfig["annot" + drag.index];
+const position = thisConfig?.label?.position || "end";
+
+let proposedY = position === "start"
+  ? chart.chartArea.bottom + proposedAdjust
+  : chart.chartArea.top + proposedAdjust;
+
+if (proposedY < chartTopLimit) {
+  proposedY = chartTopLimit;
+}
+
+if (proposedY > chartBottomLimit) {
+  proposedY = chartBottomLimit;
+}
+
+annotations[drag.index].yAdjust = position === "start"
+  ? proposedY - chart.chartArea.bottom
+  : proposedY - chart.chartArea.top;
 
         redraw();
         canvas.style.cursor = "ns-resize";
@@ -10112,7 +10132,7 @@ async function prepareChartsForExport() {
 
   if (mainContainer) {
     mainContainer.style.width = "1200px";
-    mainContainer.style.height = "560px";
+    mainContainer.style.height = "640px";
   }
 
   if (mrContainer) {
@@ -10121,7 +10141,7 @@ async function prepareChartsForExport() {
   }
 
   if (currentChart) {
-    currentChart.resize(1200, 560);
+    currentChart.resize(1200, 640);
     currentChart.update("none");
   }
 
