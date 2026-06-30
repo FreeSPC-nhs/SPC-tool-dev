@@ -3,7 +3,7 @@
 let rawRows = [];
 let currentChart = null;   // main I / run chart
 let mrChart = null;        // moving range chart
-let annotations = [];      // { date: 'YYYY-MM-DD', label: 'text' }
+let annotations = [];      // { date: 'YYYY-MM-DD', label: 'text', yAdjust?: number }
 let splits = [];   // indices where a new XmR segment starts (split AFTER index)
 let lastXmRAnalysis = null;
 let lastRunAnalysis = null;
@@ -1821,7 +1821,7 @@ if (addAnnotationBtn) {
     }
 
     // Dates from <input type="date"> are already 'YYYY-MM-DD'
-    annotations.push({ date: dateVal, label: labelVal });
+    annotations.push({ date: dateVal, label: labelVal, yAdjust: null });
 
 	// Clear just the label field, keep the date selection
 	annotationLabelInput.value = "";
@@ -5087,10 +5087,14 @@ function buildAnnotationConfig(labels) {
     const level = Math.floor(lane / 2);
     const above = lane % 2 === 0;
 
-    // Small offsets only
-    const yAdjust = above
-      ? -(4 + level * 10)
-      : (4 + level * 10);
+    // Small offsets only, unless the user has dragged the label
+	const defaultYAdjust = above
+	  ? -(4 + level * 10)
+	  : (4 + level * 10);
+
+	const yAdjust = Number.isFinite(a.yAdjust)
+	  ? a.yAdjust
+	  : defaultYAdjust;
 
     cfg["annot" + a._idx] = {
       type: "line",
@@ -5123,6 +5127,108 @@ function buildAnnotationConfig(labels) {
   });
 
   return cfg;
+}
+
+const draggableAnnotationLabelsPlugin = {
+  id: "draggableAnnotationLabels",
+
+  afterEvent(chart, args) {
+    if (!chart || chart !== currentChart) return;
+    if (!Array.isArray(annotations) || annotations.length === 0) return;
+
+    const e = args.event;
+    const canvas = chart.canvas;
+    const chartArea = chart.chartArea;
+    const xScale = chart.scales.x;
+
+    if (!e || !canvas || !chartArea || !xScale) return;
+
+    chart.$spcAnnotationDrag = chart.$spcAnnotationDrag || {
+      activeIndex: null,
+      startY: 0,
+      startAdjust: 0
+    };
+
+    function getAnnotationHitIndex() {
+      const labels = chart.data.labels || [];
+
+      for (let i = annotations.length - 1; i >= 0; i--) {
+        const a = annotations[i];
+        const xIndex = labels.indexOf(a.date);
+        if (xIndex < 0) continue;
+
+        const wrapped = wrapAnnotationText(a.label, 24);
+        const longest = wrapped.reduce((m, line) => Math.max(m, line.length), 0);
+
+        const x = xScale.getPixelForValue(a.date);
+        const yAdjust = Number.isFinite(a.yAdjust) ? a.yAdjust : 0;
+
+        const isAbove = yAdjust <= 0;
+        const y = isAbove
+          ? chartArea.top + Math.abs(yAdjust) + 14
+          : chartArea.bottom - Math.abs(yAdjust) - 14;
+
+        const width = Math.max(70, longest * 6.5 + 16);
+        const height = wrapped.length * 13 + 12;
+
+        if (
+          e.x >= x - width / 2 &&
+          e.x <= x + width / 2 &&
+          e.y >= y - height / 2 &&
+          e.y <= y + height / 2
+        ) {
+          return i;
+        }
+      }
+
+      return null;
+    }
+
+    if (e.type === "mousedown") {
+      const hitIndex = getAnnotationHitIndex();
+
+      if (hitIndex !== null) {
+        const currentAdjust = Number.isFinite(annotations[hitIndex].yAdjust)
+          ? annotations[hitIndex].yAdjust
+          : 0;
+
+        chart.$spcAnnotationDrag.activeIndex = hitIndex;
+        chart.$spcAnnotationDrag.startY = e.y;
+        chart.$spcAnnotationDrag.startAdjust = currentAdjust;
+
+        canvas.style.cursor = "ns-resize";
+      }
+    }
+
+    if (e.type === "mousemove") {
+      const drag = chart.$spcAnnotationDrag;
+
+      if (drag.activeIndex !== null) {
+        const nextAdjust = drag.startAdjust + (e.y - drag.startY);
+
+        annotations[drag.activeIndex].yAdjust = Math.max(
+          -180,
+          Math.min(180, nextAdjust)
+        );
+
+        chart.options.plugins.annotation.annotations = buildAnnotationConfig(chart.data.labels);
+        chart.update("none");
+
+        canvas.style.cursor = "ns-resize";
+      } else {
+        canvas.style.cursor = getAnnotationHitIndex() !== null ? "ns-resize" : "";
+      }
+    }
+
+    if (e.type === "mouseup" || e.type === "mouseout") {
+      chart.$spcAnnotationDrag.activeIndex = null;
+      canvas.style.cursor = "";
+    }
+  }
+};
+
+if (typeof Chart !== "undefined" && Chart.register) {
+  Chart.register(draggableAnnotationLabelsPlugin);
 }
 
 function showDataEditorDeleteHelp() {
