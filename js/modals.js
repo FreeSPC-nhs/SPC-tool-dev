@@ -84,3 +84,30 @@ function toggleDataEditorDeleteHelp() {
     showDataEditorDeleteHelp();
   }
 }
+
+if (dataEditorDeleteHelpBtn && dataEditorDeleteHelpPopup) {
+  dataEditorDeleteHelpBtn.addEventListener("mouseenter", showDataEditorDeleteHelp);
+  dataEditorDeleteHelpBtn.addEventListener("mouseleave", hideDataEditorDeleteHelp);
+
+  dataEditorDeleteHelpBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleDataEditorDeleteHelp();
+  });
+
+  dataEditorDeleteHelpBtn.addEventListener("focus", showDataEditorDeleteHelp);
+  dataEditorDeleteHelpBtn.addEventListener("blur", hideDataEditorDeleteHelp);
+
+  dataEditorDeleteHelpPopup.addEventListener("mouseenter", showDataEditorDeleteHelp);
+  dataEditorDeleteHelpPopup.addEventListener("mouseleave", hideDataEditorDeleteHelp);
+
+  document.addEventListener("click", (e) => {
+    const clickedInsideHelp =
+      dataEditorDeleteHelpBtn.contains(e.target) ||
+      dataEditorDeleteHelpPopup.contains(e.target);
+
+    if (!clickedInsideHelp) {
+      hideDataEditorDeleteHelp();
+    }
+  });
+}
