@@ -11662,15 +11662,6 @@ function toggleSpcHelper() {
 
 
 
-const spcHelperCloseBtn = document.getElementById("spcHelperCloseBtn");
-
-if (spcHelperCloseBtn) {
-  spcHelperCloseBtn.addEventListener("click", () => {
-    if (spcHelperPanel) {
-      spcHelperPanel.classList.remove("visible");
-    }
-  });
-}
 
 
 const resetButton = document.getElementById("resetButton");
@@ -11817,24 +11808,6 @@ function wireAutoRedrawControls() {
 }
 
 
-(function initHelpModal() {
-  const modal = document.getElementById("helpModal");
-  if (!modal) return;
-
-  // Click outside (backdrop) closes
-  modal.addEventListener("click", (e) => {
-    if (e.target && e.target.classList.contains("modal-backdrop")) {
-      toggleHelpSection(false);
-    }
-  });
-
-  // Escape closes
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && modal.classList.contains("visible")) {
-      toggleHelpSection(false);
-    }
-  });
-})();
 
 
 // Initialize UI once on load (in case default is run)
