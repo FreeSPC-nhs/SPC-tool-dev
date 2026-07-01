@@ -10298,30 +10298,9 @@ let tChartInputMode = (() => {
   }
 })();
 
-function toggleChartSetupModal(forceOpen) {
-  const modal = document.getElementById("chartSetupModal");
-  if (!modal) return;
 
-  const isOpen = modal.classList.contains("visible");
-  const shouldOpen = typeof forceOpen === "boolean" ? forceOpen : !isOpen;
 
-  modal.classList.toggle("visible", shouldOpen);
-  modal.setAttribute("aria-hidden", shouldOpen ? "false" : "true");
-  document.body.classList.toggle("modal-open", shouldOpen);
 
-  if (shouldOpen) {
-    const closeBtn = modal.querySelector(".modal-close");
-    if (closeBtn) closeBtn.focus();
-  }
-}
-
-function shouldAutoShowChartSetupModal() {
-  try {
-    return localStorage.getItem("spc_hideChartSetupModal") !== "true";
-  } catch {
-    return true;
-  }
-}
 
 function setAutoShowChartSetupModal(shouldShow) {
   try {
@@ -10329,25 +10308,7 @@ function setAutoShowChartSetupModal(shouldShow) {
   } catch {}
 }
 
-function renderChartSetupModal(chartType) {
-  const body = document.getElementById("chartSetupBody");
-  const subtitle = document.getElementById("chartSetupSubtitle");
-  const dontShow = document.getElementById("chartSetupDontShow");
-  if (!body || !subtitle) return;
 
-  if (dontShow) {
-    dontShow.checked = !shouldAutoShowChartSetupModal();
-    dontShow.onchange = () => setAutoShowChartSetupModal(!dontShow.checked);
-  }
-
-  function card(title, innerHtml) {
-    return `
-      <div style="border:1px solid #d8dde0; border-radius:0.5rem; padding:0.75rem; margin:0.75rem 0; background:#fafcfd;">
-        <div style="font-weight:700; color:#003087; margin-bottom:0.4rem;">${title}</div>
-        ${innerHtml}
-      </div>
-    `;
-  }
 
   function exampleTable(headers, rows) {
     const head = headers.map(h => `<th style="text-align:left; border-bottom:1px solid #d8dde0; padding:0.35rem 0.5rem;">${h}</th>`).join("");
@@ -10617,11 +10578,7 @@ function renderChartSetupModal(chartType) {
 }
 
 
-function maybeShowChartSetupModal(chartType) {
-  if (!shouldAutoShowChartSetupModal()) return;
-  renderChartSetupModal(chartType);
-  toggleChartSetupModal(true);
-}
+
 
 function openChartSetupForCurrentType() {
   const chartType = (typeof getSelectedChartType_NoSideEffects === "function")
