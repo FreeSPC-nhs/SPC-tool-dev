@@ -62,3 +62,25 @@ if (spcHelperCloseBtn) {
   });
 }
 
+function showDataEditorDeleteHelp() {
+  if (!dataEditorDeleteHelpBtn || !dataEditorDeleteHelpPopup) return;
+  dataEditorDeleteHelpPopup.classList.add("show");
+  dataEditorDeleteHelpBtn.setAttribute("aria-expanded", "true");
+  dataEditorDeleteHelpPopup.setAttribute("aria-hidden", "false");
+}
+
+function hideDataEditorDeleteHelp() {
+  if (!dataEditorDeleteHelpBtn || !dataEditorDeleteHelpPopup) return;
+  dataEditorDeleteHelpPopup.classList.remove("show");
+  dataEditorDeleteHelpBtn.setAttribute("aria-expanded", "false");
+  dataEditorDeleteHelpPopup.setAttribute("aria-hidden", "true");
+}
+
+function toggleDataEditorDeleteHelp() {
+  if (!dataEditorDeleteHelpPopup) return;
+  if (dataEditorDeleteHelpPopup.classList.contains("show")) {
+    hideDataEditorDeleteHelp();
+  } else {
+    showDataEditorDeleteHelp();
+  }
+}
