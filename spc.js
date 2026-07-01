@@ -5190,8 +5190,8 @@ const draggableAnnotationLabelsPlugin = {
       if (drag) {
         const deltaY = event.clientY - drag.startY;
 
-        const chartTopLimit = chart.chartArea.top ;
-const chartBottomLimit = chart.chartArea.bottom;
+        const chartTopLimit = chart.chartArea.top +10;
+const chartBottomLimit = chart.chartArea.bottom -10;
 
 const proposedAdjust = drag.startAdjust + deltaY;
 
@@ -11578,25 +11578,6 @@ if (clearSplitsButton) {
   });
 }
 
-// -----------------------------
-// Help section toggle
-// -----------------------------
-function toggleHelpSection(forceOpen) {
-  const modal = document.getElementById("helpModal");
-  if (!modal) return;
-
-  const isOpen = modal.classList.contains("visible");
-  const shouldOpen = typeof forceOpen === "boolean" ? forceOpen : !isOpen;
-
-  modal.classList.toggle("visible", shouldOpen);
-  modal.setAttribute("aria-hidden", shouldOpen ? "false" : "true");
-  document.body.classList.toggle("modal-open", shouldOpen);
-
-  if (shouldOpen) {
-    const closeBtn = modal.querySelector(".modal-close");
-    if (closeBtn) closeBtn.focus();
-  }
-}
 
 
 // --- SPC helper: collapse/expand suggested chips for better small-screen UX ---
