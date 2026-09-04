@@ -175,9 +175,6 @@
     </label>
   </div>
 
-  <div class="hint" style="margin-top:0.1rem;">
-    If you’re not sure, use <strong>Help me choose</strong>.
-  </div>
 </details>
 
 <div id="chartTypeAvailabilityHint" class="hint small-hint" style="margin-top:0.35rem;" aria-live="polite"></div>
@@ -595,9 +592,7 @@ Hide target line
 <div class="panel">
 
 <div style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem;">
-  <div class="hint" style="margin:0;">
-    Adjust the rule thresholds used in the summary and (optionally) point highlighting.
-  </div>
+  <strong>Detection rules</strong>
 
   <button id="ruleExplainerBtn" type="button" class="help-btn">
     Rule explainer
@@ -606,18 +601,53 @@ Hide target line
 
 <div style="margin-top:0.75rem;">
   <label>
-    Shift (run) length:
-    <input type="number" id="shiftRulePoints" min="3" step="1" value="8" style="width: 6rem;" />
-  </label>
-  <div class="hint small-hint">Default: 8 points on one side of the centre line.</div>
+  <span class="label-with-tooltip">
+    Shift (run) length
+
+    <span class="help-tooltip" tabindex="0" aria-label="Shift rule help">
+      ?
+      <span class="help-tooltip-text">
+        Number of consecutive points on the same side of the centre line
+        required to flag a shift. Default: 8.
+      </span>
+    </span>
+  </span>
+
+  <input
+    type="number"
+    id="shiftRulePoints"
+    min="3"
+    step="1"
+    value="8"
+    style="width:6rem;"
+  />
+</label>
 </div>
 
 <div>
   <label>
-    Trend length:
-    <input type="number" id="trendRulePoints" min="3" step="1" value="6" style="width: 6rem;" />
-  </label>
-  <div class="hint small-hint">Default: 6 consecutive increases or decreases. This number is only used when the trend rule is available and turned on.</div>
+  <span class="label-with-tooltip">
+    Trend length
+
+    <span class="help-tooltip" tabindex="0" aria-label="Trend rule help">
+      ?
+      <span class="help-tooltip-text">
+        Number of consecutive increases or decreases required to flag a trend.
+        Default: 6. This setting is only used when the trend rule is available
+        and enabled.
+      </span>
+    </span>
+  </span>
+
+  <input
+    type="number"
+    id="trendRulePoints"
+    min="3"
+    step="1"
+    value="6"
+    style="width:6rem;"
+  />
+</label>
 </div>
 
 <hr />
