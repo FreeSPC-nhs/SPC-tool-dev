@@ -5002,6 +5002,77 @@ if (typeof Chart !== "undefined" && Chart.register) {
   Chart.register(chartTitleUnderlinePlugin);
 }
 
+
+function positionHelpTooltip(helpIcon) {
+  if (!helpIcon) return;
+
+  const tooltip = helpIcon.querySelector(".help-tooltip-text");
+  if (!tooltip) return;
+
+  tooltip.classList.add("is-visible");
+
+  // Temporarily place it so we can measure it
+  tooltip.style.left = "0px";
+  tooltip.style.top = "0px";
+
+  const iconRect = helpIcon.getBoundingClientRect();
+  const tipRect = tooltip.getBoundingClientRect();
+
+  const gap = 8;
+  const edgePadding = 10;
+
+  // Centre tooltip horizontally on the ? icon
+  let left =
+    iconRect.left +
+    iconRect.width / 2 -
+    tipRect.width / 2;
+
+  // Keep the tooltip inside the browser window
+  left = Math.max(
+    edgePadding,
+    Math.min(left, window.innerWidth - tipRect.width - edgePadding)
+  );
+
+  // Prefer above the icon
+  let top = iconRect.top - tipRect.height - gap;
+
+  // If there isn't enough room above, put it underneath
+  if (top < edgePadding) {
+    top = iconRect.bottom + gap;
+  }
+
+  tooltip.style.left = `${left}px`;
+  tooltip.style.top = `${top}px`;
+}
+
+function hideHelpTooltip(helpIcon) {
+  const tooltip = helpIcon?.querySelector(".help-tooltip-text");
+
+  if (tooltip) {
+    tooltip.classList.remove("is-visible");
+  }
+}
+
+document.querySelectorAll(".help-tooltip").forEach(helpIcon => {
+  helpIcon.addEventListener("mouseenter", () => {
+    positionHelpTooltip(helpIcon);
+  });
+
+  helpIcon.addEventListener("mouseleave", () => {
+    hideHelpTooltip(helpIcon);
+  });
+
+  helpIcon.addEventListener("focus", () => {
+    positionHelpTooltip(helpIcon);
+  });
+
+  helpIcon.addEventListener("blur", () => {
+    hideHelpTooltip(helpIcon);
+  });
+});
+
+
+
 function cleanFontOptions(font) {
   const out = {};
   if (font?.family) out.family = font.family;
