@@ -245,6 +245,9 @@ const baselineInput     = document.getElementById("baselinePoints");
 const chartTitleInput   = document.getElementById("chartTitle");
 const xAxisLabelInput   = document.getElementById("xAxisLabel");
 const yAxisLabelInput   = document.getElementById("yAxisLabel");
+const chartTitleFontFamilyInput = document.getElementById("chartTitleFontFamily");
+const chartTitleFontSizeInput   = document.getElementById("chartTitleFontSize");
+const showChartTitleCheckbox    = document.getElementById("showChartTitle");
 
 const xAxisFontFamilyInput = document.getElementById("xAxisFontFamily");
 const xAxisFontSizeInput   = document.getElementById("xAxisFontSize");
@@ -459,7 +462,16 @@ function collectToolSettings() {
       enabled: (typeof targetEnabled !== "undefined") ? !!targetEnabled : true
     },
 
-    labels: { title, xLabel, yLabel },
+    labels: {
+  title,
+  xLabel,
+  yLabel,
+  titleDisplay: showChartTitleCheckbox?.checked ?? true,
+  titleFont: {
+    family: chartTitleFontFamilyInput?.value ?? "",
+    size: chartTitleFontSizeInput?.value ?? "16"
+  }
+},
 
     axes: {
       x: {
@@ -566,6 +578,27 @@ if (xAxisLabelInput && settings.labels?.xLabel !== undefined) {
 if (yAxisLabelInput && settings.labels?.yLabel !== undefined) {
   yAxisLabelInput.value = settings.labels.yLabel;
   yAxisLabelManuallyEdited = String(settings.labels.yLabel).trim() !== "";
+}
+
+if (
+  showChartTitleCheckbox &&
+  settings.labels?.titleDisplay !== undefined
+) {
+  showChartTitleCheckbox.checked = !!settings.labels.titleDisplay;
+}
+
+if (
+  chartTitleFontFamilyInput &&
+  settings.labels?.titleFont?.family !== undefined
+) {
+  chartTitleFontFamilyInput.value = settings.labels.titleFont.family;
+}
+
+if (
+  chartTitleFontSizeInput &&
+  settings.labels?.titleFont?.size !== undefined
+) {
+  chartTitleFontSizeInput.value = settings.labels.titleFont.size;
 }
 
   if (xAxisFontFamilyInput && settings.axes?.x?.font?.family !== undefined) xAxisFontFamilyInput.value = settings.axes.x.font.family;
@@ -1207,6 +1240,29 @@ function updateTargetToggleBtn() {
   targetToggleBtn.textContent = targetEnabled ? "Hide target line" : "Show target line";
 }
 
+function getChartTitleSettings() {
+  const size = Number(chartTitleFontSizeInput?.value);
+
+  return {
+    show: showChartTitleCheckbox ? showChartTitleCheckbox.checked : true,
+    font: {
+      family: (chartTitleFontFamilyInput?.value || "").trim(),
+      size: Number.isFinite(size) && size > 0 ? size : 16,
+      weight: "bold"
+    }
+  };
+}
+
+function buildChartTitleConfig(title) {
+  const settings = getChartTitleSettings();
+
+  return {
+    display: settings.show && !!String(title || "").trim(),
+    text: title,
+    font: cleanFontOptions(settings.font)
+  };
+}
+
 function applyPresentationEditsLive() {
   if (!currentChart) return;
 
@@ -1216,10 +1272,17 @@ function applyPresentationEditsLive() {
   const axisSettings = (typeof getAxisSettings === "function") ? getAxisSettings() : null;
 
   // Title
-  if (currentChart.options?.plugins?.title) {
-    currentChart.options.plugins.title.display = !!title;
-    currentChart.options.plugins.title.text = title;
-  }
+  // Title
+if (currentChart.options?.plugins?.title) {
+  const titleSettings = getChartTitleSettings();
+
+  currentChart.options.plugins.title.display =
+    titleSettings.show && !!title;
+
+  currentChart.options.plugins.title.text = title;
+  currentChart.options.plugins.title.font =
+    cleanFontOptions(titleSettings.font);
+}
 
   // X axis
   if (currentChart.options?.scales?.x) {
@@ -1314,6 +1377,22 @@ if (chartTitleInput) {
     applyPresentationEditsLiveDebounced();
   });
 }
+
+[
+  chartTitleFontFamilyInput,
+  chartTitleFontSizeInput,
+  showChartTitleCheckbox
+].forEach(el => {
+  if (!el) return;
+
+  el.addEventListener("input", () => {
+    applyPresentationEditsLiveDebounced();
+  });
+
+  el.addEventListener("change", () => {
+    applyPresentationEditsLiveDebounced();
+  });
+});
 
 if (xAxisLabelInput) {
   xAxisLabelInput.addEventListener("input", () => {
@@ -2100,11 +2179,7 @@ function drawSecondarySPCChart({
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        title: {
-          display: true,
-          text: title,
-          font: { size: 16, weight: "bold" }
-        },
+        title: buildChartTitleConfig(title),
         legend: SPC_LEGEND,
         annotation: {
           annotations: (typeof buildAnnotationConfig === "function")
@@ -2215,11 +2290,7 @@ function drawXbarSCombinedChart({
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        title: {
-          display: true,
-          text: mainLabels.title,
-          font: { size: 16, weight: "bold" }
-        },
+        title: buildChartTitleConfig(mainLabels.title),
         legend: SPC_LEGEND,
         annotation: {
           annotations: (typeof buildAnnotationConfig === "function")
@@ -2315,6 +2386,9 @@ function resetAll() {
   if (chartTitleInput) chartTitleInput.value = "";
   if (xAxisLabelInput) xAxisLabelInput.value = "";
   if (yAxisLabelInput) yAxisLabelInput.value = "";
+  if (chartTitleFontFamilyInput) chartTitleFontFamilyInput.value = "";
+  if (chartTitleFontSizeInput) chartTitleFontSizeInput.value = "16";
+  if (showChartTitleCheckbox) showChartTitleCheckbox.checked = true;
   if (targetInput) targetInput.value = "";
   if (annotationDateInput) annotationDateInput.value = "";
   if (annotationLabelInput) annotationLabelInput.value = "";
@@ -8370,11 +8444,7 @@ function drawRunChart(points, baselineCount, labels) {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        title: {
-          display: true,
-          text: title,
-          font: { size: 16, weight: "bold" }
-        },
+        title: buildChartTitleConfig(title),
         legend: SPC_LEGEND,
         annotation: { annotations: buildAnnotationConfig(labels) }
       },
@@ -8942,11 +9012,7 @@ function drawSimpleSPCChart({
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        title: {
-          display: true,
-          text: title,
-          font: { size: 16, weight: "bold" }
-        },
+        title: buildChartTitleConfig(title),
         legend: SPC_LEGEND,
         annotation: {
           annotations: (typeof buildAnnotationConfig === "function")
@@ -9213,11 +9279,7 @@ function drawXmRChart(points, baselineCount, labels) {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        title: {
-          display: true,
-          text: title,
-          font: { size: 16, weight: "bold" }
-        },
+        title: buildChartTitleConfig(title),
         legend: SPC_LEGEND,
         annotation: {
           annotations: buildAnnotationConfig(labels)
