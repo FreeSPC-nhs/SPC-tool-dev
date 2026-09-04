@@ -302,6 +302,11 @@ Y-axis label
 <input type="text" id="yAxisLabel" />
 </label>
 
+<hr>
+
+<details open>
+  <summary>Title settings</summary>
+
 <label>
   Title font family
   <select id="chartTitleFontFamily">
@@ -338,10 +343,37 @@ Y-axis label
   />
 </label>
 
+<div class="font-toggle-row">
+  <button
+    type="button"
+    id="chartTitleBoldBtn"
+    class="font-toggle-btn"
+    aria-pressed="true"
+    title="Bold"
+  ><strong>B</strong></button>
+
+  <button
+    type="button"
+    id="chartTitleItalicBtn"
+    class="font-toggle-btn"
+    aria-pressed="false"
+    title="Italic"
+  ><em>I</em></button>
+
+  <button
+    type="button"
+    id="chartTitleUnderlineBtn"
+    class="font-toggle-btn"
+    aria-pressed="false"
+    title="Underline"
+  ><u>U</u></button>
+</div>
+
 <label class="radio-pill" style="display:inline-flex; gap:0.5rem; align-items:center;">
   <input type="checkbox" id="showChartTitle" checked />
   Show chart title
 </label>
+</details?
 
 </div>
 

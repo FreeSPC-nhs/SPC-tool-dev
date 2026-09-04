@@ -248,6 +248,9 @@ const yAxisLabelInput   = document.getElementById("yAxisLabel");
 const chartTitleFontFamilyInput = document.getElementById("chartTitleFontFamily");
 const chartTitleFontSizeInput   = document.getElementById("chartTitleFontSize");
 const showChartTitleCheckbox    = document.getElementById("showChartTitle");
+const chartTitleBoldBtn      = document.getElementById("chartTitleBoldBtn");
+const chartTitleItalicBtn    = document.getElementById("chartTitleItalicBtn");
+const chartTitleUnderlineBtn = document.getElementById("chartTitleUnderlineBtn");
 
 const xAxisFontFamilyInput = document.getElementById("xAxisFontFamily");
 const xAxisFontSizeInput   = document.getElementById("xAxisFontSize");
@@ -469,7 +472,10 @@ function collectToolSettings() {
   titleDisplay: showChartTitleCheckbox?.checked ?? true,
   titleFont: {
     family: chartTitleFontFamilyInput?.value ?? "",
-    size: chartTitleFontSizeInput?.value ?? "16"
+    size: chartTitleFontSizeInput?.value ?? "16",
+    bold: isPressed(chartTitleBoldBtn),
+    italic: isPressed(chartTitleItalicBtn),
+    underline: isPressed(chartTitleUnderlineBtn)
   }
 },
 
@@ -599,6 +605,33 @@ if (
   settings.labels?.titleFont?.size !== undefined
 ) {
   chartTitleFontSizeInput.value = settings.labels.titleFont.size;
+}
+
+if (settings.labels?.titleFont?.bold !== undefined) {
+  setPressed(
+    chartTitleBoldBtn,
+    !!settings.labels.titleFont.bold
+  );
+}
+
+if (settings.labels?.titleFont?.italic !== undefined) {
+  setPressed(
+    chartTitleItalicBtn,
+    !!settings.labels.titleFont.italic
+  );
+}
+
+if (settings.labels?.titleFont?.underline !== undefined) {
+  setPressed(
+    chartTitleUnderlineBtn,
+    !!settings.labels.titleFont.underline
+  );
+}
+
+// Older project files pre-date title style controls.
+// Their titles were bold by default.
+if (settings.labels?.titleFont?.bold === undefined) {
+  setPressed(chartTitleBoldBtn, true);
 }
 
   if (xAxisFontFamilyInput && settings.axes?.x?.font?.family !== undefined) xAxisFontFamilyInput.value = settings.axes.x.font.family;
@@ -1245,10 +1278,14 @@ function getChartTitleSettings() {
 
   return {
     show: showChartTitleCheckbox ? showChartTitleCheckbox.checked : true,
+
+    underline: isPressed(chartTitleUnderlineBtn),
+
     font: {
       family: (chartTitleFontFamilyInput?.value || "").trim(),
       size: Number.isFinite(size) && size > 0 ? size : 16,
-      weight: "bold"
+      style: isPressed(chartTitleItalicBtn) ? "italic" : "normal",
+      weight: isPressed(chartTitleBoldBtn) ? "bold" : "normal"
     }
   };
 }
@@ -2389,6 +2426,9 @@ function resetAll() {
   if (chartTitleFontFamilyInput) chartTitleFontFamilyInput.value = "";
   if (chartTitleFontSizeInput) chartTitleFontSizeInput.value = "16";
   if (showChartTitleCheckbox) showChartTitleCheckbox.checked = true;
+  setPressed(chartTitleBoldBtn, true);
+  setPressed(chartTitleItalicBtn, false);
+  setPressed(chartTitleUnderlineBtn, false);
   if (targetInput) targetInput.value = "";
   if (annotationDateInput) annotationDateInput.value = "";
   if (annotationLabelInput) annotationLabelInput.value = "";
@@ -2611,6 +2651,10 @@ function wireToggleButton(btn) {
     }
   });
 }
+
+wireToggleButton(chartTitleBoldBtn);
+wireToggleButton(chartTitleItalicBtn);
+wireToggleButton(chartTitleUnderlineBtn);
 
 wireToggleButton(xAxisItalicBtn);
 wireToggleButton(xAxisBoldBtn);
@@ -4896,6 +4940,66 @@ function getAxisSettings() {
       }
     }
   };
+}
+
+// Draw an underline beneath the main chart title when requested.
+// Chart.js supports bold/italic natively, but not underline.
+const chartTitleUnderlinePlugin = {
+  id: "chartTitleUnderline",
+
+  afterDraw(chart) {
+    if (!chart || !chart.ctx) return;
+
+    const settings = getChartTitleSettings();
+
+    if (!settings.show || !settings.underline) return;
+
+    const titleOptions = chart.options?.plugins?.title;
+    const titleBlock = chart.titleBlock;
+
+    if (!titleOptions?.display || !titleBlock) return;
+
+    const text = titleOptions.text;
+
+    // Keep underline support simple and safe for normal one-line titles.
+    if (typeof text !== "string" || !text.trim()) return;
+
+    const ctx = chart.ctx;
+    const fontOptions = titleOptions.font || {};
+
+    ctx.save();
+
+    // Resolve the same font that Chart.js uses for the title.
+    if (typeof Chart !== "undefined" && Chart.helpers?.toFont) {
+      const resolvedFont = Chart.helpers.toFont(fontOptions);
+      ctx.font = resolvedFont.string;
+    } else {
+      const size = Number(fontOptions.size) || 16;
+      const family = fontOptions.family || "sans-serif";
+      const style = fontOptions.style || "normal";
+      const weight = fontOptions.weight || "normal";
+      ctx.font = `${style} ${weight} ${size}px ${family}`;
+    }
+
+    const textWidth = ctx.measureText(text).width;
+
+    const centreX = (titleBlock.left + titleBlock.right) / 2;
+    const underlineY = titleBlock.bottom - 3;
+
+    ctx.beginPath();
+    ctx.moveTo(centreX - textWidth / 2, underlineY);
+    ctx.lineTo(centreX + textWidth / 2, underlineY);
+
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = titleOptions.color || "#666";
+    ctx.stroke();
+
+    ctx.restore();
+  }
+};
+
+if (typeof Chart !== "undefined" && Chart.register) {
+  Chart.register(chartTitleUnderlinePlugin);
 }
 
 function cleanFontOptions(font) {
