@@ -357,9 +357,19 @@ Y-axis label
 <details open>
   <summary>Y axis</summary>
       <label>
-        Y-axis minimum
-        <input type="number" id="yAxisMin" step="any" />
-      </label>
+  <span class="label-with-tooltip">
+    Y-axis minimum
+
+    <span class="help-tooltip" tabindex="0" aria-label="Y-axis range help">
+      ?
+      <span class="help-tooltip-text">
+        Leave the minimum and maximum blank to let the chart choose its range automatically.
+      </span>
+    </span>
+  </span>
+
+  <input type="number" id="yAxisMin" />
+</label>
 
       <label>
         Y-axis maximum
@@ -418,7 +428,18 @@ Y-axis label
 </label>
 
 <label>
-  Y-axis tick interval
+  <span class="label-with-tooltip">
+    Y-axis tick interval
+
+    <span class="help-tooltip" tabindex="0" aria-label="Y-axis tick interval help">
+      ?
+      <span class="help-tooltip-text">
+        Leave blank for automatic spacing. For percentages, enter percentage
+        points: for example, 1 means 1%, and 0.5 means 0.5%.
+      </span>
+    </span>
+  </span>
+
   <input
     type="number"
     id="yAxisTickStep"
@@ -428,21 +449,12 @@ Y-axis label
   />
 </label>
 
-<div class="hint small-hint">
-  Leave blank for automatic spacing. For percentages, enter percentage points:
-  for example, 1 means 1%, and 0.5 means 0.5%.
-</div>
-
 <div class="font-toggle-row">
   <button type="button" id="yAxisItalicBtn" class="font-toggle-btn" aria-pressed="false" title="Italic"><em>I</em></button>
   <button type="button" id="yAxisBoldBtn" class="font-toggle-btn" aria-pressed="false" title="Bold"><strong>B</strong></button>
 </div>
 
 </details>
-
-<div class="hint small-hint" style="margin-top:0.25rem;">
-  Leave min/max blank to use the chart's automatic range.
-</div>
 
 </div>
 
