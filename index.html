@@ -245,7 +245,20 @@
 
 <hr />
 
-<strong class="field-label">X-axis type:</strong>
+<strong class="field-label">
+  <span class="label-with-tooltip">
+    X-axis type
+
+    <span class="help-tooltip" tabindex="0" aria-label="X-axis type help">
+      ?
+      <span class="help-tooltip-text">
+        Use Date / time for time-series SPC. Use Sequence / category
+        to plot rows in their original order without treating the
+        X-axis values as dates.
+      </span>
+    </span>
+  </span>:
+</strong>
 <div class="radio-row">
   <label class="radio-pill">
     <input type="radio" name="axisType" value="date" checked />
@@ -257,14 +270,22 @@
   </label>
 </div>
 
-<div class="hint small-hint" style="margin-top:0.25rem;">
-  Use <em>Date / time</em> for time-series SPC, or <em>Sequence / category</em> to plot rows in their original order.
-</div>
-
 <div id="dateFormatRow" style="margin-top:0.6rem;">
   <label>
+  <span class="label-with-tooltip">
     Date format for numeric dates
-    <select id="dateFormatPreference">
+
+    <span class="help-tooltip" tabindex="0" aria-label="Date format help">
+      ?
+      <span class="help-tooltip-text">
+        Used for ambiguous numeric dates such as 01/02/2024.
+        ISO dates such as 2024-02-01 and Excel dates are recognised
+        automatically.
+      </span>
+    </span>
+  </span>
+
+  <select id="dateFormatPreference">
       <option value="uk" selected>UK / day-first (dd/mm/yyyy)</option>
       <option value="us">US / month-first (mm/dd/yyyy)</option>
       <option value="auto">Auto-detect</option>
@@ -272,9 +293,6 @@
     </select>
   </label>
 
-  <div class="hint small-hint" style="margin-top:0.2rem;">
-    Applies to ambiguous numeric dates such as 01/02/2024. ISO dates like 2024-02-01 and Excel dates are handled automatically.
-  </div>
 
   <div id="dateFormatWarning" class="hint" style="display:none; margin-top:0.3rem; color:#8a3b00;"></div>
 </div>
@@ -373,7 +391,7 @@ Y-axis label
   <input type="checkbox" id="showChartTitle" checked />
   Show chart title
 </label>
-</details?
+</details>
 
 </div>
 
