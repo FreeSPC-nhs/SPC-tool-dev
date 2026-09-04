@@ -3772,19 +3772,22 @@ if (typeof updateRuleUIForChartType === "function") {
   updateRuleUIForChartType(chartType);
 }
 
+// ---- T chart UX: enable/disable Value column depending on input mode ----
+if (chartType === "t" && valueSelect) {
+  const shouldDisableValue = (tChartInputMode === "eventDates");
+  valueSelect.disabled = shouldDisableValue;
 
-  // ---- T chart UX: enable/disable Value column depending on input mode ----
-  if (chartType === "t" && valueSelect) {
-    const shouldDisableValue = (tChartInputMode === "eventDates");
-    valueSelect.disabled = shouldDisableValue;
-
-    // Soft hint if disabled
-    if (shouldDisableValue) {
-      valueSelect.title = "Not used for T chart when using event dates.";
-    }
+  // Soft hint if disabled
+  if (shouldDisableValue) {
+    valueSelect.title = "Not used for T chart when using event dates.";
   }
 }
 
+// Keep MR / S-chart toggle synchronized with the selected chart type
+if (typeof updateMrToggleVisibility === "function") {
+  updateMrToggleVisibility();
+}
+}
 
 
 
@@ -11344,10 +11347,11 @@ function countValidNumericPoints() {
 function enforceChartTypeSuitabilityAndRegen() {
   if (!rawRows || !rawRows.length) return;
 
-  updateMrToggleVisibility();
+
   const beforeType = getSelectedChartType_NoSideEffects();
   const availability = applyChartTypeAvailability();
   const afterType = getSelectedChartType_NoSideEffects();
+  updateMrToggleVisibility();
 
   if (!availability[afterType]?.enabled) {
     const reason = availability[afterType]?.reason || "This chart type is not available for the current data.";
