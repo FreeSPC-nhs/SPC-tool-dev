@@ -658,33 +658,64 @@ Hide target line
   <div class="panel" style="margin-top:0.75rem; padding:0.75rem;">
     <div id="advancedTrendRow" style="display:none; margin-top:0;">
       <label class="radio-pill" style="display:inline-flex; gap:0.5rem; align-items:center;">
-        <input type="checkbox" id="enableAdvancedTrend" />
-        Enable trend rule
-      </label>
-      <div class="hint small-hint" style="margin-top:0.25rem;">
-        Off by default. Trend rules can increase false alerts on some chart types.
-      </div>
+  <input type="checkbox" id="enableAdvancedTrend" />
+
+  <span class="label-with-tooltip">
+    Enable trend rule
+
+    <span class="help-tooltip" tabindex="0" aria-label="Trend rule help">
+      ?
+      <span class="help-tooltip-text">
+        Looks for a sustained sequence of consecutive increases or decreases.
+        The required length is set by the Trend length control above.
+      </span>
+    </span>
+  </span>
+</label>
+
+<div class="hint small-hint" style="margin-top:0.25rem;">
+  Advanced option — may increase false alerts.
+</div>
     </div>
 
     <div id="rareRulesRow" style="display:none; margin-top:0.75rem;">
-      <label class="radio-pill" style="display:inline-flex; gap:0.5rem; align-items:center;">
-        <input type="checkbox" id="enableRareRunTrend" />
-        Enable run &amp; trend rules for T/G charts (advanced)
-      </label>
+     <label class="radio-pill" style="display:inline-flex; gap:0.5rem; align-items:center;">
+  <input type="checkbox" id="enableRareRunTrend" />
 
-      <div class="hint small-hint" style="margin-top:0.25rem;">
-        This chart type is naturally irregular. Run and trend rules may generate false signals and are off by default.
-      </div>
+  <span class="label-with-tooltip">
+    Run &amp; trend rules for T/G charts
+
+    <span class="help-tooltip" tabindex="0" aria-label="Rare event rules help">
+      ?
+      <span class="help-tooltip-text">
+        Enables run and trend detection on T and G rare-event charts.
+        These chart types are naturally irregular, so pattern rules should be used cautiously.
+      </span>
+    </span>
+  </span>
+</label>
+
+<div class="hint small-hint" style="margin-top:0.25rem;">
+  Advanced option — rare-event charts can produce false run/trend signals.
+</div>
     </div>
 
     <div id="lclClampRow" style="display:none; margin-top:0.75rem;">
       <label class="radio-pill" style="display:inline-flex; gap:0.5rem; align-items:center;">
-        <input type="checkbox" id="clampLclAtZero" />
-        Clamp LCL at zero
-      </label>
-      <div class="hint small-hint" style="margin-top:0.25rem;">
-        Useful when the calculated lower control limit falls below zero for a measure that cannot realistically be negative.
-      </div>
+  <input type="checkbox" id="clampLclAtZero" />
+
+  <span class="label-with-tooltip">
+    Clamp LCL at zero
+
+    <span class="help-tooltip" tabindex="0" aria-label="Clamp LCL help">
+      ?
+      <span class="help-tooltip-text">
+        If the calculated lower control limit is below zero, display the LCL at zero instead.
+        Useful for measures such as counts or times that cannot be negative.
+      </span>
+    </span>
+  </span>
+</label>
     </div>
 
     <div id="zoneRulesSection" style="display:none; margin-top:0.75rem;">
