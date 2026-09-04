@@ -1432,6 +1432,8 @@ body.pdf-exporting #capability {
   font-weight: 400;
   line-height: 1.35;
   text-align: left;
+  white-space: normal;
+  overflow-wrap: break-word;
 
   box-sizing: border-box;
 
