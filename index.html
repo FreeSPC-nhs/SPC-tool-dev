@@ -417,6 +417,22 @@ Y-axis label
   </select>
 </label>
 
+<label>
+  Y-axis tick interval
+  <input
+    type="number"
+    id="yAxisTickStep"
+    min="0"
+    step="any"
+    placeholder="Auto"
+  />
+</label>
+
+<div class="hint small-hint">
+  Leave blank for automatic spacing. For percentages, enter percentage points:
+  for example, 1 means 1%, and 0.5 means 0.5%.
+</div>
+
 <div class="font-toggle-row">
   <button type="button" id="yAxisItalicBtn" class="font-toggle-btn" aria-pressed="false" title="Italic"><em>I</em></button>
   <button type="button" id="yAxisBoldBtn" class="font-toggle-btn" aria-pressed="false" title="Bold"><strong>B</strong></button>

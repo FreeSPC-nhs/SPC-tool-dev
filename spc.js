@@ -255,6 +255,7 @@ const yAxisMinInput        = document.getElementById("yAxisMin");
 const yAxisMaxInput        = document.getElementById("yAxisMax");
 const yAxisFormatInput     = document.getElementById("yAxisFormat");
 const yAxisDecimalsInput = document.getElementById("yAxisDecimals");
+const yAxisTickStepInput = document.getElementById("yAxisTickStep");
 const yAxisFontFamilyInput = document.getElementById("yAxisFontFamily");
 const yAxisFontSizeInput   = document.getElementById("yAxisFontSize");
 const yAxisItalicBtn = document.getElementById("yAxisItalicBtn");
@@ -474,6 +475,7 @@ function collectToolSettings() {
         max: yAxisMaxInput?.value ?? "",
         format: yAxisFormatInput?.value ?? "auto",
 	decimals: yAxisDecimalsInput?.value ?? "auto",
+        stepSize: yAxisTickStepInput?.value ?? "",
         font: {
           family: yAxisFontFamilyInput?.value ?? "",
           size: yAxisFontSizeInput?.value ?? "",
@@ -551,23 +553,70 @@ function applyToolSettings(settings, { silent = true } = {}) {
     if (typeof updateTargetToggleVisibility === "function") updateTargetToggleVisibility();
   }
 
-  if (chartTitleInput && settings.labels?.title !== undefined) chartTitleInput.value = settings.labels.title;
-  if (xAxisLabelInput && settings.labels?.xLabel !== undefined) xAxisLabelInput.value = settings.labels.xLabel;
-  if (yAxisLabelInput && settings.labels?.yLabel !== undefined) yAxisLabelInput.value = settings.labels.yLabel;
+  if (chartTitleInput && settings.labels?.title !== undefined) {
+  chartTitleInput.value = settings.labels.title;
+  chartTitleManuallyEdited = String(settings.labels.title).trim() !== "";
+}
+
+if (xAxisLabelInput && settings.labels?.xLabel !== undefined) {
+  xAxisLabelInput.value = settings.labels.xLabel;
+  xAxisLabelManuallyEdited = String(settings.labels.xLabel).trim() !== "";
+}
+
+if (yAxisLabelInput && settings.labels?.yLabel !== undefined) {
+  yAxisLabelInput.value = settings.labels.yLabel;
+  yAxisLabelManuallyEdited = String(settings.labels.yLabel).trim() !== "";
+}
 
   if (xAxisFontFamilyInput && settings.axes?.x?.font?.family !== undefined) xAxisFontFamilyInput.value = settings.axes.x.font.family;
   if (xAxisFontSizeInput && settings.axes?.x?.font?.size !== undefined) xAxisFontSizeInput.value = settings.axes.x.font.size;
   setPressed(xAxisItalicBtn, settings.axes?.x?.font?.style === "italic");
   setPressed(xAxisBoldBtn, settings.axes?.x?.font?.weight === "bold");
 
-  if (yAxisMinInput && settings.axes?.y?.min !== undefined) yAxisMinInput.value = settings.axes.y.min;
-  if (yAxisMaxInput && settings.axes?.y?.max !== undefined) yAxisMaxInput.value = settings.axes.y.max;
-  if (yAxisFormatInput && settings.axes?.y?.format !== undefined) yAxisFormatInput.value = settings.axes.y.format;
-  if (yAxisDecimalsInput && settings.axes?.y?.decimals !== undefined) yAxisDecimalsInput.value = settings.axes.y.decimals;
-  if (yAxisFontFamilyInput && settings.axes?.y?.font?.family !== undefined) yAxisFontFamilyInput.value = settings.axes.y.font.family;
-  if (yAxisFontSizeInput && settings.axes?.y?.font?.size !== undefined) yAxisFontSizeInput.value = settings.axes.y.font.size;
-  setPressed(yAxisItalicBtn, settings.axes?.y?.font?.style === "italic");
-  setPressed(yAxisBoldBtn, settings.axes?.y?.font?.weight === "bold");
+  if (yAxisMinInput && settings.axes?.y?.min !== undefined) {
+  yAxisMinInput.value = settings.axes.y.min;
+}
+
+if (yAxisMaxInput && settings.axes?.y?.max !== undefined) {
+  yAxisMaxInput.value = settings.axes.y.max;
+}
+
+const hasSavedYMin =
+  settings.axes?.y?.min !== undefined &&
+  String(settings.axes.y.min).trim() !== "";
+
+const hasSavedYMax =
+  settings.axes?.y?.max !== undefined &&
+  String(settings.axes.y.max).trim() !== "";
+
+yAxisBoundsManuallyEdited = hasSavedYMin || hasSavedYMax;
+
+if (yAxisFormatInput && settings.axes?.y?.format !== undefined) {
+  yAxisFormatInput.value = settings.axes.y.format;
+}
+
+if (yAxisDecimalsInput && settings.axes?.y?.decimals !== undefined) {
+  yAxisDecimalsInput.value = settings.axes.y.decimals;
+}
+
+if (yAxisTickStepInput && settings.axes?.y?.stepSize !== undefined) {
+  yAxisTickStepInput.value = settings.axes.y.stepSize;
+}
+
+if (typeof updateYAxisInputStep === "function") {
+  updateYAxisInputStep();
+}
+
+if (yAxisFontFamilyInput && settings.axes?.y?.font?.family !== undefined) {
+  yAxisFontFamilyInput.value = settings.axes.y.font.family;
+}
+
+if (yAxisFontSizeInput && settings.axes?.y?.font?.size !== undefined) {
+  yAxisFontSizeInput.value = settings.axes.y.font.size;
+}
+
+setPressed(yAxisItalicBtn, settings.axes?.y?.font?.style === "italic");
+setPressed(yAxisBoldBtn, settings.axes?.y?.font?.weight === "bold");
 
   if (Array.isArray(settings.splits)) splits = settings.splits.slice();
   if (Array.isArray(settings.annotations)) annotations = settings.annotations.slice();
@@ -1308,6 +1357,7 @@ function handleAxisControlChanged({ livePreview = false } = {}) {
 [
   yAxisFormatInput,
   yAxisDecimalsInput,
+  yAxisTickStepInput,
   xAxisFontFamilyInput,
   yAxisFontFamilyInput,
   xAxisFontSizeInput,
@@ -2285,6 +2335,7 @@ function resetAll() {
   if (yAxisMaxInput) yAxisMaxInput.value = "";
   if (yAxisFormatInput) yAxisFormatInput.value = "auto";
   if (yAxisDecimalsInput) yAxisDecimalsInput.value = "auto";
+  if (yAxisTickStepInput) yAxisTickStepInput.value = "";
   if (dateFormatPreferenceSelect) dateFormatPreferenceSelect.selectedIndex = 0;
   if (yAxisFontFamilyInput) yAxisFontFamilyInput.value = "";
   if (yAxisFontSizeInput) yAxisFontSizeInput.value = "11";
@@ -4730,6 +4781,24 @@ function parseOptionalNumber(value) {
   return Number.isFinite(n) ? n : undefined;
 }
 
+function getYAxisTickStep() {
+  const raw = parseOptionalNumber(yAxisTickStepInput?.value);
+
+  if (!Number.isFinite(raw) || raw <= 0) {
+    return undefined;
+  }
+
+  const format = yAxisFormatInput?.value || "auto";
+
+  // Percentage data is stored internally as proportions.
+  // User enters percentage points: 1 = 1%, 0.5 = 0.5%.
+  if (format === "percent") {
+    return raw / 100;
+  }
+
+  return raw;
+}
+
 function getAxisSettings() {
   return {
     x: {
@@ -4741,10 +4810,11 @@ function getAxisSettings() {
       }
     },
     y: {
-      min: parseOptionalNumber(yAxisMinInput?.value),
-      max: parseOptionalNumber(yAxisMaxInput?.value),
-      format: (yAxisFormatInput?.value || "auto"),
-      font: {
+  min: parseOptionalNumber(yAxisMinInput?.value),
+  max: parseOptionalNumber(yAxisMaxInput?.value),
+  format: (yAxisFormatInput?.value || "auto"),
+  stepSize: getYAxisTickStep(),
+  font: {
         family: (yAxisFontFamilyInput?.value || "").trim(),
         size: parseOptionalNumber(yAxisFontSizeInput?.value),
         style: isPressed(yAxisItalicBtn) ? "italic" : "normal",
@@ -4830,6 +4900,17 @@ function buildAxisConfig(axisLabel, settings, extra = {}) {
     },
     ...extra
   };
+
+// Integer axes should use whole-number tick positions.
+// This prevents fractional ticks being rounded into duplicate labels
+// such as 1, 1, 1, 2, 2.
+// Manual tick interval takes priority.
+if (Number.isFinite(settings?.stepSize) && settings.stepSize > 0) {
+  cfg.ticks.stepSize = settings.stepSize;
+} else if (settings?.format === "integer") {
+  // Otherwise let Chart.js choose sensible whole-number spacing.
+  cfg.ticks.precision = 0;
+}
 
   if (settings && Number.isFinite(settings.min)) {
     cfg.min = settings.min;
