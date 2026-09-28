@@ -738,22 +738,6 @@ if (
 
   updateDateFormatWarning();
   if (typeof updateDateControlsState === "function") updateDateControlsState();
-
-  if (rawRows && rawRows.length && generateButton) {
-  if (typeof lastGenerateWasManual !== "undefined") {
-    lastGenerateWasManual = false;
-  }
-
-  // Let all restored settings and UI updates finish before
-  // regenerating the chart.
-  window.setTimeout(function () {
-    if (typeof lastGenerateWasManual !== "undefined") {
-      lastGenerateWasManual = false;
-    }
-
-    generateButton.click();
-  }, 50);
-}
 }
 
 function collectProjectFile() {
@@ -808,12 +792,54 @@ function loadProjectObject(projectObj) {
 
   if (settings) {
     applyToolSettings(settings, { silent: false });
-  } else if (generateButton) {
-    if (typeof lastGenerateWasManual !== "undefined") lastGenerateWasManual = false;
-    generateButton.click();
   }
 
+  /*
+   * The data and restored settings are now in place.
+   * Mark the model dirty before generating the final chart.
+   */
   markDataModelDirty();
+
+  /*
+   * Wait until the browser has completed the restored-control updates,
+   * then generate the chart once using the final saved settings.
+   */
+  if (generateButton) {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+
+        /*
+         * Reassert saved user choices that automatic data/column logic
+         * may have changed during loading.
+         */
+        if (settings?.axisType) {
+          setCheckedRadioValue("axisType", settings.axisType);
+        }
+
+        if (
+          clampLclAtZeroCheckbox &&
+          settings?.rules?.clampLclAtZero !== undefined
+        ) {
+          clampLclAtZeroCheckbox.checked =
+            !!settings.rules.clampLclAtZero;
+        }
+
+        if (typeof updateDateFormatWarning === "function") {
+          updateDateFormatWarning();
+        }
+
+        if (typeof updateDateControlsState === "function") {
+          updateDateControlsState();
+        }
+
+        if (typeof lastGenerateWasManual !== "undefined") {
+          lastGenerateWasManual = false;
+        }
+
+        generateButton.click();
+      });
+    });
+  }
 }
 
 function importSettingsOrProjectFromFile(file) {
@@ -832,10 +858,33 @@ function importSettingsOrProjectFromFile(file) {
       }
 
       // Old settings-only file (backward compatibility)
-      if (parsed && typeof parsed === "object" && parsed.settingsVersion === 1) {
-        if (rawRows && rawRows.length) {
-          applyToolSettings(parsed, { silent: false });
-        } else {
+if (parsed && typeof parsed === "object" && parsed.settingsVersion === 1) {
+  if (rawRows && rawRows.length) {
+    applyToolSettings(parsed, { silent: false });
+
+    markDataModelDirty();
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (typeof lastGenerateWasManual !== "undefined") {
+          lastGenerateWasManual = false;
+        }
+
+        if (generateButton) {
+          generateButton.click();
+        }
+      });
+    });
+
+  } else {
+    pendingImportedSettings = parsed;
+    alert(
+      "Settings loaded. Now upload your CSV or Excel data and the tool will apply these settings automatically."
+    );
+  }
+
+  return;
+}
           pendingImportedSettings = parsed;
           alert("Settings loaded. Now upload your CSV or Excel data and the tool will apply these settings automatically.");
         }
