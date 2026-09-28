@@ -846,56 +846,68 @@ function importSettingsOrProjectFromFile(file) {
   if (!file) return;
 
   const reader = new FileReader();
+
   reader.onload = () => {
     try {
       const text = String(reader.result || "");
       const parsed = JSON.parse(text);
 
       // New full project file
-      if (parsed && typeof parsed === "object" && parsed.projectVersion === 1 && parsed.data?.rawRows) {
+      if (
+        parsed &&
+        typeof parsed === "object" &&
+        parsed.projectVersion === 1 &&
+        parsed.data?.rawRows
+      ) {
         loadProjectObject(parsed);
         return;
       }
 
       // Old settings-only file (backward compatibility)
-if (parsed && typeof parsed === "object" && parsed.settingsVersion === 1) {
-  if (rawRows && rawRows.length) {
-    applyToolSettings(parsed, { silent: false });
+      if (
+        parsed &&
+        typeof parsed === "object" &&
+        parsed.settingsVersion === 1
+      ) {
+        if (rawRows && rawRows.length) {
+          applyToolSettings(parsed, { silent: false });
 
-    markDataModelDirty();
+          markDataModelDirty();
 
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        if (typeof lastGenerateWasManual !== "undefined") {
-          lastGenerateWasManual = false;
-        }
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              if (typeof lastGenerateWasManual !== "undefined") {
+                lastGenerateWasManual = false;
+              }
 
-        if (generateButton) {
-          generateButton.click();
-        }
-      });
-    });
+              if (generateButton) {
+                generateButton.click();
+              }
+            });
+          });
 
-  } else {
-    pendingImportedSettings = parsed;
-    alert(
-      "Settings loaded. Now upload your CSV or Excel data and the tool will apply these settings automatically."
-    );
-  }
-
-  return;
-}
+        } else {
           pendingImportedSettings = parsed;
-          alert("Settings loaded. Now upload your CSV or Excel data and the tool will apply these settings automatically.");
+
+          alert(
+            "Settings loaded. Now upload your CSV or Excel data and the tool will apply these settings automatically."
+          );
         }
+
         return;
       }
 
-      alert("That file doesn’t look like a supported SPC project or settings file.");
+      alert(
+        "That file doesn’t look like a supported SPC project or settings file."
+      );
+
     } catch (e) {
-      alert("Could not read that JSON file. Please check it is a valid export from this tool.");
+      alert(
+        "Could not read that JSON file. Please check it is a valid export from this tool."
+      );
     }
   };
+
   reader.readAsText(file);
 }
 
