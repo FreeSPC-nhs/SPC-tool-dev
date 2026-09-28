@@ -716,6 +716,12 @@ setPressed(yAxisBoldBtn, settings.axes?.y?.font?.weight === "bold");
     applyColumnIntelligence(chartTypeNow);
   }
 
+// Reapply the saved X-axis type after column intelligence.
+// Column intelligence may otherwise replace the user's saved choice.
+if (settings.axisType) {
+  setCheckedRadioValue("axisType", settings.axisType);
+}
+
   if (missing.length && typeof showError === "function" && !silent) {
     showError(
       "Imported settings/project applied, but some saved columns were not found in your current data. " +
