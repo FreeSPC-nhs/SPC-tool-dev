@@ -3678,9 +3678,12 @@ function shouldFlagSpecialCauseOnChart() {
 }
 
 function shouldClampLclAtZero() {
-  // only allow if UI row is visible
-  if (!lclClampRow || lclClampRow.style.display === "none") return false;
-  return clampLclAtZeroCheckbox ? !!clampLclAtZeroCheckbox.checked : false;
+  // The saved checkbox value determines whether clamping is enabled.
+  // Do not depend on the visibility of the UI row, because visibility
+  // is determined during chart calculation.
+  return clampLclAtZeroCheckbox
+    ? !!clampLclAtZeroCheckbox.checked
+    : false;
 }
 
 function setLclClampVisibility(shouldShow) {
