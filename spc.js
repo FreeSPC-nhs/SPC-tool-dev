@@ -740,9 +740,20 @@ if (
   if (typeof updateDateControlsState === "function") updateDateControlsState();
 
   if (rawRows && rawRows.length && generateButton) {
-    if (typeof lastGenerateWasManual !== "undefined") lastGenerateWasManual = false;
-    generateButton.click();
+  if (typeof lastGenerateWasManual !== "undefined") {
+    lastGenerateWasManual = false;
   }
+
+  // Let all restored settings and UI updates finish before
+  // regenerating the chart.
+  window.setTimeout(function () {
+    if (typeof lastGenerateWasManual !== "undefined") {
+      lastGenerateWasManual = false;
+    }
+
+    generateButton.click();
+  }, 50);
+}
 }
 
 function collectProjectFile() {
