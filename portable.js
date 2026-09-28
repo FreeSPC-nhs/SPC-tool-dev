@@ -345,21 +345,31 @@
     };
   }
 
-  async function getApplicationBundle() {
-    /*
-     * If this page is already a portable file, its original clean application
-     * bundle was restored by the bootstrap. Reuse it rather than attempting
-     * any file:// or internet requests.
-     */
-    if (
-      window.__SPC_PORTABLE_BUNDLE__ &&
-      window.__SPC_PORTABLE_BUNDLE__.format === "freespc-portable-bundle"
-    ) {
-      return window.__SPC_PORTABLE_BUNDLE__;
-    }
+  var applicationBundlePromise = null;
 
-    return createBundleFromOnlineApplication();
+async function getApplicationBundle() {
+  /*
+   * Portable files already contain the complete application bundle,
+   * so reuse it directly when working offline.
+   */
+  if (
+    window.__SPC_PORTABLE_BUNDLE__ &&
+    window.__SPC_PORTABLE_BUNDLE__.format === "freespc-portable-bundle"
+  ) {
+    return window.__SPC_PORTABLE_BUNDLE__;
   }
+
+  /*
+   * On the normal web version, create the bundle only once.
+   * Keeping the Promise also means multiple callers can wait for the
+   * same background operation rather than rebuilding everything.
+   */
+  if (!applicationBundlePromise) {
+    applicationBundlePromise = createBundleFromOnlineApplication();
+  }
+
+  return applicationBundlePromise;
+}
 
   function collectCurrentProject() {
     if (typeof collectProjectFile !== "function") {
@@ -677,14 +687,39 @@
   }
 
   function initialisePortableSupport() {
-    wirePortableButton();
+  wirePortableButton();
 
-    /*
-     * Let the normal SPC startup code complete first. spc.js is loaded before
-     * portable.js, so its DOMContentLoaded handlers will normally run first.
-     */
-    window.setTimeout(loadEmbeddedProjectIfPresent, 100);
+  /*
+   * Let the normal SPC startup code complete first.
+   */
+  window.setTimeout(loadEmbeddedProjectIfPresent, 100);
+
+  /*
+   * On the normal online version, prepare the portable application bundle
+   * quietly in the background. This makes the later Save portable chart
+   * action much faster because the CSS and JavaScript have already been read.
+   *
+   * A portable/offline copy already contains its bundle and does not need
+   * to do this.
+   */
+  if (!window.__SPC_PORTABLE_BUNDLE__) {
+    window.setTimeout(function () {
+      getApplicationBundle().catch(function (error) {
+        /*
+         * Do not interrupt normal use of the SPC tool if background
+         * preparation fails. Save portable chart will try again later
+         * and display an error if necessary.
+         */
+        console.warn(
+          "FreeSPC portable bundle could not be prepared in advance:",
+          error
+        );
+
+        applicationBundlePromise = null;
+      });
+    }, 500);
   }
+}
 
   if (document.readyState === "loading") {
     document.addEventListener(

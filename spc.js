@@ -722,6 +722,13 @@ if (settings.axisType) {
   setCheckedRadioValue("axisType", settings.axisType);
 }
 
+if (
+  clampLclAtZeroCheckbox &&
+  settings.rules?.clampLclAtZero !== undefined
+) {
+  clampLclAtZeroCheckbox.checked = !!settings.rules.clampLclAtZero;
+}
+
   if (missing.length && typeof showError === "function" && !silent) {
     showError(
       "Imported settings/project applied, but some saved columns were not found in your current data. " +
