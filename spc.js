@@ -11914,9 +11914,9 @@ if (clearDataButton) {
 
     if (hasExistingWork) {
       const ok = window.confirm(
-        "Clear all data and chart settings?\n\n" +
-        "This will remove the loaded data as well as the current chart. " +
-        "Save the chart first if you want to reopen it later."
+        "Clear all loaded data?\n\n" +
+"This will also reset the current chart and its settings. " +
+"Save the chart first if you want to reopen it later."
       );
 
       if (!ok) return;
