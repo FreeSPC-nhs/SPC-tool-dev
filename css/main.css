@@ -62,6 +62,26 @@ select:disabled {
   cursor: not-allowed;
 }
 
+/* Secondary destructive utility action in the Data tab */
+.clear-data-button {
+  display: block;
+  width: auto;
+  padding: 0.3rem 0.7rem;
+  margin-top: 0.15rem;
+  margin-bottom: 0.5rem;
+  background: #ffffff;
+  border: 1px solid #aeb7bd;
+  color: #425563;
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+.clear-data-button:hover:not(:disabled) {
+  background: #f2f4f5;
+  border-color: #768692;
+  color: #212b32;
+}
+
 /* MR chart a bit shorter */
 #mrPanel .chart-container {
   height: 300px;
