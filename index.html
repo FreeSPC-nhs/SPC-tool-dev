@@ -145,6 +145,38 @@
   Load data to enable chart and column selection.
 </div>
 
+<div
+  id="newDataChartPrompt"
+  style="
+    display:none;
+    margin-bottom:0.75rem;
+    padding:0.75rem;
+    border:1px solid #b8c8d6;
+    border-radius:8px;
+    background:#f3f8fc;
+  "
+>
+  <strong>New data loaded</strong>
+
+  <div class="hint" style="margin-top:0.25rem;">
+    Would you like help choosing the most appropriate chart for these data?
+  </div>
+
+  <div style="display:flex; gap:0.4rem; flex-wrap:wrap; margin-top:0.55rem;">
+    <button id="newDataHelpChooseBtn" type="button">
+      Help me choose
+    </button>
+
+    <button
+      id="newDataChooseManuallyBtn"
+      type="button"
+      class="help-btn"
+    >
+      Choose manually
+    </button>
+  </div>
+</div>
+
 <strong class="field-label">Chart type:</strong>
 
 <div class="radio-row chart-row">

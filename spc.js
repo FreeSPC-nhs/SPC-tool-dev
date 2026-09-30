@@ -281,6 +281,16 @@ if (uRateMultiplierSelect) {
 // Chart chooser / extra columns
 const helpChooseChartBtn   = document.getElementById("helpChooseChartBtn");
 const chartSetupBtn        = document.getElementById("chartSetupBtn");
+
+const newDataChartPrompt =
+  document.getElementById("newDataChartPrompt");
+
+const newDataHelpChooseBtn =
+  document.getElementById("newDataHelpChooseBtn");
+
+const newDataChooseManuallyBtn =
+  document.getElementById("newDataChooseManuallyBtn");
+
 const extraColumnsWrap     = document.getElementById("extraColumns");
 const extraColumns_PU      = document.getElementById("extraColumns_PU");
 const extraColumns_XbarS   = document.getElementById("extraColumns_XbarS");
@@ -2274,10 +2284,13 @@ fileInput.addEventListener("change", async () => {
         const headers = results.meta && results.meta.fields ? results.meta.fields : null;
         rows = stripDuplicateHeaderRow(rows, headers);
 
-	if (!prepareForNewImportedChart(rows)) return;        
-	if (!loadRows(rows)) return;
-        resetStateAfterDataLoad();
-        return;
+	if (!prepareForNewImportedChart(rows)) return;
+if (!loadRows(rows)) return;
+
+resetStateAfterDataLoad();
+showNewDataChartPrompt();
+
+return;
       }
     }
 
@@ -2311,6 +2324,7 @@ fileInput.addEventListener("change", async () => {
     }
 
     resetStateAfterDataLoad();
+showNewDataChartPrompt();
   } catch (err) {
     console.error(err);
     showError(
@@ -6317,8 +6331,20 @@ loadedOk = true;
       const hint = document.getElementById("noDataYetHint");
       if (hint) hint.style.display = "none";
 
-      try { if (generateButton) generateButton.click(); }
-      catch (genErr) { console.warn("Auto-generate failed:", genErr); }
+      if (isNewExcelImport) {
+  // A genuinely new Excel dataset should pause at chart choice
+  // rather than immediately implying that the default Run chart
+  // is necessarily the right choice.
+  showNewDataChartPrompt();
+} else {
+  // Editing the existing dataset should retain the current behaviour:
+  // redraw the existing chart immediately.
+  try {
+    if (generateButton) generateButton.click();
+  } catch (genErr) {
+    console.warn("Auto-generate failed:", genErr);
+  }
+}
 
     } catch (e) {
       console.error(e);
@@ -11196,6 +11222,26 @@ function setChartType(chartType) {
   }
 }
 
+function hideNewDataChartPrompt() {
+  if (newDataChartPrompt) {
+    newDataChartPrompt.style.display = "none";
+  }
+}
+
+function showNewDataChartPrompt() {
+  if (!newDataChartPrompt) return;
+
+  newDataChartPrompt.style.display = "block";
+
+  // Move naturally to the next step in the workflow: chart choice.
+  const chartTabButton =
+    document.querySelector('.tab-btn[data-tab="tab-chart"]');
+
+  if (chartTabButton) {
+    chartTabButton.click();
+  }
+}
+
 function startChartWizard() {
   chartWizardState.step = 0;
   chartWizardState.answers = {};
@@ -11475,11 +11521,26 @@ function useWizardChart(chartType) {
   }
 }
 
+if (newDataHelpChooseBtn) {
+  newDataHelpChooseBtn.addEventListener("click", () => {
+    hideNewDataChartPrompt();
 
+    toggleChartWizard(true);
+    startChartWizard();
+  });
+}
+
+if (newDataChooseManuallyBtn) {
+  newDataChooseManuallyBtn.addEventListener("click", () => {
+    hideNewDataChartPrompt();
+  });
+}
 
 // Hook wizard start into the existing button/modal
 if (helpChooseChartBtn) {
   helpChooseChartBtn.addEventListener("click", () => {
+    hideNewDataChartPrompt();
+
     toggleChartWizard(true);
     startChartWizard();
   });
@@ -12161,7 +12222,8 @@ function wireAutoRedrawControls() {
   // Chart type radios (run / xmr)
    document.querySelectorAll("input[name='chartType']").forEach(radio => {
   radio.addEventListener("change", () => {
-    applyDefaultYBoundsForSelectedColumn();
+  hideNewDataChartPrompt();  
+  applyDefaultYBoundsForSelectedColumn();
 
     if (typeof updateUIForChartType === "function") {
       updateUIForChartType(radio.value);
