@@ -1033,6 +1033,48 @@ function resetStateAfterDataLoad() {
   if (splitPointSelect) splitPointSelect.innerHTML = "";
 }
 
+function prepareForNewImportedChart(rows) {
+  // Validate the new data before destroying the current chart.
+  if (!rows || rows.length === 0) {
+    showError("No rows found in the data.");
+    return false;
+  }
+
+  const firstRow = rows[0];
+  const columns =
+    firstRow && typeof firstRow === "object"
+      ? Object.keys(firstRow)
+      : [];
+
+  if (columns.length === 0) {
+    showError("Could not detect any columns in the data.");
+    return false;
+  }
+
+  const hasExistingWork =
+    (Array.isArray(rawRows) && rawRows.length > 0) ||
+    !!currentChart ||
+    !!dataModelDirty;
+
+  if (hasExistingWork) {
+    const ok = window.confirm(
+      "Load these data as a new chart?\n\n" +
+      "This will clear the current data and chart settings. " +
+      "Save the current chart first if you want to reopen it later."
+    );
+
+    if (!ok) {
+      // Allow the same file to be selected again later.
+      if (fileInput) fileInput.value = "";
+      return false;
+    }
+  }
+
+  // We now know the replacement data are usable.
+  resetAll();
+  return true;
+}
+
 function guessColumns(rows) {
   if (!rows || rows.length === 0) return { dateCol: null, valueCol: null, hasDateCandidate: false };
 
@@ -2136,15 +2178,17 @@ fileInput.addEventListener("change", async () => {
         const headers = results.meta && results.meta.fields ? results.meta.fields : null;
         rows = stripDuplicateHeaderRow(rows, headers);
 
-        if (!loadRows(rows)) return;
+	if (!prepareForNewImportedChart(rows)) return;        
+	if (!loadRows(rows)) return;
         resetStateAfterDataLoad();
         return;
       }
     }
 
     if (parsed.hadHeader) {
-      if (!loadRows(parsed.rows)) return;
-    } else {
+  if (!prepareForNewImportedChart(parsed.rows)) return;
+  if (!loadRows(parsed.rows)) return;
+} else {
       const ok = confirm(
         "It looks like your CSV does not include column headings.\n\n" +
         "Click OK to treat the first row as DATA (I will create Column1, Column2...).\n" +
@@ -2166,6 +2210,7 @@ fileInput.addEventListener("change", async () => {
         return o;
       });
 
+      if (!prepareForNewImportedChart(objRows)) return;
       if (!loadRows(objRows)) return;
     }
 
@@ -2695,6 +2740,88 @@ if (typeof setGenerateNeedsRecalc === "function") setGenerateNeedsRecalc(false);
   console.log("All elements reset.");
 }
 
+function resetChartKeepData() {
+  // If there is no dataset to preserve, a normal full reset is enough.
+  if (!Array.isArray(rawRows) || rawRows.length === 0) {
+    resetAll();
+    return;
+  }
+
+  // Keep the current dataset in memory.
+  // resetAll() replaces rawRows with a new empty array, so a shallow
+  // copy of the existing array is sufficient here.
+  const savedRows = rawRows.slice();
+
+  // Keep data-related choices rather than chart-specific settings.
+  const savedXColumn = dateSelect?.value || "";
+  const savedYColumn = valueSelect?.value || "";
+
+  const savedAxisType =
+    document.querySelector("input[name='axisType']:checked")?.value || "date";
+
+  const savedDateFormat =
+    dateFormatPreferenceSelect?.value || "";
+
+  // Perform the normal, thoroughly defined clean reset.
+  resetAll();
+
+  // Put the existing dataset back.
+  if (!loadRows(savedRows)) {
+    showError("The existing data could not be restored after resetting the chart.");
+    return;
+  }
+
+  // Restore X and Y column selections where those columns are still available.
+  function restoreSelectValue(selectEl, value) {
+    if (!selectEl || !value) return;
+
+    const exists = Array.from(selectEl.options)
+      .some(option => option.value === value && !option.disabled);
+
+    if (exists) {
+      selectEl.value = value;
+    }
+  }
+
+  restoreSelectValue(dateSelect, savedXColumn);
+  restoreSelectValue(valueSelect, savedYColumn);
+
+  // Keep the user's interpretation of the X axis.
+  const axisRadio = document.querySelector(
+    `input[name="axisType"][value="${savedAxisType}"]`
+  );
+
+  if (axisRadio) {
+    axisRadio.checked = true;
+  }
+
+  // Keep the date parsing preference because this belongs to the dataset,
+  // rather than to the appearance/statistical setup of the chart.
+  if (dateFormatPreferenceSelect && savedDateFormat) {
+    const exists = Array.from(dateFormatPreferenceSelect.options)
+      .some(option => option.value === savedDateFormat);
+
+    if (exists) {
+      dateFormatPreferenceSelect.value = savedDateFormat;
+    }
+  }
+
+  if (typeof updateDateFormatWarning === "function") {
+    updateDateFormatWarning();
+  }
+
+  if (typeof updateDateControlsState === "function") {
+    updateDateControlsState();
+  }
+
+  // Y-axis limits have just been reset to automatic.
+  yAxisBoundsManuallyEdited = false;
+
+  // Generate the clean Run chart immediately from the retained data.
+  if (generateButton) {
+    generateButton.click();
+  }
+}
 
 function validateBeforeGenerate() {
   if (!rawRows || rawRows.length === 0) {
@@ -6043,14 +6170,21 @@ if (useHeaders !== autoGuess) {
 }
 
       const rows = sheetToObjects(headers, body);
+if (!rows || rows.length === 0) {
+  showError("Paste at least one row of data.");
+  return;
+}
 
-      if (!rows || rows.length === 0) {
-        showError("Paste at least one row of data.");
-        return;
-      }
+// Applying data from a newly opened Excel workbook means "new chart".
+// Applying data from the normal data editor means "edit current chart".
+const isNewExcelImport = dataEditorSourceMode === "excel";
 
-      if (!loadRows(rows)) return;
-      loadedOk = true;
+if (isNewExcelImport) {
+  if (!prepareForNewImportedChart(rows)) return;
+}
+
+if (!loadRows(rows)) return;
+loadedOk = true;
 
             clearError();
 
@@ -11746,11 +11880,8 @@ function toggleSpcHelper() {
 }
 
 
-
-
-
-
 const resetButton = document.getElementById("resetButton");
+const clearDataButton = document.getElementById("clearDataButton");
 
 if (resetButton) {
   resetButton.addEventListener("click", () => {
@@ -11761,8 +11892,30 @@ if (resetButton) {
 
     if (hasExistingWork) {
       const ok = window.confirm(
-        "Start a new chart?\n\n" +
-        "This will clear the current data and chart settings. " +
+        "Reset this chart?\n\n" +
+        "Your loaded data and selected X/value columns will be kept, " +
+        "but chart settings such as chart type, baseline, target, splits, " +
+        "annotations, labels, rules and axis formatting will be reset."
+      );
+
+      if (!ok) return;
+    }
+
+    resetChartKeepData();
+  });
+}
+
+if (clearDataButton) {
+  clearDataButton.addEventListener("click", () => {
+    const hasExistingWork =
+      (Array.isArray(rawRows) && rawRows.length > 0) ||
+      !!currentChart ||
+      !!dataModelDirty;
+
+    if (hasExistingWork) {
+      const ok = window.confirm(
+        "Clear all data and chart settings?\n\n" +
+        "This will remove the loaded data as well as the current chart. " +
         "Save the chart first if you want to reopen it later."
       );
 
@@ -11772,7 +11925,6 @@ if (resetButton) {
     resetAll();
   });
 }
-
 updateSaveChartButtonState();
 updateDateControlsState();
 
