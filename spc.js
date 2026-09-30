@@ -222,6 +222,60 @@ const thirdColumnRow = document.getElementById("thirdColumnRow");
 const thirdLabelEl = document.getElementById("thirdLabel");
 const thirdHintEl = document.getElementById("thirdHint");
 const thirdSelect = document.getElementById("thirdColumn");
+const uRateMultiplierRow = document.getElementById("uRateMultiplierRow");
+const uRateMultiplierSelect = document.getElementById("uRateMultiplier");
+
+let lastURateMultiplier = 1;
+
+function getURateMultiplier() {
+  const value = Number(uRateMultiplierSelect?.value || 1);
+
+  return [1, 10, 100, 1000, 10000].includes(value)
+    ? value
+    : 1;
+}
+
+function formatURateMultiplier(multiplier) {
+  return Number(multiplier).toLocaleString("en-GB");
+}
+
+function rescaleNumericInput(input, ratio) {
+  if (!input) return;
+
+  const text = String(input.value || "").trim();
+  if (text === "") return;
+
+  const value = Number(text);
+  if (!Number.isFinite(value)) return;
+
+  input.value = String(value * ratio);
+}
+
+if (uRateMultiplierSelect) {
+  lastURateMultiplier = getURateMultiplier();
+
+  uRateMultiplierSelect.addEventListener("change", () => {
+    const newMultiplier = getURateMultiplier();
+    const oldMultiplier = lastURateMultiplier || 1;
+
+    if (newMultiplier !== oldMultiplier) {
+      const ratio = newMultiplier / oldMultiplier;
+
+      // These controls use the same visible units as the chart.
+      // Keep their meaning unchanged when the display scale changes.
+      rescaleNumericInput(targetInput, ratio);
+      rescaleNumericInput(yAxisMinInput, ratio);
+      rescaleNumericInput(yAxisMaxInput, ratio);
+      rescaleNumericInput(yAxisTickStepInput, ratio);
+    }
+
+    lastURateMultiplier = newMultiplier;
+
+    if (rawRows && rawRows.length && generateButton) {
+      generateButton.click();
+    }
+  });
+}
 
 
 // Chart chooser / extra columns
@@ -456,15 +510,17 @@ function collectToolSettings() {
     axisType,
 
     selectedColumns,
-    dateFormatPreference: getDateFormatPreference(),
+dateFormatPreference: getDateFormatPreference(),
 
-    appearance: {
+appearance: {
   colourTheme: colourBlindModeCheckbox?.checked
     ? "colourBlind"
     : "default"
 },
 
-    baselinePoints,
+uRateMultiplier: String(getURateMultiplier()),
+
+baselinePoints,
     target: {
       value: targetValue,
       direction: targetDirection,
@@ -551,6 +607,18 @@ if (
   if (typeof updateUIForChartType === "function" && settings.chartType) {
     updateUIForChartType(settings.chartType);
   }
+
+  if (uRateMultiplierSelect) {
+  const savedMultiplier = String(settings.uRateMultiplier ?? "1");
+
+  const validMultiplier = ["1", "10", "100", "1000", "10000"]
+    .includes(savedMultiplier)
+      ? savedMultiplier
+      : "1";
+
+  uRateMultiplierSelect.value = validMultiplier;
+  lastURateMultiplier = Number(validMultiplier);
+}
 
   if (shiftRulePointsInput && settings.rules?.shiftRulePoints !== undefined) {
     shiftRulePointsInput.value = settings.rules.shiftRulePoints;
@@ -2582,6 +2650,15 @@ dataModelDirty = false;
   if (thirdColumnRow) thirdColumnRow.style.display = "none";
   if (thirdLabelEl) thirdLabelEl.textContent = "Denominator / opportunities";
   if (thirdHintEl) thirdHintEl.textContent = "";
+  if (uRateMultiplierSelect) {
+  uRateMultiplierSelect.value = "1";
+}
+
+lastURateMultiplier = 1;
+
+if (uRateMultiplierRow) {
+  uRateMultiplierRow.style.display = "none";
+}
 
   // --- Reset text inputs ---
   if (baselineInput) baselineInput.value = "";
@@ -4113,6 +4190,11 @@ updateColumnCheckWarning(chartType);
   thirdColumnRow.style.display = "none";
   thirdLabelEl.textContent = "";
   thirdHintEl.textContent = "";
+
+  if (uRateMultiplierRow) {
+  uRateMultiplierRow.style.display =
+    chartType === "u" ? "block" : "none";
+}
 
   // ---- Chart-specific UI definitions ----
   const chartUI = {
@@ -6837,6 +6919,12 @@ function renderAttributeMultiSummary(segmentAnalyses, totalPoints) {
   html += `<p>Total number of points: <strong>${totalPoints}</strong>. `;
   html += `The chart is divided into <strong>${segmentAnalyses.length}</strong> period${segmentAnalyses.length !== 1 ? "s" : ""} `;
   html += `(based on the baseline and any splits).</p>`;
+  if (chartType === "u") {
+  const multiplier = getURateMultiplier();
+
+  html += `<p>Rates are displayed per <strong>${formatURateMultiplier(multiplier)}</strong> ` +
+          `${multiplier === 1 ? "opportunity" : "opportunities"}.</p>`;
+}
 
   segmentAnalyses.forEach((a, idx) => {
   html += `<div class="pdf-avoid-break">`;
@@ -9233,6 +9321,8 @@ function drawUChart(pointsWithN, baselineCount, labels) {
     return;
   }
 
+  const rateMultiplier = getURateMultiplier();
+
   const clampLcl =
     (typeof shouldClampLclAtZero === "function")
       ? shouldClampLclAtZero()
@@ -9270,11 +9360,14 @@ function drawUChart(pointsWithN, baselineCount, labels) {
 
     for (let j = 0; j < segPoints.length; j++) {
       const i = start + j;
-      values[i] = res.uVals[j];
-      clArr[i] = res.ubar;
-      uclArr[i] = res.ucl[j];
-      lclArr[i] = res.lcl[j];
-      beyond[i] = res.beyond[j];
+      // computeU() remains in the natural "per 1" scale.
+// Apply the user's multiplier only to displayed values.
+values[i] = res.uVals[j] * rateMultiplier;
+clArr[i] = res.ubar * rateMultiplier;
+uclArr[i] = res.ucl[j] * rateMultiplier;
+lclArr[i] = res.lcl[j] * rateMultiplier;
+
+beyond[i] = res.beyond[j];
     }
   }
 
@@ -9288,7 +9381,10 @@ function drawUChart(pointsWithN, baselineCount, labels) {
     ucl: uclArr,
     lcl: lclArr,
     chartTitleFallback: "U chart",
-    yAxisLabelFallback: "Rate per unit",
+    yAxisLabelFallback:
+  rateMultiplier === 1
+    ? "Rate per opportunity"
+    : `Rate per ${formatURateMultiplier(rateMultiplier)} opportunities`,
     showUCL: true,
     showLCL: true
   });
