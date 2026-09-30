@@ -2094,34 +2094,26 @@ if (enableRareRunTrendCheckbox) {
     }
   });
 }
+
 const recalcPrompt = document.getElementById("recalcPrompt");
 const firstRunGuide = document.getElementById("firstRunGuide");
-const FIRST_RUN_KEY = "spc_first_run_done_v1";
 
-// Safe storage wrappers (localStorage can throw in some browser/privacy modes)
-function safeGetItem(key) {
-  try { return localStorage.getItem(key); } catch (e) { return null; }
-}
-function safeSetItem(key, value) {
-  try { localStorage.setItem(key, value); } catch (e) {}
-}
-function safeRemoveItem(key) {
-  try { localStorage.removeItem(key); } catch (e) {}
-}
-
+// Treat the Quick start panel as useful empty-state guidance,
+// rather than something shown only once per browser.
 function updateFirstRunGuideVisibility() {
   if (!firstRunGuide) return;
-  const done = safeGetItem(FIRST_RUN_KEY) === "1";
-  firstRunGuide.style.display = done ? "none" : "block";
+
+  firstRunGuide.style.display = currentChart ? "none" : "block";
 }
 
 function markFirstRunComplete() {
-  safeSetItem(FIRST_RUN_KEY, "1");
-  updateFirstRunGuideVisibility();
+  if (!firstRunGuide) return;
+
+  firstRunGuide.style.display = "none";
 }
 
+// Kept for compatibility with existing reset code.
 function clearFirstRunFlag() {
-  safeRemoveItem(FIRST_RUN_KEY);
   updateFirstRunGuideVisibility();
 }
 
