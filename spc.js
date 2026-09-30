@@ -1460,10 +1460,13 @@ function updateTargetToggleVisibility() {
   if (hasValidTargetInput()) {
     targetToggleBtn.style.display = "inline-flex";
   } else {
-    // No target defined: hide button and force target OFF
+    // No target defined: hide the button, but keep the user's
+    // current show/hide preference for when a target is entered.
     targetToggleBtn.style.display = "none";
-    targetEnabled = false;              // assumes you use the button toggle model
-    if (typeof updateTargetToggleBtn === "function") updateTargetToggleBtn();
+  }
+
+  if (typeof updateTargetToggleBtn === "function") {
+    updateTargetToggleBtn();
   }
 }
 
@@ -2515,8 +2518,18 @@ function resetAll() {
   setPressed(chartTitleItalicBtn, false);
   setPressed(chartTitleUnderlineBtn, false);
   if (targetInput) targetInput.value = "";
-  if (annotationDateInput) annotationDateInput.value = "";
-  if (annotationLabelInput) annotationLabelInput.value = "";
+
+// A fresh/reset chart should show a target by default once one is entered.
+targetEnabled = true;
+if (typeof updateTargetToggleBtn === "function") {
+  updateTargetToggleBtn();
+}
+if (typeof updateTargetToggleVisibility === "function") {
+  updateTargetToggleVisibility();
+}
+
+if (annotationDateInput) annotationDateInput.value = "";
+if (annotationLabelInput) annotationLabelInput.value = "";
 
   chartTitleManuallyEdited = false;
   xAxisLabelManuallyEdited = false;
