@@ -1615,6 +1615,19 @@ if (targetInput) {
   });
 }
 
+// When target direction changes, immediately recalculate
+// target performance and capability analysis.
+if (targetDirectionInput) {
+  targetDirectionInput.addEventListener("change", () => {
+    if (rawRows && rawRows.length && generateButton) {
+      lastGenerateWasManual = false;
+      generateButton.click();
+    }
+  });
+}
+
+
+
 // Call once on load
 updateTargetToggleVisibility();
 updateYAxisInputStep();	
