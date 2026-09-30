@@ -11297,11 +11297,64 @@ function renderChartWizard() {
         ${optionButton("A count per time period — e.g. falls per week, complaints per month", `wizardNext('kind','count')`)}
         ${optionButton("A proportion out of a total — e.g. 5 out of 100, pass rate", `wizardNext('kind','proportion')`)}
         ${optionButton("Rare events — time or opportunities between events", `wizardNext('kind','rare')`)}
-        ${optionButton("Not sure", `finishWizard(computeRecommendation({kind:'unsure'}))`)}
+        ${optionButton("Not sure", `wizardNext('kind','unsure')`)}
       </div>
     `;
     return;
   }
+
+if (s.step === 1 && a.kind === "unsure") {
+  chartWizardBody.innerHTML = `
+    <p class="chart-wizard-question">Which description is closest to your data?</p>
+
+    <p class="hint small-hint">
+      The chart type depends on what each value represents. Choose the closest
+      description below. If none fits, you can return to the chart list and
+      select a chart manually.
+    </p>
+
+    <div class="chart-wizard-options">
+      ${optionButton(
+        "One measurement at each time point — e.g. waiting time, score, length of stay",
+        `wizardNext('kind','measurement')`
+      )}
+
+      ${optionButton(
+        "A number of events in each time period — e.g. falls, complaints, incidents",
+        `wizardNext('kind','count')`
+      )}
+
+      ${optionButton(
+        "A proportion or percentage — e.g. 5 out of 100, compliance rate",
+        `wizardNext('kind','proportion')`
+      )}
+
+      ${optionButton(
+        "The time or opportunities between rare events",
+        `wizardNext('kind','rare')`
+      )}
+    </div>
+
+    <div class="chart-wizard-actions">
+      <button
+        type="button"
+        class="chart-wizard-secondary"
+        onclick="wizardBack()"
+      >
+        Back
+      </button>
+
+      <button
+        type="button"
+        onclick="closeChartWizard()"
+      >
+        Choose manually
+      </button>
+    </div>
+  `;
+
+  return;
+}
 
   if (s.step === 1 && a.kind === "measurement") {
     chartWizardBody.innerHTML = `
