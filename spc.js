@@ -458,6 +458,12 @@ function collectToolSettings() {
     selectedColumns,
     dateFormatPreference: getDateFormatPreference(),
 
+    appearance: {
+  colourTheme: colourBlindModeCheckbox?.checked
+    ? "colourBlind"
+    : "default"
+},
+
     baselinePoints,
     target: {
       value: targetValue,
@@ -521,6 +527,23 @@ function collectToolSettings() {
 
 function applyToolSettings(settings, { silent = true } = {}) {
   if (!settings || typeof settings !== "object") return;
+
+// Restore the colour theme saved with this chart.
+// Do not write it to localStorage: opening somebody else's saved
+// chart should not permanently change this browser's preference.
+const savedColourTheme = settings.appearance?.colourTheme;
+
+if (
+  savedColourTheme === "default" ||
+  savedColourTheme === "colourBlind"
+) {
+  applySpcColourTheme(savedColourTheme);
+
+  if (colourBlindModeCheckbox) {
+    colourBlindModeCheckbox.checked =
+      savedColourTheme === "colourBlind";
+  }
+}
 
   if (settings.chartType) setCheckedRadioValue("chartType", settings.chartType);
   if (settings.axisType) setCheckedRadioValue("axisType", settings.axisType);
