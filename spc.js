@@ -2485,9 +2485,18 @@ function drawXbarSCombinedChart({
 function resetAll() {
   // --- Clear stored data ---
   rawRows = [];
-  annotations = [];
-  splits = [];
-  lastXmRAnalysis = null;
+annotations = [];
+splits = [];
+
+// Clear all cached analysis from the previous chart
+lastXmRAnalysis = null;
+lastRunAnalysis = null;
+lastAttributeAnalysis = null;
+lastRareAnalysis = null;
+lastXbarSAnalysis = null;
+
+// A new chart is no longer carrying unsaved changes
+dataModelDirty = false;
 
   // --- Reset file input ---
   if (fileInput) fileInput.value = "";
@@ -2589,10 +2598,22 @@ if (annotationLabelInput) annotationLabelInput.value = "";
   const lclClampRow = document.getElementById("lclClampRow");
 
   if (shiftRulePointsInput) shiftRulePointsInput.value = "8";
-  if (trendRulePointsInput) trendRulePointsInput.value = "6";
-  if (flagSpecialCauseOnChart) flagSpecialCauseOnChart.checked = true;
-  if (clampLclAtZero) clampLclAtZero.checked = false;
-  if (lclClampRow) lclClampRow.style.display = "none";
+if (trendRulePointsInput) trendRulePointsInput.value = "6";
+if (flagSpecialCauseOnChart) flagSpecialCauseOnChart.checked = true;
+if (clampLclAtZero) clampLclAtZero.checked = false;
+if (lclClampRow) lclClampRow.style.display = "none";
+
+// Advanced rules are off by default on a new chart
+if (enableAdvancedTrendCheckbox) enableAdvancedTrendCheckbox.checked = false;
+if (enableRareRunTrendCheckbox) enableRareRunTrendCheckbox.checked = false;
+if (ruleTwoOfThreeOuterThirdCheckbox) ruleTwoOfThreeOuterThirdCheckbox.checked = false;
+if (ruleFourOfFiveOneSigmaCheckbox) ruleFourOfFiveOneSigmaCheckbox.checked = false;
+
+if (advancedRulesDetails) advancedRulesDetails.open = false;
+
+if (typeof updateRuleUIForChartType === "function") {
+  updateRuleUIForChartType("run");
+}
 
   // --- Clear any error message ---
   if (errorMessage) errorMessage.textContent = "";
@@ -2664,7 +2685,10 @@ if (typeof updateDateControlsState === "function") {
   updateDateControlsState();
 }
 
-clearFirstRunFlag();
+// Keep the user's first-run/help history when starting another chart.
+if (typeof updateFirstRunGuideVisibility === "function") {
+  updateFirstRunGuideVisibility();
+}
 
 if (typeof setGenerateNeedsRecalc === "function") setGenerateNeedsRecalc(false);
 
@@ -11729,7 +11753,24 @@ function toggleSpcHelper() {
 const resetButton = document.getElementById("resetButton");
 
 if (resetButton) {
-  resetButton.addEventListener("click", resetAll);
+  resetButton.addEventListener("click", () => {
+    const hasExistingWork =
+      (Array.isArray(rawRows) && rawRows.length > 0) ||
+      !!currentChart ||
+      !!dataModelDirty;
+
+    if (hasExistingWork) {
+      const ok = window.confirm(
+        "Start a new chart?\n\n" +
+        "This will clear the current data and chart settings. " +
+        "Save the chart first if you want to reopen it later."
+      );
+
+      if (!ok) return;
+    }
+
+    resetAll();
+  });
 }
 
 updateSaveChartButtonState();
