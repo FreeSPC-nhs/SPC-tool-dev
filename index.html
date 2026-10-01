@@ -816,33 +816,50 @@ Hide target line
   "
 >
   <div class="hint small-hint" style="margin-top:0;">
-    <strong>XmR limit calculation</strong>
+    <strong>
+      <span class="label-with-tooltip">
+        XmR limit calculation
+
+        <span
+          class="help-tooltip"
+          tabindex="0"
+          aria-label="XmR moving range screening help"
+        >
+          ?
+          <span class="help-tooltip-text">
+            A very large jump between two consecutive points can make XmR
+            control limits too wide. When this is on, SimpleSPC keeps all data
+            points and moving ranges on the chart, but does not use unusually
+            large moving ranges to estimate routine variation. Uses the Nelson
+            method: moving ranges greater than 3.5 times the initial average
+            moving range are excluded from the variation estimate.
+          </span>
+        </span>
+      </span>
+    </strong>
   </div>
 
   <label
     class="radio-pill"
-    style="display:inline-flex; gap:0.5rem; align-items:center; margin-top:0.35rem;"
+    style="
+      display:flex;
+      align-items:flex-start;
+      gap:0.5rem;
+      margin-top:0.4rem;
+      width:100%;
+      box-sizing:border-box;
+      white-space:normal;
+    "
   >
-    <input type="checkbox" id="screenLargeMRs" checked />
+    <input
+      type="checkbox"
+      id="screenLargeMRs"
+      checked
+      style="flex:0 0 auto; margin-top:0.15rem;"
+    />
 
-    <span class="label-with-tooltip">
-      Prevent unusually large jumps from widening XmR limits
-
-      <span
-        class="help-tooltip"
-        tabindex="0"
-        aria-label="XmR moving range screening help"
-      >
-        ?
-        <span class="help-tooltip-text">
-          A very large jump between two consecutive points can make XmR
-          control limits too wide. When this is on, SimpleSPC keeps all data
-          points and moving ranges on the chart, but does not use unusually
-          large moving ranges to estimate routine variation. NB: Uses the Nelson
-          method: moving ranges greater than 3.5 times the initial average
-          moving range are excluded from the variation estimate.
-        </span>
-      </span>
+    <span style="min-width:0; white-space:normal;">
+      Screen unusually large jumps when setting limits
     </span>
   </label>
 </div>
