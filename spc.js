@@ -4523,11 +4523,26 @@ function populateSplitOptions(labels) {
 
 /**
  * Compute XmR statistics and MR values.
+ *
+ * By default, unusually large baseline moving ranges are screened
+ * when estimating routine variation using the Nelson method:
+ *
+ *   screening threshold = 3.5 × initial average moving range
+ *
+ * Moving ranges above that threshold are excluded from the
+ * variation estimate only. The original observations and moving
+ * ranges remain in the chart.
  */
-function computeXmR(points, baselineCount, clampLclAtZero = false) {
+function computeXmR(
+  points,
+  baselineCount,
+  clampLclAtZero = false,
+  screenLargeMRs = true
+) {
   const pts = [...points].sort((a, b) => a.x - b.x);
 
   let baselineCountUsed;
+
   if (baselineCount && baselineCount >= 2) {
     baselineCountUsed = Math.min(baselineCount, pts.length);
   } else {
@@ -4538,39 +4553,106 @@ function computeXmR(points, baselineCount, clampLclAtZero = false) {
 
   const mean = baseline.reduce((sum, p) => sum + p.y, 0) / baseline.length;
 
+  // Moving ranges used to estimate routine variation
   const baselineMRs = [];
+
   for (let i = 1; i < baseline.length; i++) {
-    baselineMRs.push(Math.abs(baseline[i].y - baseline[i - 1].y));
+    baselineMRs.push(
+      Math.abs(baseline[i].y - baseline[i - 1].y)
+    );
   }
 
-  const avgMR = baselineMRs.length
+  // First calculate MR-bar using all baseline moving ranges.
+  const initialAvgMR = baselineMRs.length
     ? baselineMRs.reduce((sum, v) => sum + v, 0) / baselineMRs.length
     : 0;
+
+  // Nelson moving-range screening is a one-pass calculation:
+  // the threshold is based on the ORIGINAL MR-bar and is not
+  // repeatedly recalculated after exclusions.
+  const mrScreeningThreshold =
+    screenLargeMRs && initialAvgMR > 0
+      ? 3.5 * initialAvgMR
+      : null;
+
+  const includedBaselineMRs = [];
+  const excludedMRs = [];
+
+  baselineMRs.forEach((mr, mrIndex) => {
+    const shouldExclude =
+      screenLargeMRs &&
+      Number.isFinite(mrScreeningThreshold) &&
+      mr > mrScreeningThreshold;
+
+    if (shouldExclude) {
+      excludedMRs.push({
+        mrIndex,
+        fromPointIndex: mrIndex,
+        toPointIndex: mrIndex + 1,
+        fromLabel: baseline[mrIndex]?.label ?? null,
+        toLabel: baseline[mrIndex + 1]?.label ?? null,
+        value: mr
+      });
+    } else {
+      includedBaselineMRs.push(mr);
+    }
+  });
+
+  // This is the MR-bar actually used to estimate sigma.
+  // The fallback is defensive; under normal circumstances the
+  // screening rule cannot remove every moving range.
+  const avgMR = includedBaselineMRs.length
+    ? includedBaselineMRs.reduce((sum, v) => sum + v, 0) /
+      includedBaselineMRs.length
+    : initialAvgMR;
 
   const sigma = avgMR === 0 ? 0 : avgMR / 1.128;
 
   const ucl = mean + 3 * sigma;
   const rawLcl = mean - 3 * sigma;
-  const lcl = (clampLclAtZero && rawLcl < 0) ? 0 : rawLcl;
+  const lcl =
+    (clampLclAtZero && rawLcl < 0)
+      ? 0
+      : rawLcl;
 
+  // Keep ALL moving ranges for display on the MR chart.
+  // Screening changes the variation estimate, not the data shown.
   const mrValues = [];
+
   for (let i = 1; i < pts.length; i++) {
-    mrValues.push(Math.abs(pts[i].y - pts[i - 1].y));
+    mrValues.push(
+      Math.abs(pts[i].y - pts[i - 1].y)
+    );
   }
 
   const flagged = pts.map(p => ({
     ...p,
-    beyondLimits: sigma > 0 && (p.y > ucl || p.y < lcl)
+    beyondLimits:
+      sigma > 0 &&
+      (p.y > ucl || p.y < lcl)
   }));
 
   return {
     points: flagged,
+
     mean,
     ucl,
     lcl,
     rawLcl,
     sigma,
+
+    // Effective MR-bar used for the limits
     avgMR,
+
+    // Diagnostic information for summary/helper/UI later
+    initialAvgMR,
+    mrScreeningEnabled: !!screenLargeMRs,
+    mrScreeningThreshold,
+    excludedMRCount: excludedMRs.length,
+    excludedMRs,
+    baselineMRCount: baselineMRs.length,
+    effectiveMRCount: includedBaselineMRs.length,
+
     baselineCountUsed,
     mrValues
   };
@@ -7591,13 +7673,25 @@ const rangeText =
       const nBeyond = beyondIdx.length;
 
       lastXmRAnalysis = {
-        mean,
-        ucl,
-        lcl,
-        sigma,
-        avgMR,
-        n,
-        signals: signals.slice(),
+  mean,
+  ucl,
+  lcl,
+  sigma,
+
+  // Moving-range calculation
+  avgMR,
+  initialAvgMR: result.initialAvgMR,
+  mrScreeningEnabled: result.mrScreeningEnabled,
+  mrScreeningThreshold: result.mrScreeningThreshold,
+  excludedMRCount: result.excludedMRCount,
+  excludedMRs: Array.isArray(result.excludedMRs)
+    ? result.excludedMRs.map(item => ({ ...item }))
+    : [],
+  baselineMRCount: result.baselineMRCount,
+  effectiveMRCount: result.effectiveMRCount,
+
+  n,
+  signals: signals.slice(),
         hasTrend,
         hasRunViolation,
         hasAstronomical,
