@@ -113,7 +113,9 @@
   }
 
   function getSuggestedQuestions(hasChart) {
-    return {
+const chartType = getChartTypeSafe();    
+
+return {
       general: [
         "What is SPC?",
         "What is the difference between common and special cause variation?",
@@ -136,7 +138,10 @@
         "Is this likely to be real improvement?",
         "What does this mean for our target?",
         "What should I do next?",
-        "Should I add a split here?"
+"Should I add a split here?",
+chartType === "xmr"
+  ? "Why are my XmR limits different?"
+  : null
       ].filter(Boolean)
     };
   }
@@ -201,6 +206,32 @@
         "P, U, and C charts are based on count, proportion, or rate data. Their limits may vary, and their data may not behave like the continuous data that classic zone rules were designed for.\n\n" +
         "The safer default is to use beyond-limit signals and run rules, rather than adding extra zone-rule alerts."
     },
+{
+  id: "xmr-moving-range-screening",
+  priority: 10,
+  aliases: [
+    "what is moving range screening",
+    "what is mr screening",
+    "what is the nelson method",
+    "nelson moving range",
+    "why are my xmr limits different",
+    "why are xmr limits different",
+    "screen large jumps",
+    "3.5 moving range"
+  ],
+  keywords: [
+    ["moving", "range", "screening"],
+    ["mr", "screening"],
+    ["nelson"],
+    ["xmr", "limits", "different"],
+    ["large", "jump"],
+    ["3.5"]
+  ],
+  answer:
+    "XmR control limits estimate routine variation from the differences between consecutive points, called moving ranges.\n\n" +
+    "A very large point-to-point jump can inflate the average moving range and make the control limits unusually wide. By default, SimpleSPC screens unusually large moving ranges when estimating routine variation. The original observations and moving ranges are still shown on the chart.\n\n" +
+    "SimpleSPC uses the Nelson method: moving ranges greater than 3.5 times the initial average moving range are not used in the variation estimate. You can turn this screening off in Advanced detection options if you want the unscreened calculation."
+},
     {
       id: "what-is-spc",
       priority: 8,
@@ -583,6 +614,20 @@ function isXmRPeriodAssessable(period) {
   const latest = ctx.xmr;
   const periods = ctx.xmrPeriods;
 
+  // Helper used only inside this answer:
+  // look for early warning features without treating them as a
+  // formal stability conclusion when the period is still provisional.
+  function provisionalHasWarningSigns() {
+    if (!latest) return false;
+
+    return (
+      (finiteNumber(latest.nBeyond) && latest.nBeyond > 0) ||
+      !!latest.hasRunViolation ||
+      !!latest.hasTrend ||
+      !!latest.hasAstronomical
+    );
+  }
+
   if (Array.isArray(periods) && periods.length > 1) {
     const latestPeriod = periods[periods.length - 1];
     const latestAssessable = isXmRPeriodAssessable(latestPeriod);
@@ -602,14 +647,15 @@ function isXmRPeriodAssessable(period) {
 
     if (earlierUnstable) {
       out +=
-        "Looking across the XmR chart, one or more assessable periods show special-cause signals, so there is evidence that the process may have changed.\n\n";
+        "Looking across the XmR chart, one or more periods with enough data show special-cause signals. That is evidence that the process may have changed.\n\n";
     } else {
       out +=
-        "This XmR chart has been divided into separate process periods using one or more splits. A split tells SimpleSPC to recalculate the mean and limits for the new period; the split itself does not prove that a change occurred.\n\n";
+        "This XmR chart has been divided into separate process periods using one or more splits. A split marks a point where you believe the process may have changed and tells SimpleSPC to recalculate the mean and limits. The split itself does not prove that a change occurred.\n\n";
     }
 
     out += describeXmRPeriods(periods) + "\n\n";
 
+    // Latest period is still provisional
     if (!latestAssessable) {
       const count = finiteNumber(latestPeriod.limitEstimatePointCount)
         ? latestPeriod.limitEstimatePointCount
@@ -620,16 +666,25 @@ function isXmRPeriodAssessable(period) {
         : 12;
 
       out +=
-        `The most recent period (points ${latestStart}–${latestEnd}) is not yet ready for a stability assessment. ` +
-        `${count !== null ? `Only ${count} points were used to estimate its limits. ` : ""}` +
-        `SimpleSPC needs at least ${minimum} points before interpreting special-cause signals for that period.`;
+        `For the most recent period (points ${latestStart}–${latestEnd}), there are not yet enough data to make a firm judgement about stability. ` +
+        `${count !== null ? `There are currently ${count} points in this period, and ` : ""}` +
+        `SimpleSPC uses at least ${minimum} points before making a formal XmR stability interpretation.`;
+
+      if (provisionalHasWarningSigns()) {
+        out +=
+          "\n\nThere are already some features in the latest points that are worth watching. That means the early picture is not yet clearly consistent with a settled process. More data will help show whether those features disappear as temporary fluctuation or develop into a sustained signal.";
+      } else {
+        out +=
+          "\n\nSo far, the latest points look fairly consistent around their current level and there are no obvious warning signs in this short period. That is encouraging, but it is still provisional rather than proof of stability. If the next points continue in a similar pattern, that would strengthen the evidence that the process has settled into a new stable level.";
+      }
 
       return out;
     }
 
+    // Latest period has enough data for a formal interpretation
     if (latestPeriod.isStable === true) {
       out +=
-        `In the most recent period (points ${latestStart}–${latestEnd}), I cannot see a clear signal that the process has changed again. That latest section looks like routine variation within its current level.`;
+        `In the most recent period (points ${latestStart}–${latestEnd}), I cannot see a clear special-cause signal. With enough data now available for interpretation, the latest section is consistent with routine variation around its current level.`;
     } else {
       const latestSignals =
         joinNice(signalTextList(latestPeriod.signals));
@@ -641,10 +696,12 @@ function isXmRPeriodAssessable(period) {
     return out;
   }
 
+  // No current XmR analysis
   if (!latest) {
     return "Please generate an XmR chart first, then ask again.";
   }
 
+  // Single provisional period
   if (!isXmRPeriodAssessable(latest)) {
     const count = finiteNumber(latest.limitEstimatePointCount)
       ? latest.limitEstimatePointCount
@@ -654,18 +711,35 @@ function isXmRPeriodAssessable(period) {
       ? latest.minimumPointsForInterpretation
       : 12;
 
+    let out =
+      "There are not yet enough data to make a firm judgement about stability. " +
+      `${count !== null ? `There are currently ${count} points being used to estimate the limits, and ` : ""}` +
+      `SimpleSPC uses at least ${minimum} points before making a formal XmR stability interpretation.`;
+
+    if (provisionalHasWarningSigns()) {
+      out +=
+        "\n\nThere are already some features in the pattern that are worth watching, so I would not yet describe the process as settled. More observations will help show whether these develop into a sustained signal.";
+    } else {
+      out +=
+        "\n\nSo far, the pattern looks fairly consistent and there are no obvious warning signs. That is encouraging, but still provisional. If future points continue in a similar pattern, confidence that the process is stable will become stronger.";
+    }
+
+    return out;
+  }
+
+  // Single period with enough data
+  if (latest.isStable === true) {
     return (
-      "This XmR period is still provisional. " +
-      `${count !== null ? `Only ${count} points were used to estimate its limits. ` : ""}` +
-      `SimpleSPC needs at least ${minimum} points before describing the period as stable or showing special-cause variation.`
+      "Looking at the current XmR chart, I cannot see a clear special-cause signal. " +
+      "There are enough data for interpretation, so the pattern is consistent with routine variation around its current level. " +
+      "That does not necessarily mean performance is good enough; stability and performance against a target are separate questions."
     );
   }
 
-  if (latest.isStable === true) {
-    return "Looking at the current XmR chart, I cannot see a clear special-cause signal. This suggests the process is behaving broadly consistently in its current form, but it should still be monitored and interpreted with local context.";
-  }
-
-  return "This XmR chart shows evidence that something may have changed. The pattern is not fully explained by routine variation alone, so it would be worth investigating what changed in the system or the data around that time.";
+  return (
+    "This XmR chart shows evidence that something may have changed. " +
+    "The pattern is not fully explained by routine variation alone, so it would be worth investigating what changed in the system or the data around that time."
+  );
 }
 
   function buildLatestPeriodSummary(ctx) {
@@ -688,11 +762,26 @@ if (!isXmRPeriodAssessable(a)) {
     ? a.minimumPointsForInterpretation
     : 12;
 
-  return (
-    `${periodText}, the XmR limits are still provisional. ` +
-    `${count !== null ? `Only ${count} points were used to estimate the limits. ` : ""}` +
-    `SimpleSPC needs at least ${minimum} points before assessing whether this period shows routine or special-cause variation.`
-  );
+  const provisionalHasWarning =
+    (finiteNumber(a.nBeyond) && a.nBeyond > 0) ||
+    !!a.hasRunViolation ||
+    !!a.hasTrend ||
+    !!a.hasAstronomical;
+
+  let out =
+    `${periodText}, there are not yet enough data to make a firm judgement about stability. ` +
+    `${count !== null ? `There are currently ${count} points in this period, and ` : ""}` +
+    `SimpleSPC uses at least ${minimum} points before making a formal XmR stability interpretation.`;
+
+  if (provisionalHasWarning) {
+    out +=
+      "\n\nThere are already some features in this short period that are worth watching, so I would not yet describe the process as stable. More data will help show whether these are temporary fluctuations or part of a real pattern.";
+  } else {
+    out +=
+      "\n\nSo far, the pattern looks fairly consistent and there are no obvious warning signs in this short period. That is encouraging, but it is still provisional rather than proof of stability. If the next points continue in a similar pattern, that would strengthen the evidence that the process has settled into a stable pattern.";
+  }
+
+  return out;
 }
 
       if (a.isStable) {
@@ -738,22 +827,207 @@ if (!isXmRPeriodAssessable(a)) {
   }
 
   function buildTargetAnswer(ctx) {
-    const chartType = ctx.chartType;
+  const chartType = ctx.chartType;
 
-    if (chartType === "xmr" && ctx.xmr) {
+  if (chartType === "xmr" && ctx.xmr) {
+    const a = ctx.xmr;
 
-  if (!isXmRPeriodAssessable(ctx.xmr)) {
-    return "The latest XmR period is still provisional, so it is too early to use its control limits for a reliable stability or capability assessment. You can still compare individual results with the target, but wait for enough points before judging whether the new process can reliably meet it.";
-  }
+    const hasTarget = finiteNumber(a.target);
+    const hasMean = finiteNumber(a.mean);
 
-  if (ctx.xmr.isStable) {
-        return "In the latest XmR period, the process looks stable, so the target becomes more useful for judging whether the current system is reliably good enough.\n\nIf the stable process is still below target, that usually suggests the system needs improvement or redesign rather than pressure on individual teams or shifts.";
-      }
-      return "In the latest XmR period, the process does not look fully stable, so target performance should be interpreted cautiously.\n\nThe first question is often what is changing in the system, demand, staffing, coding, or measurement — not just whether the target was hit on isolated points.";
+    if (!hasTarget) {
+      return (
+        "There is no target currently set on this XmR chart. " +
+        "If you add one, SimpleSPC can help interpret performance against the target alongside process stability."
+      );
     }
 
-    return "Targets are most useful when interpreted alongside stability. A stable process below target often needs system redesign. An unstable process meeting target occasionally may still not be reliable.";
+    const target = a.target;
+    const direction = a.direction === "above" ? "above" : "below";
+
+    let currentPositionText = "";
+
+    if (hasMean) {
+      const meanMeetsTarget =
+        direction === "above"
+          ? a.mean >= target
+          : a.mean <= target;
+
+      if (meanMeetsTarget) {
+        currentPositionText =
+          `The current period mean (${a.mean.toFixed(2)}) is on the favourable side of the target (${target}).`;
+      } else {
+        currentPositionText =
+          `The current period mean (${a.mean.toFixed(2)}) is not yet on the favourable side of the target (${target}).`;
+      }
+    }
+
+    // Provisional XmR period
+    if (!isXmRPeriodAssessable(a)) {
+      const count = finiteNumber(a.limitEstimatePointCount)
+        ? a.limitEstimatePointCount
+        : null;
+
+      const minimum = finiteNumber(a.minimumPointsForInterpretation)
+        ? a.minimumPointsForInterpretation
+        : 12;
+
+      let out =
+        "The latest XmR period is still provisional, so it is too early to make a firm judgement about whether the process can reliably meet the target.";
+
+      if (currentPositionText) {
+        out += `\n\n${currentPositionText}`;
+      }
+
+      out +=
+        `\n\n${count !== null ? `There are currently ${count} points in this period, and ` : ""}` +
+        `SimpleSPC uses at least ${minimum} points before making a formal stability or capability interpretation.`;
+
+      if (hasMean) {
+        const meanMeetsTarget =
+          direction === "above"
+            ? a.mean >= target
+            : a.mean <= target;
+
+        if (meanMeetsTarget) {
+          out +=
+            "\n\nThe early results are therefore encouraging, but they do not yet show that this level of performance is predictable or sustainable. If future points continue around this level, confidence that the process can reliably meet the target will become stronger.";
+        } else {
+          out +=
+            "\n\nThe early pattern may still be settling, so it is worth continuing to monitor it. More data will show whether the new process level is genuinely different and whether further improvement is needed to reach the target reliably.";
+        }
+      }
+
+      return out;
+    }
+
+    // Enough data and stable
+    if (a.isStable === true) {
+      let out =
+        "The latest XmR period has enough data for interpretation and currently looks stable.";
+
+      if (currentPositionText) {
+        out += `\n\n${currentPositionText}`;
+      }
+
+      if (a.capability && finiteNumber(a.capability.prob)) {
+        out +=
+          `\n\nBased on the current stable process, SimpleSPC estimates that about ${(a.capability.prob * 100).toFixed(1)}% of future results would meet the target, assuming the process continues to behave in the same way.`;
+      } else {
+        out +=
+          "\n\nBecause the process appears stable, the target comparison is more meaningful: the main question is whether the current system is predictably good enough.";
+      }
+
+      return out;
+    }
+
+    // Enough data but special-cause signals present
+    let out =
+      "The latest XmR period has enough data for interpretation, but it shows special-cause variation. That means target performance should be interpreted cautiously because the process is not yet behaving predictably.";
+
+    if (currentPositionText) {
+      out += `\n\n${currentPositionText}`;
+    }
+
+    out +=
+      "\n\nThe priority is to understand what is changing in the system, demand, staffing, pathway, coding, or measurement before relying on a capability estimate.";
+
+    return out;
   }
+
+  return (
+    "Targets are most useful when interpreted alongside stability. " +
+    "A stable process below target often needs system improvement or redesign. " +
+    "An unstable process may meet the target occasionally without being able to do so reliably."
+  );
+}
+
+function buildXmRLimitsAnswer(ctx) {
+  const a = ctx.xmr;
+
+  if (!a) {
+    return (
+      "XmR limits are estimated from the moving ranges between consecutive points. " +
+      "Generate an XmR chart and I can explain the calculation used for your current data."
+    );
+  }
+
+  let out =
+    "XmR control limits depend on the estimated routine variation. " +
+    "SimpleSPC estimates this from the moving ranges between consecutive observations.";
+
+  if (a.mrScreeningEnabled === true) {
+    out +=
+      "\n\nFor your current chart, moving-range screening is ON.";
+
+    if (
+      finiteNumber(a.excludedMRCount) &&
+      a.excludedMRCount > 0
+    ) {
+      const count = a.excludedMRCount;
+
+      out +=
+        ` SimpleSPC found ${count} unusually large point-to-point ` +
+        `${count === 1 ? "change" : "changes"} and did not use ` +
+        `${count === 1 ? "it" : "them"} when estimating routine variation. ` +
+        "The original data points and moving ranges remain on the chart.";
+
+      out +=
+        "\n\nThis prevents an unusually large jump from making the estimated variation — and therefore the XmR control limits — artificially wide.";
+    } else {
+      out +=
+        " No moving ranges in the current period exceeded the screening threshold, so screening has not changed the variation estimate for this period.";
+    }
+
+    if (
+      finiteNumber(a.initialAvgMR) &&
+      finiteNumber(a.mrScreeningThreshold) &&
+      finiteNumber(a.avgMR)
+    ) {
+      out +=
+        "\n\nFor the current period:\n" +
+        `• initial average MR = ${a.initialAvgMR.toFixed(3)}\n` +
+        `• Nelson screening threshold = ${a.mrScreeningThreshold.toFixed(3)}\n` +
+        `• average MR used for the limits = ${a.avgMR.toFixed(3)}`;
+    }
+  } else if (a.mrScreeningEnabled === false) {
+    out +=
+      "\n\nFor your current chart, moving-range screening is OFF. " +
+      "All baseline moving ranges are therefore used to estimate routine variation. " +
+      "If one point-to-point jump is unusually large, this can increase the average moving range and produce wider control limits.";
+
+    if (finiteNumber(a.avgMR)) {
+      out +=
+        `\n\nThe average MR currently being used for the limits is ${a.avgMR.toFixed(3)}.`;
+    }
+  } else {
+    out +=
+      "\n\nI cannot determine the moving-range screening setting from the current chart snapshot.";
+  }
+
+  if (a.periodCount && a.periodCount > 1) {
+    out +=
+      "\n\nThis chart also contains a split. Each period is treated as a separate process period with its own mean and limits, and the moving range across the split is not used. This can also make the limits different from an unsplit version of the same chart.";
+  }
+
+  if (!isXmRPeriodAssessable(a)) {
+    const count = finiteNumber(a.limitEstimatePointCount)
+      ? a.limitEstimatePointCount
+      : null;
+
+    const minimum = finiteNumber(a.minimumPointsForInterpretation)
+      ? a.minimumPointsForInterpretation
+      : 12;
+
+    out +=
+      "\n\nThe latest period is still provisional. " +
+      `${count !== null ? `Only ${count} points are currently being used to estimate its limits. ` : ""}` +
+      `SimpleSPC waits until at least ${minimum} points are available before making a formal stability interpretation.`;
+  }
+
+  return out;
+}
+
 
   function buildWhatChartTellingMe(ctx) {
     const chartType = ctx.chartType;
@@ -810,6 +1084,27 @@ if (!isXmRPeriodAssessable(a)) {
     const asksRulesUsed =
       includesAny(q, ["which rules", "what rules", "rules used", "rule policy", "why rules", "unavailable", "blocked"]);
 
+   const asksXmRLimits =
+  ctx.chartType === "xmr" &&
+  (
+    includesAny(q, [
+      "moving range screening",
+      "mr screening",
+      "nelson",
+      "large jump",
+      "large jumps",
+      "limits different",
+      "control limits different",
+      "why are my limits",
+      "limit calculation",
+      "3.5"
+    ]) ||
+    (
+      q.includes("xmr") &&
+      includesAny(q, ["limit", "limits", "calculation"])
+    )
+  );
+
     const asksDecision =
       includesAll(q, ["what", "should", "i", "do"]) ||
       includesAll(q, ["what", "decision"]) ||
@@ -818,6 +1113,7 @@ if (!isXmRPeriodAssessable(a)) {
     const hasChart =
       !!ctx.run || !!ctx.xmr || !!ctx.xbars || !!ctx.attribute || !!ctx.rare;
 
+    if (hasChart && asksXmRLimits) return buildXmRLimitsAnswer(ctx);    
     if (hasChart && asksRulesUsed) return describeRulesForCurrentChart(ctx.chartType);    
     if (hasChart && asksWhatChartSays) return buildWhatChartTellingMe(ctx);
     if (hasChart && asksChanged && ctx.chartType === "xmr") return buildXmRChangeAnswer(ctx);
