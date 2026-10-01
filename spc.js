@@ -383,6 +383,8 @@ const ruleExplainerBtn = document.getElementById("ruleExplainerBtn");
 const advancedRulesDetails = document.getElementById("advancedRulesDetails");
 const enableAdvancedTrendCheckbox = document.getElementById("enableAdvancedTrend");
 const advancedTrendRow = document.getElementById("advancedTrendRow");
+const mrScreeningRow = document.getElementById("mrScreeningRow");
+const screenLargeMRsCheckbox = document.getElementById("screenLargeMRs");
 
 const ruleTwoOfThreeOuterThirdCheckbox = document.getElementById("ruleTwoOfThreeOuterThird");
 const ruleFourOfFiveOneSigmaCheckbox = document.getElementById("ruleFourOfFiveOneSigma");
@@ -2077,9 +2079,25 @@ if (clampLclAtZeroCheckbox) {
   });
 }
 
+if (screenLargeMRsCheckbox) {
+  screenLargeMRsCheckbox.addEventListener("change", () => {
+    const chartType = getSelectedChartType_NoSideEffects();
+
+    if (
+      chartType === "xmr" &&
+      rawRows &&
+      rawRows.length &&
+      generateButton
+    ) {
+      generateButton.click();
+    }
+  });
+}
+
 if (ruleTwoOfThreeOuterThirdCheckbox) {
   ruleTwoOfThreeOuterThirdCheckbox.addEventListener("change", debouncedRegen);
 }
+
 if (ruleFourOfFiveOneSigmaCheckbox) {
   ruleFourOfFiveOneSigmaCheckbox.addEventListener("change", debouncedRegen);
 }
@@ -2772,6 +2790,9 @@ if (enableAdvancedTrendCheckbox) enableAdvancedTrendCheckbox.checked = false;
 if (enableRareRunTrendCheckbox) enableRareRunTrendCheckbox.checked = false;
 if (ruleTwoOfThreeOuterThirdCheckbox) ruleTwoOfThreeOuterThirdCheckbox.checked = false;
 if (ruleFourOfFiveOneSigmaCheckbox) ruleFourOfFiveOneSigmaCheckbox.checked = false;
+if (screenLargeMRsCheckbox) {
+  screenLargeMRsCheckbox.checked = true;
+}
 
 if (advancedRulesDetails) advancedRulesDetails.open = false;
 
@@ -4140,6 +4161,12 @@ function updateRuleUIForChartType(chartType) {
   if (advancedContinuousCaution) {
     advancedContinuousCaution.style.display = (chartType === "xmr") ? "block" : "none";
   }
+
+  // XmR-specific limit calculation option
+if (mrScreeningRow) {
+  mrScreeningRow.style.display =
+    chartType === "xmr" ? "block" : "none";
+}
 
   // Conservative message for chart types with no advanced offering
   if (conservativeRulesMessage) {
@@ -9739,6 +9766,11 @@ function drawXmRChart(points, baselineCount, labels) {
     (typeof shouldClampLclAtZero === "function")
       ? shouldClampLclAtZero()
       : false;
+  
+  const screenLargeMRs =
+  screenLargeMRsCheckbox
+    ? screenLargeMRsCheckbox.checked
+    : true;
 
   // ----- Segment definition from splits -----
   let effectiveSplits = Array.isArray(splits) ? splits.slice() : [];
@@ -9756,7 +9788,12 @@ function drawXmRChart(points, baselineCount, labels) {
 
   // Compute a "global" XmR as a fallback (no splits)
   // (computeXmR should accept clampLcl as third arg; if not, it’ll just ignore it)
-  const globalResult = computeXmR(points, baselineCount, clampLcl);
+  const globalResult = computeXmR(
+  points,
+  baselineCount,
+  clampLcl,
+  screenLargeMRs
+);
 
   // ----- Global arrays for plotting -----
   const values = points.map(p => p.y);
@@ -9789,7 +9826,12 @@ function drawXmRChart(points, baselineCount, labels) {
     // Only the first segment uses the user baseline; later segments use all points as baseline.
     const segBaseline = s === 0 ? baselineCount : null;
 
-    const segResult = computeXmR(segPoints, segBaseline, clampLcl);
+    const segResult = computeXmR(
+  segPoints,
+  segBaseline,
+  clampLcl,
+  screenLargeMRs
+);
     const segPts    = segResult.points;
 
     const mean  = segResult.mean;

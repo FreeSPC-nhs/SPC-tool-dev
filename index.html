@@ -806,6 +806,47 @@ Hide target line
       </div>
     </div>
 
+    <div
+  id="mrScreeningRow"
+  style="
+    display:none;
+    margin-top:0.9rem;
+    padding-top:0.75rem;
+    border-top:1px solid #d6dde3;
+  "
+>
+  <div class="hint small-hint" style="margin-top:0;">
+    <strong>XmR limit calculation</strong>
+  </div>
+
+  <label
+    class="radio-pill"
+    style="display:inline-flex; gap:0.5rem; align-items:center; margin-top:0.35rem;"
+  >
+    <input type="checkbox" id="screenLargeMRs" checked />
+
+    <span class="label-with-tooltip">
+      Prevent unusually large jumps from widening XmR limits
+
+      <span
+        class="help-tooltip"
+        tabindex="0"
+        aria-label="XmR moving range screening help"
+      >
+        ?
+        <span class="help-tooltip-text">
+          A very large jump between two consecutive points can make XmR
+          control limits too wide. When this is on, SimpleSPC keeps all data
+          points and moving ranges on the chart, but does not use unusually
+          large moving ranges to estimate routine variation. NB: Uses the Nelson
+          method: moving ranges greater than 3.5 times the initial average
+          moving range are excluded from the variation estimate.
+        </span>
+      </span>
+    </span>
+  </label>
+</div>
+
     <div id="conservativeRulesMessage" class="hint small-hint" style="display:none; margin-top:0.75rem;">
       This chart uses a conservative rule set designed for reliable interpretation.
     </div>
