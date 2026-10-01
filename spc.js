@@ -7547,7 +7547,18 @@ function updateXmRMultiSummary(segments, totalPoints) {
 
   segments.forEach((seg, idx) => {
     const { startIndex, endIndex, labelStart, labelEnd, result } = seg;
-    const { mean, ucl, lcl, sigma, avgMR, baselineCountUsed } = result;
+    const {
+  mean,
+  ucl,
+  lcl,
+  sigma,
+  avgMR,
+  baselineCountUsed,
+  initialAvgMR,
+  mrScreeningEnabled,
+  mrScreeningThreshold,
+  excludedMRCount
+} = result;
 
     const points = result.points || [];
     const n = points.length;
@@ -7660,7 +7671,47 @@ const rangeText =
     html += `<li>Mean: <strong>${mean.toFixed(3)}</strong>; control limits: <strong>LCL = ${lcl.toFixed(3)}</strong>, <strong>UCL = ${ucl.toFixed(3)}</strong>.</li>`;
     html += `<li>Estimated σ (from MR): <strong>${sigma.toFixed(3)}</strong> (average MR = ${avgMR.toFixed(3)}).</li>`;
 
-    if (target !== null) {
+// Explain XmR moving-range screening only when it is relevant.
+// Keep the main wording simple, with the technical method second.
+if (mrScreeningEnabled && excludedMRCount > 0) {
+  const changeWord =
+    excludedMRCount === 1
+      ? "change was"
+      : "changes were";
+
+  html += `
+    <li>
+      <strong>XmR limit calculation:</strong>
+      ${excludedMRCount} unusually large point-to-point
+      ${changeWord} not used when estimating routine variation.
+      All data points remain shown on the chart.
+    </li>
+  `;
+
+  if (
+    Number.isFinite(initialAvgMR) &&
+    Number.isFinite(mrScreeningThreshold)
+  ) {
+    html += `
+      <li class="hint">
+        Nelson moving-range screening was used:
+        initial average MR = ${initialAvgMR.toFixed(3)};
+        screening threshold = ${mrScreeningThreshold.toFixed(3)};
+        revised average MR = ${avgMR.toFixed(3)}.
+      </li>
+    `;
+  }
+} else if (mrScreeningEnabled === false) {
+  html += `
+    <li>
+      <strong>XmR limit calculation:</strong>
+      Moving-range screening is turned off, so all baseline
+      point-to-point changes were used to estimate routine variation.
+    </li>
+  `;
+}
+
+if (target !== null) {
       html += `<li>Target: <strong>${target}</strong> (${direction === "above" ? "at or above is better" : "at or below is better"}). `;
       html += targetCoverageText ? (targetCoverageText + `</li>`) : `Target coverage not calculated for this period.</li>`;
     }
