@@ -4559,7 +4559,7 @@ function populateSplitOptions(labels) {
   }
 }
 
-
+const MIN_XMR_LIMIT_POINTS = 12;
 
 /**
  * Compute XmR statistics and MR values.
@@ -7564,6 +7564,14 @@ function updateXmRMultiSummary(segments, totalPoints) {
     const n = points.length;
     const values = points.map(p => p.y);
 
+   const limitEstimatePointCount =
+  Number.isFinite(baselineCountUsed)
+    ? baselineCountUsed
+    : n;
+
+const hasEnoughPointsForInterpretation =
+  limitEstimatePointCount >= MIN_XMR_LIMIT_POINTS;
+
     // --- Special-cause detection (simple, lay-focused labels) ---
     // 1) Points beyond limits
     const beyondIdx = [];
@@ -7606,27 +7614,47 @@ if (rs.allowTrend) {
     // Build simple signals list
     const signals = [];
 
-    if (beyondIdx.length > 0) {
-      signals.push("one or more points are outside the control limits");
-    }
+// Only interpret SPC signals once enough observations have been used
+// to establish the XmR limits for this period.
+if (hasEnoughPointsForInterpretation) {
+  if (beyondIdx.length > 0) {
+    signals.push("one or more points are outside the control limits");
+  }
 
-    if (runRanges.length > 0) {
-      signals.push("a sustained shift (many points on the same side of the mean)");
-    }
+  if (runRanges.length > 0) {
+    signals.push(
+      "a sustained shift (many points on the same side of the mean)"
+    );
+  }
 
-    if (rs.allowTrend && trendRanges.length > 0) {
-  signals.push("a sustained trend (steady increase or decrease)");
+  if (rs.allowTrend && trendRanges.length > 0) {
+    signals.push(
+      "a sustained trend (steady increase or decrease)"
+    );
+  }
+
+  if (astro.indices && astro.indices.length > 0) {
+    signals.push(
+      "an unusual outlier (an ‘astronomical’ point)"
+    );
+  }
 }
-
-    if (astro.indices && astro.indices.length > 0) {
-      signals.push("an unusual outlier (an ‘astronomical’ point)");
-    }
 
     // Capability (only if target exists and sigma > 0)
     let capability = null;
-    if (target !== null && sigma > 0) {
-      capability = computeTargetCapability(mean, sigma, target, direction);
-    }
+
+if (
+  hasEnoughPointsForInterpretation &&
+  target !== null &&
+  sigma > 0
+) {
+  capability = computeTargetCapability(
+    mean,
+    sigma,
+    target,
+    direction
+  );
+}
 
     // Target coverage in this period
     let targetCoverageText = "";
@@ -7711,15 +7739,37 @@ if (mrScreeningEnabled && excludedMRCount > 0) {
   `;
 }
 
+if (!hasEnoughPointsForInterpretation) {
+  html += `
+    <li>
+      <strong>Provisional limits:</strong>
+      only <strong>${limitEstimatePointCount}</strong>
+      point${limitEstimatePointCount !== 1 ? "s were" : " was"}
+      used to estimate the limits for this period.
+      SimpleSPC needs at least <strong>${MIN_XMR_LIMIT_POINTS}</strong>
+      points before interpreting special-cause signals or capability.
+      The displayed limits are shown for context only.
+    </li>
+  `;
+}
+
 if (target !== null) {
       html += `<li>Target: <strong>${target}</strong> (${direction === "above" ? "at or above is better" : "at or below is better"}). `;
       html += targetCoverageText ? (targetCoverageText + `</li>`) : `Target coverage not calculated for this period.</li>`;
     }
 
     // Simple, clearly labelled interpretation
-    if (signals.length === 0) {
-      html += `<li><strong>Interpretation:</strong> No clear special-cause signals were detected in this period. The pattern is consistent with natural/common variation (still interpret in clinical context).</li>`;
-    } else {
+    if (!hasEnoughPointsForInterpretation) {
+  html += `
+    <li>
+      <strong>Interpretation:</strong>
+      Not yet assessed — more data are needed before this period
+      can be interpreted as showing routine or special-cause variation.
+    </li>
+  `;
+} else if (signals.length === 0) {
+  html += `<li><strong>Interpretation:</strong> No clear special-cause signals were detected in this period. The pattern is consistent with natural/common variation (still interpret in clinical context).</li>`;
+} else {
       html += `<li><strong>Interpretation:</strong> This period shows special-cause signals: ${signals.join("; ")}.</li>`;
 
       // Optional: very short “where” hints (kept minimal)
@@ -7756,7 +7806,10 @@ if (target !== null) {
     if (idx === segments.length - 1) {
       lastPeriodSignals = signals;
       lastPeriodCapability = capability;
-      lastPeriodHasCapability = sigma > 0 && !!capability;
+      lastPeriodHasCapability =
+  hasEnoughPointsForInterpretation &&
+  sigma > 0 &&
+  !!capability;
 
       const hasTrend = trendRanges.length > 0;
       const hasRunViolation = runRanges.length > 0;
@@ -7790,8 +7843,16 @@ if (target !== null) {
         baselineCountUsed,
         target,
         direction,
-        capability,
-        isStable: signals.length === 0,
+                capability,
+
+        hasEnoughPointsForInterpretation,
+        limitEstimatePointCount,
+        minimumPointsForInterpretation: MIN_XMR_LIMIT_POINTS,
+
+        isStable: hasEnoughPointsForInterpretation
+          ? signals.length === 0
+          : null,
+
         // thresholds used (handy for helper explanations)
         shiftLength,
         trendLength,
@@ -9810,10 +9871,13 @@ function drawXmRChart(points, baselineCount, labels) {
   if (!chartCanvas) return;
 
   const n = points.length;
-  if (n < 12) {
-    if (errorMessage) errorMessage.textContent = "XmR chart needs at least 12 points.";
-    return;
+  if (n < MIN_XMR_LIMIT_POINTS) {
+  if (errorMessage) {
+    errorMessage.textContent =
+      `XmR chart needs at least ${MIN_XMR_LIMIT_POINTS} points.`;
   }
+  return;
+}
 
   // ---- Read “rules & interpretation” settings (with safe fallbacks) ----
   const { shiftLength, trendLength } =
@@ -9903,6 +9967,14 @@ function drawXmRChart(points, baselineCount, labels) {
     const lcl   = segResult.lcl;
     const sigma = segResult.sigma;
 
+    const limitEstimatePointCount =
+  Number.isFinite(segResult.baselineCountUsed)
+    ? segResult.baselineCountUsed
+    : segPoints.length;
+
+const hasEnoughPointsForInterpretation =
+  limitEstimatePointCount >= MIN_XMR_LIMIT_POINTS;
+
     // If computeXmR returns rawLcl, use it to decide whether to show the clamp option
     if (typeof segResult.rawLcl === "number" && segResult.rawLcl < 0) {
       anyRawLclBelowZero = true;
@@ -9927,7 +9999,9 @@ function drawXmRChart(points, baselineCount, labels) {
       labelStart: labels[start],
       labelEnd: labels[end],
       result: segResult,
-      analysis: segAnalysis
+      analysis: segAnalysis,
+  limitEstimatePointCount,
+  hasEnoughPointsForInterpretation
     });
 
     // Fill chart arrays for this segment
@@ -9938,15 +10012,16 @@ function drawXmRChart(points, baselineCount, labels) {
       // - beyond limits = red
       // - other special-cause signals = orange
       // - otherwise blue
-      if (!flagOnChart) {
-        pointColours[globalIdx] = SPC_STYLE.pointNormal;
-      } else if (segAnalysis.flags?.beyond?.[i]) {
-        pointColours[globalIdx] = SPC_STYLE.pointBeyond;
-      } else if (segAnalysis.flags?.special?.[i]) {
-        pointColours[globalIdx] = SPC_STYLE.pointSpecial;
-      } else {
-        pointColours[globalIdx] = SPC_STYLE.pointNormal;
-      }
+      if (!hasEnoughPointsForInterpretation || !flagOnChart) {
+  // Do not present statistical signals from provisional XmR limits.
+  pointColours[globalIdx] = SPC_STYLE.pointNormal;
+} else if (segAnalysis.flags?.beyond?.[i]) {
+  pointColours[globalIdx] = SPC_STYLE.pointBeyond;
+} else if (segAnalysis.flags?.special?.[i]) {
+  pointColours[globalIdx] = SPC_STYLE.pointSpecial;
+} else {
+  pointColours[globalIdx] = SPC_STYLE.pointNormal;
+}
 
       // Centre line & limits
       meanLine[globalIdx] = mean;
@@ -10095,8 +10170,26 @@ function drawXmRChart(points, baselineCount, labels) {
     ucl: seg.result?.ucl,
     lcl: seg.result?.lcl,
     sigma: seg.result?.sigma,
-    isStable: Array.isArray(seg.analysis?.signals) ? seg.analysis.signals.length === 0 : false,
-    signals: Array.isArray(seg.analysis?.signals) ? seg.analysis.signals.slice() : []
+    hasEnoughPointsForInterpretation:
+  !!seg.hasEnoughPointsForInterpretation,
+
+limitEstimatePointCount:
+  seg.limitEstimatePointCount,
+
+minimumPointsForInterpretation:
+  MIN_XMR_LIMIT_POINTS,
+
+isStable:
+  seg.hasEnoughPointsForInterpretation &&
+  Array.isArray(seg.analysis?.signals)
+    ? seg.analysis.signals.length === 0
+    : null,
+
+signals:
+  seg.hasEnoughPointsForInterpretation &&
+  Array.isArray(seg.analysis?.signals)
+    ? seg.analysis.signals.slice()
+    : []
   }));
 
 
