@@ -11406,7 +11406,7 @@ function renderRuleExplainerModal(chartType) {
       "Rare-event charts are naturally irregular. Run and trend rules can create false signals, so they are advanced-only and warning-gated.";
   } else if (chartType === "xmr") {
     whyText =
-      "XmR charts are used for individual measurements over time. SimpleSPC keeps the default interpretation deliberately simple, while additional pattern rules and calculation options are available for users who need them.";s.";
+      "XmR charts are used for individual measurements over time. SimpleSPC keeps the default interpretation deliberately simple, while additional pattern rules and calculation options are available for users who need them.";
   } else if (chartType === "xbars") {
     whyText =
       "X̄-S charts are the chart family where advanced rule sets are most defensible, but the default remains conservative to reduce false alarms.";
