@@ -2026,7 +2026,6 @@ function clearError() {
 }
 
 function getTargetValue() {
-  if (!targetEnabled) return null;
   if (!targetInput) return null;
 
   const v = targetInput.value.trim();
@@ -9246,7 +9245,7 @@ function drawRunChart(points, baselineCount, labels) {
     }
   ];
 
-  if (target !== null) {
+  if (targetEnabled &&  target !== null) {
     datasets.push({
       label: "Target",
       data: values.map(() => target),
@@ -9820,9 +9819,9 @@ function drawSimpleSPCChart({
     });
   }
 
-  // Optional target line – consistent with Run/XmR
-  const target = getTargetValue();
-  if (target !== null) {
+  // Optional target line
+const target = getTargetValue();
+if (targetEnabled && target !== null) {
     datasets.push({
       label: "Target",
       data: values.map(() => target),
@@ -10109,8 +10108,8 @@ const hasEnoughPointsForInterpretation =
   }
 
   // Target line (optional)
-  const target = getTargetValue();
-  if (target !== null) {
+const target = getTargetValue();
+if (targetEnabled && target !== null) {
     datasets.push({
       label: "Target",
       data: values.map(() => target),
