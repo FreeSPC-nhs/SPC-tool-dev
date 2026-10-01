@@ -585,7 +585,8 @@ baselinePoints,
       ruleTwoOfThreeOuterThird: ruleTwoOfThreeOuterThirdCheckbox?.checked ?? false,
       ruleFourOfFiveOneSigma: ruleFourOfFiveOneSigmaCheckbox?.checked ?? false,
       flagSpecialCauseOnChart: flagSpecial,
-      clampLclAtZero: clampLcl
+      clampLclAtZero: clampLcl,
+      screenLargeMRs: screenLargeMRsCheckbox?.checked ?? true
     },
 
     splits: Array.isArray(splits) ? splits.slice() : [],
@@ -662,6 +663,18 @@ if (
   if (clampLclAtZeroCheckbox && settings.rules?.clampLclAtZero !== undefined) {
     clampLclAtZeroCheckbox.checked = !!settings.rules.clampLclAtZero;
   }
+
+  if (screenLargeMRsCheckbox) {
+  if (settings.rules?.screenLargeMRs !== undefined) {
+    // Newer saved chart: restore the user's saved choice.
+    screenLargeMRsCheckbox.checked =
+      !!settings.rules.screenLargeMRs;
+  } else {
+    // Older saved chart: preserve the legacy XmR calculation
+    // rather than silently changing its historical limits.
+    screenLargeMRsCheckbox.checked = false;
+  }
+}
 
   if (baselineInput && settings.baselinePoints !== undefined) baselineInput.value = settings.baselinePoints;
 
