@@ -11406,7 +11406,7 @@ function renderRuleExplainerModal(chartType) {
       "Rare-event charts are naturally irregular. Run and trend rules can create false signals, so they are advanced-only and warning-gated.";
   } else if (chartType === "xmr") {
     whyText =
-      "X-MR charts are continuous, but more fragile than subgrouped charts. Extra pattern rules are available only as advanced options.";
+      "XmR charts are used for individual measurements over time. SimpleSPC keeps the default interpretation deliberately simple, while additional pattern rules and calculation options are available for users who need them.";s.";
   } else if (chartType === "xbars") {
     whyText =
       "X̄-S charts are the chart family where advanced rule sets are most defensible, but the default remains conservative to reduce false alarms.";
@@ -11418,20 +11418,82 @@ function renderRuleExplainerModal(chartType) {
       "This tool keeps the default rule set simple and conservative to reduce false alerts.";
   }
 
-  body.innerHTML = `
-    <div class="hint">
-      <strong>${chartName}</strong>
-    </div>
+  let xmrCalculationHtml = "";
 
-    <div class="hint" style="margin-top:0.5rem;">
-      ${whyText}
-    </div>
+if (chartType === "xmr") {
+  const screeningOn =
+    screenLargeMRsCheckbox
+      ? screenLargeMRsCheckbox.checked
+      : true;
 
+  xmrCalculationHtml = `
     <hr style="margin:0.9rem 0;">
 
     <div class="hint">
-      <strong>What this chart checks by default</strong>
+      <strong>How XmR limits are set</strong>
     </div>
+
+    <div class="hint" style="margin-top:0.5rem;">
+      XmR charts estimate routine variation from the differences between
+      consecutive points. These differences are called
+      <strong>moving ranges</strong>.
+    </div>
+
+    <div class="hint" style="margin-top:0.5rem;">
+      A very large jump between two points can make the estimated variation
+      too large and produce control limits that are too wide.
+      By default, FreeSPC screens unusually large moving ranges when setting
+      XmR limits. The original data points and moving ranges are still shown
+      on the chart.
+    </div>
+
+    <div class="hint" style="margin-top:0.5rem;">
+      <strong>Technical detail:</strong>
+      FreeSPC uses the Nelson method. Moving ranges greater than
+      3.5 times the initial average moving range are not used when estimating
+      routine variation.
+    </div>
+
+    <div class="hint" style="margin-top:0.5rem;">
+      <strong>Current setting:</strong>
+      moving-range screening is
+      <strong>${screeningOn ? "ON" : "OFF"}</strong>.
+      You can change this under <em>Advanced detection options</em>.
+    </div>
+
+    <div class="hint" style="margin-top:0.75rem;">
+      <strong>What happens when you add a split?</strong>
+      A split tells FreeSPC that you want to treat the data before and after
+      that point as different process periods. Each period gets its own mean
+      and control limits, and the moving range across the split is not used.
+    </div>
+
+    <div class="hint" style="margin-top:0.5rem;">
+      FreeSPC needs at least
+      <strong>${MIN_XMR_LIMIT_POINTS} points</strong>
+      to interpret the XmR limits for a period. If a split creates a shorter
+      period, the limits are shown as provisional and FreeSPC does not label
+      that period as showing routine or special-cause variation yet.
+    </div>
+  `;
+}
+
+  body.innerHTML = `
+  <div class="hint">
+    <strong>${chartName}</strong>
+  </div>
+
+  <div class="hint" style="margin-top:0.5rem;">
+    ${whyText}
+  </div>
+
+  ${xmrCalculationHtml}
+
+  <hr style="margin:0.9rem 0;">
+
+  <div class="hint">
+    <strong>What this chart checks by default</strong>
+  </div>
     <ul style="margin-top:0.5rem;">
       ${describeRuleStatus(policy.beyondLimits, { name: "Beyond limits" })}
       ${describeRuleStatus(policy.runShift, { name: "Run rule" })}
