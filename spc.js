@@ -10253,7 +10253,6 @@ if (targetEnabled && target !== null) {
   populateSplitOptions(labels);
 
   // ----- Create chart -----
-  // ----- Create chart -----
 if (currentChart) currentChart.destroy();
 
 const { title, xLabel, yLabel } =
@@ -10271,30 +10270,27 @@ currentChart = new Chart(chartCanvas, {
   ],
 
   options: {
-    type: "line",
-    data: { labels, datasets },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        title: buildChartTitleConfig(title),
-        legend: SPC_LEGEND,
-        annotation: {
-          annotations: buildAnnotationConfig(labels)
-        }
-      },
-      elements: {
-        point: { radius: 0, hoverRadius: 0 }
-      },
-            scales: (() => {
-        const axisSettings = getAxisSettings();
-        return {
-          x: buildCategoryXAxisConfig(xLabel, axisSettings.x, labels),
-          y: buildAxisConfig(yLabel, axisSettings.y)
-        };
-      })()
-    }
-  });
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      title: buildChartTitleConfig(title),
+      legend: SPC_LEGEND,
+      annotation: {
+        annotations: buildAnnotationConfig(labels)
+      }
+    },
+    elements: {
+      point: { radius: 0, hoverRadius: 0 }
+    },
+    scales: (() => {
+      const axisSettings = getAxisSettings();
+      return {
+        x: buildCategoryXAxisConfig(xLabel, axisSettings.x, labels),
+        y: buildAxisConfig(yLabel, axisSettings.y)
+      };
+    })()
+  }
+});
 
     // Expose all XmR periods to the helper so it can talk about the whole chart,
   // not just the latest segment.
