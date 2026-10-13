@@ -1489,13 +1489,30 @@ Hide target line
 
 <div data-role="xmrMeanLabelsGroup" style="display:none;">
 
-
   <button
     type="button"
     data-action="toggleXmRMeanLabels"
-    title="Show or hide the calculated mean value for each XmR process period."
+    title="Show or hide the calculated mean values for this XmR chart."
   >
     Show mean labels
+  </button>
+
+  <button
+    type="button"
+    data-action="hideXmRMeanLabel"
+    style="display:none;"
+    title="Hide only the mean label that you right-clicked."
+  >
+    Hide this mean label
+  </button>
+
+  <button
+    type="button"
+    data-action="restoreXmRMeanLabels"
+    style="display:none;"
+    title="Restore any individual mean labels that have been hidden."
+  >
+    Restore hidden mean labels
   </button>
 </div>
 

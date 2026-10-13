@@ -9883,6 +9883,7 @@ let showXmRMeanLabels = false;
 // to 1 = right side of period.
 let xmrMeanLabelPositions = {};
 let xmrMeanLabelVerticalPositions = {};
+let xmrHiddenMeanLabels = new Set();
 
 function buildXmRMeanLabelPlugin(segmentSummaries) {
 
@@ -10103,6 +10104,10 @@ xmrMeanLabelVerticalPositions[
 
       segmentSummaries.forEach(
         (seg, segmentIndex) => {
+
+        if (xmrHiddenMeanLabels.has(segmentIndex)) {
+  	return;
+   }
 
           const mean =
             Number(seg?.result?.mean);
@@ -11078,12 +11083,14 @@ const chartContextMenu = document.getElementById("chartContextMenu");
 
 // Track which point index was right-clicked
 let contextMenuPointIndex = null;
+let contextMenuMeanLabelSegmentIndex = null;
 
 // Helper: hide menu
 function hideChartContextMenu() {
   if (!chartContextMenu) return;
   chartContextMenu.style.display = "none";
   contextMenuPointIndex = null;
+  contextMenuMeanLabelSegmentIndex = null;
 }
 
 // Helper: show menu at cursor, clamped to viewport
@@ -11119,6 +11126,37 @@ if (xmrMeanLabelsBtn) {
     showXmRMeanLabels
       ? "Hide mean labels"
       : "Show mean labels";
+}
+
+const hideXmRMeanLabelBtn =
+  chartContextMenu.querySelector(
+    'button[data-action="hideXmRMeanLabel"]'
+  );
+
+const restoreXmRMeanLabelsBtn =
+  chartContextMenu.querySelector(
+    'button[data-action="restoreXmRMeanLabels"]'
+  );
+
+if (hideXmRMeanLabelBtn) {
+  const canHideThisLabel =
+    chartType === "xmr" &&
+    showXmRMeanLabels &&
+    contextMenuMeanLabelSegmentIndex !== null &&
+    !xmrHiddenMeanLabels.has(
+      contextMenuMeanLabelSegmentIndex
+    );
+
+  hideXmRMeanLabelBtn.style.display =
+    canHideThisLabel ? "" : "none";
+}
+
+if (restoreXmRMeanLabelsBtn) {
+  restoreXmRMeanLabelsBtn.style.display =
+    chartType === "xmr" &&
+    xmrHiddenMeanLabels.size > 0
+      ? ""
+      : "none";
 }
 
   // Current x-label at the clicked point (if any)
@@ -12505,15 +12543,47 @@ if (addSplitButton) {
 // ---- Right-click on chart: show menu ----
 if (chartCanvas) {
   chartCanvas.addEventListener("contextmenu", (evt) => {
-    // Always use our menu on the chart canvas
     evt.preventDefault();
 
-    // Try to find a nearby point; if none, menu still shows but split is disabled
     const idx = getNearestPointIndexFromEvent(evt);
-    showChartContextMenu(evt.clientX, evt.clientY, idx); // idx may be null
+
+    contextMenuMeanLabelSegmentIndex = null;
+
+    if (
+      currentChart &&
+      Array.isArray(currentChart.$xmrMeanLabelHitboxes)
+    ) {
+      const rect = chartCanvas.getBoundingClientRect();
+
+      const x =
+        (evt.clientX - rect.left) *
+        (currentChart.width / rect.width);
+
+      const y =
+        (evt.clientY - rect.top) *
+        (currentChart.height / rect.height);
+
+      const hit =
+        currentChart.$xmrMeanLabelHitboxes.find(box =>
+          x >= box.x &&
+          x <= box.x + box.width &&
+          y >= box.y &&
+          y <= box.y + box.height
+        );
+
+      if (hit) {
+        contextMenuMeanLabelSegmentIndex =
+          hit.segmentIndex;
+      }
+    }
+
+    showChartContextMenu(
+      evt.clientX,
+      evt.clientY,
+      idx
+    );
   });
 }
-
 
 // Hide menu on click elsewhere / escape / scroll
 document.addEventListener("click", () => hideChartContextMenu());
@@ -12528,8 +12598,12 @@ if (chartContextMenu) {
 
     const action = btn.getAttribute("data-action");
 
-    // capture the point index BEFORE hiding the menu
-    const clickedPointIndex = contextMenuPointIndex;
+    // Capture context BEFORE hiding the menu
+    const clickedPointIndex =
+      contextMenuPointIndex;
+
+    const clickedMeanLabelSegmentIndex =
+      contextMenuMeanLabelSegmentIndex;
 
     hideChartContextMenu();
 
@@ -12539,48 +12613,106 @@ if (chartContextMenu) {
     }
 
     try {
-	    if (action === "toggleXmRMeanLabels") {
- 				 showXmRMeanLabels = !showXmRMeanLabels;
+      if (action === "toggleXmRMeanLabels") {
+        showXmRMeanLabels =
+          !showXmRMeanLabels;
 
-  				if (generateButton) {
- 				   generateButton.click();
-	     }
-
-  				return;
-	    }
-
-            if (action === "addAnnotation") {
-        if (clickedPointIndex === null || clickedPointIndex === undefined) {
-          alert("Right-click near a data point to add an annotation.");
-          return;
+        if (generateButton) {
+          generateButton.click();
         }
 
-        const labels = currentChart?.data?.labels || [];
-        const xLabel = labels?.[clickedPointIndex];
-
-        if (!xLabel) {
-          alert("Could not determine the selected x-position for annotation.");
-          return;
-        }
-
-        const text = prompt(`New annotation for ${xLabel}:`, "");
-        if (text === null) return;
-
-        const trimmed = String(text).trim();
-        if (!trimmed) {
-          alert("Annotation text cannot be blank.");
-          return;
-        }
-
-        if (annotationDateInput) annotationDateInput.value = xLabel;
-        if (annotationLabelInput) annotationLabelInput.value = trimmed;
-
-        annotations.push({ date: xLabel, label: trimmed });
-
-        if (generateButton) generateButton.click();
         return;
       }
 
+      if (action === "hideXmRMeanLabel") {
+        if (
+          clickedMeanLabelSegmentIndex !== null &&
+          clickedMeanLabelSegmentIndex !== undefined
+        ) {
+          xmrHiddenMeanLabels.add(
+            clickedMeanLabelSegmentIndex
+          );
+
+          if (currentChart) {
+            currentChart.draw();
+          }
+        }
+
+        return;
+      }
+
+      if (action === "restoreXmRMeanLabels") {
+        xmrHiddenMeanLabels.clear();
+
+        if (currentChart) {
+          currentChart.draw();
+        }
+
+        return;
+      }
+
+      if (action === "addAnnotation") {
+        if (
+          clickedPointIndex === null ||
+          clickedPointIndex === undefined
+        ) {
+          alert(
+            "Right-click near a data point to add an annotation."
+          );
+          return;
+        }
+
+        const labels =
+          currentChart?.data?.labels || [];
+
+        const xLabel =
+          labels?.[clickedPointIndex];
+
+        if (!xLabel) {
+          alert(
+            "Could not determine the selected x-position for annotation."
+          );
+          return;
+        }
+
+        const text = prompt(
+          `New annotation for ${xLabel}:`,
+          ""
+        );
+
+        if (text === null) return;
+
+        const trimmed =
+          String(text).trim();
+
+        if (!trimmed) {
+          alert(
+            "Annotation text cannot be blank."
+          );
+          return;
+        }
+
+        if (annotationDateInput) {
+          annotationDateInput.value =
+            xLabel;
+        }
+
+        if (annotationLabelInput) {
+          annotationLabelInput.value =
+            trimmed;
+        }
+
+        annotations.push({
+          date: xLabel,
+          label: trimmed
+        });
+
+        if (generateButton) {
+          generateButton.click();
+        }
+
+        return;
+      }
       if (action === "editAnnotation") {
         if (clickedPointIndex === null || clickedPointIndex === undefined) {
           alert("Right-click near a data point to edit an annotation.");
