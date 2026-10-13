@@ -9314,29 +9314,64 @@ if (chartType === "run") {
   }
 
   // Block: denominator must be > 0
-    if (!handleValidationResult(
-    validateDenominatorPositive(
-      denomArr,
-      chartType === "p"
-        ? "P chart denominator (n)"
-        : "U chart denominator/opportunities (n)",
-      {
-        columnName: currentDenom,
-        alternativeColumn: fallbackDenom && fallbackDenom !== currentDenom ? fallbackDenom : "",
-        purposeText: chartType === "p" ? "denominator column" : "opportunities column"
-      }
-    )
-  )) return;
+if (!handleValidationResult(
+  validateDenominatorPositive(
+    denomArr,
+    isPFamily
+      ? "P/P′ chart denominator (n)"
+      : "U chart denominator/opportunities (n)",
+    {
+      columnName: currentDenom,
+      alternativeColumn:
+        fallbackDenom && fallbackDenom !== currentDenom
+          ? fallbackDenom
+          : "",
+      purposeText:
+        isPFamily
+          ? "denominator column"
+          : "opportunities column"
+    }
+  )
+)) return;
 
-  // Warn: non-integers (allow user to continue)
-    if (!handleValidationResult(
+// Warn: non-integers (allow user to continue)
+if (!handleValidationResult(
   warnIfNonInteger(
     numerArr,
-    chartType === "p" ? "P chart numerator (d)" : "U chart numerator (c)",
+    isPFamily
+      ? "P/P′ chart numerator (d)"
+      : "U chart numerator (c)",
     {
       columnName: currentNumer,
-      alternativeColumn: fallbackNumer && fallbackNumer !== currentNumer ? fallbackNumer : "",
-      purposeText: isPFamily ? "numerator column" : "count column"
+      alternativeColumn:
+        fallbackNumer && fallbackNumer !== currentNumer
+          ? fallbackNumer
+          : "",
+      purposeText:
+        isPFamily
+          ? "numerator column"
+          : "count column"
+    }
+  ),
+  { manual: lastGenerateWasManual }
+)) return;
+
+if (!handleValidationResult(
+  warnIfNonInteger(
+    denomArr,
+    isPFamily
+      ? "P/P′ chart denominator (n)"
+      : "U chart denominator/opportunities (n)",
+    {
+      columnName: currentDenom,
+      alternativeColumn:
+        fallbackDenom && fallbackDenom !== currentDenom
+          ? fallbackDenom
+          : "",
+      purposeText:
+        isPFamily
+          ? "denominator column"
+          : "opportunities column"
     }
   ),
   { manual: lastGenerateWasManual }
