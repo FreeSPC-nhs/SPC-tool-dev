@@ -9882,6 +9882,7 @@ let showXmRMeanLabels = false;
 // Stored as a fraction from 0 = left side of period
 // to 1 = right side of period.
 let xmrMeanLabelPositions = {};
+let xmrMeanLabelVerticalPositions = {};
 
 function buildXmRMeanLabelPlugin(segmentSummaries) {
 
@@ -9987,6 +9988,14 @@ function buildXmRMeanLabelPlugin(segmentSummaries) {
                 availableWidth
               : 0;
 
+         // Snap vertically to either side of the mean line.
+xmrMeanLabelVerticalPositions[
+  drag.segmentIndex
+] =
+  pos.y < hit.meanY
+    ? "above"
+    : "below";
+
           chart.draw();
 
           evt.preventDefault();
@@ -10001,7 +10010,7 @@ function buildXmRMeanLabelPlugin(segmentSummaries) {
         );
 
         canvas.style.cursor =
-          hit ? "ew-resize" : "";
+ 	 hit ? "move" : "";
       };
 
       const onPointerUp = (evt) => {
@@ -10224,26 +10233,44 @@ function buildXmRMeanLabelPlugin(segmentSummaries) {
             );
           }
 
-          // Keep vertical position tied
-          // to the mean line.
-          let boxY =
-            y -
-            boxHeight -
-            4;
+          // Keep the label tied vertically to the mean line,
+// but allow the user to choose above or below.
+let verticalSide =
+  xmrMeanLabelVerticalPositions[segmentIndex] === "below"
+    ? "below"
+    : "above";
 
-          if (
-            boxY <
-            chartArea.top + 2
-          ) {
-            boxY = y + 4;
-          }
+let boxY =
+  verticalSide === "below"
+    ? y + 4
+    : y - boxHeight - 4;
 
-          boxY = Math.min(
-            boxY,
-            chartArea.bottom -
-              boxHeight -
-              2
-          );
+// If the chosen side would place the label outside
+// the chart, automatically use the other side.
+if (
+  verticalSide === "above" &&
+  boxY < chartArea.top + 2
+) {
+  verticalSide = "below";
+  boxY = y + 4;
+}
+
+if (
+  verticalSide === "below" &&
+  boxY + boxHeight > chartArea.bottom - 2
+) {
+  verticalSide = "above";
+  boxY = y - boxHeight - 4;
+}
+
+// Final safety clamp.
+boxY = Math.max(
+  chartArea.top + 2,
+  Math.min(
+    boxY,
+    chartArea.bottom - boxHeight - 2
+  )
+);
 
           ctx.fillStyle =
             "rgba(255,255,255,0.92)";
@@ -10279,15 +10306,16 @@ function buildXmRMeanLabelPlugin(segmentSummaries) {
           // Remember where the label is
           // so the pointer handlers know
           // when the user clicks it.
-          chart.$xmrMeanLabelHitboxes.push({
-            segmentIndex,
-            x: boxX,
-            y: boxY,
-            width: boxWidth,
-            height: boxHeight,
-            minX,
-            maxX
-          });
+         chart.$xmrMeanLabelHitboxes.push({
+  segmentIndex,
+  x: boxX,
+  y: boxY,
+  width: boxWidth,
+  height: boxHeight,
+  minX,
+  maxX,
+  meanY: y
+});
         }
       );
 
