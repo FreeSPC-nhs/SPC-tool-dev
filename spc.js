@@ -9741,10 +9741,18 @@ function drawRunChart(points, baselineCount, labels) {
     });
   }
 
-  currentChart = new Chart(chartCanvas, {
-    type: "line",
-    data: { labels, datasets },
-    options: {
+  const centreLineLabelPlugin =
+  buildXmRMeanLabelPlugin();
+
+currentChart = new Chart(chartCanvas, {
+  type: "line",
+  data: { labels, datasets },
+
+  plugins: [
+    centreLineLabelPlugin
+  ],
+
+  options: {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
