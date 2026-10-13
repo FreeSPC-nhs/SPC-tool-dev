@@ -8583,8 +8583,8 @@ function handleValidationResult(result, { manual = true } = {}) {
 
 
 // ---- Generate chart button ----
-generateButton.addEventListener("click", () => {
-  lastGenerateWasManual = true;
+generateButton.addEventListener("click", (evt) => {
+  lastGenerateWasManual = !!evt.isTrusted;
   clearError();
 
 
@@ -8812,16 +8812,16 @@ if (chartType === "run") {
   const fallbackDenom = fallback?.thirdCol || "";
 
   if (!handleValidationResult(
-    validateNonNegativeNumbers(
-      numerArr,
-      chartType === "p" ? "P chart numerator (d)" : "U chart numerator (c)",
-      {
-        columnName: currentNumer,
-        alternativeColumn: fallbackNumer && fallbackNumer !== currentNumer ? fallbackNumer : "",
-        purposeText: chartType === "p" ? "numerator column" : "count column"
-      }
-    )
-  )) return;
+  validateNonNegativeNumbers(
+    numerArr,
+    chartType === "p" ? "P chart numerator (d)" : "U chart numerator (c)",
+    {
+      columnName: currentNumer,
+      alternativeColumn: fallbackNumer && fallbackNumer !== currentNumer ? fallbackNumer : "",
+      purposeText: chartType === "p" ? "numerator column" : "count column"
+    }
+  )
+)) return;
 
   // Extra UX recovery for P / U:
   // if the current pair is poor for the chosen chart type,
@@ -8911,28 +8911,30 @@ if (chartType === "run") {
 
   // Warn: non-integers (allow user to continue)
     if (!handleValidationResult(
-    warnIfNonInteger(
-      numerArr,
-      chartType === "p" ? "P chart numerator (d)" : "U chart numerator (c)",
-      {
-        columnName: currentNumer,
-        alternativeColumn: fallbackNumer && fallbackNumer !== currentNumer ? fallbackNumer : "",
-        purposeText: chartType === "p" ? "numerator column" : "count column"
-      }
-    )
-  )) return;
+  warnIfNonInteger(
+    numerArr,
+    chartType === "p" ? "P chart numerator (d)" : "U chart numerator (c)",
+    {
+      columnName: currentNumer,
+      alternativeColumn: fallbackNumer && fallbackNumer !== currentNumer ? fallbackNumer : "",
+      purposeText: chartType === "p" ? "numerator column" : "count column"
+    }
+  ),
+  { manual: lastGenerateWasManual }
+)) return;
 
   if (!handleValidationResult(
-    warnIfNonInteger(
-      denomArr,
-      chartType === "p" ? "P chart denominator (n)" : "U chart denominator/opportunities (n)",
-      {
-        columnName: currentDenom,
-        alternativeColumn: fallbackDenom && fallbackDenom !== currentDenom ? fallbackDenom : "",
-        purposeText: chartType === "p" ? "denominator column" : "opportunities column"
-      }
-    )
-  )) return;
+  warnIfNonInteger(
+    denomArr,
+    chartType === "p" ? "P chart denominator (n)" : "U chart denominator/opportunities (n)",
+    {
+      columnName: currentDenom,
+      alternativeColumn: fallbackDenom && fallbackDenom !== currentDenom ? fallbackDenom : "",
+      purposeText: chartType === "p" ? "denominator column" : "opportunities column"
+    }
+  ),
+  { manual: lastGenerateWasManual }
+)) return;
 
   // Draw chart
   if (chartType === "p") {
