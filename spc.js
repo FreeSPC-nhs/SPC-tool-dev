@@ -2690,10 +2690,21 @@ function drawXbarSCombinedChart({
     }
   ];
 
+  const centreLineLabelPlugin =
+  buildXmRMeanLabelPlugin();
+
   currentChart = new Chart(chartCanvas.getContext("2d"), {
-    type: "line",
-    data: { labels, datasets: mainDatasets },
-    options: {
+  type: "line",
+  data: {
+    labels,
+    datasets: mainDatasets
+  },
+
+  plugins: [
+    centreLineLabelPlugin
+  ],
+
+  options: {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
@@ -10528,10 +10539,18 @@ if (targetEnabled && target !== null) {
     });
   }
 
+  const centreLineLabelPlugin =
+  buildXmRMeanLabelPlugin();
+
   currentChart = new Chart(chartCanvas.getContext("2d"), {
-    type: "line",
-    data: { labels, datasets },
-    options: {
+  type: "line",
+  data: { labels, datasets },
+
+  plugins: [
+    centreLineLabelPlugin
+  ],
+
+  options: {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
@@ -10584,7 +10603,7 @@ function resetXmRMeanLabelState() {
   xmrHiddenMeanLabels = new Set();
 }
 
-function buildXmRMeanLabelPlugin(segmentSummaries) {
+function buildXmRMeanLabelPlugin(segmentSummaries = null) {
 
   function getPointerPosition(chart, evt) {
     const canvas = chart.canvas;
@@ -10765,65 +10784,166 @@ xmrMeanLabelVerticalPositions[
 
       if (!showXmRMeanLabels) return;
 
-      if (
-        !Array.isArray(segmentSummaries) ||
-        !segmentSummaries.length
+const ctx = chart.ctx;
+const chartArea = chart.chartArea;
+const xScale = chart.scales?.x;
+const yScale = chart.scales?.y;
+
+if (
+  !ctx ||
+  !chartArea ||
+  !xScale ||
+  !yScale
+) {
+  return;
+}
+
+// Find the chart's centre-line dataset.
+// Run = Median
+// XmR = Mean
+// Other SPC charts = Centre line
+const centreDataset =
+  chart.data?.datasets?.find(ds =>
+    ds.label === "Mean" ||
+    ds.label === "Median" ||
+    ds.label === "Centre line"
+  );
+
+if (
+  !centreDataset ||
+  !Array.isArray(centreDataset.data) ||
+  !centreDataset.data.length
+) {
+  return;
+}
+
+const lineColour =
+  centreDataset.borderColor || "#d33";
+
+let labelSegments = [];
+
+// XmR already provides explicit segment summaries,
+// so continue using those when available.
+if (
+  Array.isArray(segmentSummaries) &&
+  segmentSummaries.length
+) {
+  labelSegments =
+    segmentSummaries.map(seg => ({
+      startIndex:
+        Number(seg?.startIndex),
+
+      endIndex:
+        Number(seg?.endIndex),
+
+      value:
+        Number(seg?.result?.mean),
+
+      label:
+        "Mean"
+    }));
+
+} else {
+  // For every other chart, derive the periods from
+  // the chart labels and the current split positions.
+  const totalPoints =
+    chart.data?.labels?.length ||
+    centreDataset.data.length;
+
+  let effectiveSplits =
+    Array.isArray(splits)
+      ? splits.slice()
+      : [];
+
+  effectiveSplits =
+    effectiveSplits
+      .filter(
+        i =>
+          Number.isInteger(i) &&
+          i >= 0 &&
+          i < totalPoints - 1
+      )
+      .sort((a, b) => a - b);
+
+  const segmentStarts = [0];
+  const segmentEnds = [];
+
+  effectiveSplits.forEach(idx => {
+    segmentEnds.push(idx);
+    segmentStarts.push(idx + 1);
+  });
+
+  segmentEnds.push(totalPoints - 1);
+
+  const labelName =
+    centreDataset.label === "Median"
+      ? "Median"
+      : centreDataset.label === "Mean"
+        ? "Mean"
+        : "Centre line";
+
+  labelSegments =
+    segmentStarts.map((startIndex, segmentIndex) => {
+      const endIndex =
+        segmentEnds[segmentIndex];
+
+      let value = NaN;
+
+      // Find the first valid centre-line value
+      // within this process period.
+      for (
+        let i = startIndex;
+        i <= endIndex;
+        i++
       ) {
-        return;
+        const candidate =
+          Number(centreDataset.data[i]);
+
+        if (Number.isFinite(candidate)) {
+          value = candidate;
+          break;
+        }
       }
 
-      const ctx = chart.ctx;
-      const chartArea = chart.chartArea;
-      const xScale = chart.scales?.x;
-      const yScale = chart.scales?.y;
+      return {
+        startIndex,
+        endIndex,
+        value,
+        label: labelName
+      };
+    });
+}
 
-      if (
-        !ctx ||
-        !chartArea ||
-        !xScale ||
-        !yScale
-      ) {
-        return;
-      }
+ctx.save();
 
-      const meanDataset =
-        chart.data?.datasets?.find(
-          ds => ds.label === "Mean"
-        );
+ctx.font =
+  "600 12px Arial, sans-serif";
 
-      const lineColour =
-        meanDataset?.borderColor || "#d33";
+ctx.textBaseline = "middle";
 
-      ctx.save();
+labelSegments.forEach(
+  (seg, segmentIndex) => {
 
-      ctx.font =
-        "600 12px Arial, sans-serif";
+    if (xmrHiddenMeanLabels.has(segmentIndex)) {
+      return;
+    }
 
-      ctx.textBaseline = "middle";
+    const centreValue =
+      Number(seg?.value);
 
-      segmentSummaries.forEach(
-        (seg, segmentIndex) => {
+    const startIndex =
+      Number(seg?.startIndex);
 
-        if (xmrHiddenMeanLabels.has(segmentIndex)) {
-  	return;
-   }
+    const endIndex =
+      Number(seg?.endIndex);
 
-          const mean =
-            Number(seg?.result?.mean);
-
-          const startIndex =
-            Number(seg?.startIndex);
-
-          const endIndex =
-            Number(seg?.endIndex);
-
-          if (
-            !Number.isFinite(mean) ||
-            !Number.isFinite(startIndex) ||
-            !Number.isFinite(endIndex)
-          ) {
-            return;
-          }
+    if (
+      !Number.isFinite(centreValue) ||
+      !Number.isFinite(startIndex) ||
+      !Number.isFinite(endIndex)
+    ) {
+      return;
+    }
 
           const startX =
             xScale.getPixelForValue(
@@ -10836,7 +10956,9 @@ xmrMeanLabelVerticalPositions[
             );
 
           const y =
-            yScale.getPixelForValue(mean);
+  yScale.getPixelForValue(
+    centreValue
+  );
 
           if (
             !Number.isFinite(startX) ||
@@ -10847,7 +10969,7 @@ xmrMeanLabelVerticalPositions[
           }
 
           const text =
-            `Mean = ${mean.toFixed(3)}`;
+  `${seg.label} = ${centreValue.toFixed(3)}`;
 
           const paddingX = 5;
           const boxHeight = 18;
@@ -11327,12 +11449,15 @@ const { title, xLabel, yLabel } =
 const xmrMeanLabelPlugin =
   buildXmRMeanLabelPlugin(segmentSummaries);
 
+const centreLineLabelPlugin =
+  buildXmRMeanLabelPlugin();
+
 currentChart = new Chart(chartCanvas, {
   type: "line",
   data: { labels, datasets },
 
   plugins: [
-    xmrMeanLabelPlugin
+    centreLineLabelPlugin
   ],
 
   options: {
@@ -11815,16 +11940,31 @@ const xmrMeanLabelsBtn =
     'button[data-action="toggleXmRMeanLabels"]'
   );
 
+const supportsCentreLineLabels =
+  [
+    "run",
+    "xmr",
+    "c",
+    "p",
+    "pprime",
+    "u",
+    "xbars",
+    "t",
+    "g"
+  ].includes(chartType);
+
 if (xmrMeanLabelsGroup) {
   xmrMeanLabelsGroup.style.display =
-    chartType === "xmr" ? "" : "none";
+    supportsCentreLineLabels
+      ? ""
+      : "none";
 }
 
 if (xmrMeanLabelsBtn) {
   xmrMeanLabelsBtn.textContent =
     showXmRMeanLabels
-      ? "Hide mean labels"
-      : "Show mean labels";
+  ? "Hide centre-line labels"
+  : "Show centre-line labels";
 }
 
 const hideXmRMeanLabelBtn =
@@ -11839,8 +11979,8 @@ const restoreXmRMeanLabelsBtn =
 
 if (hideXmRMeanLabelBtn) {
   const canHideThisLabel =
-    chartType === "xmr" &&
-    showXmRMeanLabels &&
+  supportsCentreLineLabels &&
+  showXmRMeanLabels &&
     contextMenuMeanLabelSegmentIndex !== null &&
     !xmrHiddenMeanLabels.has(
       contextMenuMeanLabelSegmentIndex
@@ -11852,8 +11992,8 @@ if (hideXmRMeanLabelBtn) {
 
 if (restoreXmRMeanLabelsBtn) {
   restoreXmRMeanLabelsBtn.style.display =
-    chartType === "xmr" &&
-    xmrHiddenMeanLabels.size > 0
+    supportsCentreLineLabels &&
+xmrHiddenMeanLabels.size > 0
       ? ""
       : "none";
 }
