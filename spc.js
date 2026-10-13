@@ -539,6 +539,30 @@ baselinePoints,
       enabled: (typeof targetEnabled !== "undefined") ? !!targetEnabled : true
     },
 
+  xmrMeanLabels: {
+  show:
+    (typeof showXmRMeanLabels !== "undefined")
+      ? !!showXmRMeanLabels
+      : false,
+
+  positions:
+    (typeof xmrMeanLabelPositions !== "undefined" &&
+     xmrMeanLabelPositions)
+      ? { ...xmrMeanLabelPositions }
+      : {},
+
+  verticalPositions:
+    (typeof xmrMeanLabelVerticalPositions !== "undefined" &&
+     xmrMeanLabelVerticalPositions)
+      ? { ...xmrMeanLabelVerticalPositions }
+      : {},
+
+  hidden:
+    (typeof xmrHiddenMeanLabels !== "undefined" &&
+     xmrHiddenMeanLabels instanceof Set)
+      ? Array.from(xmrHiddenMeanLabels)
+      : []
+},
     labels: {
   title,
   xLabel,
@@ -686,6 +710,70 @@ if (
     if (typeof updateTargetToggleBtn === "function") updateTargetToggleBtn();
     if (typeof updateTargetToggleVisibility === "function") updateTargetToggleVisibility();
   }
+
+  // Restore XmR mean-label display settings.
+// Older saved charts do not contain these settings, so default to labels off.
+if (settings.xmrMeanLabels && typeof settings.xmrMeanLabels === "object") {
+  showXmRMeanLabels =
+    !!settings.xmrMeanLabels.show;
+
+  xmrMeanLabelPositions = {};
+
+  Object.entries(
+    settings.xmrMeanLabels.positions || {}
+  ).forEach(([key, value]) => {
+    const idx = Number(key);
+    const pos = Number(value);
+
+    if (
+      Number.isInteger(idx) &&
+      idx >= 0 &&
+      Number.isFinite(pos)
+    ) {
+      xmrMeanLabelPositions[idx] =
+        Math.max(0, Math.min(1, pos));
+    }
+  });
+
+  xmrMeanLabelVerticalPositions = {};
+
+  Object.entries(
+    settings.xmrMeanLabels.verticalPositions || {}
+  ).forEach(([key, value]) => {
+    const idx = Number(key);
+
+    if (
+      Number.isInteger(idx) &&
+      idx >= 0 &&
+      (value === "above" || value === "below")
+    ) {
+      xmrMeanLabelVerticalPositions[idx] =
+        value;
+    }
+  });
+
+  const hidden =
+    Array.isArray(settings.xmrMeanLabels.hidden)
+      ? settings.xmrMeanLabels.hidden
+      : [];
+
+  xmrHiddenMeanLabels = new Set(
+    hidden
+      .map(Number)
+      .filter(
+        idx =>
+          Number.isInteger(idx) &&
+          idx >= 0
+      )
+  );
+} else {
+  // Backward compatibility with saved charts created
+  // before mean labels were introduced.
+  showXmRMeanLabels = false;
+  xmrMeanLabelPositions = {};
+  xmrMeanLabelVerticalPositions = {};
+  xmrHiddenMeanLabels = new Set();
+}
 
   if (chartTitleInput && settings.labels?.title !== undefined) {
   chartTitleInput.value = settings.labels.title;
@@ -882,6 +970,8 @@ function resetAnnotationsAndSplitsForNewData() {
 
   splits = [];
   if (splitPointSelect) splitPointSelect.innerHTML = "";
+
+  resetXmRMeanLabelState();
 }
 
 function loadProjectObject(projectObj) {
@@ -1147,6 +1237,8 @@ function resetStateAfterDataLoad() {
 
   splits = [];
   if (splitPointSelect) splitPointSelect.innerHTML = "";
+
+  resetXmRMeanLabelState();
 }
 
 function prepareForNewImportedChart(rows) {
@@ -2672,6 +2764,7 @@ function resetAll() {
   rawRows = [];
 annotations = [];
 splits = [];
+resetXmRMeanLabelState();
 
 // Clear all cached analysis from the previous chart
 lastXmRAnalysis = null;
@@ -9884,6 +9977,13 @@ let showXmRMeanLabels = false;
 let xmrMeanLabelPositions = {};
 let xmrMeanLabelVerticalPositions = {};
 let xmrHiddenMeanLabels = new Set();
+
+function resetXmRMeanLabelState() {
+  showXmRMeanLabels = false;
+  xmrMeanLabelPositions = {};
+  xmrMeanLabelVerticalPositions = {};
+  xmrHiddenMeanLabels = new Set();
+}
 
 function buildXmRMeanLabelPlugin(segmentSummaries) {
 
