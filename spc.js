@@ -9866,7 +9866,132 @@ if (targetEnabled && target !== null) {
   });
 }
 
+// ===============================
+// XmR mean labels
+// ===============================
 
+// For now this is a session-only display preference.
+// Persistence and draggable positions will be added later.
+let showXmRMeanLabels = false;
+
+function buildXmRMeanLabelPlugin(segmentSummaries) {
+  return {
+    id: "xmrMeanLabels",
+
+    afterDatasetsDraw(chart) {
+      if (!showXmRMeanLabels) return;
+      if (!Array.isArray(segmentSummaries) || !segmentSummaries.length) return;
+
+      const ctx = chart.ctx;
+      const chartArea = chart.chartArea;
+      const xScale = chart.scales?.x;
+      const yScale = chart.scales?.y;
+
+      if (!ctx || !chartArea || !xScale || !yScale) return;
+
+      // Match the colour of the XmR mean line
+      const meanDataset =
+        chart.data?.datasets?.find(ds => ds.label === "Mean");
+
+      const lineColour =
+        meanDataset?.borderColor || "#d33";
+
+      ctx.save();
+
+      ctx.font = "600 12px Arial, sans-serif";
+      ctx.textBaseline = "middle";
+
+      segmentSummaries.forEach((seg) => {
+        const mean = Number(seg?.result?.mean);
+        const startIndex = Number(seg?.startIndex);
+        const endIndex = Number(seg?.endIndex);
+
+        if (
+          !Number.isFinite(mean) ||
+          !Number.isFinite(startIndex) ||
+          !Number.isFinite(endIndex)
+        ) {
+          return;
+        }
+
+        const startX = xScale.getPixelForValue(startIndex);
+        const endX = xScale.getPixelForValue(endIndex);
+        const y = yScale.getPixelForValue(mean);
+
+        if (
+          !Number.isFinite(startX) ||
+          !Number.isFinite(endX) ||
+          !Number.isFinite(y)
+        ) {
+          return;
+        }
+
+        const text = `Mean = ${mean.toFixed(3)}`;
+
+        const paddingX = 5;
+        const boxHeight = 18;
+        const textWidth = ctx.measureText(text).width;
+        const boxWidth = textWidth + (paddingX * 2);
+
+        // Default position: near the right-hand end of this process period
+        let boxX = endX - boxWidth - 6;
+
+        // Try to keep the label within its own process period
+        const minX = Math.max(chartArea.left + 2, startX + 2);
+        const maxX = chartArea.right - boxWidth - 2;
+
+        if (maxX >= minX) {
+          boxX = Math.max(minX, Math.min(boxX, maxX));
+        } else {
+          boxX = Math.max(
+            chartArea.left + 2,
+            Math.min(boxX, chartArea.right - boxWidth - 2)
+          );
+        }
+
+        // Put the label just above the mean line where possible
+        let boxY = y - boxHeight - 4;
+
+        // If there isn't room above, put it underneath instead
+        if (boxY < chartArea.top + 2) {
+          boxY = y + 4;
+        }
+
+        boxY = Math.min(
+          boxY,
+          chartArea.bottom - boxHeight - 2
+        );
+
+        // White background so the value remains readable over the chart
+        ctx.fillStyle = "rgba(255,255,255,0.92)";
+        ctx.fillRect(
+          boxX,
+          boxY,
+          boxWidth,
+          boxHeight
+        );
+
+        ctx.strokeStyle = lineColour;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(
+          boxX,
+          boxY,
+          boxWidth,
+          boxHeight
+        );
+
+        ctx.fillStyle = "#222";
+        ctx.fillText(
+          text,
+          boxX + paddingX,
+          boxY + (boxHeight / 2)
+        );
+      });
+
+      ctx.restore();
+    }
+  };
+}
 
 function drawXmRChart(points, baselineCount, labels) {
   if (!chartCanvas) return;
@@ -10128,11 +10253,24 @@ if (targetEnabled && target !== null) {
   populateSplitOptions(labels);
 
   // ----- Create chart -----
-  if (currentChart) currentChart.destroy();
+  // ----- Create chart -----
+if (currentChart) currentChart.destroy();
 
-  const { title, xLabel, yLabel } = getChartLabels("X Chart", "Date", "Value");
+const { title, xLabel, yLabel } =
+  getChartLabels("X Chart", "Date", "Value");
 
-  currentChart = new Chart(chartCanvas, {
+const xmrMeanLabelPlugin =
+  buildXmRMeanLabelPlugin(segmentSummaries);
+
+currentChart = new Chart(chartCanvas, {
+  type: "line",
+  data: { labels, datasets },
+
+  plugins: [
+    xmrMeanLabelPlugin
+  ],
+
+  options: {
     type: "line",
     data: { labels, datasets },
     options: {
@@ -10603,6 +10741,27 @@ function showChartContextMenu(clientX, clientY, pointIndex) {
       : ((typeof getSelectedChartType === "function") ? (getSelectedChartType() || "run") : "run");
 
   const supportsSplits = ["run", "xmr", "c", "p", "u", "xbars", "t", "g"].includes(chartType);
+
+  // ---------- XmR mean labels ----------
+const xmrMeanLabelsGroup =
+  chartContextMenu.querySelector('[data-role="xmrMeanLabelsGroup"]');
+
+const xmrMeanLabelsBtn =
+  chartContextMenu.querySelector(
+    'button[data-action="toggleXmRMeanLabels"]'
+  );
+
+if (xmrMeanLabelsGroup) {
+  xmrMeanLabelsGroup.style.display =
+    chartType === "xmr" ? "" : "none";
+}
+
+if (xmrMeanLabelsBtn) {
+  xmrMeanLabelsBtn.textContent =
+    showXmRMeanLabels
+      ? "Hide mean labels"
+      : "Show mean labels";
+}
 
   // Current x-label at the clicked point (if any)
   const labels = currentChart?.data?.labels || [];
@@ -12022,6 +12181,16 @@ if (chartContextMenu) {
     }
 
     try {
+	    if (action === "toggleXmRMeanLabels") {
+ 				 showXmRMeanLabels = !showXmRMeanLabels;
+
+  				if (generateButton) {
+ 				   generateButton.click();
+	     }
+
+  				return;
+	    }
+
             if (action === "addAnnotation") {
         if (clickedPointIndex === null || clickedPointIndex === undefined) {
           alert("Right-click near a data point to add an annotation.");
