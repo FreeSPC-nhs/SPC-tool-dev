@@ -9870,125 +9870,459 @@ if (targetEnabled && target !== null) {
 // XmR mean labels
 // ===============================
 
-// For now this is a session-only display preference.
-// Persistence and draggable positions will be added later.
+// ===============================
+// XmR mean labels
+// ===============================
+
+// Display preference.
+// Save/load persistence will be added later.
 let showXmRMeanLabels = false;
 
+// Horizontal position of each period label.
+// Stored as a fraction from 0 = left side of period
+// to 1 = right side of period.
+let xmrMeanLabelPositions = {};
+
 function buildXmRMeanLabelPlugin(segmentSummaries) {
+
+  function getPointerPosition(chart, evt) {
+    const canvas = chart.canvas;
+    const rect = canvas.getBoundingClientRect();
+
+    return {
+      x:
+        (evt.clientX - rect.left) *
+        (chart.width / rect.width),
+
+      y:
+        (evt.clientY - rect.top) *
+        (chart.height / rect.height)
+    };
+  }
+
+  function findMeanLabelHitbox(chart, x, y) {
+    const boxes = chart.$xmrMeanLabelHitboxes || [];
+
+    return boxes.find(box =>
+      x >= box.x &&
+      x <= box.x + box.width &&
+      y >= box.y &&
+      y <= box.y + box.height
+    ) || null;
+  }
+
   return {
     id: "xmrMeanLabels",
 
+    afterInit(chart) {
+      const canvas = chart.canvas;
+      if (!canvas) return;
+
+      const onPointerDown = (evt) => {
+        if (!showXmRMeanLabels) return;
+        if (evt.button !== 0) return;
+
+        const pos = getPointerPosition(chart, evt);
+        const hit = findMeanLabelHitbox(
+          chart,
+          pos.x,
+          pos.y
+        );
+
+        if (!hit) return;
+
+        chart.$xmrMeanLabelDrag = {
+          segmentIndex: hit.segmentIndex,
+          offsetX: pos.x - hit.x
+        };
+
+        if (canvas.setPointerCapture) {
+          try {
+            canvas.setPointerCapture(evt.pointerId);
+          } catch (_) {
+            // Safe fallback if pointer capture is unavailable
+          }
+        }
+
+        evt.preventDefault();
+      };
+
+      const onPointerMove = (evt) => {
+        if (!showXmRMeanLabels) {
+          canvas.style.cursor = "";
+          return;
+        }
+
+        const pos = getPointerPosition(chart, evt);
+        const drag = chart.$xmrMeanLabelDrag;
+
+        // Actively dragging a label
+        if (drag) {
+          const hit =
+            (chart.$xmrMeanLabelHitboxes || [])
+              .find(
+                box =>
+                  box.segmentIndex ===
+                  drag.segmentIndex
+              );
+
+          if (!hit) return;
+
+          let newX =
+            pos.x - drag.offsetX;
+
+          newX = Math.max(
+            hit.minX,
+            Math.min(newX, hit.maxX)
+          );
+
+          const availableWidth =
+            hit.maxX - hit.minX;
+
+          xmrMeanLabelPositions[
+            drag.segmentIndex
+          ] =
+            availableWidth > 0
+              ? (newX - hit.minX) /
+                availableWidth
+              : 0;
+
+          chart.draw();
+
+          evt.preventDefault();
+          return;
+        }
+
+        // Change cursor when hovering over a label
+        const hit = findMeanLabelHitbox(
+          chart,
+          pos.x,
+          pos.y
+        );
+
+        canvas.style.cursor =
+          hit ? "ew-resize" : "";
+      };
+
+      const onPointerUp = (evt) => {
+        chart.$xmrMeanLabelDrag = null;
+
+        if (
+          canvas.releasePointerCapture &&
+          canvas.hasPointerCapture?.(
+            evt.pointerId
+          )
+        ) {
+          try {
+            canvas.releasePointerCapture(
+              evt.pointerId
+            );
+          } catch (_) {
+            // Safe fallback
+          }
+        }
+      };
+
+      canvas.addEventListener(
+        "pointerdown",
+        onPointerDown
+      );
+
+      canvas.addEventListener(
+        "pointermove",
+        onPointerMove
+      );
+
+      canvas.addEventListener(
+        "pointerup",
+        onPointerUp
+      );
+
+      canvas.addEventListener(
+        "pointercancel",
+        onPointerUp
+      );
+
+      chart.$xmrMeanLabelHandlers = {
+        onPointerDown,
+        onPointerMove,
+        onPointerUp
+      };
+    },
+
     afterDatasetsDraw(chart) {
+      // Always clear old hitboxes first
+      chart.$xmrMeanLabelHitboxes = [];
+
       if (!showXmRMeanLabels) return;
-      if (!Array.isArray(segmentSummaries) || !segmentSummaries.length) return;
+
+      if (
+        !Array.isArray(segmentSummaries) ||
+        !segmentSummaries.length
+      ) {
+        return;
+      }
 
       const ctx = chart.ctx;
       const chartArea = chart.chartArea;
       const xScale = chart.scales?.x;
       const yScale = chart.scales?.y;
 
-      if (!ctx || !chartArea || !xScale || !yScale) return;
+      if (
+        !ctx ||
+        !chartArea ||
+        !xScale ||
+        !yScale
+      ) {
+        return;
+      }
 
-      // Match the colour of the XmR mean line
       const meanDataset =
-        chart.data?.datasets?.find(ds => ds.label === "Mean");
+        chart.data?.datasets?.find(
+          ds => ds.label === "Mean"
+        );
 
       const lineColour =
         meanDataset?.borderColor || "#d33";
 
       ctx.save();
 
-      ctx.font = "600 12px Arial, sans-serif";
+      ctx.font =
+        "600 12px Arial, sans-serif";
+
       ctx.textBaseline = "middle";
 
-      segmentSummaries.forEach((seg) => {
-        const mean = Number(seg?.result?.mean);
-        const startIndex = Number(seg?.startIndex);
-        const endIndex = Number(seg?.endIndex);
+      segmentSummaries.forEach(
+        (seg, segmentIndex) => {
 
-        if (
-          !Number.isFinite(mean) ||
-          !Number.isFinite(startIndex) ||
-          !Number.isFinite(endIndex)
-        ) {
-          return;
-        }
+          const mean =
+            Number(seg?.result?.mean);
 
-        const startX = xScale.getPixelForValue(startIndex);
-        const endX = xScale.getPixelForValue(endIndex);
-        const y = yScale.getPixelForValue(mean);
+          const startIndex =
+            Number(seg?.startIndex);
 
-        if (
-          !Number.isFinite(startX) ||
-          !Number.isFinite(endX) ||
-          !Number.isFinite(y)
-        ) {
-          return;
-        }
+          const endIndex =
+            Number(seg?.endIndex);
 
-        const text = `Mean = ${mean.toFixed(3)}`;
+          if (
+            !Number.isFinite(mean) ||
+            !Number.isFinite(startIndex) ||
+            !Number.isFinite(endIndex)
+          ) {
+            return;
+          }
 
-        const paddingX = 5;
-        const boxHeight = 18;
-        const textWidth = ctx.measureText(text).width;
-        const boxWidth = textWidth + (paddingX * 2);
+          const startX =
+            xScale.getPixelForValue(
+              startIndex
+            );
 
-        // Default position: near the right-hand end of this process period
-        let boxX = endX - boxWidth - 6;
+          const endX =
+            xScale.getPixelForValue(
+              endIndex
+            );
 
-        // Try to keep the label within its own process period
-        const minX = Math.max(chartArea.left + 2, startX + 2);
-        const maxX = chartArea.right - boxWidth - 2;
+          const y =
+            yScale.getPixelForValue(mean);
 
-        if (maxX >= minX) {
-          boxX = Math.max(minX, Math.min(boxX, maxX));
-        } else {
-          boxX = Math.max(
+          if (
+            !Number.isFinite(startX) ||
+            !Number.isFinite(endX) ||
+            !Number.isFinite(y)
+          ) {
+            return;
+          }
+
+          const text =
+            `Mean = ${mean.toFixed(3)}`;
+
+          const paddingX = 5;
+          const boxHeight = 18;
+
+          const textWidth =
+            ctx.measureText(text).width;
+
+          const boxWidth =
+            textWidth +
+            (paddingX * 2);
+
+          const periodLeft =
+            Math.min(startX, endX);
+
+          const periodRight =
+            Math.max(startX, endX);
+
+          // Preferred movement range:
+          // keep the whole label inside its period.
+          let minX = Math.max(
             chartArea.left + 2,
-            Math.min(boxX, chartArea.right - boxWidth - 2)
+            periodLeft + 2
           );
+
+          let maxX = Math.min(
+            chartArea.right -
+              boxWidth -
+              2,
+            periodRight -
+              boxWidth -
+              2
+          );
+
+          // A very short period may physically
+          // be narrower than the label itself.
+          // In that case allow movement within
+          // the overall chart area instead.
+          if (maxX < minX) {
+            minX =
+              chartArea.left + 2;
+
+            maxX =
+              chartArea.right -
+              boxWidth -
+              2;
+          }
+
+          const savedPosition =
+            Number(
+              xmrMeanLabelPositions[
+                segmentIndex
+              ]
+            );
+
+          let boxX;
+
+          if (
+            Number.isFinite(savedPosition)
+          ) {
+            const fraction =
+              Math.max(
+                0,
+                Math.min(
+                  1,
+                  savedPosition
+                )
+              );
+
+            boxX =
+              minX +
+              fraction *
+              (maxX - minX);
+          } else {
+            // Existing default:
+            // near right-hand end of period
+            boxX =
+              endX -
+              boxWidth -
+              6;
+
+            boxX = Math.max(
+              minX,
+              Math.min(
+                boxX,
+                maxX
+              )
+            );
+          }
+
+          // Keep vertical position tied
+          // to the mean line.
+          let boxY =
+            y -
+            boxHeight -
+            4;
+
+          if (
+            boxY <
+            chartArea.top + 2
+          ) {
+            boxY = y + 4;
+          }
+
+          boxY = Math.min(
+            boxY,
+            chartArea.bottom -
+              boxHeight -
+              2
+          );
+
+          ctx.fillStyle =
+            "rgba(255,255,255,0.92)";
+
+          ctx.fillRect(
+            boxX,
+            boxY,
+            boxWidth,
+            boxHeight
+          );
+
+          ctx.strokeStyle =
+            lineColour;
+
+          ctx.lineWidth = 1;
+
+          ctx.strokeRect(
+            boxX,
+            boxY,
+            boxWidth,
+            boxHeight
+          );
+
+          ctx.fillStyle = "#222";
+
+          ctx.fillText(
+            text,
+            boxX + paddingX,
+            boxY +
+              (boxHeight / 2)
+          );
+
+          // Remember where the label is
+          // so the pointer handlers know
+          // when the user clicks it.
+          chart.$xmrMeanLabelHitboxes.push({
+            segmentIndex,
+            x: boxX,
+            y: boxY,
+            width: boxWidth,
+            height: boxHeight,
+            minX,
+            maxX
+          });
         }
-
-        // Put the label just above the mean line where possible
-        let boxY = y - boxHeight - 4;
-
-        // If there isn't room above, put it underneath instead
-        if (boxY < chartArea.top + 2) {
-          boxY = y + 4;
-        }
-
-        boxY = Math.min(
-          boxY,
-          chartArea.bottom - boxHeight - 2
-        );
-
-        // White background so the value remains readable over the chart
-        ctx.fillStyle = "rgba(255,255,255,0.92)";
-        ctx.fillRect(
-          boxX,
-          boxY,
-          boxWidth,
-          boxHeight
-        );
-
-        ctx.strokeStyle = lineColour;
-        ctx.lineWidth = 1;
-        ctx.strokeRect(
-          boxX,
-          boxY,
-          boxWidth,
-          boxHeight
-        );
-
-        ctx.fillStyle = "#222";
-        ctx.fillText(
-          text,
-          boxX + paddingX,
-          boxY + (boxHeight / 2)
-        );
-      });
+      );
 
       ctx.restore();
+    },
+
+    afterDestroy(chart) {
+      const canvas = chart.canvas;
+
+      const handlers =
+        chart.$xmrMeanLabelHandlers;
+
+      if (canvas && handlers) {
+        canvas.removeEventListener(
+          "pointerdown",
+          handlers.onPointerDown
+        );
+
+        canvas.removeEventListener(
+          "pointermove",
+          handlers.onPointerMove
+        );
+
+        canvas.removeEventListener(
+          "pointerup",
+          handlers.onPointerUp
+        );
+
+        canvas.removeEventListener(
+          "pointercancel",
+          handlers.onPointerUp
+        );
+
+        canvas.style.cursor = "";
+      }
     }
   };
 }
