@@ -4852,6 +4852,189 @@ function computeP(points, baselineCount = null, clampLclAtZero = false) {
   return { pbar, pVals, ucl, lcl, rawLcl, beyond };
 }
 
+function computePPrime(points, baselineCount = null) {
+  const nPts = points.length;
+
+  const baseN =
+    baselineCount && baselineCount >= 1
+      ? Math.min(baselineCount, nPts)
+      : nPts;
+
+  // Baseline data used to estimate p-bar
+  const base = points
+    .slice(0, baseN)
+    .filter(
+      p =>
+        isFinite(p.y) &&
+        isFinite(p.n) &&
+        p.n > 0
+    );
+
+  const sumD = base.reduce(
+    (acc, p) => acc + p.y,
+    0
+  );
+
+  const sumN = base.reduce(
+    (acc, p) => acc + p.n,
+    0
+  );
+
+  const pbar =
+    sumN > 0
+      ? sumD / sumN
+      : NaN;
+
+  const pVals =
+    new Array(nPts).fill(NaN);
+
+  const zValues =
+    new Array(nPts).fill(NaN);
+
+  const ucl =
+    new Array(nPts).fill(NaN);
+
+  const lcl =
+    new Array(nPts).fill(NaN);
+
+  const rawLcl =
+    new Array(nPts).fill(NaN);
+
+  const beyond =
+    new Array(nPts).fill(false);
+
+  // First calculate proportions and standardised z-values.
+  for (let i = 0; i < nPts; i++) {
+    const d = points[i].y;
+    const ni = points[i].n;
+
+    if (
+      !isFinite(d) ||
+      !isFinite(ni) ||
+      ni <= 0 ||
+      !isFinite(pbar)
+    ) {
+      continue;
+    }
+
+    const pi = d / ni;
+    pVals[i] = pi;
+
+    const standardSigma =
+      Math.sqrt(
+        Math.max(
+          pbar * (1 - pbar) / ni,
+          0
+        )
+      );
+
+    if (standardSigma > 0) {
+      zValues[i] =
+        (pi - pbar) /
+        standardSigma;
+    }
+  }
+
+  // Laney Sigma Z:
+  // moving ranges of consecutive baseline z-scores.
+  const mrValues = [];
+
+  for (let i = 1; i < baseN; i++) {
+    const zPrev = zValues[i - 1];
+    const zNow = zValues[i];
+
+    if (
+      Number.isFinite(zPrev) &&
+      Number.isFinite(zNow)
+    ) {
+      mrValues.push(
+        Math.abs(zNow - zPrev)
+      );
+    }
+  }
+
+  const avgMR =
+    mrValues.length
+      ? mrValues.reduce(
+          (a, b) => a + b,
+          0
+        ) / mrValues.length
+      : NaN;
+
+  const sigmaZ =
+    Number.isFinite(avgMR)
+      ? avgMR / 1.128
+      : NaN;
+
+  // Apply the Laney adjustment to each subgroup's
+  // ordinary binomial standard deviation.
+  for (let i = 0; i < nPts; i++) {
+    const ni = points[i].n;
+    const pi = pVals[i];
+
+    if (
+      !Number.isFinite(pi) ||
+      !Number.isFinite(ni) ||
+      ni <= 0 ||
+      !Number.isFinite(pbar) ||
+      !Number.isFinite(sigmaZ)
+    ) {
+      continue;
+    }
+
+    const standardSigma =
+      Math.sqrt(
+        Math.max(
+          pbar * (1 - pbar) / ni,
+          0
+        )
+      );
+
+    const adjustedSigma =
+      standardSigma * sigmaZ;
+
+    const u =
+      pbar +
+      3 * adjustedSigma;
+
+    const lRaw =
+      pbar -
+      3 * adjustedSigma;
+
+    // P′ limits remain bounded between 0 and 1.
+    ucl[i] =
+      Math.min(1, u);
+
+    rawLcl[i] =
+      lRaw;
+
+    lcl[i] =
+      Math.max(
+        0,
+        Math.min(1, lRaw)
+      );
+
+    beyond[i] =
+      pi > ucl[i] ||
+      pi < lcl[i];
+  }
+
+  return {
+    pbar,
+    pVals,
+    zValues,
+    mrValues,
+    avgMR,
+    sigmaZ,
+    ucl,
+    lcl,
+    rawLcl,
+    beyond,
+    baselineCountUsed: baseN,
+    baselineMRCount: mrValues.length
+  };
+}
+
 function computeU(points, baselineCount = null) {
   const nPts = points.length;
   const baseN = baselineCount && baselineCount >= 1 ? Math.min(baselineCount, nPts) : nPts;
