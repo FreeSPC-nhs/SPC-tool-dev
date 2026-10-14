@@ -943,9 +943,22 @@ setPressed(yAxisBoldBtn, settings.axes?.y?.font?.weight === "bold");
   }
 
 // Reapply the saved X-axis type after column intelligence.
-// Column intelligence may otherwise replace the user's saved choice.
-if (settings.axisType) {
-  setCheckedRadioValue("axisType", settings.axisType);
+// X̄–S is always categorical by subgroup, so old saved projects
+// that used Date / time are safely normalised to Sequence / category.
+if (chartTypeNow === "xbars") {
+  if (typeof setAxisType === "function") {
+    setAxisType("sequence");
+  } else {
+    setCheckedRadioValue(
+      "axisType",
+      "sequence"
+    );
+  }
+} else if (settings.axisType) {
+  setCheckedRadioValue(
+    "axisType",
+    settings.axisType
+  );
 }
 
 if (
@@ -4558,11 +4571,12 @@ updateColumnCheckWarning(chartType);
 	},
    
     xbars: {
-      yLabel: "Measurement value",
-      thirdLabel: "Subgroup ID (e.g. day / week / sample)",
-      thirdHint: "X̄–S needs multiple measurements per subgroup.",
-      needsThird: true
-    },
+  yLabel: "Measurement value",
+  thirdLabel: "Subgroup ID (e.g. day / week / sample)",
+  thirdHint:
+    "X̄–S needs multiple measurements per subgroup. The horizontal axis uses subgroup order automatically.",
+  needsThird: true
+},
 
     t: {
           // Labels depend on T chart input mode (event dates vs gaps)
@@ -4640,6 +4654,68 @@ if (chartType === "t" && valueSelect) {
   if (shouldDisableValue) {
     valueSelect.title = "Not used for T chart when using event dates.";
   }
+}
+
+// ---- X̄–S axis policy ----
+// X̄–S is plotted by subgroup, so its horizontal axis is categorical.
+// Do not make the calculation depend on individual rows having parseable dates.
+const axisDateRadio =
+  document.querySelector(
+    "input[name='axisType'][value='date']"
+  );
+
+const axisSequenceRadio =
+  document.querySelector(
+    "input[name='axisType'][value='sequence']"
+  );
+
+if (chartType === "xbars") {
+  // Force the appropriate axis mode.
+  if (typeof setAxisType === "function") {
+    setAxisType("sequence");
+  } else {
+    if (axisSequenceRadio) {
+      axisSequenceRadio.checked = true;
+    }
+
+    if (axisDateRadio) {
+      axisDateRadio.checked = false;
+    }
+  }
+
+  // Prevent an accidental switch back to Date / time.
+  if (axisDateRadio) {
+    axisDateRadio.disabled = true;
+    axisDateRadio.title =
+      "X̄–S charts use subgroup order on the horizontal axis.";
+  }
+
+  if (axisSequenceRadio) {
+    axisSequenceRadio.disabled = false;
+    axisSequenceRadio.title =
+      "X̄–S charts use subgroup order on the horizontal axis.";
+  }
+
+} else {
+  // Restore normal axis choices for every other chart type.
+  if (axisDateRadio) {
+    axisDateRadio.disabled = false;
+    axisDateRadio.title = "";
+  }
+
+  if (axisSequenceRadio) {
+    axisSequenceRadio.disabled = false;
+    axisSequenceRadio.title = "";
+  }
+}
+
+// Keep the date-format control consistent with the forced axis mode.
+if (typeof updateDateControlsState === "function") {
+  updateDateControlsState();
+}
+
+if (typeof updateDateFormatWarning === "function") {
+  updateDateFormatWarning();
 }
 
 // Keep MR / S-chart toggle synchronized with the selected chart type
