@@ -49,10 +49,27 @@ let pendingImportedSettings = null;
 
 
 const IMPLEMENTED_CHARTS =
-  new Set(["run", "xmr", "c", "p", "pprime", "u", "xbars", "t", "g"]);
+  new Set([
+    "run",
+    "xmr",
+    "c",
+    "p",
+    "pprime",
+    "u",
+    "uprime",
+    "xbars",
+    "t",
+    "g"
+  ]);
 
 function isPFamilyChartType(chartType) {
-  return chartType === "p" || chartType === "pprime";
+  return chartType === "p" ||
+         chartType === "pprime";
+}
+
+function isUFamilyChartType(chartType) {
+  return chartType === "u" ||
+         chartType === "uprime";
 }
 
 // -----------------------------
@@ -3422,10 +3439,10 @@ function getCandidatesForValue(chartType) {
     let hint = "";
     let disabled = false;
 
-    if ((chartType === "c" || isPFamilyChartType(chartType) || chartType === "u") && p.hasNeg) {
+    if ((chartType === "c" || isPFamilyChartType(chartType) || isUFamilyChartType(chartType)) && p.hasNeg) {
       hint = "(has negatives)";
     }
-    if ((chartType === "c" || isPFamilyChartType(chartType) || chartType === "u") && p.looksLikeDate) {
+    if ((chartType === "c" || isPFamilyChartType(chartType) || isUFamilyChartType(chartType)) && p.looksLikeDate) {
       hint = "(looks like date)";
     }
 
@@ -3444,7 +3461,7 @@ function getCandidatesForValue(chartType) {
 
 function getCandidatesForThird(chartType) {
   // thirdSelect: denominator/opportunities (P/P′/U), subgroup (Xbars)
-  if (isPFamilyChartType(chartType) || chartType === "u") {
+  if (isPFamilyChartType(chartType) || isUFamilyChartType(chartType)) {
     const cols = getNumericColumnsSorted();
     const items = [];
     for (const c of cols) {
@@ -3656,7 +3673,7 @@ function chooseDefaultsForChart(chartType) {
     return { xCol, yCol, thirdCol };
   }
 
-  if (chartType === "u") {
+  if (isUFamilyChartType(chartType)) {
   // choose count/opportunity pair:
   // numerator = count-like column
   // denominator = positive integer-like opportunities column, usually larger
@@ -3798,13 +3815,16 @@ const currentThirdProfile =
 const isPFamily =
   isPFamilyChartType(chartType);
 
+const isUFamily =
+  isUFamilyChartType(chartType);
+
 const currentValuePoorForCountChart =
   !!(
     currentValueProfile &&
     (
       chartType === "c" ||
       isPFamily ||
-      chartType === "u"
+      isUFamily
     ) &&
     (
       !currentValueProfile.isMostlyInteger ||
@@ -3817,7 +3837,7 @@ const currentThirdPoorForDenominator =
     currentThirdProfile &&
     (
       isPFamily ||
-      chartType === "u"
+      isUFamily
     ) &&
     (
       !currentThirdProfile.isMostlyInteger ||
@@ -3840,12 +3860,12 @@ if (currentValuePoorForCountChart && defaults.yCol) {
 
 if (
   isPFamily ||
-  chartType === "u" ||
+  isUFamily ||
   chartType === "xbars"
 ) {
   if (
     isPFamily ||
-    chartType === "u"
+    isUFamily
   ) {
     if (
       currentThirdPoorForDenominator &&
@@ -3871,7 +3891,7 @@ if (
 if (
   (
     isPFamily ||
-    chartType === "u" ||
+    isUFamily ||
     chartType === "xbars"
   ) &&
   thirdSelect &&
@@ -3916,7 +3936,7 @@ if (!axisTypeManuallyChanged) {
     chartType === "xmr" ||
     chartType === "c" ||
     isPFamily ||
-    chartType === "u" ||
+    isUFamily ||
     chartType === "g"
   ) &&
   xLooksLikeNonDateLabel
@@ -3972,7 +3992,7 @@ function getChartAvailability() {
   const out = {};
   const noDataReason = "Load data to assess which chart types are available.";
 
-  for (const chartType of ["run", "xmr", "c", "p", "pprime", "u", "xbars", "t", "g"]) {
+  for (const chartType of ["run", "xmr", "c", "p", "pprime", "u","uprime", "xbars", "t", "g"]) {
     out[chartType] = { enabled: true, reason: "" };
   }
 
@@ -4048,12 +4068,22 @@ function getChartAvailability() {
   };
 }
 
-  if (countLikeNonNegCols.length < 2 || !positiveCountLikeCols.length) {
-    out.u = {
-      enabled: false,
-      reason: "No suitable count/opportunities pair is available yet — U charts need a whole-number count column plus a positive opportunities column."
-    };
-  }
+  if (
+  countLikeNonNegCols.length < 2 ||
+  !positiveCountLikeCols.length
+) {
+  out.u = {
+    enabled: false,
+    reason:
+      "No suitable count/opportunities pair is available yet — U charts need a whole-number count column plus a positive opportunities column."
+  };
+
+  out.uprime = {
+    enabled: false,
+    reason:
+      "No suitable count/opportunities pair is available yet — U′ charts need a whole-number count column plus a positive opportunities column."
+  };
+}
 
   if (!numericNonDateCols.length || !repeatingSubgroupCols.length) {
     out.xbars = {
@@ -4356,9 +4386,8 @@ if (mrScreeningRow) {
   if (conservativeRulesMessage) {
     const showConservativeMessage =
   chartType === "c" ||
-  chartType === "p" ||
-  chartType === "pprime" ||
-  chartType === "u";
+  isPFamilyChartType(chartType) ||
+  isUFamilyChartType(chartType);
     conservativeRulesMessage.style.display = showConservativeMessage ? "block" : "none";
   }
 }
@@ -4387,6 +4416,15 @@ function updateColumnCheckWarning(chartType) {
       <strong>Check your selected columns.</strong>
       For a U chart, the value column should be the numerator, e.g. number of defects/events,
       and the third column should be the opportunities/denominator, e.g. bed days, attendances, or procedures.
+    `,
+    uprime: `
+    <strong>Check your selected columns.</strong>
+ 	 For a U′ chart, the value column should be the numerator,
+  	e.g. number of defects/events, and the third column should
+  	be the opportunities/denominator, e.g. bed days,
+ 	 attendances, procedures or inspections.
+ 	 U′ uses the same data as a U chart but adjusts the
+ 	 control limits using the Laney method.
     `,
     xbars: `
       <strong>Check your selected columns.</strong>
@@ -4432,7 +4470,9 @@ updateColumnCheckWarning(chartType);
 
   if (uRateMultiplierRow) {
   uRateMultiplierRow.style.display =
-    chartType === "u" ? "block" : "none";
+  isUFamilyChartType(chartType)
+    ? "block"
+    : "none";
 }
 
   // ---- Chart-specific UI definitions ----
@@ -4470,6 +4510,14 @@ updateColumnCheckWarning(chartType);
       needsThird: true
     },
 
+    uprime: {
+ 	 yLabel: "Numerator: defects (c)",
+ 	 thirdLabel: "Denominator: opportunities (n)",
+ 	 thirdHint:
+   	 "U′ chart plots defects per opportunity, with Laney-adjusted control limits.",
+  	needsThird: true
+	},
+   
     xbars: {
       yLabel: "Measurement value",
       thirdLabel: "Subgroup ID (e.g. day / week / sample)",
@@ -5685,6 +5733,319 @@ function computeUPrime(points, baselineCount = null) {
     beyond,
     baselineCountUsed: baseN,
     baselineMRCount: mrValues.length
+  };
+}
+
+function computeUDispersionDiagnostic(
+  points,
+  baselineCount = null
+) {
+  const nPts =
+    Array.isArray(points)
+      ? points.length
+      : 0;
+
+  const baseN =
+    baselineCount && baselineCount >= 1
+      ? Math.min(baselineCount, nPts)
+      : nPts;
+
+  const base =
+    (points || [])
+      .slice(0, baseN)
+      .filter(p =>
+        Number.isFinite(Number(p.y)) &&
+        Number.isFinite(Number(p.n)) &&
+        Number(p.y) >= 0 &&
+        Number(p.n) > 0
+      )
+      .map(p => ({
+        c: Number(p.y),
+        n: Number(p.n)
+      }));
+
+  const m = base.length;
+
+  if (m < 4) {
+    return {
+      ok: false,
+      reason:
+        "Too few usable subgroups for the dispersion check."
+    };
+  }
+
+  const sumC =
+    base.reduce(
+      (acc, p) => acc + p.c,
+      0
+    );
+
+  const sumN =
+    base.reduce(
+      (acc, p) => acc + p.n,
+      0
+    );
+
+  const nBar =
+    sumN / m;
+
+  const uBar =
+    sumN > 0
+      ? sumC / sumN
+      : NaN;
+
+  if (
+    !Number.isFinite(nBar) ||
+    nBar <= 0 ||
+    !Number.isFinite(uBar) ||
+    uBar <= 0
+  ) {
+    return {
+      ok: false,
+      reason:
+        "The dispersion check could not be calculated for these data."
+    };
+  }
+
+  // Adjust each subgroup count to the
+  // average subgroup size.
+  const transformed =
+    base
+      .map(p => {
+        const adjustedCount =
+          (p.c / p.n) * nBar;
+
+        return (
+          Math.sqrt(adjustedCount) +
+          Math.sqrt(adjustedCount + 1)
+        );
+      })
+      .filter(Number.isFinite)
+      .sort((a, b) => a - b);
+
+  if (transformed.length < 4) {
+    return {
+      ok: false,
+      reason:
+        "The dispersion check could not be calculated for these data."
+    };
+  }
+
+  function inverseNormalCdf(probability) {
+    if (
+      !Number.isFinite(probability) ||
+      probability <= 0 ||
+      probability >= 1
+    ) {
+      return NaN;
+    }
+
+    let low = -8;
+    let high = 8;
+
+    for (let i = 0; i < 60; i++) {
+      const mid =
+        (low + high) / 2;
+
+      if (normalCdf(mid) < probability) {
+        low = mid;
+      } else {
+        high = mid;
+      }
+    }
+
+    return (low + high) / 2;
+  }
+
+  function quantile(sortedValues, q) {
+    if (!sortedValues.length) {
+      return NaN;
+    }
+
+    const position =
+      (sortedValues.length - 1) * q;
+
+    const lower =
+      Math.floor(position);
+
+    const upper =
+      Math.ceil(position);
+
+    if (lower === upper) {
+      return sortedValues[lower];
+    }
+
+    const fraction =
+      position - lower;
+
+    return (
+      sortedValues[lower] +
+      (
+        sortedValues[upper] -
+        sortedValues[lower]
+      ) * fraction
+    );
+  }
+
+  // Give tied transformed values the same
+  // normal score using their average rank.
+  const ranked = [];
+
+  let i = 0;
+
+  while (i < transformed.length) {
+    let j = i + 1;
+
+    while (
+      j < transformed.length &&
+      Math.abs(
+        transformed[j] -
+        transformed[i]
+      ) <= 1e-12
+    ) {
+      j++;
+    }
+
+    const meanRank =
+      ((i + 1) + j) / 2;
+
+    const probability =
+      (meanRank - 0.375) /
+      (transformed.length + 0.25);
+
+    const normalScore =
+      inverseNormalCdf(probability);
+
+    for (let k = i; k < j; k++) {
+      ranked.push({
+        x: transformed[k],
+        y: normalScore
+      });
+    }
+
+    i = j;
+  }
+
+  const q1 =
+    quantile(transformed, 0.25);
+
+  const q3 =
+    quantile(transformed, 0.75);
+
+  const middle =
+    ranked.filter(item =>
+      item.x >= q1 &&
+      item.x <= q3 &&
+      Number.isFinite(item.y)
+    );
+
+  if (middle.length < 2) {
+    return {
+      ok: false,
+      reason:
+        "There were not enough usable values for the dispersion check."
+    };
+  }
+
+  const meanX =
+    middle.reduce(
+      (acc, item) => acc + item.x,
+      0
+    ) / middle.length;
+
+  const meanY =
+    middle.reduce(
+      (acc, item) => acc + item.y,
+      0
+    ) / middle.length;
+
+  let numerator = 0;
+  let denominator = 0;
+
+  middle.forEach(item => {
+    numerator +=
+      (item.x - meanX) *
+      (item.y - meanY);
+
+    denominator +=
+      Math.pow(
+        item.x - meanX,
+        2
+      );
+  });
+
+  if (
+    !Number.isFinite(denominator) ||
+    denominator <= 0
+  ) {
+    return {
+      ok: false,
+      reason:
+        "There was too little variation to calculate the dispersion check."
+    };
+  }
+
+  const slope =
+    numerator / denominator;
+
+  if (
+    !Number.isFinite(slope) ||
+    slope <= 0
+  ) {
+    return {
+      ok: false,
+      reason:
+        "The dispersion check could not be calculated reliably."
+    };
+  }
+
+  // For the U diagnostic, expected variation
+  // after transformation is 1.
+  const observedVariation =
+    1 / slope;
+
+  const expectedVariation = 1;
+
+  const ratio =
+    (
+      observedVariation /
+      expectedVariation
+    ) * 100;
+
+  const upperLimit =
+    Math.exp(
+      0.182 +
+      (5.75 / m) +
+      (
+        0.195 /
+        (nBar * uBar)
+      )
+    ) * 100;
+
+  const lowerLimit = 60;
+
+  let status = "expected";
+
+  if (ratio > upperLimit) {
+    status = "overdispersed";
+  } else if (ratio < lowerLimit) {
+    status = "underdispersed";
+  }
+
+  return {
+    ok: true,
+    m,
+    nBar,
+    uBar,
+    observedVariation,
+    expectedVariation,
+    ratio,
+    lowerLimit,
+    upperLimit,
+    status,
+    recommendUPrime:
+      status === "overdispersed" ||
+      status === "underdispersed"
   };
 }
 
@@ -7465,6 +7826,14 @@ const RULE_POLICY = {
     zone45: "blocked"
   },
 
+  uprime: {
+  beyondLimits: "on",
+  runShift: "on",
+  trend: "blocked",
+  zone23: "blocked",
+  zone45: "blocked"
+},
+
   // Rare-event charts: beyond limits by default; run/trend only behind warning
   t: {
     beyondLimits: "on",
@@ -7958,7 +8327,8 @@ function renderAttributeMultiSummary(segmentAnalyses, totalPoints) {
     c: "C chart",
     p: "P chart",
     pprime: "P′ chart",
-    u: "U chart"
+    u: "U chart",
+ uprime: "U′ chart"
   };
 
   const chartType =
@@ -7977,13 +8347,19 @@ function renderAttributeMultiSummary(segmentAnalyses, totalPoints) {
       : "—";
 
   const sym = (t) =>
-    t === "c"
-      ? "c̄"
-      : (t === "p" || t === "pprime")
-        ? "p̄"
-        : t === "u"
-          ? "ū"
-          : "CL";
+  t === "c"
+    ? "c̄"
+    : (
+        t === "p" ||
+        t === "pprime"
+      )
+      ? "p̄"
+      : (
+          t === "u" ||
+          t === "uprime"
+        )
+        ? "ū"
+        : "CL";
 
   let html =
     `<h3>Summary (${chartName})</h3>`;
@@ -7998,7 +8374,7 @@ function renderAttributeMultiSummary(segmentAnalyses, totalPoints) {
   html +=
     `(based on the baseline and any splits).</p>`;
 
-  if (chartType === "u") {
+  if (isUFamilyChartType(chartType)) {
     const multiplier =
       getURateMultiplier();
 
@@ -8065,10 +8441,11 @@ function renderAttributeMultiSummary(segmentAnalyses, totalPoints) {
           `UCL = ${fmt(st.ucl)}.</li>`;
 
       } else if (
-        a.chartType === "p" ||
-        a.chartType === "pprime" ||
-        a.chartType === "u"
-      ) {
+  a.chartType === "p" ||
+  a.chartType === "pprime" ||
+  a.chartType === "u" ||
+  a.chartType === "uprime"
+) {
         html +=
           `<li><strong>Centre line (${sym(a.chartType)}):</strong> ${fmt(st.cl)}; ` +
           `<strong>control limits:</strong> ` +
@@ -8101,6 +8478,102 @@ function renderAttributeMultiSummary(segmentAnalyses, totalPoints) {
           `<li><strong>Centre line:</strong> ${fmt(fallbackCL)}</li>`;
       }
     }
+
+  if (
+  a.chartType === "u" &&
+  st?.dispersionDiagnostic?.ok
+) {
+  const d =
+    st.dispersionDiagnostic;
+
+  const ratioText =
+    Number(d.ratio).toFixed(1);
+
+  const lowerText =
+    Number(d.lowerLimit).toFixed(1);
+
+  const upperText =
+    Number(d.upperLimit).toFixed(1);
+
+  if (d.status === "overdispersed") {
+    html +=
+      `<li>` +
+      `<strong>U′ may be a better fit for these data.</strong> ` +
+      `The rates vary more from point to point than a standard U chart expects for the amount of opportunity. ` +
+      `This can make a standard U chart produce limits that are too narrow and create extra alerts. ` +
+      `A U′ chart adjusts the limits for this extra variation while keeping the same rates and centre line.` +
+      `<div style="margin-top:0.45rem; font-size:0.92em;">` +
+      `<strong>Technical check:</strong> observed variation = ${ratioText}% of expected; ` +
+      `diagnostic upper limit = ${upperText}%.` +
+      `</div>` +
+      `<div style="margin-top:0.55rem;">` +
+      `<button type="button" onclick="switchUToUPrime()">` +
+      `Use U′ chart instead` +
+      `</button>` +
+      `</div>` +
+      `</li>`;
+
+  } else if (
+    d.status === "underdispersed"
+  ) {
+    html +=
+      `<li>` +
+      `<strong>U′ may be a better fit for these data.</strong> ` +
+      `The rates vary less from point to point than a standard U chart expects. ` +
+      `This can make standard U-chart limits too wide and make genuine changes harder to detect. ` +
+      `A U′ chart adjusts the limits to better match the variation actually seen in the data.` +
+      `<div style="margin-top:0.45rem; font-size:0.92em;">` +
+      `<strong>Technical check:</strong> observed variation = ${ratioText}% of expected; ` +
+      `diagnostic lower limit = ${lowerText}%.` +
+      `</div>` +
+      `<div style="margin-top:0.55rem;">` +
+      `<button type="button" onclick="switchUToUPrime()">` +
+      `Use U′ chart instead` +
+      `</button>` +
+      `</div>` +
+      `</li>`;
+
+  } else {
+    html +=
+      `<li>` +
+      `<strong>A standard U chart looks appropriate for these data.</strong> ` +
+      `The amount of variation is within the range expected for defect-rate data, ` +
+      `so there is no clear reason to use a U′ chart instead.` +
+      `<div style="margin-top:0.45rem; font-size:0.92em;">` +
+      `<strong>Technical check:</strong> observed variation = ${ratioText}% of expected; ` +
+      `expected range = ${lowerText}%–${upperText}%.` +
+      `</div>` +
+      `</li>`;
+  }
+}
+
+if (
+  a.chartType === "uprime" &&
+  Number.isFinite(st?.sigmaZ)
+) {
+  let adjustmentText = "";
+
+  if (st.sigmaZ > 1) {
+    adjustmentText =
+      "These data vary more than a standard U chart expects, so the U′ chart uses wider control limits.";
+  } else if (st.sigmaZ < 1) {
+    adjustmentText =
+      "These data vary less than a standard U chart expects, so the U′ chart uses narrower control limits.";
+  } else {
+    adjustmentText =
+      "The amount of variation is very close to what a standard U chart expects, so the adjustment is small.";
+  }
+
+  html +=
+    `<li>` +
+    `<strong>Why are these limits different?</strong> ` +
+    `${adjustmentText} ` +
+    `This helps the control limits better reflect the amount of variation actually seen in the data.` +
+    `<div style="margin-top:0.45rem; font-size:0.92em;">` +
+    `<strong>Technical detail:</strong> Sigma Z = ${fmt(st.sigmaZ)}.` +
+    `</div>` +
+    `</li>`;
+}
 
     // P vs P′ dispersion diagnostic
     if (
@@ -8242,6 +8715,7 @@ function renderAttributeSummary(a) {
   c: "C chart",
   p: "P chart",
   pprime: "P′ chart",
+  uprime: "U′ chart",
   u: "U chart"
 };
   const chartName = nameMap[a.chartType] || "Chart";
@@ -8279,7 +8753,10 @@ function renderAttributeSummary(a) {
   a.chartType === "pprime"
 ) {
     html += `<li><strong>Best used when:</strong> You have a number out of a total each time (a proportion or %).</li>`;
-  } else if (a.chartType === "u") {
+  } else if (
+  a.chartType === "u" ||
+  a.chartType === "uprime"
+) {
     html += `<li><strong>Best used when:</strong> You have a rate where the “out of how many” changes (e.g., per 1,000 bed days).</li>`;
   }
 
@@ -9866,232 +10343,376 @@ if (chartType === "run") {
 
 } else if (
   isPFamilyChartType(chartType) ||
-  chartType === "u"
+  isUFamilyChartType(chartType)
 ) {
   const isPFamily =
     isPFamilyChartType(chartType);
 
-  // P/U require a third column (denominator/opportunities)
-  if (!thirdSelect || !thirdSelect.value) {
-    showError(`The ${getChartTypeDisplayName(chartType)} needs a third column. Please choose ${isPFamily ? "a denominator (total)" : "an opportunities column"} before generating the chart.`);
+  const isUFamily =
+    isUFamilyChartType(chartType);
+
+  // P/P′ and U/U′ require a third column
+  // (denominator or opportunities).
+  if (
+    !thirdSelect ||
+    !thirdSelect.value
+  ) {
+    showError(
+      `The ${getChartTypeDisplayName(chartType)} needs a third column. ` +
+      `Please choose ${
+        isPFamily
+          ? "a denominator (total)"
+          : "an opportunities column"
+      } before generating the chart.`
+    );
+
     return;
   }
 
-  const denomCol = thirdSelect.value;
+  const denomCol =
+    thirdSelect.value;
 
-  // Build points with denominator using original row index saved on each point
-  const pointsWithNOrdered = points.map((p, i) => {
-    const row = rawRows[p._rowIndex];
-    const numerator = toNumericValue(row[valueSelect.value]);
-    const denom = toNumericValue(row[denomCol]);
+  // Build points with denominator/opportunities
+  // using the original source-row index.
+  const pointsWithNOrdered =
+    points.map((p, i) => {
+      const row =
+        rawRows[p._rowIndex];
 
-    return {
-      x: p.x,
-      y: numerator,  // P chart: numerator (d); U chart: numerator (c)
-      n: denom,      // denominator/opportunities
-      label: labels[i],
-      _rowIndex: p._rowIndex
-    };
-  });
+      const numerator =
+        toNumericValue(
+          row[valueSelect.value]
+        );
 
-  // -----------------------------
-  // VALIDATION: P / U charts
-  // -----------------------------
-  const numerArr = pointsWithNOrdered.map(p => p.y);
-  const denomArr = pointsWithNOrdered.map(p => p.n);
+      const denom =
+        toNumericValue(
+          row[denomCol]
+        );
 
-  // Block: non-numeric or negative numerator
-    const currentNumer = valueSelect?.value || "";
-  const currentDenom = thirdSelect?.value || "";
-  const fallback = (typeof chooseDefaultsForChart === "function")
-    ? chooseDefaultsForChart(chartType)
-    : null;
+      return {
+        x: p.x,
+        y: numerator,
+        n: denom,
+        label: labels[i],
+        _rowIndex: p._rowIndex
+      };
+    });
 
-  const fallbackNumer = fallback?.yCol || "";
-  const fallbackDenom = fallback?.thirdCol || "";
+  const numerArr =
+    pointsWithNOrdered.map(
+      p => p.y
+    );
 
-  if (!handleValidationResult(
-  validateNonNegativeNumbers(
-    numerArr,
-    isPFamily ? "P chart numerator (d)" : "U chart numerator (c)",
-    {
-      columnName: currentNumer,
-      alternativeColumn: fallbackNumer && fallbackNumer !== currentNumer ? fallbackNumer : "",
-      purposeText: isPFamily ? "numerator column" : "count column"
-    }
-  )
-)) return;
+  const denomArr =
+    pointsWithNOrdered.map(
+      p => p.n
+    );
 
-  // Extra UX recovery for P / U:
-  // if the current pair is poor for the chosen chart type,
-  // try the tool's preferred default pair before showing a hard error.
-  if (isPFamily || chartType === "u") {
-    
+  const currentNumer =
+    valueSelect?.value || "";
 
-    const canTryFallback =
-      fallbackNumer &&
-      fallbackDenom &&
-      fallbackNumer !== fallbackDenom &&
-      (fallbackNumer !== currentNumer || fallbackDenom !== currentDenom);
+  const currentDenom =
+    thirdSelect?.value || "";
 
-    let shouldFallback = false;
+  const fallback =
+    (
+      typeof chooseDefaultsForChart ===
+      "function"
+    )
+      ? chooseDefaultsForChart(
+          chartType
+        )
+      : null;
 
-    if (isPFamily) {
-      const pPairValidation = validateNumeratorNotGreaterThanDenom(numerArr, denomArr, {
-  numeratorColumn: currentNumer,
-  denominatorColumn: currentDenom,
-  alternativeNumerator: fallbackNumer && fallbackNumer !== currentNumer ? fallbackNumer : "",
-  alternativeDenominator: fallbackDenom && fallbackDenom !== currentDenom ? fallbackDenom : ""
-});
-      if (pPairValidation) {
-        if (canTryFallback && valueSelect && thirdSelect) {
-          valueSelect.value = fallbackNumer;
-          thirdSelect.value = fallbackDenom;
+  const fallbackNumer =
+    fallback?.yCol || "";
 
-          showChartMessage(
-            "I changed the numerator and denominator columns to a more suitable pair for a P chart."
-          );
+  const fallbackDenom =
+    fallback?.thirdCol || "";
 
-          if (generateButton) {
-            lastGenerateWasManual = false;
-            generateButton.click();
-          }
-          return;
+  // Numerator/count must be numeric and non-negative.
+  if (
+    !handleValidationResult(
+      validateNonNegativeNumbers(
+        numerArr,
+        isPFamily
+          ? "P/P′ chart numerator (d)"
+          : "U/U′ chart numerator (c)",
+        {
+          columnName:
+            currentNumer,
+
+          alternativeColumn:
+            fallbackNumer &&
+            fallbackNumer !== currentNumer
+              ? fallbackNumer
+              : "",
+
+          purposeText:
+            isPFamily
+              ? "numerator column"
+              : "count column"
         }
+      )
+    )
+  ) {
+    return;
+  }
 
-        if (!handleValidationResult(pPairValidation)) return;
-      }
-    }
+  const canTryFallback =
+    fallbackNumer &&
+    fallbackDenom &&
+    fallbackNumer !== fallbackDenom &&
+    (
+      fallbackNumer !== currentNumer ||
+      fallbackDenom !== currentDenom
+    );
 
-    if (chartType === "u") {
-      const invalidDenominator =
-        denomArr.some(d => !Number.isFinite(d) || d <= 0);
+  // -------------------------------------------------
+  // P / P′ only:
+  // numerator cannot be greater than denominator.
+  // -------------------------------------------------
+  if (isPFamily) {
+    const pPairValidation =
+      validateNumeratorNotGreaterThanDenom(
+        numerArr,
+        denomArr,
+        {
+          numeratorColumn:
+            currentNumer,
 
-      const sameColumnChosen =
-        currentNumer &&
-        currentDenom &&
-        currentNumer === currentDenom;
+          denominatorColumn:
+            currentDenom,
 
-      if (invalidDenominator || sameColumnChosen) {
-        shouldFallback = true;
-      }
+          alternativeNumerator:
+            fallbackNumer &&
+            fallbackNumer !== currentNumer
+              ? fallbackNumer
+              : "",
 
-      if (shouldFallback && canTryFallback && valueSelect && thirdSelect) {
-        valueSelect.value = fallbackNumer;
-        thirdSelect.value = fallbackDenom;
+          alternativeDenominator:
+            fallbackDenom &&
+            fallbackDenom !== currentDenom
+              ? fallbackDenom
+              : ""
+        }
+      );
+
+    if (pPairValidation) {
+      if (
+        canTryFallback &&
+        valueSelect &&
+        thirdSelect
+      ) {
+        valueSelect.value =
+          fallbackNumer;
+
+        thirdSelect.value =
+          fallbackDenom;
 
         showChartMessage(
-          "I changed the count and opportunities columns to a more suitable pair for a U chart."
+          "I changed the numerator and denominator columns to a more suitable pair for a P/P′ chart."
         );
 
         if (generateButton) {
-          lastGenerateWasManual = false;
+          lastGenerateWasManual =
+            false;
+
           generateButton.click();
         }
+
+        return;
+      }
+
+      if (
+        !handleValidationResult(
+          pPairValidation
+        )
+      ) {
         return;
       }
     }
   }
 
-  // Block: denominator must be > 0
-if (!handleValidationResult(
-  validateDenominatorPositive(
-    denomArr,
-    isPFamily
-      ? "P/P′ chart denominator (n)"
-      : "U chart denominator/opportunities (n)",
-    {
-      columnName: currentDenom,
-      alternativeColumn:
-        fallbackDenom && fallbackDenom !== currentDenom
-          ? fallbackDenom
-          : "",
-      purposeText:
+  // -------------------------------------------------
+  // U / U′ only:
+  // counts may exceed opportunities, but the
+  // opportunities must be positive and the selected
+  // columns must be different.
+  // -------------------------------------------------
+  if (isUFamily) {
+    const invalidDenominator =
+      denomArr.some(
+        d =>
+          !Number.isFinite(d) ||
+          d <= 0
+      );
+
+    const sameColumnChosen =
+      currentNumer &&
+      currentDenom &&
+      currentNumer === currentDenom;
+
+    if (
+      (
+        invalidDenominator ||
+        sameColumnChosen
+      ) &&
+      canTryFallback &&
+      valueSelect &&
+      thirdSelect
+    ) {
+      valueSelect.value =
+        fallbackNumer;
+
+      thirdSelect.value =
+        fallbackDenom;
+
+      showChartMessage(
+        "I changed the count and opportunities columns to a more suitable pair for a U/U′ chart."
+      );
+
+      if (generateButton) {
+        lastGenerateWasManual =
+          false;
+
+        generateButton.click();
+      }
+
+      return;
+    }
+  }
+
+  // Denominator / opportunities must be positive.
+  if (
+    !handleValidationResult(
+      validateDenominatorPositive(
+        denomArr,
         isPFamily
-          ? "denominator column"
-          : "opportunities column"
-    }
-  )
-)) return;
+          ? "P/P′ chart denominator (n)"
+          : "U/U′ chart denominator/opportunities (n)",
+        {
+          columnName:
+            currentDenom,
 
-// Warn: non-integers (allow user to continue)
-if (!handleValidationResult(
-  warnIfNonInteger(
-    numerArr,
-    isPFamily
-      ? "P/P′ chart numerator (d)"
-      : "U chart numerator (c)",
-    {
-      columnName: currentNumer,
-      alternativeColumn:
-        fallbackNumer && fallbackNumer !== currentNumer
-          ? fallbackNumer
-          : "",
-      purposeText:
+          alternativeColumn:
+            fallbackDenom &&
+            fallbackDenom !== currentDenom
+              ? fallbackDenom
+              : "",
+
+          purposeText:
+            isPFamily
+              ? "denominator column"
+              : "opportunities column"
+        }
+      )
+    )
+  ) {
+    return;
+  }
+
+  // Soft warning for non-integer numerator/count.
+  if (
+    !handleValidationResult(
+      warnIfNonInteger(
+        numerArr,
         isPFamily
-          ? "numerator column"
-          : "count column"
-    }
-  ),
-  { manual: lastGenerateWasManual }
-)) return;
+          ? "P/P′ chart numerator (d)"
+          : "U/U′ chart numerator (c)",
+        {
+          columnName:
+            currentNumer,
 
-if (!handleValidationResult(
-  warnIfNonInteger(
-    denomArr,
-    isPFamily
-      ? "P/P′ chart denominator (n)"
-      : "U chart denominator/opportunities (n)",
-    {
-      columnName: currentDenom,
-      alternativeColumn:
-        fallbackDenom && fallbackDenom !== currentDenom
-          ? fallbackDenom
-          : "",
-      purposeText:
+          alternativeColumn:
+            fallbackNumer &&
+            fallbackNumer !== currentNumer
+              ? fallbackNumer
+              : "",
+
+          purposeText:
+            isPFamily
+              ? "numerator column"
+              : "count column"
+        }
+      ),
+      {
+        manual:
+          lastGenerateWasManual
+      }
+    )
+  ) {
+    return;
+  }
+
+  // Soft warning for non-integer denominator/opportunities.
+  if (
+    !handleValidationResult(
+      warnIfNonInteger(
+        denomArr,
         isPFamily
-          ? "denominator column"
-          : "opportunities column"
-    }
-  ),
-  { manual: lastGenerateWasManual }
-)) return;
+          ? "P/P′ chart denominator (n)"
+          : "U/U′ chart denominator/opportunities (n)",
+        {
+          columnName:
+            currentDenom,
 
-  if (!handleValidationResult(
-  warnIfNonInteger(
-    denomArr,
-    chartType === "p" ? "P chart denominator (n)" : "U chart denominator/opportunities (n)",
-    {
-      columnName: currentDenom,
-      alternativeColumn: fallbackDenom && fallbackDenom !== currentDenom ? fallbackDenom : "",
-      purposeText: chartType === "p" ? "denominator column" : "opportunities column"
-    }
-  ),
-  { manual: lastGenerateWasManual }
-)) return;
+          alternativeColumn:
+            fallbackDenom &&
+            fallbackDenom !== currentDenom
+              ? fallbackDenom
+              : "",
 
-  // Draw chart
-if (chartType === "p") {
-  drawPChart(
-    pointsWithNOrdered,
-    baselineCount,
-    labels
-  );
+          purposeText:
+            isPFamily
+              ? "denominator column"
+              : "opportunities column"
+        }
+      ),
+      {
+        manual:
+          lastGenerateWasManual
+      }
+    )
+  ) {
+    return;
+  }
 
-} else if (chartType === "pprime") {
-  drawPPrimeChart(
-    pointsWithNOrdered,
-    baselineCount,
-    labels
-  );
+  // Draw the selected attribute chart.
+  if (chartType === "p") {
+    drawPChart(
+      pointsWithNOrdered,
+      baselineCount,
+      labels
+    );
 
-} else {
-  drawUChart(
-    pointsWithNOrdered,
-    baselineCount,
-    labels
-  );
-}
+  } else if (
+    chartType === "pprime"
+  ) {
+    drawPPrimeChart(
+      pointsWithNOrdered,
+      baselineCount,
+      labels
+    );
+
+  } else if (
+    chartType === "u"
+  ) {
+    drawUChart(
+      pointsWithNOrdered,
+      baselineCount,
+      labels
+    );
+
+  } else if (
+    chartType === "uprime"
+  ) {
+    drawUPrimeChart(
+      pointsWithNOrdered,
+      baselineCount,
+      labels
+    );
+  }
 
 } else if (chartType === "xbars") {
   drawXbarSChart(points, baselineCount, labels);
@@ -11091,6 +11712,12 @@ const segLCL = lclArr.slice(start, end + 1);
 const uRange = rangeFinite(segUCL);
 const lRange = rangeFinite(segLCL);
 
+const dispersionDiagnostic =
+  computeUDispersionDiagnostic(
+    segPoints,
+    segBaselineCountUsed
+  );
+
 a.stats = {
   cl: segCL.find(v => Number.isFinite(v)),     // ū
   uclMin: uRange.min,
@@ -11098,7 +11725,9 @@ a.stats = {
   uclAvg: meanFinite(segUCL),                  // ✅
   lclMin: lRange.min,
   lclMax: lRange.max,
-  lclAvg: meanFinite(segLCL)                   // ✅
+  lclAvg: meanFinite(segLCL),                   // ✅
+
+  dispersionDiagnostic
 };
 
 
@@ -11121,6 +11750,313 @@ a.stats = {
   // Keep "latest" available for anything else that expects it
   lastAttributeAnalysis = analyses[analyses.length - 1];
 
+}
+
+function drawUPrimeChart(
+  pointsWithN,
+  baselineCount,
+  labels
+) {
+  if (!chartCanvas) return;
+
+  const n =
+    pointsWithN.length;
+
+  if (n < 2) {
+    showError(
+      "U′ chart needs at least 2 points."
+    );
+    return;
+  }
+
+  const rateMultiplier =
+    getURateMultiplier();
+
+  let effectiveSplits =
+    Array.isArray(splits)
+      ? splits.slice()
+      : [];
+
+  effectiveSplits =
+    effectiveSplits
+      .filter(
+        i =>
+          Number.isInteger(i) &&
+          i >= 0 &&
+          i < n - 1
+      )
+      .sort((a, b) => a - b);
+
+  const segmentStarts = [0];
+  const segmentEnds = [];
+
+  effectiveSplits.forEach(idx => {
+    segmentEnds.push(idx);
+    segmentStarts.push(idx + 1);
+  });
+
+  segmentEnds.push(n - 1);
+
+  const values =
+    new Array(n).fill(NaN);
+
+  const clArr =
+    new Array(n).fill(NaN);
+
+  const uclArr =
+    new Array(n).fill(NaN);
+
+  const lclArr =
+    new Array(n).fill(NaN);
+
+  const beyond =
+    new Array(n).fill(false);
+
+  const segmentResults = [];
+
+  for (
+    let s = 0;
+    s < segmentStarts.length;
+    s++
+  ) {
+    const start =
+      segmentStarts[s];
+
+    const end =
+      segmentEnds[s];
+
+    const segPoints =
+      pointsWithN.slice(
+        start,
+        end + 1
+      );
+
+    const segBaselineCountUsed =
+      (
+        s === 0 &&
+        baselineCount &&
+        baselineCount >= 1
+      )
+        ? Math.min(
+            baselineCount,
+            segPoints.length
+          )
+        : segPoints.length;
+
+    const res =
+      computeUPrime(
+        segPoints,
+        segBaselineCountUsed
+      );
+
+    segmentResults.push(res);
+
+    for (
+      let j = 0;
+      j < segPoints.length;
+      j++
+    ) {
+      const i =
+        start + j;
+
+      values[i] =
+        res.uVals[j] *
+        rateMultiplier;
+
+      clArr[i] =
+        res.ubar *
+        rateMultiplier;
+
+      uclArr[i] =
+        res.ucl[j] *
+        rateMultiplier;
+
+      lclArr[i] =
+        res.lcl[j] *
+        rateMultiplier;
+
+      beyond[i] =
+        res.beyond[j];
+    }
+  }
+
+  const pointColours =
+    values.map(
+      (v, i) =>
+        beyond[i]
+          ? SPC_STYLE.pointBeyond
+          : SPC_STYLE.seriesBlue
+    );
+
+  drawSimpleSPCChart({
+    labels,
+    values,
+    pointColours,
+    cl: clArr,
+    ucl: uclArr,
+    lcl: lclArr,
+
+    chartTitleFallback:
+      "U′ chart",
+
+    yAxisLabelFallback:
+      rateMultiplier === 1
+        ? "Rate per opportunity"
+        : `Rate per ${formatURateMultiplier(rateMultiplier)} opportunities`,
+
+    showUCL: true,
+    showLCL: true
+  });
+
+  const analyses = [];
+
+  for (
+    let s = 0;
+    s < segmentStarts.length;
+    s++
+  ) {
+    const start =
+      segmentStarts[s];
+
+    const end =
+      segmentEnds[s];
+
+    const segPoints =
+      pointsWithN.slice(
+        start,
+        end + 1
+      );
+
+    const segBaselineCountUsed =
+      (
+        s === 0 &&
+        baselineCount &&
+        baselineCount >= 1
+      )
+        ? Math.min(
+            baselineCount,
+            segPoints.length
+          )
+        : segPoints.length;
+
+    const res =
+      segmentResults[s];
+
+    const a =
+      analyzeAttributeChart({
+        chartType: "uprime",
+
+        labels:
+          labels.slice(
+            start,
+            end + 1
+          ),
+
+        values:
+          values.slice(
+            start,
+            end + 1
+          ),
+
+        cl:
+          clArr.slice(
+            start,
+            end + 1
+          ),
+
+        ucl:
+          uclArr.slice(
+            start,
+            end + 1
+          ),
+
+        lcl:
+          lclArr.slice(
+            start,
+            end + 1
+          )
+      });
+
+    const segCL =
+      clArr.slice(
+        start,
+        end + 1
+      );
+
+    const segUCL =
+      uclArr.slice(
+        start,
+        end + 1
+      );
+
+    const segLCL =
+      lclArr.slice(
+        start,
+        end + 1
+      );
+
+    const uRange =
+      rangeFinite(segUCL);
+
+    const lRange =
+      rangeFinite(segLCL);
+
+    a.stats = {
+      cl:
+        segCL.find(
+          v => Number.isFinite(v)
+        ),
+
+      uclMin: uRange.min,
+      uclMax: uRange.max,
+      uclAvg:
+        meanFinite(segUCL),
+
+      lclMin: lRange.min,
+      lclMax: lRange.max,
+      lclAvg:
+        meanFinite(segLCL),
+
+      sigmaZ:
+        res?.sigmaZ,
+
+      avgMR:
+        res?.avgMR
+    };
+
+    a.periodIndex =
+      s + 1;
+
+    a.periodCount =
+      segmentStarts.length;
+
+    a.startIndex =
+      start;
+
+    a.endIndex =
+      end;
+
+    a.labelStart =
+      labels[start];
+
+    a.labelEnd =
+      labels[end];
+
+    a.baselineCountUsed =
+      segBaselineCountUsed;
+
+    analyses.push(a);
+  }
+
+  renderAttributeMultiSummary(
+    analyses,
+    labels.length
+  );
+
+  lastAttributeAnalysis =
+    analyses[
+      analyses.length - 1
+    ];
 }
 
 
@@ -12619,7 +13555,7 @@ function showChartContextMenu(clientX, clientY, pointIndex) {
       ? (getSelectedChartType_NoSideEffects() || "run")
       : ((typeof getSelectedChartType === "function") ? (getSelectedChartType() || "run") : "run");
 
-  const supportsSplits = ["run", "xmr", "c", "p", "pprime", "u", "xbars", "t", "g"].includes(chartType);
+  const supportsSplits = ["run", "xmr", "c", "p", "pprime", "u", "uprime", "xbars", "t", "g"].includes(chartType);
 
   // ---------- XmR mean labels ----------
 const xmrMeanLabelsGroup =
@@ -12638,6 +13574,7 @@ const supportsCentreLineLabels =
     "p",
     "pprime",
     "u",
+    "uprime",
     "xbars",
     "t",
     "g"
@@ -13452,6 +14389,7 @@ function getChartTypeDisplayName(chartType) {
     p: "P chart",
     pprime: "P′ chart",
     u: "U chart",
+    uprime: "U′ chart",
     xbars: "X̄-S chart",
     t: "T chart",
     g: "G chart"
@@ -13488,7 +14426,7 @@ function renderRuleExplainerModal(chartType) {
   chartType === "c" ||
   chartType === "p" ||
   chartType === "pprime" ||
-  chartType === "u"
+  isUFamilyChartType(chartType)
 ) {
     whyText =
       "Attribute charts use a conservative rule set here. Zone rules are blocked because they can create misleading alerts, especially when limits vary or counts are low.";
@@ -13661,7 +14599,7 @@ function setChartType(chartType) {
     radio.checked = true;
     // If chart type is in the "More chart types" details, open it so the selection is visible
     const details = document.getElementById("moreChartTypesDetails");
-    if (details && ["c", "p", "pprime", "u", "xbars", "t", "g"].includes(chartType)) {
+    if (details && ["c", "p", "pprime", "u", "uprime", "xbars", "t", "g"].includes(chartType)) {
       details.open = true;
     }
     updateUIForChartType(chartType);
@@ -13743,9 +14681,27 @@ function computeRecommendation(answers) {
     }
 
     case "count": {
-      if (answers.countOpportunity === "varies") return { chartType: "u", label: "U", reason: "The opportunity/volume varies across time points." };
-      return { chartType: "c", label: "C", reason: "You have counts with a roughly constant opportunity/volume each time." };
-    }
+  if (
+    answers.countOpportunity ===
+    "varies"
+  ) {
+    return {
+      chartType: "u",
+      label: "U chart",
+      reason:
+        "You have counts where the amount of opportunity or activity varies, so a U chart is the right starting point. " +
+        "After the chart is generated, SimpleSPC will check whether the rates vary more or less than a standard U chart expects. " +
+        "If so, it will suggest a Laney U′ chart and explain why."
+    };
+  }
+
+  return {
+    chartType: "c",
+    label: "C chart",
+    reason:
+      "You have counts with a roughly constant amount of opportunity or activity each time."
+  };
+}
 
     case "proportion": {
   if (answers.proportionHasDenom === "yes") {
@@ -13883,9 +14839,13 @@ if (s.step === 1 && a.kind === "unsure") {
       <p class="chart-wizard-question">Does the amount of work or opportunity vary?</p>
 
       <p class="hint small-hint">
-        If activity is broadly similar each time, treat it as roughly constant. If volume changes a lot,
-        or you have a denominator such as bed-days or inspections, choose varies.
-      </p>
+  If activity is broadly similar each time, treat it as roughly constant.
+  If volume changes a lot, or you have a denominator such as bed-days,
+  attendances or inspections, choose varies.
+  <br><br>
+  SimpleSPC will normally start with a U chart and then check whether
+  a Laney U′ chart would better match the amount of variation in your data.
+</p>
 
       <div class="chart-wizard-options">
         ${optionButton("No — roughly similar volume each time", `wizardNext('countOpportunity','constant')`)}
@@ -14017,6 +14977,22 @@ function switchPToPPrime() {
 window.switchPToPPrime =
   switchPToPPrime;
 
+function switchUToUPrime() {
+  setChartType("uprime");
+
+  if (
+    rawRows &&
+    rawRows.length &&
+    generateButton
+  ) {
+    lastGenerateWasManual = false;
+    generateButton.click();
+  }
+}
+
+window.switchUToUPrime =
+  switchUToUPrime;
+
 if (newDataHelpChooseBtn) {
   newDataHelpChooseBtn.addEventListener("click", () => {
     hideNewDataChartPrompt();
@@ -14074,7 +15050,7 @@ function applySplitFromSidebarSelection() {
       ? (getSelectedChartType_NoSideEffects() || "run")
       : ((typeof getSelectedChartType === "function") ? (getSelectedChartType() || "run") : "run");
 
-  const supportsSplits = ["run", "xmr", "c", "p", "pprime", "u", "xbars", "t", "g"].includes(chartType);
+  const supportsSplits = ["run", "xmr", "c", "p", "pprime", "u", "uprime", "xbars", "t", "g"].includes(chartType);
 
   if (!supportsSplits) {
     alert("Splits / recalculating limits are not available for this chart type.");

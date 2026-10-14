@@ -194,45 +194,74 @@
 <details id="moreChartTypesDetails" class="more-types">
   <summary>More chart types</summary>
 
-  <div class="radio-row chart-row" style="margin-top:0.1rem; flex-wrap:wrap;">
-    <label class="radio-pill" title="Counts per time period (e.g., number of incidents per week)">
+  <div
+    class="radio-row chart-row"
+    style="margin-top:0.1rem; flex-wrap:wrap;"
+  >
+    <label
+      class="radio-pill"
+      title="Counts per time period (e.g., number of incidents per week)"
+    >
       <input type="radio" name="chartType" value="c" />
       C chart (counts)
     </label>
 
-    <label class="radio-pill" title="Proportion out of a total (e.g., 5 out of 100, % compliant)">
+    <label
+      class="radio-pill"
+      title="Proportion out of a total (e.g., 5 out of 100, % compliant)"
+    >
       <input type="radio" name="chartType" value="p" />
       P chart (proportion)
     </label>
 
     <label
-  class="radio-pill"
-  title="Laney P-prime chart: proportion out of a total, with limits adjusted when the observed variation is greater or smaller than a standard P chart expects.">
-  <input type="radio" name="chartType" value="pprime" />
-  P′ chart (Laney)
-   </label>
+      class="radio-pill"
+      title="Laney P-prime chart: proportion out of a total, with limits adjusted when the observed variation is greater or smaller than a standard P chart expects."
+    >
+      <input type="radio" name="chartType" value="pprime" />
+      P′ chart (Laney)
+    </label>
 
-    <label class="radio-pill" title="Rate per opportunity (e.g., infections per 1,000 bed-days)">
+    <label
+      class="radio-pill"
+      title="Rate per opportunity (e.g., infections per 1,000 bed-days)"
+    >
       <input type="radio" name="chartType" value="u" />
       U chart (rate)
     </label>
 
-    <label class="radio-pill" title="Subgrouped measurements (multiple values per time point)">
+    <label
+      class="radio-pill"
+      title="Laney U-prime chart: rate per opportunity, with limits adjusted when the observed variation is greater or smaller than a standard U chart expects."
+    >
+      <input type="radio" name="chartType" value="uprime" />
+      U′ chart (Laney)
+    </label>
+
+    <label
+      class="radio-pill"
+      title="Subgrouped measurements (multiple values per time point)"
+    >
       <input type="radio" name="chartType" value="xbars" />
       X̄–S chart (subgroups)
     </label>
 
-    <label class="radio-pill" title="Time between rare events (e.g., days between serious incidents)">
+    <label
+      class="radio-pill"
+      title="Time between rare events (e.g., days between serious incidents)"
+    >
       <input type="radio" name="chartType" value="t" />
       T chart (time between)
     </label>
 
-    <label class="radio-pill" title="Opportunities between rare events (e.g., procedures between harms)">
+    <label
+      class="radio-pill"
+      title="Opportunities between rare events (e.g., procedures between harms)"
+    >
       <input type="radio" name="chartType" value="g" />
       G chart (opportunities between)
     </label>
   </div>
-
 </details>
 
 <div id="chartTypeAvailabilityHint" class="hint small-hint" style="margin-top:0.35rem;" aria-live="polite"></div>
