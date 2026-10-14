@@ -33,6 +33,7 @@
       case "xbars": return "X̄–S chart";
       case "c": return "C chart";
       case "p": return "P chart";
+      case "pprime": return "P′ chart";
       case "u": return "U chart";
       case "t": return "T chart";
       case "g": return "G chart";
@@ -95,6 +96,7 @@
   function describeRulesForCurrentChart(chartType) {
     switch (chartType) {
       case "p":
+      case "pprime":
       case "u":
       case "c":
         return "For this chart, the tool uses beyond-limit signals and the run rule. Zone rules are blocked because they may create misleading alerts on attribute charts.";
@@ -113,38 +115,48 @@
   }
 
   function getSuggestedQuestions(hasChart) {
-const chartType = getChartTypeSafe();    
+  const chartType = getChartTypeSafe();
 
-return {
-      general: [
-        "What is SPC?",
-        "What is the difference between common and special cause variation?",
-        "How do I choose the right chart?",
-        "What is a run chart?",
-        "What is an XmR chart?",
-        "What does stable mean?",
-        "What is the difference between a baseline and a split?",
-        "How do control limits work?",
-        "What should I do if I see a signal?",
-        "What if my process is stable but performance is poor?",
-	"Why are some SPC rules unavailable?",
-	"Why are T/G run and trend rules off by default?",
-	"Why can’t I use zone rules on P, U, or C charts?"
-      ],
-      chart: [
-        "What is my chart telling me?",
-        "Has anything changed?",
-        "Is my process stable?",
-        "Is this likely to be real improvement?",
-        "What does this mean for our target?",
-        "What should I do next?",
-"Should I add a split here?",
-chartType === "xmr"
-  ? "Why are my XmR limits different?"
-  : null
-      ].filter(Boolean)
-    };
-  }
+  return {
+    general: [
+      "What is SPC?",
+      "What is the difference between common and special cause variation?",
+      "How do I choose the right chart?",
+      "What is a run chart?",
+      "What is an XmR chart?",
+      "What does stable mean?",
+      "What is the difference between a baseline and a split?",
+      "How do control limits work?",
+      "What should I do if I see a signal?",
+      "What if my process is stable but performance is poor?",
+      "Why are some SPC rules unavailable?",
+      "Why are T/G run and trend rules off by default?",
+      "Why can’t I use zone rules on P, P′, U, or C charts?"
+    ],
+
+    chart: [
+      "What is my chart telling me?",
+      "Has anything changed?",
+      "Is my process stable?",
+      "Is this likely to be real improvement?",
+      "What does this mean for our target?",
+      "What should I do next?",
+      "Should I add a split here?",
+
+      chartType === "xmr"
+        ? "Why are my XmR limits different?"
+        : null,
+
+      chartType === "pprime"
+        ? "Why am I using a P′ chart?"
+        : null,
+
+      chartType === "pprime"
+        ? "What does Sigma Z mean?"
+        : null
+    ].filter(Boolean)
+  };
+}
 
   const FAQ = [
     {
@@ -270,11 +282,12 @@ chartType === "xmr"
         "• Run chart: simple data over time, often a good starting point\n" +
         "• XmR chart: continuous data with one value per time point\n" +
         "• C chart: counts with roughly constant opportunity\n" +
-        "• P chart: proportions\n" +
+        "• P chart: proportions with a numerator and denominator\n" +
+	"• P′ chart: proportions where the variation is more or less than a standard P chart expects\n" +
         "• U chart: rates with changing opportunity\n" +
         "• X̄–S chart: subgrouped continuous data\n" +
         "• T / G charts: rare events\n\n" +
-        "In healthcare, it often helps to ask: what exactly is the numerator, denominator, subgroup, or opportunity?"
+        "For proportion data, SimpleSPC normally starts with a P chart and checks whether P′ would better match the amount of variation in the data."
     },
     {
       id: "run-chart",
@@ -742,6 +755,47 @@ function isXmRPeriodAssessable(period) {
   );
 }
 
+function buildPPrimeExplanation(ctx) {
+  const a = ctx.attribute;
+
+  if (!a || ctx.chartType !== "pprime") {
+    return (
+      "A P′ chart is a Laney-adjusted version of a P chart. " +
+      "It is used for proportion data when the amount of variation is noticeably different from what a standard P chart expects."
+    );
+  }
+
+  const sigmaZ =
+    a.stats && finiteNumber(a.stats.sigmaZ)
+      ? a.stats.sigmaZ
+      : null;
+
+  let out =
+    "This P′ chart uses the same numerator, denominator, proportions and centre line as a standard P chart. " +
+    "The difference is that it adjusts the control limits to better match the amount of variation actually seen in the data.";
+
+  if (sigmaZ != null) {
+    if (sigmaZ > 1) {
+      out +=
+        "\n\nYour data vary more than a standard P chart expects, so P′ uses wider control limits. " +
+        "This helps avoid treating ordinary variation as a possible process change.";
+    } else if (sigmaZ < 1) {
+      out +=
+        "\n\nYour data vary less than a standard P chart expects, so P′ uses narrower control limits. " +
+        "This can make genuine unusual variation easier to detect.";
+    } else {
+      out +=
+        "\n\nThe amount of variation is very close to what a standard P chart expects, so the P′ adjustment is small.";
+    }
+
+    out +=
+      `\n\nTechnical detail: Sigma Z = ${sigmaZ.toFixed(3)}. ` +
+      "Values above 1 widen the standard P-chart limits; values below 1 narrow them.";
+  }
+
+  return out;
+}
+
   function buildLatestPeriodSummary(ctx) {
     const chartType = ctx.chartType;
 
@@ -1060,6 +1114,16 @@ function buildXmRLimitsAnswer(ctx) {
 
     const ctx = getCurrentChartContext();
 
+    const asksPPrime =
+  includesAny(q, [
+    "p prime",
+    "laney p",
+    "sigma z",
+    "why p prime",
+    "why am i using p prime",
+    "why are these limits different"
+  ]);
+
     // Prefer chart-aware answers for clearly chart-specific questions
     const asksWhatChartSays =
       includesAll(q, ["what", "chart", "telling"]) ||
@@ -1113,7 +1177,8 @@ function buildXmRLimitsAnswer(ctx) {
     const hasChart =
       !!ctx.run || !!ctx.xmr || !!ctx.xbars || !!ctx.attribute || !!ctx.rare;
 
-    if (hasChart && asksXmRLimits) return buildXmRLimitsAnswer(ctx);    
+    if (hasChart && asksXmRLimits) return buildXmRLimitsAnswer(ctx);   
+    if (hasChart && ctx.chartType === "pprime" && asksPPrime) {return buildPPrimeExplanation(ctx);} 
     if (hasChart && asksRulesUsed) return describeRulesForCurrentChart(ctx.chartType);    
     if (hasChart && asksWhatChartSays) return buildWhatChartTellingMe(ctx);
     if (hasChart && asksChanged && ctx.chartType === "xmr") return buildXmRChangeAnswer(ctx);
