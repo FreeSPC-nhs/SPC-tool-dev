@@ -5,14 +5,21 @@
 // ============================================================
 
 (function () {
-  function norm(text) {
-    return String(text || "")
-      .toLowerCase()
-      .replace(/[’']/g, "'")
-      .replace(/[^a-z0-9%+\-.\s]/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
-  }
+ function norm(text) {
+  return String(text || "")
+    .toLowerCase()
+
+    // Preserve the mathematical prime symbol used in P′ / U′
+    // by translating it into the searchable word "prime".
+    .replace(/′/g, " prime ")
+
+    // Normalise ordinary apostrophes separately.
+    .replace(/[’']/g, "'")
+
+    .replace(/[^a-z0-9%+\-.\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
 
   function includesAll(text, parts) {
     return parts.every(p => text.includes(norm(p)));
