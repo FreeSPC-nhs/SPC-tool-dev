@@ -5506,6 +5506,187 @@ function computeU(points, baselineCount = null) {
   return { ubar, uVals, ucl, lcl, beyond };
 }
 
+function computeUPrime(points, baselineCount = null) {
+  const nPts = points.length;
+
+  const baseN =
+    baselineCount && baselineCount >= 1
+      ? Math.min(baselineCount, nPts)
+      : nPts;
+
+  // Baseline data used to estimate u-bar
+  const base = points
+    .slice(0, baseN)
+    .filter(
+      p =>
+        Number.isFinite(Number(p.y)) &&
+        Number.isFinite(Number(p.n)) &&
+        Number(p.n) > 0
+    );
+
+  const sumC = base.reduce(
+    (acc, p) => acc + Number(p.y),
+    0
+  );
+
+  const sumN = base.reduce(
+    (acc, p) => acc + Number(p.n),
+    0
+  );
+
+  const ubar =
+    sumN > 0
+      ? sumC / sumN
+      : NaN;
+
+  const uVals =
+    new Array(nPts).fill(NaN);
+
+  const zValues =
+    new Array(nPts).fill(NaN);
+
+  const ucl =
+    new Array(nPts).fill(NaN);
+
+  const lcl =
+    new Array(nPts).fill(NaN);
+
+  const beyond =
+    new Array(nPts).fill(false);
+
+  // Convert each subgroup rate to a z-score.
+  for (let i = 0; i < nPts; i++) {
+    const c = Number(points[i].y);
+    const ni = Number(points[i].n);
+
+    if (
+      !Number.isFinite(c) ||
+      !Number.isFinite(ni) ||
+      ni <= 0 ||
+      !Number.isFinite(ubar)
+    ) {
+      continue;
+    }
+
+    const ui =
+      c / ni;
+
+    uVals[i] =
+      ui;
+
+    // Standard U-chart standard deviation
+    const standardSigma =
+      Math.sqrt(
+        Math.max(
+          ubar / ni,
+          0
+        )
+      );
+
+    if (standardSigma > 0) {
+      zValues[i] =
+        (ui - ubar) /
+        standardSigma;
+    }
+  }
+
+  // Laney Sigma Z:
+  // moving ranges of consecutive baseline z-scores.
+  const mrValues = [];
+
+  for (let i = 1; i < baseN; i++) {
+    const zPrev =
+      zValues[i - 1];
+
+    const zNow =
+      zValues[i];
+
+    if (
+      Number.isFinite(zPrev) &&
+      Number.isFinite(zNow)
+    ) {
+      mrValues.push(
+        Math.abs(
+          zNow - zPrev
+        )
+      );
+    }
+  }
+
+  const avgMR =
+    mrValues.length
+      ? mrValues.reduce(
+          (a, b) => a + b,
+          0
+        ) / mrValues.length
+      : NaN;
+
+  const sigmaZ =
+    Number.isFinite(avgMR)
+      ? avgMR / 1.128
+      : NaN;
+
+  // Apply the Laney adjustment to the
+  // usual U-chart standard deviation.
+  for (let i = 0; i < nPts; i++) {
+    const ni =
+      Number(points[i].n);
+
+    const ui =
+      uVals[i];
+
+    if (
+      !Number.isFinite(ui) ||
+      !Number.isFinite(ni) ||
+      ni <= 0 ||
+      !Number.isFinite(ubar) ||
+      !Number.isFinite(sigmaZ)
+    ) {
+      continue;
+    }
+
+    const standardSigma =
+      Math.sqrt(
+        Math.max(
+          ubar / ni,
+          0
+        )
+      );
+
+    const adjustedSigma =
+      standardSigma *
+      sigmaZ;
+
+    ucl[i] =
+      ubar +
+      3 * adjustedSigma;
+
+    lcl[i] =
+      Math.max(
+        0,
+        ubar -
+        3 * adjustedSigma
+      );
+
+    beyond[i] =
+      ui > ucl[i] ||
+      ui < lcl[i];
+  }
+
+  return {
+    ubar,
+    uVals,
+    zValues,
+    mrValues,
+    avgMR,
+    sigmaZ,
+    ucl,
+    lcl,
+    beyond,
+    baselineCountUsed: baseN,
+    baselineMRCount: mrValues.length
+  };
+}
 
 // -----------------------------
 // X̄–S chart calculations + drawing
