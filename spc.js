@@ -7878,6 +7878,55 @@ if (
       `Observed variation is <strong>${ratioText}%</strong> of that expected from the binomial model, ` +
       `which is above the diagnostic upper limit of ${upperText}%. ` +
       `<strong>The data show overdispersion, so a Laney P′ chart should be considered.</strong> ` +
+      `An ordinary P chart may give limits that are too narrow and therefore too many false signals.` +
+      `<div style="margin-top:0.55rem;">` +
+      `<button type="button" onclick="switchPToPPrime()">` +
+      `Switch to P′ chart` +
+      `</button>` +
+      `</div>` +
+      `</li>`;
+
+  } else if (d.status === "underdispersed") {
+    html +=
+      `<li><strong>P vs P′ check:</strong> ` +
+      `Observed variation is <strong>${ratioText}%</strong> of that expected from the binomial model, ` +
+      `which is below the diagnostic lower limit of ${lowerText}%. ` +
+      `<strong>The data show underdispersion, so a Laney P′ chart should be considered.</strong> ` +
+      `An ordinary P chart may give limits that are too wide and potentially hide unusual variation.` +
+      `<div style="margin-top:0.55rem;">` +
+      `<button type="button" onclick="switchPToPPrime()">` +
+      `Switch to P′ chart` +
+      `</button>` +
+      `</div>` +
+      `</li>`;
+
+  } else {
+    html +=
+      `<li><strong>P vs P′ check:</strong> ` +
+      `Observed variation is <strong>${ratioText}%</strong> of that expected from the binomial model. ` +
+      `This is within the diagnostic range of ${lowerText}%–${upperText}%, ` +
+      `so there is no clear dispersion-based reason to prefer P′ over the standard P chart.` +
+      `</li>`;
+  }
+}
+  const d =
+    st.dispersionDiagnostic;
+
+  const ratioText =
+    Number(d.ratio).toFixed(1);
+
+  const lowerText =
+    Number(d.lowerLimit).toFixed(1);
+
+  const upperText =
+    Number(d.upperLimit).toFixed(1);
+
+  if (d.status === "overdispersed") {
+    html +=
+      `<li><strong>P vs P′ check:</strong> ` +
+      `Observed variation is <strong>${ratioText}%</strong> of that expected from the binomial model, ` +
+      `which is above the diagnostic upper limit of ${upperText}%. ` +
+      `<strong>The data show overdispersion, so a Laney P′ chart should be considered.</strong> ` +
       `An ordinary P chart may give limits that are too narrow and therefore too many false signals.</li>`;
 
   } else if (d.status === "underdispersed") {
@@ -13677,6 +13726,22 @@ function useWizardChart(chartType) {
     generateButton.click();
   }
 }
+
+function switchPToPPrime() {
+  setChartType("pprime");
+
+  if (
+    rawRows &&
+    rawRows.length &&
+    generateButton
+  ) {
+    lastGenerateWasManual = false;
+    generateButton.click();
+  }
+}
+
+window.switchPToPPrime =
+  switchPToPPrime;
 
 if (newDataHelpChooseBtn) {
   newDataHelpChooseBtn.addEventListener("click", () => {
