@@ -2591,6 +2591,140 @@ function estimateXbarSSigmaFromSbar(sValues, subgroupSizes) {
 // -----------------------------
 // Draw a second chart in the MR panel (re-uses the existing mrPanel UI)
 // -----------------------------
+function buildXbarSSplitMarkerPlugin(splitAfterIndices = []) {
+  const safeSplits = Array.isArray(splitAfterIndices)
+    ? splitAfterIndices.filter(
+        i =>
+          Number.isInteger(i) &&
+          i >= 0
+      )
+    : [];
+
+  return {
+    id: "xbarSSplitMarkers",
+
+    afterDraw(chart) {
+      if (!safeSplits.length) return;
+
+      const ctx = chart.ctx;
+      const chartArea = chart.chartArea;
+      const xScale = chart.scales?.x;
+      const labels =
+        chart.data?.labels || [];
+
+      if (
+        !ctx ||
+        !chartArea ||
+        !xScale ||
+        labels.length < 2
+      ) {
+        return;
+      }
+
+      ctx.save();
+
+      ctx.strokeStyle =
+        "rgba(80,80,80,0.65)";
+
+      ctx.fillStyle =
+        "rgba(80,80,80,0.85)";
+
+      ctx.lineWidth = 1;
+      ctx.setLineDash([5, 4]);
+
+      ctx.font =
+        "600 10px Arial, sans-serif";
+
+      ctx.textAlign = "center";
+      ctx.textBaseline = "bottom";
+
+      safeSplits.forEach(
+        (splitAfterIndex) => {
+          if (
+            splitAfterIndex >=
+            labels.length - 1
+          ) {
+            return;
+          }
+
+          const leftX =
+            xScale.getPixelForValue(
+              splitAfterIndex
+            );
+
+          const rightX =
+            xScale.getPixelForValue(
+              splitAfterIndex + 1
+            );
+
+          if (
+            !Number.isFinite(leftX) ||
+            !Number.isFinite(rightX)
+          ) {
+            return;
+          }
+
+          const x =
+            (leftX + rightX) / 2;
+
+          ctx.beginPath();
+
+          ctx.moveTo(
+            x,
+            chartArea.top
+          );
+
+          ctx.lineTo(
+            x,
+            chartArea.bottom
+          );
+
+          ctx.stroke();
+
+          ctx.fillText(
+            "Split",
+            x,
+            chartArea.top - 3
+          );
+        }
+      );
+
+      ctx.restore();
+    }
+  };
+}
+
+function buildXbarSSplitSegmentStyle(
+  baseColour,
+  splitAfterIndices = []
+) {
+  const splitSet =
+    new Set(
+      Array.isArray(
+        splitAfterIndices
+      )
+        ? splitAfterIndices.filter(
+            i =>
+              Number.isInteger(i) &&
+              i >= 0
+          )
+        : []
+    );
+
+  if (!splitSet.size) {
+    return undefined;
+  }
+
+  return {
+    borderColor: (ctx) =>
+      splitSet.has(
+        ctx.p0DataIndex
+      )
+        ? "rgba(0,0,0,0)"
+        : baseColour
+  };
+}
+
 function drawSecondarySPCChart({
   canvas,
   labels,
@@ -2603,7 +2737,8 @@ function drawSecondarySPCChart({
   xLabel,
   yLabel,
   suggestedMin,
-  suggestedMax
+  suggestedMax,
+  splitAfterIndices = []
 }) {
   if (!canvas) return null;
 
@@ -2611,71 +2746,161 @@ function drawSecondarySPCChart({
     {
       label: "Value",
       data: values,
-      borderColor: SPC_STYLE.seriesBlue,
+      borderColor:
+        SPC_STYLE.seriesBlue,
       borderWidth: 2,
       fill: false,
       pointRadius: 4,
-      pointBackgroundColor: pointColours,
-      pointBorderColor: pointColours,
+      pointBackgroundColor:
+        pointColours,
+      pointBorderColor:
+        pointColours,
       tension: 0.1
     },
+
     {
       label: "Centre line",
       data: cl,
-      borderColor: SPC_STYLE.centreRed,
+      borderColor:
+        SPC_STYLE.centreRed,
       borderDash: [6, 4],
       borderWidth: 2,
       pointRadius: 0,
-      pointHoverRadius: 0
+      pointHoverRadius: 0,
+
+      segment:
+        buildXbarSSplitSegmentStyle(
+          SPC_STYLE.centreRed,
+          splitAfterIndices
+        )
     },
+
     {
       label: "UCL",
       data: ucl,
-      borderColor: SPC_STYLE.limitGreen,
+      borderColor:
+        SPC_STYLE.limitGreen,
       borderDash: [4, 4],
       borderWidth: 2,
       pointRadius: 0,
-      pointHoverRadius: 0
+      pointHoverRadius: 0,
+
+      segment:
+        buildXbarSSplitSegmentStyle(
+          SPC_STYLE.limitGreen,
+          splitAfterIndices
+        )
     },
+
     {
       label: "LCL",
       data: lcl,
-      borderColor: SPC_STYLE.limitGreen,
+      borderColor:
+        SPC_STYLE.limitGreen,
       borderDash: [4, 4],
       borderWidth: 2,
       pointRadius: 0,
-      pointHoverRadius: 0
+      pointHoverRadius: 0,
+
+      segment:
+        buildXbarSSplitSegmentStyle(
+          SPC_STYLE.limitGreen,
+          splitAfterIndices
+        )
     }
   ];
 
-  return new Chart(canvas.getContext("2d"), {
-    type: "line",
-    data: { labels, datasets },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        title: buildChartTitleConfig(title),
-        legend: SPC_LEGEND,
-        annotation: {
-          annotations: (typeof buildAnnotationConfig === "function")
-            ? buildAnnotationConfig(labels)
-            : {}
-        }
+  const splitMarkerPlugin =
+    buildXbarSSplitMarkerPlugin(
+      splitAfterIndices
+    );
+
+  return new Chart(
+    canvas.getContext("2d"),
+    {
+      type: "line",
+
+      data: {
+        labels,
+        datasets
       },
-      elements: { point: { radius: 0, hoverRadius: 0 } },
-            scales: (() => {
-        const axisSettings = getAxisSettings();
-        return {
-          x: buildCategoryXAxisConfig(xLabel, axisSettings.x, labels),
-          y: buildAxisConfig(yLabel, withoutAxisBounds(axisSettings.y), {
-            suggestedMin: isFinite(suggestedMin) ? suggestedMin : undefined,
-            suggestedMax: isFinite(suggestedMax) ? suggestedMax : undefined
-          })
-        };
-      })()
+
+      plugins: [
+        splitMarkerPlugin
+      ],
+
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+
+        plugins: {
+          title:
+            buildChartTitleConfig(
+              title
+            ),
+
+          legend:
+            SPC_LEGEND,
+
+          annotation: {
+            annotations:
+              (
+                typeof buildAnnotationConfig ===
+                "function"
+              )
+                ? buildAnnotationConfig(
+                    labels
+                  )
+                : {}
+          }
+        },
+
+        elements: {
+          point: {
+            radius: 0,
+            hoverRadius: 0
+          }
+        },
+
+        scales: (() => {
+          const axisSettings =
+            getAxisSettings();
+
+          return {
+            x:
+              buildCategoryXAxisConfig(
+                xLabel,
+                axisSettings.x,
+                labels
+              ),
+
+            y:
+              buildAxisConfig(
+                yLabel,
+                withoutAxisBounds(
+                  axisSettings.y
+                ),
+                {
+                  suggestedMin:
+                    isFinite(
+                      suggestedMin
+                    )
+                      ? suggestedMin
+                      : undefined,
+
+                  suggestedMax:
+                    isFinite(
+                      suggestedMax
+                    )
+                      ? suggestedMax
+                      : undefined
+                }
+              )
+          };
+        })()
+      }
     }
-  });
+  );
 }
 
 // -----------------------------
@@ -2694,19 +2919,28 @@ function drawXbarSCombinedChart({
   lclXArr,
   clS,
   uclSArr,
-  lclSArr
+  lclSArr,
+  splitAfterIndices = []
 }) {
   if (!chartCanvas) return;
 
-  // Keep annotation + split dropdowns in sync (consistent with other charts)
-  if (typeof populateAnnotationDateOptions === "function") {
-    populateAnnotationDateOptions(labels);
-  }
-  if (typeof populateSplitOptions === "function") {
-    populateSplitOptions(labels);
+  if (
+    typeof populateAnnotationDateOptions ===
+    "function"
+  ) {
+    populateAnnotationDateOptions(
+      labels
+    );
   }
 
-    // Use shared labels helper so defaults are written into the controls
+  if (
+    typeof populateSplitOptions ===
+    "function"
+  ) {
+    populateSplitOptions(
+      labels
+    );
+  }
 
   // -------------------------
   // 1) Main chart: X̄ chart
@@ -2716,130 +2950,247 @@ function drawXbarSCombinedChart({
     currentChart = null;
   }
 
-  const mainLabels = getChartLabels("X̄ chart", "Subgroup", "X̄");
+  const mainLabels =
+    getChartLabels(
+      "X̄ chart",
+      "Subgroup",
+      "X̄"
+    );
 
   const mainDatasets = [
     {
       label: "X̄",
       data: xbarVals,
-      borderColor: SPC_STYLE.seriesBlue,
+      borderColor:
+        SPC_STYLE.seriesBlue,
       borderWidth: 2,
       fill: false,
       pointRadius: 4,
-      pointBackgroundColor: pointColoursX,
-      pointBorderColor: pointColoursX,
+      pointBackgroundColor:
+        pointColoursX,
+      pointBorderColor:
+        pointColoursX,
       tension: 0.1
     },
+
     {
       label: "Centre line",
       data: clX,
-      borderColor: SPC_STYLE.centreRed,
+      borderColor:
+        SPC_STYLE.centreRed,
       borderDash: [6, 4],
       borderWidth: 2,
       pointRadius: 0,
-      pointHoverRadius: 0
+      pointHoverRadius: 0,
+
+      segment:
+        buildXbarSSplitSegmentStyle(
+          SPC_STYLE.centreRed,
+          splitAfterIndices
+        )
     },
+
     {
       label: "UCL",
       data: uclXArr,
-      borderColor: SPC_STYLE.limitGreen,
+      borderColor:
+        SPC_STYLE.limitGreen,
       borderDash: [4, 4],
       borderWidth: 2,
       pointRadius: 0,
-      pointHoverRadius: 0
+      pointHoverRadius: 0,
+
+      segment:
+        buildXbarSSplitSegmentStyle(
+          SPC_STYLE.limitGreen,
+          splitAfterIndices
+        )
     },
+
     {
       label: "LCL",
       data: lclXArr,
-      borderColor: SPC_STYLE.limitGreen,
+      borderColor:
+        SPC_STYLE.limitGreen,
       borderDash: [4, 4],
       borderWidth: 2,
       pointRadius: 0,
-      pointHoverRadius: 0
+      pointHoverRadius: 0,
+
+      segment:
+        buildXbarSSplitSegmentStyle(
+          SPC_STYLE.limitGreen,
+          splitAfterIndices
+        )
     }
   ];
 
   const centreLineLabelPlugin =
-  buildXmRMeanLabelPlugin();
+    buildXmRMeanLabelPlugin();
 
-  currentChart = new Chart(chartCanvas.getContext("2d"), {
-  type: "line",
-  data: {
-    labels,
-    datasets: mainDatasets
-  },
+  const splitMarkerPlugin =
+    buildXbarSSplitMarkerPlugin(
+      splitAfterIndices
+    );
 
-  plugins: [
-    centreLineLabelPlugin
-  ],
+  currentChart =
+    new Chart(
+      chartCanvas.getContext("2d"),
+      {
+        type: "line",
 
-  options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        title: buildChartTitleConfig(mainLabels.title),
-        legend: SPC_LEGEND,
-        annotation: {
-          annotations: (typeof buildAnnotationConfig === "function")
-            ? buildAnnotationConfig(labels)
-            : {}
+        data: {
+          labels,
+          datasets:
+            mainDatasets
+        },
+
+        plugins: [
+          centreLineLabelPlugin,
+          splitMarkerPlugin
+        ],
+
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+
+          plugins: {
+            title:
+              buildChartTitleConfig(
+                mainLabels.title
+              ),
+
+            legend:
+              SPC_LEGEND,
+
+            annotation: {
+              annotations:
+                (
+                  typeof buildAnnotationConfig ===
+                  "function"
+                )
+                  ? buildAnnotationConfig(
+                      labels
+                    )
+                  : {}
+            }
+          },
+
+          elements: {
+            point: {
+              radius: 0,
+              hoverRadius: 0
+            }
+          },
+
+          scales: (() => {
+            const axisSettings =
+              getAxisSettings();
+
+            return {
+              x:
+                buildCategoryXAxisConfig(
+                  mainLabels.xLabel,
+                  axisSettings.x,
+                  labels
+                ),
+
+              y:
+                buildAxisConfig(
+                  mainLabels.yLabel,
+                  axisSettings.y
+                )
+            };
+          })()
         }
-      },
-      elements: { point: { radius: 0, hoverRadius: 0 } },
-            scales: (() => {
-        const axisSettings = getAxisSettings();
-        return {
-          x: buildCategoryXAxisConfig(mainLabels.xLabel, axisSettings.x, labels),
-          y: buildAxisConfig(mainLabels.yLabel, axisSettings.y)
-        };
-      })()
-    }
-  });
+      }
+    );
 
   // -------------------------
-  // 2) Secondary chart: S chart (in MR panel)
+  // 2) Secondary chart: S chart
   // -------------------------
-  // Kill any existing MR/S chart first
   if (mrChart) {
     mrChart.destroy();
     mrChart = null;
   }
 
-  const showSecondary = showMRCheckbox ? showMRCheckbox.checked : true;
+  const showSecondary =
+    showMRCheckbox
+      ? showMRCheckbox.checked
+      : true;
 
   if (!showSecondary) {
     if (mrPanel) {
-      mrPanel.style.display = "none";
+      mrPanel.style.display =
+        "none";
     }
+
     return;
   }
 
-  // Show the panel and rename it (optional but avoids confusion)
   if (mrPanel) {
-    mrPanel.style.display = "block";
-    const strong = mrPanel.querySelector("strong");
-    if (strong) strong.textContent = "S chart:";
+    mrPanel.style.display =
+      "block";
+
+    const strong =
+      mrPanel.querySelector(
+        "strong"
+      );
+
+    if (strong) {
+      strong.textContent =
+        "S chart:";
+    }
   }
 
   if (!mrCanvas) return;
 
-  const sLabels = getChartLabels("S chart", "Subgroup", "S");
+  const sLabels =
+    getChartLabels(
+      "S chart",
+      "Subgroup",
+      "S"
+    );
 
-  // Use your existing helper so the styling matches
-  mrChart = drawSecondarySPCChart({
-    canvas: mrCanvas,
-    labels,
-    values: sVals,
-    pointColours: pointColoursS,
-    cl: clS,
-    ucl: uclSArr,
-    lcl: lclSArr,
-    title: sLabels.title,
-    xLabel: sLabels.xLabel,
-    yLabel: sLabels.yLabel,
-    suggestedMin: 0,
-    suggestedMax: undefined
-  });
+  mrChart =
+    drawSecondarySPCChart({
+      canvas:
+        mrCanvas,
+
+      labels,
+
+      values:
+        sVals,
+
+      pointColours:
+        pointColoursS,
+
+      cl:
+        clS,
+
+      ucl:
+        uclSArr,
+
+      lcl:
+        lclSArr,
+
+      title:
+        sLabels.title,
+
+      xLabel:
+        sLabels.xLabel,
+
+      yLabel:
+        sLabels.yLabel,
+
+      suggestedMin:
+        0,
+
+      suggestedMax:
+        undefined,
+
+      splitAfterIndices
+    });
 }
 
 
@@ -6203,52 +6554,95 @@ function sampleStdDev(arr) {
   return Math.sqrt(v);
 }
 
-function drawXbarSChart(points, baselineCount, labels) {
-  // Requires third column to be subgroup ID
-  if (!thirdSelect || !thirdSelect.value) {
-    showError("X̄–S chart needs a third column: Subgroup ID.");
+function drawXbarSChart(
+  points,
+  baselineCount,
+  labels
+) {
+  if (
+    !thirdSelect ||
+    !thirdSelect.value
+  ) {
+    showError(
+      "X̄–S chart needs a third column: Subgroup ID."
+    );
+
     return;
   }
 
-  const subgroupCol = thirdSelect.value;
+  const subgroupCol =
+    thirdSelect.value;
 
-  // Group measurements by subgroup
-  const groups = groupBySubgroup(points, subgroupCol);
-  const subgroupKeys = Array.from(groups.keys());
+  const groups =
+    groupBySubgroup(
+      points,
+      subgroupCol
+    );
+
+  const subgroupKeys =
+    Array.from(
+      groups.keys()
+    );
 
   const xbarVals = [];
   const sVals = [];
   const subgroupLabels = [];
   const subgroupSizes = [];
 
-  // Build subgroup summaries.
-  // Only finite measurements count toward subgroup size.
-  subgroupKeys.forEach((k) => {
-    const arr = groups.get(k) || [];
-    const vals =
-      arr
-        .map(p => p.y)
-        .filter(v => isFinite(v));
+  subgroupKeys.forEach(
+    (k) => {
+      const arr =
+        groups.get(k) || [];
 
-    if (vals.length < 2) return;
+      const vals =
+        arr
+          .map(
+            p => p.y
+          )
+          .filter(
+            v => isFinite(v)
+          );
 
-    const xbar = mean(vals);
-    const s = sampleStdDev(vals);
+      if (
+        vals.length < 2
+      ) {
+        return;
+      }
 
-    xbarVals.push(xbar);
-    sVals.push(s);
-    subgroupLabels.push(String(k));
-    subgroupSizes.push(vals.length);
-  });
+      xbarVals.push(
+        mean(vals)
+      );
 
-  if (xbarVals.length < 4) {
-    showError("X̄–S needs at least 4 subgroups.");
+      sVals.push(
+        sampleStdDev(vals)
+      );
+
+      subgroupLabels.push(
+        String(k)
+      );
+
+      subgroupSizes.push(
+        vals.length
+      );
+    }
+  );
+
+  if (
+    xbarVals.length < 4
+  ) {
+    showError(
+      "X̄–S needs at least 4 subgroups."
+    );
+
     return;
   }
 
-  const m = xbarVals.length;
+  const m =
+    xbarVals.length;
 
-  // ---- Segment definition from splits (apply to subgroups) ----
+  // --------------------------------
+  // Define process periods from splits
+  // --------------------------------
   let effectiveSplits =
     Array.isArray(splits)
       ? splits.slice()
@@ -6262,17 +6656,28 @@ function drawXbarSChart(points, baselineCount, labels) {
           i >= 0 &&
           i < m - 1
       )
-      .sort((a, b) => a - b);
+      .sort(
+        (a, b) => a - b
+      );
 
   const segmentStarts = [0];
   const segmentEnds = [];
 
-  effectiveSplits.forEach(idx => {
-    segmentEnds.push(idx);
-    segmentStarts.push(idx + 1);
-  });
+  effectiveSplits.forEach(
+    idx => {
+      segmentEnds.push(
+        idx
+      );
 
-  segmentEnds.push(m - 1);
+      segmentStarts.push(
+        idx + 1
+      );
+    }
+  );
+
+  segmentEnds.push(
+    m - 1
+  );
 
   const clX =
     new Array(m).fill(NaN);
@@ -6294,16 +6699,25 @@ function drawXbarSChart(points, baselineCount, labels) {
 
   const segmentStats = [];
 
+  // --------------------------------
+  // Calculate limits independently
+  // for every process period
+  // --------------------------------
   for (
-    let s = 0;
-    s < segmentStarts.length;
-    s++
+    let segmentIndex = 0;
+    segmentIndex <
+      segmentStarts.length;
+    segmentIndex++
   ) {
     const start =
-      segmentStarts[s];
+      segmentStarts[
+        segmentIndex
+      ];
 
     const end =
-      segmentEnds[s];
+      segmentEnds[
+        segmentIndex
+      ];
 
     const segX =
       xbarVals.slice(
@@ -6325,7 +6739,7 @@ function drawXbarSChart(points, baselineCount, labels) {
 
     const segBaselineCountUsed =
       (
-        s === 0 &&
+        segmentIndex === 0 &&
         baselineCount &&
         baselineCount >= 2
       )
@@ -6353,9 +6767,6 @@ function drawXbarSChart(points, baselineCount, labels) {
         segBaselineCountUsed
       );
 
-    // Overall process mean.
-    // With unequal subgroup sizes, larger subgroups correctly
-    // contribute more observations to the estimate.
     const totalBaselineN =
       baseN.reduce(
         (acc, n) =>
@@ -6365,9 +6776,14 @@ function drawXbarSChart(points, baselineCount, labels) {
 
     const weightedBaselineSum =
       baseX.reduce(
-        (acc, xbar, i) =>
+        (
+          acc,
+          xbar,
+          i
+        ) =>
           acc +
-          xbar * baseN[i],
+          xbar *
+          baseN[i],
         0
       );
 
@@ -6377,8 +6793,6 @@ function drawXbarSChart(points, baselineCount, labels) {
           totalBaselineN
         : NaN;
 
-    // Estimate the underlying process standard deviation
-    // using the subgroup-size-adjusted S-bar method.
     const sigmaHat =
       estimateXbarSSigmaFromSbar(
         baseS,
@@ -6386,12 +6800,17 @@ function drawXbarSChart(points, baselineCount, labels) {
       );
 
     if (
-      !Number.isFinite(processMean) ||
-      !Number.isFinite(sigmaHat)
+      !Number.isFinite(
+        processMean
+      ) ||
+      !Number.isFinite(
+        sigmaHat
+      )
     ) {
       showError(
         "Could not calculate X̄–S limits for these subgroup sizes."
       );
+
       return;
     }
 
@@ -6402,7 +6821,6 @@ function drawXbarSChart(points, baselineCount, labels) {
         segBaselineCountUsed
     });
 
-    // Each subgroup receives limits based on its own size.
     for (
       let i = start;
       i <= end;
@@ -6422,13 +6840,15 @@ function drawXbarSChart(points, baselineCount, labels) {
         showError(
           "Could not calculate X̄–S constants for one or more subgroup sizes."
         );
+
         return;
       }
 
       const c5 =
         Math.sqrt(
           Math.max(
-            1 - c4 * c4,
+            1 -
+            c4 * c4,
             0
           )
         );
@@ -6485,339 +6905,433 @@ function drawXbarSChart(points, baselineCount, labels) {
       ? shouldFlagSpecialCauseOnChart()
       : true;
 
-  const axX =
-    analyzeAttributeChart({
-      chartType: "xbars",
-      labels: subgroupLabels,
-      values: xbarVals,
-      cl: clX,
-      ucl: uclXArr,
-      lcl: lclXArr
-    });
-
-  const axS =
-    analyzeAttributeChart({
-      chartType: "xbars",
-      labels: subgroupLabels,
-      values: sVals,
-      cl: clS,
-      ucl: uclSArr,
-      lcl: lclSArr
-    });
-
   const pointColoursX =
-    xbarVals.map(
-      (v, i) => {
-        if (!flagOnChart) {
-          return SPC_STYLE.seriesBlue;
-        }
-
-        if (
-          axX.flags
-            ?.beyond
-            ?.[i]
-        ) {
-          return SPC_STYLE.pointBeyond;
-        }
-
-        if (
-          axX.flags
-            ?.special
-            ?.[i]
-        ) {
-          return SPC_STYLE.pointSpecial;
-        }
-
-        return SPC_STYLE.seriesBlue;
-      }
+    new Array(m).fill(
+      SPC_STYLE.seriesBlue
     );
 
   const pointColoursS =
-    sVals.map(
-      (v, i) => {
-        if (!flagOnChart) {
-          return SPC_STYLE.seriesBlue;
-        }
-
-        if (
-          axS.flags
-            ?.beyond
-            ?.[i]
-        ) {
-          return SPC_STYLE.pointBeyond;
-        }
-
-        if (
-          axS.flags
-            ?.special
-            ?.[i]
-        ) {
-          return SPC_STYLE.pointSpecial;
-        }
-
-        return SPC_STYLE.seriesBlue;
-      }
+    new Array(m).fill(
+      SPC_STYLE.seriesBlue
     );
 
-  drawXbarSCombinedChart({
-    labels: subgroupLabels,
-    xbarVals,
-    sVals,
-    pointColoursX,
-    pointColoursS,
-    clX,
-    uclXArr,
-    lclXArr,
-    clS,
-    uclSArr,
-    lclSArr
-  });
+  const periodAnalyses = [];
 
-  // Latest period analysis
-  const lastSeg =
-    segmentStarts.length - 1;
+  // --------------------------------
+  // Analyse each period independently.
+  // Rules restart after every split.
+  // --------------------------------
+  for (
+    let segmentIndex = 0;
+    segmentIndex <
+      segmentStarts.length;
+    segmentIndex++
+  ) {
+    const start =
+      segmentStarts[
+        segmentIndex
+      ];
 
-  const start =
-    segmentStarts[lastSeg];
+    const end =
+      segmentEnds[
+        segmentIndex
+      ];
 
-  const end =
-    segmentEnds[lastSeg];
+    const localLabels =
+      subgroupLabels.slice(
+        start,
+        end + 1
+      );
 
-  lastXbarSAnalysis = {
-    xbar:
+    const xAnalysis =
       analyzeAttributeChart({
-        chartType: "xbars",
+        chartType:
+          "xbars",
+
         labels:
-          subgroupLabels.slice(
-            start,
-            end + 1
-          ),
+          localLabels,
+
         values:
           xbarVals.slice(
             start,
             end + 1
           ),
+
         cl:
           clX.slice(
             start,
             end + 1
           ),
+
         ucl:
           uclXArr.slice(
             start,
             end + 1
           ),
+
         lcl:
           lclXArr.slice(
             start,
             end + 1
           )
-      }),
+      });
 
-    s:
+    const sAnalysis =
       analyzeAttributeChart({
-        chartType: "xbars",
+        chartType:
+          "xbars",
+
         labels:
-          subgroupLabels.slice(
-            start,
-            end + 1
-          ),
+          localLabels,
+
         values:
           sVals.slice(
             start,
             end + 1
           ),
+
         cl:
           clS.slice(
             start,
             end + 1
           ),
+
         ucl:
           uclSArr.slice(
             start,
             end + 1
           ),
+
         lcl:
           lclSArr.slice(
             start,
             end + 1
           )
-      })
-  };
+      });
 
-  lastXbarSAnalysis.periodIndex =
-    lastSeg + 1;
+    if (flagOnChart) {
+      for (
+        let j = 0;
+        j <=
+          end - start;
+        j++
+      ) {
+        const globalIndex =
+          start + j;
 
-  lastXbarSAnalysis.periodCount =
-    segmentStarts.length;
+        if (
+          xAnalysis.flags
+            ?.beyond
+            ?.[j]
+        ) {
+          pointColoursX[
+            globalIndex
+          ] =
+            SPC_STYLE.pointBeyond;
 
-  lastXbarSAnalysis.startIndex =
-    start;
+        } else if (
+          xAnalysis.flags
+            ?.special
+            ?.[j]
+        ) {
+          pointColoursX[
+            globalIndex
+          ] =
+            SPC_STYLE.pointSpecial;
+        }
 
-  lastXbarSAnalysis.endIndex =
-    end;
+        if (
+          sAnalysis.flags
+            ?.beyond
+            ?.[j]
+        ) {
+          pointColoursS[
+            globalIndex
+          ] =
+            SPC_STYLE.pointBeyond;
 
-  lastXbarSAnalysis.labelStart =
-    subgroupLabels[start];
+        } else if (
+          sAnalysis.flags
+            ?.special
+            ?.[j]
+        ) {
+          pointColoursS[
+            globalIndex
+          ] =
+            SPC_STYLE.pointSpecial;
+        }
+      }
+    }
 
-  lastXbarSAnalysis.labelEnd =
-    subgroupLabels[end];
+    const periodSizes =
+      subgroupSizes.slice(
+        start,
+        end + 1
+      );
 
-  const latestSizes =
-    subgroupSizes.slice(
-      start,
-      end + 1
-    );
+    const uniqueSizes =
+      Array.from(
+        new Set(
+          periodSizes
+        )
+      );
 
-  const latestUniqueSizes =
-    Array.from(
-      new Set(latestSizes)
-    );
+    const variableSubgroupSizes =
+      uniqueSizes.length > 1;
 
-  const variableSubgroupSizes =
-    latestUniqueSizes.length > 1;
+    const periodXUcl =
+      uclXArr
+        .slice(
+          start,
+          end + 1
+        )
+        .filter(
+          Number.isFinite
+        );
 
-  const latestXUcl =
-    uclXArr
-      .slice(start, end + 1)
-      .filter(Number.isFinite);
+    const periodXLcl =
+      lclXArr
+        .slice(
+          start,
+          end + 1
+        )
+        .filter(
+          Number.isFinite
+        );
 
-  const latestXLcl =
-    lclXArr
-      .slice(start, end + 1)
-      .filter(Number.isFinite);
+    const periodSCl =
+      clS
+        .slice(
+          start,
+          end + 1
+        )
+        .filter(
+          Number.isFinite
+        );
 
-  const latestSCl =
-    clS
-      .slice(start, end + 1)
-      .filter(Number.isFinite);
+    const periodSUcl =
+      uclSArr
+        .slice(
+          start,
+          end + 1
+        )
+        .filter(
+          Number.isFinite
+        );
 
-  const latestSUcl =
-    uclSArr
-      .slice(start, end + 1)
-      .filter(Number.isFinite);
+    const periodSLcl =
+      lclSArr
+        .slice(
+          start,
+          end + 1
+        )
+        .filter(
+          Number.isFinite
+        );
 
-  const latestSLcl =
-    lclSArr
-      .slice(start, end + 1)
-      .filter(Number.isFinite);
+    const stats =
+      segmentStats[
+        segmentIndex
+      ] || {};
 
-  const latestSegmentStats =
-    segmentStats[lastSeg] || {};
+    periodAnalyses.push({
+      xbar:
+        xAnalysis,
 
-  lastXbarSAnalysis.stats = {
-    subgroupSize:
-      variableSubgroupSizes
-        ? null
-        : latestSizes[0],
+      s:
+        sAnalysis,
 
-    subgroupSizes:
-      latestSizes.slice(),
+      periodIndex:
+        segmentIndex + 1,
 
-    subgroupSizeMin:
-      Math.min(...latestSizes),
+      periodCount:
+        segmentStarts.length,
 
-    subgroupSizeMax:
-      Math.max(...latestSizes),
+      startIndex:
+        start,
 
-    variableSubgroupSizes,
+      endIndex:
+        end,
 
-    processSigma:
-      latestSegmentStats.sigmaHat,
+      labelStart:
+        subgroupLabels[start],
 
-    baselineCountUsed:
-      latestSegmentStats.baselineCountUsed,
+      labelEnd:
+        subgroupLabels[end],
 
-    xbarbar:
-      latestSegmentStats.processMean,
+      stats: {
+        subgroupSize:
+          variableSubgroupSizes
+            ? null
+            : periodSizes[0],
 
-    sbar:
-      variableSubgroupSizes
-        ? null
-        : clS[start],
+        subgroupSizes:
+          periodSizes.slice(),
 
-    uclX:
-      variableSubgroupSizes
-        ? null
-        : uclXArr[start],
+        subgroupSizeMin:
+          Math.min(
+            ...periodSizes
+          ),
 
-    lclX:
-      variableSubgroupSizes
-        ? null
-        : lclXArr[start],
+        subgroupSizeMax:
+          Math.max(
+            ...periodSizes
+          ),
 
-    uclS:
-      variableSubgroupSizes
-        ? null
-        : uclSArr[start],
+        variableSubgroupSizes,
 
-    lclS:
-      variableSubgroupSizes
-        ? null
-        : lclSArr[start],
+        processSigma:
+          stats.sigmaHat,
 
-    xUclMin:
-      latestXUcl.length
-        ? Math.min(...latestXUcl)
-        : NaN,
+        baselineCountUsed:
+          stats.baselineCountUsed,
 
-    xUclMax:
-      latestXUcl.length
-        ? Math.max(...latestXUcl)
-        : NaN,
+        xbarbar:
+          stats.processMean,
 
-    xLclMin:
-      latestXLcl.length
-        ? Math.min(...latestXLcl)
-        : NaN,
+        sbar:
+          variableSubgroupSizes
+            ? null
+            : clS[start],
 
-    xLclMax:
-      latestXLcl.length
-        ? Math.max(...latestXLcl)
-        : NaN,
+        uclX:
+          variableSubgroupSizes
+            ? null
+            : uclXArr[start],
 
-    sClMin:
-      latestSCl.length
-        ? Math.min(...latestSCl)
-        : NaN,
+        lclX:
+          variableSubgroupSizes
+            ? null
+            : lclXArr[start],
 
-    sClMax:
-      latestSCl.length
-        ? Math.max(...latestSCl)
-        : NaN,
+        uclS:
+          variableSubgroupSizes
+            ? null
+            : uclSArr[start],
 
-    sUclMin:
-      latestSUcl.length
-        ? Math.min(...latestSUcl)
-        : NaN,
+        lclS:
+          variableSubgroupSizes
+            ? null
+            : lclSArr[start],
 
-    sUclMax:
-      latestSUcl.length
-        ? Math.max(...latestSUcl)
-        : NaN,
+        xUclMin:
+          periodXUcl.length
+            ? Math.min(
+                ...periodXUcl
+              )
+            : NaN,
 
-    sLclMin:
-      latestSLcl.length
-        ? Math.min(...latestSLcl)
-        : NaN,
+        xUclMax:
+          periodXUcl.length
+            ? Math.max(
+                ...periodXUcl
+              )
+            : NaN,
 
-    sLclMax:
-      latestSLcl.length
-        ? Math.max(...latestSLcl)
-        : NaN
-  };
+        xLclMin:
+          periodXLcl.length
+            ? Math.min(
+                ...periodXLcl
+              )
+            : NaN,
+
+        xLclMax:
+          periodXLcl.length
+            ? Math.max(
+                ...periodXLcl
+              )
+            : NaN,
+
+        sClMin:
+          periodSCl.length
+            ? Math.min(
+                ...periodSCl
+              )
+            : NaN,
+
+        sClMax:
+          periodSCl.length
+            ? Math.max(
+                ...periodSCl
+              )
+            : NaN,
+
+        sUclMin:
+          periodSUcl.length
+            ? Math.min(
+                ...periodSUcl
+              )
+            : NaN,
+
+        sUclMax:
+          periodSUcl.length
+            ? Math.max(
+                ...periodSUcl
+              )
+            : NaN,
+
+        sLclMin:
+          periodSLcl.length
+            ? Math.min(
+                ...periodSLcl
+              )
+            : NaN,
+
+        sLclMax:
+          periodSLcl.length
+            ? Math.max(
+                ...periodSLcl
+              )
+            : NaN
+      }
+    });
+  }
+
+  // --------------------------------
+  // Draw charts
+  // --------------------------------
+  drawXbarSCombinedChart({
+    labels:
+      subgroupLabels,
+
+    xbarVals,
+    sVals,
+
+    pointColoursX,
+    pointColoursS,
+
+    clX,
+    uclXArr,
+    lclXArr,
+
+    clS,
+    uclSArr,
+    lclSArr,
+
+    splitAfterIndices:
+      effectiveSplits
+  });
+
+  // Keep the existing helper contract:
+  // lastXbarSAnalysis remains the
+  // latest process period.
+  lastXbarSAnalysis =
+    periodAnalyses.length
+      ? periodAnalyses[
+          periodAnalyses.length - 1
+        ]
+      : null;
 
   if (
     typeof renderXbarSSummary ===
     "function"
   ) {
     renderXbarSSummary(
-      lastXbarSAnalysis,
+      periodAnalyses,
       subgroupLabels.length
     );
   }
 }
-
 
 // -----------------------------
 // T chart: time between events (Exponential limits via percentiles)
@@ -10023,259 +10537,337 @@ if (target !== null) {
 }
 
 function renderXbarSSummary(
-  latestAnalysis,
+  periodAnalyses,
   totalSubgroups
 ) {
-  if (
-    !summaryDiv ||
-    !latestAnalysis
-  ) {
+  if (!summaryDiv) return;
+
+  const periods =
+    Array.isArray(
+      periodAnalyses
+    )
+      ? periodAnalyses.filter(
+          Boolean
+        )
+      : periodAnalyses
+        ? [periodAnalyses]
+        : [];
+
+  if (!periods.length) {
     return;
   }
-
-  const x =
-    latestAnalysis.xbar;
-
-  const s =
-    latestAnalysis.s;
-
-  const xStable =
-    !!x?.isStable;
-
-  const sStable =
-    !!s?.isStable;
-
-  const periodIndex =
-    latestAnalysis.periodIndex || 1;
-
-  const periodCount =
-    latestAnalysis.periodCount || 1;
-
-  const startIndex =
-    latestAnalysis.startIndex ?? 0;
-
-  const endIndex =
-    latestAnalysis.endIndex ?? 0;
-
-  const labelStart =
-    latestAnalysis.labelStart;
-
-  const labelEnd =
-    latestAnalysis.labelEnd;
-
-  const stats =
-    latestAnalysis.stats || {};
 
   const fmt =
     (value) =>
       Number.isFinite(value)
-        ? Number(value).toFixed(3)
+        ? Number(value)
+            .toFixed(3)
         : "not available";
 
-  const variableSubgroupSizes =
-    !!stats.variableSubgroupSizes;
-
-  const subgroupSizeText =
+  const signalText =
     (
-      variableSubgroupSizes &&
-      Number.isFinite(
-        stats.subgroupSizeMin
-      ) &&
-      Number.isFinite(
-        stats.subgroupSizeMax
-      )
-    )
-      ? (
-          `${stats.subgroupSizeMin}–` +
-          `${stats.subgroupSizeMax} ` +
-          "(varies by subgroup)"
+      analysis,
+      stableText
+    ) => {
+      if (
+        analysis?.isStable
+      ) {
+        return stableText;
+      }
+
+      const signals =
+        Array.isArray(
+          analysis?.signals
         )
-      : Number.isFinite(
-          stats.subgroupSize
-        )
-        ? `${stats.subgroupSize}`
-        : "not stated";
+          ? analysis.signals
+              .filter(Boolean)
+          : [];
 
-  const xbarbarText =
-    fmt(stats.xbarbar);
-
-  const sigmaText =
-    fmt(stats.processSigma);
-
-  const base =
-    `subgroups ${startIndex + 1}–${endIndex + 1}`;
-
-  const rangeText =
-    (
-      typeof getAxisType ===
-        "function" &&
-      getAxisType() === "date" &&
-      labelStart !== undefined &&
-      labelEnd !== undefined
-    )
-      ? (
-          `${base} (` +
-          `${formatDateOnlyLabel(labelStart)} ` +
-          `to ` +
-          `${formatDateOnlyLabel(labelEnd)})`
-        )
-      : base;
-
-  const xSignals =
-    Array.isArray(x?.signals)
-      ? x.signals
-      : [];
-
-  const sSignals =
-    Array.isArray(s?.signals)
-      ? s.signals
-      : [];
-
-  let overallInterpretation = "";
-
-  if (
-    xStable &&
-    sStable
-  ) {
-    overallInterpretation =
-      "Both the subgroup averages (X̄) and within-subgroup variation (S) look stable in the latest period. " +
-      "No clear special-cause signals were detected in the latest X̄–S period. " +
-      "This suggests the process may be behaving consistently, but it should still be monitored and interpreted with local context.";
-
-  } else if (
-    !xStable &&
-    sStable
-  ) {
-    overallInterpretation =
-      "The subgroup averages (X̄) show special-cause signals, but the within-subgroup variation (S) looks stable. " +
-      "This suggests that the process level may have shifted while within-group variation stayed broadly consistent.";
-
-  } else if (
-    xStable &&
-    !sStable
-  ) {
-    overallInterpretation =
-      "The subgroup averages (X̄) look stable, but the within-subgroup variation (S) shows special-cause signals. " +
-      "This suggests the average level may be steady while consistency within subgroups has changed.";
-
-  } else {
-    overallInterpretation =
-      "Both the subgroup averages (X̄) and the within-subgroup variation (S) show special-cause signals. " +
-      "This suggests the process level and its consistency may both have changed.";
-  }
+      return signals.length
+        ? (
+            `signal(s): ` +
+            `${signals.join("; ")}.`
+          )
+        : (
+            "one or more special-cause signals were detected."
+          );
+    };
 
   let html =
-    `<h3>X̄–S summary (latest period)</h3>`;
+    `<h3>X̄–S summary</h3>`;
 
   html +=
     `<p>Total number of subgroups: ` +
     `<strong>${totalSubgroups}</strong>. ` +
-    `Showing interpretation for ` +
-    `<strong>period ${periodIndex} of ${periodCount}</strong>.</p>`;
+    `The chart is divided into ` +
+    `<strong>${periods.length}</strong> ` +
+    `period${periods.length === 1 ? "" : "s"} ` +
+    `(based on the baseline and any splits).</p>`;
 
-  html +=
-    `<div class="pdf-avoid-break">`;
+  periods.forEach(
+    (
+      period,
+      index
+    ) => {
+      const x =
+        period.xbar;
 
-  html +=
-    `<ul>`;
+      const s =
+        period.s;
 
-  html +=
-    `<li><strong>Coverage:</strong> ` +
-    `${rangeText}.</li>`;
+      const stats =
+        period.stats || {};
 
-  html +=
-    `<li><strong>Subgroup size:</strong> ` +
-    `${subgroupSizeText} ` +
-    `measurement${stats.subgroupSize === 1 ? "" : "s"} ` +
-    `per subgroup.</li>`;
+      const xStable =
+        !!x?.isStable;
 
-  if (variableSubgroupSizes) {
-    html +=
-      `<li>` +
-      `<strong>X̄ chart centre line:</strong> ` +
-      `${xbarbarText}; ` +
-      `<strong>control limits vary with subgroup size:</strong> ` +
-      `LCL range = ${fmt(stats.xLclMin)}–${fmt(stats.xLclMax)}, ` +
-      `UCL range = ${fmt(stats.xUclMin)}–${fmt(stats.xUclMax)}.` +
-      `</li>`;
+      const sStable =
+        !!s?.isStable;
 
-    html +=
-      `<li>` +
-      `<strong>S chart:</strong> ` +
-      `the expected S and its control limits vary with subgroup size. ` +
-      `Centre-line range = ${fmt(stats.sClMin)}–${fmt(stats.sClMax)}; ` +
-      `LCL range = ${fmt(stats.sLclMin)}–${fmt(stats.sLclMax)}; ` +
-      `UCL range = ${fmt(stats.sUclMin)}–${fmt(stats.sUclMax)}.` +
-      `</li>`;
+      const variableSubgroupSizes =
+        !!stats.variableSubgroupSizes;
 
-    html +=
-      `<li>` +
-      `<strong>Estimated process standard deviation:</strong> ` +
-      `${sigmaText}. ` +
-      `SimpleSPC uses the actual size of each subgroup when calculating its limits.` +
-      `</li>`;
+      const subgroupSizeText =
+        (
+          variableSubgroupSizes &&
+          Number.isFinite(
+            stats.subgroupSizeMin
+          ) &&
+          Number.isFinite(
+            stats.subgroupSizeMax
+          )
+        )
+          ? (
+              `${stats.subgroupSizeMin}–` +
+              `${stats.subgroupSizeMax} ` +
+              `(varies by subgroup)`
+            )
+          : Number.isFinite(
+              stats.subgroupSize
+            )
+            ? `${stats.subgroupSize}`
+            : "not stated";
+
+      const coverage =
+        (
+          period.labelStart !==
+            undefined &&
+          period.labelEnd !==
+            undefined
+        )
+          ? (
+              `${period.labelStart} ` +
+              `to ` +
+              `${period.labelEnd}`
+            )
+          : (
+              `subgroups ` +
+              `${period.startIndex + 1}–` +
+              `${period.endIndex + 1}`
+            );
+
+      let interpretation =
+        "";
+
+      if (
+        xStable &&
+        sStable
+      ) {
+        interpretation =
+          "Both the subgroup averages (X̄) and within-subgroup variation (S) look stable in this period.";
+
+      } else if (
+        !xStable &&
+        sStable
+      ) {
+        interpretation =
+          "The subgroup averages (X̄) show special-cause signals, while within-subgroup variation (S) looks stable.";
+
+      } else if (
+        xStable &&
+        !sStable
+      ) {
+        interpretation =
+          "The subgroup averages (X̄) look stable, while within-subgroup variation (S) shows special-cause signals.";
+
+      } else {
+        interpretation =
+          "Both the subgroup averages (X̄) and within-subgroup variation (S) show special-cause signals.";
+      }
+
+      html +=
+        `<div class="pdf-avoid-break">`;
+
+      html +=
+        `<h4>Period ${index + 1} of ` +
+        `${periods.length}: ` +
+        `${coverage}</h4>`;
+
+      html += `<ul>`;
+
+      html +=
+        `<li>` +
+        `<strong>Subgroup size:</strong> ` +
+        `${subgroupSizeText} ` +
+        `measurement${stats.subgroupSize === 1 ? "" : "s"} ` +
+        `per subgroup.` +
+        `</li>`;
+
+      if (
+        index === 0 &&
+        Number.isFinite(
+          stats.baselineCountUsed
+        ) &&
+        stats.baselineCountUsed <
+          (
+            period.endIndex -
+            period.startIndex +
+            1
+          )
+      ) {
+        html +=
+          `<li>` +
+          `<strong>Baseline:</strong> ` +
+          `limits for this first period were estimated from the first ` +
+          `${stats.baselineCountUsed} ` +
+          `subgroup${stats.baselineCountUsed === 1 ? "" : "s"}.` +
+          `</li>`;
+      }
+
+      if (
+        variableSubgroupSizes
+      ) {
+        html +=
+          `<li>` +
+          `<strong>X̄ chart centre line:</strong> ` +
+          `${fmt(stats.xbarbar)}; ` +
+          `<strong>control limits vary with subgroup size:</strong> ` +
+          `LCL range = ` +
+          `${fmt(stats.xLclMin)}–${fmt(stats.xLclMax)}, ` +
+          `UCL range = ` +
+          `${fmt(stats.xUclMin)}–${fmt(stats.xUclMax)}.` +
+          `</li>`;
+
+        html +=
+          `<li>` +
+          `<strong>S chart:</strong> ` +
+          `the expected S and its control limits vary with subgroup size. ` +
+          `Centre-line range = ` +
+          `${fmt(stats.sClMin)}–${fmt(stats.sClMax)}; ` +
+          `LCL range = ` +
+          `${fmt(stats.sLclMin)}–${fmt(stats.sLclMax)}; ` +
+          `UCL range = ` +
+          `${fmt(stats.sUclMin)}–${fmt(stats.sUclMax)}.` +
+          `</li>`;
+
+        html +=
+          `<li>` +
+          `<strong>Estimated process standard deviation:</strong> ` +
+          `${fmt(stats.processSigma)}.` +
+          `</li>`;
+
+      } else {
+        html +=
+          `<li>` +
+          `<strong>X̄ chart centre line:</strong> ` +
+          `${fmt(stats.xbarbar)}; limits: ` +
+          `LCL = ${fmt(stats.lclX)}, ` +
+          `UCL = ${fmt(stats.uclX)}.` +
+          `</li>`;
+
+        html +=
+          `<li>` +
+          `<strong>S chart centre line:</strong> ` +
+          `${fmt(stats.sbar)}; limits: ` +
+          `LCL = ${fmt(stats.lclS)}, ` +
+          `UCL = ${fmt(stats.uclS)}.` +
+          `</li>`;
+      }
+
+      html +=
+        `<li>` +
+        `<strong>X̄ chart:</strong> ` +
+        `${signalText(
+          x,
+          "stable (no clear signal of change in subgroup averages)."
+        )}` +
+        `</li>`;
+
+      html +=
+        `<li>` +
+        `<strong>S chart:</strong> ` +
+        `${signalText(
+          s,
+          "stable (no clear signal of change in within-subgroup variation)."
+        )}` +
+        `</li>`;
+
+      html +=
+        `<li>` +
+        `<strong>Interpretation:</strong> ` +
+        `${interpretation}` +
+        `</li>`;
+
+      html += `</ul>`;
+      html += `</div>`;
+    }
+  );
+
+  const latest =
+    periods[
+      periods.length - 1
+    ];
+
+  const latestXStable =
+    !!latest
+      ?.xbar
+      ?.isStable;
+
+  const latestSStable =
+    !!latest
+      ?.s
+      ?.isStable;
+
+  let latestText = "";
+
+  if (
+    latestXStable &&
+    latestSStable
+  ) {
+    latestText =
+      "The latest period looks stable on both parts of the X̄–S chart. " +
+      "That means the current process level and within-subgroup variation are behaving broadly consistently under the current rule settings.";
+
+  } else if (
+    !latestXStable &&
+    latestSStable
+  ) {
+    latestText =
+      "The latest period shows possible change in the subgroup averages, while within-subgroup variation remains stable.";
+
+  } else if (
+    latestXStable &&
+    !latestSStable
+  ) {
+    latestText =
+      "The latest period shows possible change in within-subgroup variation, while the subgroup averages remain stable.";
 
   } else {
-    html +=
-      `<li>` +
-      `<strong>X̄ chart centre line:</strong> ` +
-      `${xbarbarText}; limits: ` +
-      `LCL = ${fmt(stats.lclX)}, ` +
-      `UCL = ${fmt(stats.uclX)}.` +
-      `</li>`;
-
-    html +=
-      `<li>` +
-      `<strong>S chart centre line:</strong> ` +
-      `${fmt(stats.sbar)}; limits: ` +
-      `LCL = ${fmt(stats.lclS)}, ` +
-      `UCL = ${fmt(stats.uclS)}.` +
-      `</li>`;
-  }
-
-  if (xStable) {
-    html +=
-      `<li>` +
-      `<strong>X̄ chart:</strong> ` +
-      `stable (no clear signal of change in subgroup averages).` +
-      `</li>`;
-  } else {
-    html +=
-      `<li>` +
-      `<strong>X̄ chart:</strong> ` +
-      `signal(s): ${xSignals.join("; ")}.` +
-      `</li>`;
-  }
-
-  if (sStable) {
-    html +=
-      `<li>` +
-      `<strong>S chart:</strong> ` +
-      `stable (no clear signal of change in within-subgroup variation).` +
-      `</li>`;
-  } else {
-    html +=
-      `<li>` +
-      `<strong>S chart:</strong> ` +
-      `signal(s): ${sSignals.join("; ")}.` +
-      `</li>`;
+    latestText =
+      "The latest period shows possible special-cause variation in both the subgroup averages and within-subgroup variation.";
   }
 
   html +=
-    `<li>` +
-    `<strong>Interpretation:</strong> ` +
-    `${overallInterpretation}` +
-    `</li>`;
-
-  html +=
-    `</ul>`;
-
-  html +=
+    `<div class="pdf-avoid-break">` +
+    `<p><strong>Latest period:</strong> ` +
+    `${latestText}</p>` +
     `</div>`;
 
   summaryDiv.innerHTML =
     html;
 }
+
+
 // Approximate standard normal CDF Φ(z)
 function normalCdf(z) {
   // Abramowitz & Stegun approximation
