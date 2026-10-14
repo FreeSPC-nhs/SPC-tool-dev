@@ -7940,41 +7940,53 @@ function renderAttributeMultiSummary(segmentAnalyses, totalPoints) {
 
       if (d.status === "overdispersed") {
         html +=
-          `<li><strong>P vs P′ check:</strong> ` +
-          `Observed variation is <strong>${ratioText}%</strong> of that expected from the binomial model, ` +
-          `which is above the diagnostic upper limit of ${upperText}%. ` +
-          `<strong>The data show overdispersion, so a Laney P′ chart should be considered.</strong> ` +
-          `An ordinary P chart may give limits that are too narrow and therefore too many false signals.` +
-          `<div style="margin-top:0.55rem;">` +
-          `<button type="button" onclick="switchPToPPrime()">` +
-          `Switch to P′ chart` +
-          `</button>` +
-          `</div>` +
-          `</li>`;
+  `<li>` +
+  `<strong>P′ may be a better fit for these data.</strong> ` +
+  `The proportions vary more from point to point than a standard P chart expects for these sample sizes. ` +
+  `This can make a standard P chart produce limits that are too narrow and create extra alerts. ` +
+  `A P′ chart adjusts the limits for this extra variation while keeping the same proportions and centre line.` +
+  `<div style="margin-top:0.45rem; font-size:0.92em;">` +
+  `<strong>Technical check:</strong> observed variation = ${ratioText}% of expected; ` +
+  `diagnostic upper limit = ${upperText}%.` +
+  `</div>` +
+  `<div style="margin-top:0.55rem;">` +
+  `<button type="button" onclick="switchPToPPrime()">` +
+  `Use P′ chart instead` +
+  `</button>` +
+  `</div>` +
+  `</li>`;
 
       } else if (
         d.status === "underdispersed"
       ) {
         html +=
-          `<li><strong>P vs P′ check:</strong> ` +
-          `Observed variation is <strong>${ratioText}%</strong> of that expected from the binomial model, ` +
-          `which is below the diagnostic lower limit of ${lowerText}%. ` +
-          `<strong>The data show underdispersion, so a Laney P′ chart should be considered.</strong> ` +
-          `An ordinary P chart may give limits that are too wide and potentially hide unusual variation.` +
-          `<div style="margin-top:0.55rem;">` +
-          `<button type="button" onclick="switchPToPPrime()">` +
-          `Switch to P′ chart` +
-          `</button>` +
-          `</div>` +
-          `</li>`;
+  `<li>` +
+  `<strong>P′ may be a better fit for these data.</strong> ` +
+  `The proportions vary less from point to point than a standard P chart expects. ` +
+  `This can make standard P-chart limits too wide and make genuine changes harder to detect. ` +
+  `A P′ chart adjusts the limits to better match the variation actually seen in the data.` +
+  `<div style="margin-top:0.45rem; font-size:0.92em;">` +
+  `<strong>Technical check:</strong> observed variation = ${ratioText}% of expected; ` +
+  `diagnostic lower limit = ${lowerText}%.` +
+  `</div>` +
+  `<div style="margin-top:0.55rem;">` +
+  `<button type="button" onclick="switchPToPPrime()">` +
+  `Use P′ chart instead` +
+  `</button>` +
+  `</div>` +
+  `</li>`;
 
       } else {
         html +=
-          `<li><strong>P vs P′ check:</strong> ` +
-          `Observed variation is <strong>${ratioText}%</strong> of that expected from the binomial model. ` +
-          `This is within the diagnostic range of ${lowerText}%–${upperText}%, ` +
-          `so there is no clear dispersion-based reason to prefer P′ over the standard P chart.` +
-          `</li>`;
+  `<li>` +
+  `<strong>A standard P chart looks appropriate for these data.</strong> ` +
+  `The amount of variation is within the range expected for proportion data of these sample sizes, ` +
+  `so there is no clear reason to use a P′ chart instead.` +
+  `<div style="margin-top:0.45rem; font-size:0.92em;">` +
+  `<strong>Technical check:</strong> observed variation = ${ratioText}% of expected; ` +
+  `expected range = ${lowerText}%–${upperText}%.` +
+  `</div>` +
+  `</li>`;
       }
     }
 
@@ -7986,21 +7998,25 @@ function renderAttributeMultiSummary(segmentAnalyses, totalPoints) {
       let adjustmentText = "";
 
       if (st.sigmaZ > 1) {
-        adjustmentText =
-          "The observed variation is greater than a standard P chart expects, so the P′ limits are wider.";
-
-      } else if (st.sigmaZ < 1) {
-        adjustmentText =
-          "The observed variation is smaller than a standard P chart expects, so the P′ limits are narrower.";
-
-      } else {
-        adjustmentText =
-          "The observed variation is very close to that expected by a standard P chart.";
-      }
+  adjustmentText =
+    "These data vary more than a standard P chart expects, so the P′ chart uses wider control limits.";
+} else if (st.sigmaZ < 1) {
+  adjustmentText =
+    "These data vary less than a standard P chart expects, so the P′ chart uses narrower control limits.";
+} else {
+  adjustmentText =
+    "The amount of variation is very close to what a standard P chart expects, so the adjustment is small.";
+}
 
       html +=
-        `<li><strong>Laney adjustment (Sigma Z):</strong> ` +
-        `${fmt(st.sigmaZ)}. ${adjustmentText}</li>`;
+        `<li>` +
+`<strong>Why are these limits different?</strong> ` +
+`${adjustmentText} ` +
+`This helps the control limits better reflect the amount of variation actually seen in the data.` +
+`<div style="margin-top:0.45rem; font-size:0.92em;">` +
+`<strong>Technical detail:</strong> Sigma Z = ${fmt(st.sigmaZ)}.` +
+`</div>` +
+`</li>`;
     }
 
     // Signals
