@@ -862,6 +862,73 @@ function buildUPrimeExplanation(ctx) {
   return out;
 }
 
+function buildSigmaZExplanation(ctx) {
+  const chartType = ctx.chartType;
+  const a = ctx.attribute;
+
+  const isPPrime =
+    chartType === "pprime";
+
+  const isUPrime =
+    chartType === "uprime";
+
+  if (!isPPrime && !isUPrime) {
+    return (
+      "Sigma Z is used on Laney P′ and U′ charts. " +
+      "It is an adjustment factor that tells SimpleSPC whether the data are varying more or less than a standard P or U chart would normally expect."
+    );
+  }
+
+  const sigmaZ =
+    a?.stats &&
+    finiteNumber(a.stats.sigmaZ)
+      ? a.stats.sigmaZ
+      : null;
+
+  const standardChart =
+    isPPrime
+      ? "P chart"
+      : "U chart";
+
+  const primeChart =
+    isPPrime
+      ? "P′ chart"
+      : "U′ chart";
+
+  let out =
+    "Sigma Z is the adjustment factor used by a Laney chart. " +
+    `It tells SimpleSPC whether your data are varying more or less than a standard ${standardChart} expects.\n\n` +
+    "A Sigma Z of about 1 means the amount of variation is close to what the standard chart expects. " +
+    "A value above 1 means there is more variation than expected, so the control limits are made wider. " +
+    "A value below 1 means there is less variation than expected, so the control limits are made narrower.\n\n" +
+    "Sigma Z does not change your original data or the centre line. " +
+    `It only adjusts the width of the control limits on the ${primeChart}.`;
+
+  if (sigmaZ != null) {
+    out +=
+      `\n\nFor your current chart, Sigma Z = ${sigmaZ.toFixed(3)}.`;
+
+    if (sigmaZ > 1.05) {
+      out +=
+        ` This means the data are showing more variation than the standard ${standardChart} expects, so the ${primeChart} uses wider limits.`;
+
+    } else if (sigmaZ < 0.95) {
+      out +=
+        ` This means the data are showing less variation than the standard ${standardChart} expects, so the ${primeChart} uses narrower limits.`;
+
+    } else {
+      out +=
+        ` This is quite close to 1, so the amount of variation is similar to what the standard ${standardChart} expects and the Laney adjustment is fairly small.`;
+    }
+  }
+
+  out +=
+    "\n\nTechnical detail: Sigma Z is calculated from the changes between consecutive standardised values. " +
+    "You do not need to calculate this yourself — SimpleSPC uses it to make the control limits better match the variation actually present in the data.";
+
+  return out;
+}
+
   function buildLatestPeriodSummary(ctx) {
     const chartType = ctx.chartType;
 
@@ -1180,11 +1247,18 @@ function buildXmRLimitsAnswer(ctx) {
 
     const ctx = getCurrentChartContext();
 
-    const asksPPrime =
+   const asksSigmaZ =
+  includesAny(q, [
+    "sigma z",
+    "what does sigma z mean",
+    "what is sigma z",
+    "explain sigma z"
+  ]);
+
+const asksPPrime =
   includesAny(q, [
     "p prime",
     "laney p",
-    "sigma z",
     "why p prime",
     "why am i using p prime",
     "why are these limits different"
@@ -1194,7 +1268,6 @@ const asksUPrime =
   includesAny(q, [
     "u prime",
     "laney u",
-    "sigma z",
     "why u prime",
     "why am i using u prime",
     "why are these limits different"
@@ -1253,15 +1326,84 @@ const asksUPrime =
     const hasChart =
       !!ctx.run || !!ctx.xmr || !!ctx.xbars || !!ctx.attribute || !!ctx.rare;
 
-    if (hasChart && asksXmRLimits) return buildXmRLimitsAnswer(ctx);   
-    if (hasChart && ctx.chartType === "pprime" && asksPPrime) {return buildPPrimeExplanation(ctx);} 
-    if (hasChart && ctx.chartType === "uprime" && asksUPrime) {return buildUPrimeExplanation(ctx);}
-    if (hasChart && asksRulesUsed) return describeRulesForCurrentChart(ctx.chartType);    
-    if (hasChart && asksWhatChartSays) return buildWhatChartTellingMe(ctx);
-    if (hasChart && asksChanged && ctx.chartType === "xmr") return buildXmRChangeAnswer(ctx);
-    if (hasChart && asksStable) return buildLatestPeriodSummary(ctx);
-    if (hasChart && asksTargetMeaning) return buildTargetAnswer(ctx);
-    if (hasChart && asksDecision) return buildDecisionAnswer(ctx);
+    if (
+  hasChart &&
+  asksXmRLimits
+) {
+  return buildXmRLimitsAnswer(ctx);
+}
+
+if (
+  hasChart &&
+  asksSigmaZ &&
+  (
+    ctx.chartType === "pprime" ||
+    ctx.chartType === "uprime"
+  )
+) {
+  return buildSigmaZExplanation(ctx);
+}
+
+if (
+  hasChart &&
+  ctx.chartType === "pprime" &&
+  asksPPrime
+) {
+  return buildPPrimeExplanation(ctx);
+}
+
+if (
+  hasChart &&
+  ctx.chartType === "uprime" &&
+  asksUPrime
+) {
+  return buildUPrimeExplanation(ctx);
+}
+
+if (
+  hasChart &&
+  asksRulesUsed
+) {
+  return describeRulesForCurrentChart(
+    ctx.chartType
+  );
+}
+
+if (
+  hasChart &&
+  asksWhatChartSays
+) {
+  return buildWhatChartTellingMe(ctx);
+}
+
+if (
+  hasChart &&
+  asksChanged &&
+  ctx.chartType === "xmr"
+) {
+  return buildXmRChangeAnswer(ctx);
+}
+
+if (
+  hasChart &&
+  asksStable
+) {
+  return buildLatestPeriodSummary(ctx);
+}
+
+if (
+  hasChart &&
+  asksTargetMeaning
+) {
+  return buildTargetAnswer(ctx);
+}
+
+if (
+  hasChart &&
+  asksDecision
+) {
+  return buildDecisionAnswer(ctx);
+}
 
     // General FAQ
     const faq = findBestFaq(q);
