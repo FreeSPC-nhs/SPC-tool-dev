@@ -13567,10 +13567,25 @@ function computeRecommendation(answers) {
     }
 
     case "proportion": {
-      if (answers.proportionHasDenom === "yes") return { chartType: "p", label: "P", reason: "You have defectives out of a total (a proportion)." };
-      // If no denominator, P isn't really possible. Give a safe novice fallback:
-      return { chartType: "xmr", label: "XmR", reason: "Without a denominator column, the safest option is to chart the percentage as a measurement (XmR)." };
-    }
+  if (answers.proportionHasDenom === "yes") {
+    return {
+      chartType: "p",
+      label: "P chart",
+      reason:
+        "You have a numerator and denominator for each time point, so a P chart is the right starting point. " +
+        "After the chart is generated, SimpleSPC will check whether the data vary more or less than a standard P chart expects. " +
+        "If so, it will suggest a Laney P′ chart and explain why."
+    };
+  }
+
+  return {
+    chartType: "xmr",
+    label: "XmR",
+    reason:
+      "Without the numerator and denominator, a P or P′ chart cannot calculate the expected variation correctly. " +
+      "The percentage or proportion can instead be treated as a single measurement over time using an XmR chart."
+  };
+}
 
     case "rare": {
       if (answers.rareType === "opportunities") return { chartType: "g", label: "G", reason: "You have opportunities between rare events." };
@@ -13703,23 +13718,42 @@ if (s.step === 1 && a.kind === "unsure") {
   }
 
   if (s.step === 1 && a.kind === "proportion") {
-    chartWizardBody.innerHTML = `
-      <p class="chart-wizard-question">Do you have both parts of the proportion?</p>
+  chartWizardBody.innerHTML = `
+    <p class="chart-wizard-question">
+      Do you have both parts of the proportion?
+    </p>
 
-      <p class="hint small-hint">
-        For a P chart you need a numerator and denominator for each time point.
-      </p>
+    <p class="hint small-hint">
+      For example, if 8 out of 100 patients met the measure,
+      the numerator is 8 and the denominator is 100.
+      <br><br>
+      SimpleSPC will normally start with a P chart and then
+      check whether a Laney P′ chart would better match the
+      amount of variation in your data.
+    </p>
 
-      <div class="chart-wizard-options">
-        ${optionButton("Yes — I have numerator and denominator columns", `wizardNext('proportionHasDenom','yes')`)}
-        ${optionButton("No — I only have the percentage or proportion value", `wizardNext('proportionHasDenom','no')`)}
-        ${optionButton("Not sure", `wizardNext('proportionHasDenom','unsure')`)}
-      </div>
+    <div class="chart-wizard-options">
+      ${optionButton(
+        "Yes — I have numerator and denominator columns",
+        `wizardNext('proportionHasDenom','yes')`
+      )}
 
-      ${actionButtons}
-    `;
-    return;
-  }
+      ${optionButton(
+        "No — I only have the percentage or proportion value",
+        `wizardNext('proportionHasDenom','no')`
+      )}
+
+      ${optionButton(
+        "Not sure",
+        `wizardNext('proportionHasDenom','unsure')`
+      )}
+    </div>
+
+    ${actionButtons}
+  `;
+
+  return;
+}
 
   if (s.step === 1 && a.kind === "rare") {
     chartWizardBody.innerHTML = `
