@@ -13474,13 +13474,34 @@ function answerSpcQuestion(question) {
 function renderHelperState() {
   if (!spcHelperIntro) return;
 
-  // Treat "has chart" as "we have any analysis object", not just XmR.
-  const hasChart =
-    !!lastRunAnalysis ||
-    !!lastXmRAnalysis ||
-    !!lastAttributeAnalysis ||
-    !!lastRareAnalysis ||
-    !!lastXbarSAnalysis;
+  // Treat "has chart" as "the currently selected chart has matching analysis".
+const helperChartType =
+  (typeof getSelectedChartType_NoSideEffects === "function")
+    ? (getSelectedChartType_NoSideEffects() || "run")
+    : (
+        (typeof getSelectedChartType === "function")
+          ? (getSelectedChartType() || "run")
+          : "run"
+      );
+
+const hasChart =
+  helperChartType === "run"
+    ? !!lastRunAnalysis
+    : helperChartType === "xmr"
+      ? !!lastXmRAnalysis
+      : helperChartType === "xbars"
+        ? !!lastXbarSAnalysis
+        : ["c", "p", "pprime", "u", "uprime"].includes(helperChartType)
+          ? (
+              !!lastAttributeAnalysis &&
+              lastAttributeAnalysis.chartType === helperChartType
+            )
+          : ["t", "g"].includes(helperChartType)
+            ? (
+                !!lastRareAnalysis &&
+                lastRareAnalysis.chartType === helperChartType
+              )
+            : false;
 
   // 1) Intro text
   if (!hasChart) {
