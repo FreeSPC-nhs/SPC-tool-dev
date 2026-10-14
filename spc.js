@@ -7774,224 +7774,267 @@ function renderAttributeMultiSummary(segmentAnalyses, totalPoints) {
   if (!summaryDiv) return;
 
   const nameMap = {
-  c: "C chart",
-  p: "P chart",
-  pprime: "P′ chart",
-  u: "U chart"
-};
-  const chartType = segmentAnalyses?.[0]?.chartType;
-  const chartName = nameMap[chartType] || "Chart";
+    c: "C chart",
+    p: "P chart",
+    pprime: "P′ chart",
+    u: "U chart"
+  };
+
+  const chartType =
+    segmentAnalyses?.[0]?.chartType;
+
+  const chartName =
+    nameMap[chartType] || "Chart";
 
   const fmt = (v) =>
     Number.isFinite(v)
-      ? (typeof formatNumber === "function" ? formatNumber(v, 3) : Number(v).toFixed(3))
+      ? (
+          typeof formatNumber === "function"
+            ? formatNumber(v, 3)
+            : Number(v).toFixed(3)
+        )
       : "—";
 
   const sym = (t) =>
-  t === "c"
-    ? "c̄"
-    : (t === "p" || t === "pprime")
-      ? "p̄"
-      : t === "u"
-        ? "ū"
-        : "CL";
+    t === "c"
+      ? "c̄"
+      : (t === "p" || t === "pprime")
+        ? "p̄"
+        : t === "u"
+          ? "ū"
+          : "CL";
 
-  let html = `<h3>Summary (${chartName})</h3>`;
-  html += `<p>Total number of points: <strong>${totalPoints}</strong>. `;
-  html += `The chart is divided into <strong>${segmentAnalyses.length}</strong> period${segmentAnalyses.length !== 1 ? "s" : ""} `;
-  html += `(based on the baseline and any splits).</p>`;
+  let html =
+    `<h3>Summary (${chartName})</h3>`;
+
+  html +=
+    `<p>Total number of points: <strong>${totalPoints}</strong>. `;
+
+  html +=
+    `The chart is divided into <strong>${segmentAnalyses.length}</strong> ` +
+    `period${segmentAnalyses.length !== 1 ? "s" : ""} `;
+
+  html +=
+    `(based on the baseline and any splits).</p>`;
+
   if (chartType === "u") {
-  const multiplier = getURateMultiplier();
+    const multiplier =
+      getURateMultiplier();
 
-  html += `<p>Rates are displayed per <strong>${formatURateMultiplier(multiplier)}</strong> ` +
-          `${multiplier === 1 ? "opportunity" : "opportunities"}.</p>`;
-}
+    html +=
+      `<p>Rates are displayed per <strong>${formatURateMultiplier(multiplier)}</strong> ` +
+      `${multiplier === 1 ? "opportunity" : "opportunities"}.</p>`;
+  }
 
   segmentAnalyses.forEach((a, idx) => {
-  html += `<div class="pdf-avoid-break">`;
-  html += segmentAnalyses.length > 1 ? `<h4>Period ${idx + 1}</h4>` : `<h4>Single period</h4>`;
-  html += `<ul>`;
+    html +=
+      `<div class="pdf-avoid-break">`;
+
+    html +=
+      segmentAnalyses.length > 1
+        ? `<h4>Period ${idx + 1}</h4>`
+        : `<h4>Single period</h4>`;
+
+    html += `<ul>`;
 
     // Coverage
-    if (a.startIndex != null && a.endIndex != null && a.labelStart && a.labelEnd) {
-      const n = (a.endIndex - a.startIndex + 1);
-      html += `<li><strong>Coverage:</strong> <strong>points ${a.startIndex + 1}–${a.endIndex + 1}</strong> (${a.labelStart} to ${a.labelEnd}) – ${n} points.</li>`;
+    if (
+      a.startIndex != null &&
+      a.endIndex != null &&
+      a.labelStart &&
+      a.labelEnd
+    ) {
+      const n =
+        a.endIndex -
+        a.startIndex +
+        1;
+
+      html +=
+        `<li><strong>Coverage:</strong> ` +
+        `<strong>points ${a.startIndex + 1}–${a.endIndex + 1}</strong> ` +
+        `(${a.labelStart} to ${a.labelEnd}) – ${n} points.</li>`;
+
     } else if (a.nPoints != null) {
-      html += `<li><strong>Coverage:</strong> ${a.nPoints} points.</li>`;
+      html +=
+        `<li><strong>Coverage:</strong> ${a.nPoints} points.</li>`;
     }
 
     // Baseline
     if (a.baselineCountUsed != null) {
-      html += `<li><strong>Baseline for this period:</strong> first ${a.baselineCountUsed} points used to calculate centre line and limits.</li>`;
+      html +=
+        `<li><strong>Baseline for this period:</strong> ` +
+        `first ${a.baselineCountUsed} points used to calculate centre line and limits.</li>`;
     }
 
-    // -------- Stats (prefer a.stats) --------
-    const st = a.stats || null;
+    // Stats
+    const st =
+      a.stats || null;
 
-       // Centre line + limits
-    if (st && Number.isFinite(st.cl)) {
+    // Centre line + limits
+    if (
+      st &&
+      Number.isFinite(st.cl)
+    ) {
       if (a.chartType === "c") {
-        html += `<li><strong>Centre line (${sym(a.chartType)}):</strong> ${fmt(st.cl)}; <strong>control limits:</strong> LCL = ${fmt(st.lcl)}, UCL = ${fmt(st.ucl)}.</li>`;
+        html +=
+          `<li><strong>Centre line (${sym(a.chartType)}):</strong> ` +
+          `${fmt(st.cl)}; ` +
+          `<strong>control limits:</strong> ` +
+          `LCL = ${fmt(st.lcl)}, ` +
+          `UCL = ${fmt(st.ucl)}.</li>`;
+
       } else if (
-  a.chartType === "p" ||
-  a.chartType === "pprime" ||
-  a.chartType === "u"
-) {
-        html += `<li><strong>Centre line (${sym(a.chartType)}):</strong> ${fmt(st.cl)}; ` +
-                `<strong>control limits:</strong> ` +
-                `LCL = ${fmt(st.lclAvg)} (range ${fmt(st.lclMin)}–${fmt(st.lclMax)}), ` +
-                `UCL = ${fmt(st.uclAvg)} (range ${fmt(st.uclMin)}–${fmt(st.uclMax)}).</li>`;
+        a.chartType === "p" ||
+        a.chartType === "pprime" ||
+        a.chartType === "u"
+      ) {
+        html +=
+          `<li><strong>Centre line (${sym(a.chartType)}):</strong> ${fmt(st.cl)}; ` +
+          `<strong>control limits:</strong> ` +
+          `LCL = ${fmt(st.lclAvg)} ` +
+          `(range ${fmt(st.lclMin)}–${fmt(st.lclMax)}), ` +
+          `UCL = ${fmt(st.uclAvg)} ` +
+          `(range ${fmt(st.uclMin)}–${fmt(st.uclMax)}).</li>`;
+
       } else {
-        html += `<li><strong>Centre line:</strong> ${fmt(st.cl)}</li>`;
+        html +=
+          `<li><strong>Centre line:</strong> ${fmt(st.cl)}</li>`;
       }
+
     } else {
-      // Fallback (older logic) if st missing
       const fallbackCL =
-        (typeof a.cl === "number" && Number.isFinite(a.cl)) ? a.cl :
-        (typeof a.centerLine === "number" && Number.isFinite(a.centerLine)) ? a.centerLine :
-        null;
+        (
+          typeof a.cl === "number" &&
+          Number.isFinite(a.cl)
+        )
+          ? a.cl
+          : (
+              typeof a.centerLine === "number" &&
+              Number.isFinite(a.centerLine)
+            )
+            ? a.centerLine
+            : null;
 
       if (fallbackCL != null) {
-        html += `<li><strong>Centre line:</strong> ${fmt(fallbackCL)}</li>`;
+        html +=
+          `<li><strong>Centre line:</strong> ${fmt(fallbackCL)}</li>`;
       }
     }
 
-if (
-  a.chartType === "p" &&
-  st?.dispersionDiagnostic?.ok
-) {
-  const d =
-    st.dispersionDiagnostic;
+    // P vs P′ dispersion diagnostic
+    if (
+      a.chartType === "p" &&
+      st?.dispersionDiagnostic?.ok
+    ) {
+      const d =
+        st.dispersionDiagnostic;
 
-  const ratioText =
-    Number(d.ratio).toFixed(1);
+      const ratioText =
+        Number(d.ratio).toFixed(1);
 
-  const lowerText =
-    Number(d.lowerLimit).toFixed(1);
+      const lowerText =
+        Number(d.lowerLimit).toFixed(1);
 
-  const upperText =
-    Number(d.upperLimit).toFixed(1);
+      const upperText =
+        Number(d.upperLimit).toFixed(1);
 
-  if (d.status === "overdispersed") {
-    html +=
-      `<li><strong>P vs P′ check:</strong> ` +
-      `Observed variation is <strong>${ratioText}%</strong> of that expected from the binomial model, ` +
-      `which is above the diagnostic upper limit of ${upperText}%. ` +
-      `<strong>The data show overdispersion, so a Laney P′ chart should be considered.</strong> ` +
-      `An ordinary P chart may give limits that are too narrow and therefore too many false signals.` +
-      `<div style="margin-top:0.55rem;">` +
-      `<button type="button" onclick="switchPToPPrime()">` +
-      `Switch to P′ chart` +
-      `</button>` +
-      `</div>` +
-      `</li>`;
+      if (d.status === "overdispersed") {
+        html +=
+          `<li><strong>P vs P′ check:</strong> ` +
+          `Observed variation is <strong>${ratioText}%</strong> of that expected from the binomial model, ` +
+          `which is above the diagnostic upper limit of ${upperText}%. ` +
+          `<strong>The data show overdispersion, so a Laney P′ chart should be considered.</strong> ` +
+          `An ordinary P chart may give limits that are too narrow and therefore too many false signals.` +
+          `<div style="margin-top:0.55rem;">` +
+          `<button type="button" onclick="switchPToPPrime()">` +
+          `Switch to P′ chart` +
+          `</button>` +
+          `</div>` +
+          `</li>`;
 
-  } else if (d.status === "underdispersed") {
-    html +=
-      `<li><strong>P vs P′ check:</strong> ` +
-      `Observed variation is <strong>${ratioText}%</strong> of that expected from the binomial model, ` +
-      `which is below the diagnostic lower limit of ${lowerText}%. ` +
-      `<strong>The data show underdispersion, so a Laney P′ chart should be considered.</strong> ` +
-      `An ordinary P chart may give limits that are too wide and potentially hide unusual variation.` +
-      `<div style="margin-top:0.55rem;">` +
-      `<button type="button" onclick="switchPToPPrime()">` +
-      `Switch to P′ chart` +
-      `</button>` +
-      `</div>` +
-      `</li>`;
+      } else if (
+        d.status === "underdispersed"
+      ) {
+        html +=
+          `<li><strong>P vs P′ check:</strong> ` +
+          `Observed variation is <strong>${ratioText}%</strong> of that expected from the binomial model, ` +
+          `which is below the diagnostic lower limit of ${lowerText}%. ` +
+          `<strong>The data show underdispersion, so a Laney P′ chart should be considered.</strong> ` +
+          `An ordinary P chart may give limits that are too wide and potentially hide unusual variation.` +
+          `<div style="margin-top:0.55rem;">` +
+          `<button type="button" onclick="switchPToPPrime()">` +
+          `Switch to P′ chart` +
+          `</button>` +
+          `</div>` +
+          `</li>`;
 
-  } else {
-    html +=
-      `<li><strong>P vs P′ check:</strong> ` +
-      `Observed variation is <strong>${ratioText}%</strong> of that expected from the binomial model. ` +
-      `This is within the diagnostic range of ${lowerText}%–${upperText}%, ` +
-      `so there is no clear dispersion-based reason to prefer P′ over the standard P chart.` +
-      `</li>`;
-  }
-}
-  const d =
-    st.dispersionDiagnostic;
-
-  const ratioText =
-    Number(d.ratio).toFixed(1);
-
-  const lowerText =
-    Number(d.lowerLimit).toFixed(1);
-
-  const upperText =
-    Number(d.upperLimit).toFixed(1);
-
-  if (d.status === "overdispersed") {
-    html +=
-      `<li><strong>P vs P′ check:</strong> ` +
-      `Observed variation is <strong>${ratioText}%</strong> of that expected from the binomial model, ` +
-      `which is above the diagnostic upper limit of ${upperText}%. ` +
-      `<strong>The data show overdispersion, so a Laney P′ chart should be considered.</strong> ` +
-      `An ordinary P chart may give limits that are too narrow and therefore too many false signals.</li>`;
-
-  } else if (d.status === "underdispersed") {
-    html +=
-      `<li><strong>P vs P′ check:</strong> ` +
-      `Observed variation is <strong>${ratioText}%</strong> of that expected from the binomial model, ` +
-      `which is below the diagnostic lower limit of ${lowerText}%. ` +
-      `<strong>The data show underdispersion, so a Laney P′ chart should be considered.</strong> ` +
-      `An ordinary P chart may give limits that are too wide and potentially hide unusual variation.</li>`;
-
-  } else {
-    html +=
-      `<li><strong>P vs P′ check:</strong> ` +
-      `Observed variation is <strong>${ratioText}%</strong> of that expected from the binomial model. ` +
-      `This is within the diagnostic range of ${lowerText}%–${upperText}%, ` +
-      `so there is no clear dispersion-based reason to prefer P′ over the standard P chart.</li>`;
-  }
-}
-
-if (
-  a.chartType === "pprime" &&
-  Number.isFinite(st?.sigmaZ)
-) {
-  let adjustmentText = "";
-
-  if (st.sigmaZ > 1) {
-    adjustmentText =
-      "The observed variation is greater than a standard P chart expects, so the P′ limits are wider.";
-  } else if (st.sigmaZ < 1) {
-    adjustmentText =
-      "The observed variation is smaller than a standard P chart expects, so the P′ limits are narrower.";
-  } else {
-    adjustmentText =
-      "The observed variation is very close to that expected by a standard P chart.";
-  }
-
-  html +=
-    `<li><strong>Laney adjustment (Sigma Z):</strong> ` +
-    `${fmt(st.sigmaZ)}. ${adjustmentText}</li>`;
-}
-
-
-    // Signals (keep brief, like XmR)
-    if (!a.isStable && Array.isArray(a.signals) && a.signals.length) {
-      html += `<li><strong>Signals:</strong> ${a.signals.join("; ")}.</li>`;
+      } else {
+        html +=
+          `<li><strong>P vs P′ check:</strong> ` +
+          `Observed variation is <strong>${ratioText}%</strong> of that expected from the binomial model. ` +
+          `This is within the diagnostic range of ${lowerText}%–${upperText}%, ` +
+          `so there is no clear dispersion-based reason to prefer P′ over the standard P chart.` +
+          `</li>`;
+      }
     }
 
-     // Interpretation (safer wording: clear + cautious)
-    const interpretation = a.isStable
-      ? "Based on the selected rules, no clear special-cause signals were detected in this period. This suggests the pattern is consistent with routine (common-cause) variation."
-      : "Based on the selected rules, special-cause signals were detected in this period (a pattern unlikely to be routine variation alone).";
+    // Laney P′ adjustment
+    if (
+      a.chartType === "pprime" &&
+      Number.isFinite(st?.sigmaZ)
+    ) {
+      let adjustmentText = "";
+
+      if (st.sigmaZ > 1) {
+        adjustmentText =
+          "The observed variation is greater than a standard P chart expects, so the P′ limits are wider.";
+
+      } else if (st.sigmaZ < 1) {
+        adjustmentText =
+          "The observed variation is smaller than a standard P chart expects, so the P′ limits are narrower.";
+
+      } else {
+        adjustmentText =
+          "The observed variation is very close to that expected by a standard P chart.";
+      }
+
+      html +=
+        `<li><strong>Laney adjustment (Sigma Z):</strong> ` +
+        `${fmt(st.sigmaZ)}. ${adjustmentText}</li>`;
+    }
+
+    // Signals
+    if (
+      !a.isStable &&
+      Array.isArray(a.signals) &&
+      a.signals.length
+    ) {
+      html +=
+        `<li><strong>Signals:</strong> ${a.signals.join("; ")}.</li>`;
+    }
+
+    // Interpretation
+    const interpretation =
+      a.isStable
+        ? "Based on the selected rules, no clear special-cause signals were detected in this period. This suggests the pattern is consistent with routine (common-cause) variation."
+        : "Based on the selected rules, special-cause signals were detected in this period (a pattern unlikely to be routine variation alone).";
 
     const caution =
       "These rules are prompts, not absolute answers. Interpret alongside local context (changes in process, staffing, demand, definitions/coding) and consider basic SPC assumptions (e.g. reasonably consistent measurement and opportunity over time).";
 
-    html += `<li><strong>Interpretation:</strong> ${interpretation}</li>`;
-    html += `<li><strong>Note:</strong> ${caution}</li>`;
+    html +=
+      `<li><strong>Interpretation:</strong> ${interpretation}</li>`;
+
+    html +=
+      `<li><strong>Note:</strong> ${caution}</li>`;
 
     html += `</ul>`;
     html += `</div>`;
   });
 
-  summaryDiv.innerHTML = html;
+  summaryDiv.innerHTML =
+    html;
 }
-
 
 
 
