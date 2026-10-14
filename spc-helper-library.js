@@ -42,6 +42,7 @@
       case "p": return "P chart";
       case "pprime": return "P′ chart";
       case "u": return "U chart";
+      case "uprime": return "U′ chart";
       case "t": return "T chart";
       case "g": return "G chart";
       default: return "chart";
@@ -105,6 +106,7 @@
       case "p":
       case "pprime":
       case "u":
+      case "uprime":
       case "c":
         return "For this chart, the tool uses beyond-limit signals and the run rule. Zone rules are blocked because they may create misleading alerts on attribute charts.";
       case "t":
@@ -138,7 +140,7 @@
       "What if my process is stable but performance is poor?",
       "Why are some SPC rules unavailable?",
       "Why are T/G run and trend rules off by default?",
-      "Why can’t I use zone rules on P, P′, U, or C charts?"
+      "Why can’t I use zone rules on P, P′, U, U′, or C charts?"
     ],
 
     chart: [
@@ -159,6 +161,14 @@
         : null,
 
       chartType === "pprime"
+        ? "What does Sigma Z mean?"
+        : null,
+
+      chartType === "uprime"
+        ? "Why am I using a U′ chart?"
+        : null,
+
+      chartType === "uprime"
         ? "What does Sigma Z mean?"
         : null
     ].filter(Boolean)
@@ -205,26 +215,31 @@
         "For that reason, this tool keeps run and trend rules off by default for T/G charts. You can enable them in advanced settings, but they should be interpreted cautiously because they may create false signals."
     },
     {
-      id: "puc-zone-rules-blocked",
-      priority: 9,
-      aliases: [
-        "why can't i use zone rules on p u or c charts",
-        "why are zone rules blocked on p charts",
-        "why are zone rules blocked on u charts",
-        "why are zone rules blocked on c charts",
-        "zone rules p u c"
-      ],
-      keywords: [
-        ["zone", "rules", "p"],
-        ["zone", "rules", "u"],
-        ["zone", "rules", "c"],
-        ["zone", "rules", "blocked"]
-      ],
-      answer:
-        "Zone rules are not available for P, U, or C charts because they can create misleading alerts on these chart types.\n\n" +
-        "P, U, and C charts are based on count, proportion, or rate data. Their limits may vary, and their data may not behave like the continuous data that classic zone rules were designed for.\n\n" +
-        "The safer default is to use beyond-limit signals and run rules, rather than adding extra zone-rule alerts."
-    },
+  id: "puc-zone-rules-blocked",
+  priority: 9,
+
+  aliases: [
+    "why can't i use zone rules on p p prime u u prime or c charts",
+    "why are zone rules blocked on p charts",
+    "why are zone rules blocked on p prime charts",
+    "why are zone rules blocked on u charts",
+    "why are zone rules blocked on u prime charts",
+    "why are zone rules blocked on c charts",
+    "zone rules p u c"
+  ],
+
+  keywords: [
+    ["zone", "rules", "p"],
+    ["zone", "rules", "u"],
+    ["zone", "rules", "c"],
+    ["zone", "rules", "blocked"]
+  ],
+
+  answer:
+    "Zone rules are not available for P, P′, U, U′, or C charts because they can create misleading alerts on these chart types.\n\n" +
+    "These charts are based on count, proportion, or rate data. Their limits may vary, and their data may not behave like the continuous data that classic zone rules were designed for.\n\n" +
+    "The safer default is to use beyond-limit signals and run rules, rather than adding extra zone-rule alerts."
+},
 {
   id: "xmr-moving-range-screening",
   priority: 10,
@@ -292,6 +307,7 @@
         "• P chart: proportions with a numerator and denominator\n" +
 	"• P′ chart: proportions where the variation is more or less than a standard P chart expects\n" +
         "• U chart: rates with changing opportunity\n" +
+    	"• U′ chart: rates where the variation is more or less than a standard U chart expects\n" +
         "• X̄–S chart: subgrouped continuous data\n" +
         "• T / G charts: rare events\n\n" +
         "For proportion data, SimpleSPC normally starts with a P chart and checks whether P′ would better match the amount of variation in the data."
@@ -803,6 +819,49 @@ function buildPPrimeExplanation(ctx) {
   return out;
 }
 
+function buildUPrimeExplanation(ctx) {
+  const a = ctx.attribute;
+
+  if (!a || ctx.chartType !== "uprime") {
+    return (
+      "A U′ chart is a Laney-adjusted version of a U chart. " +
+      "It is used for rate data when the amount of variation is noticeably different from what a standard U chart expects."
+    );
+  }
+
+  const sigmaZ =
+    a.stats && finiteNumber(a.stats.sigmaZ)
+      ? a.stats.sigmaZ
+      : null;
+
+  let out =
+    "This U′ chart uses the same counts, opportunities, rates and centre line as a standard U chart. " +
+    "The difference is that it adjusts the control limits to better match the amount of variation actually seen in the data.";
+
+  if (sigmaZ != null) {
+    if (sigmaZ > 1) {
+      out +=
+        "\n\nYour data vary more than a standard U chart expects, so U′ uses wider control limits. " +
+        "This helps avoid treating ordinary variation as a possible process change.";
+
+    } else if (sigmaZ < 1) {
+      out +=
+        "\n\nYour data vary less than a standard U chart expects, so U′ uses narrower control limits. " +
+        "This can make genuine unusual variation easier to detect.";
+
+    } else {
+      out +=
+        "\n\nThe amount of variation is very close to what a standard U chart expects, so the U′ adjustment is small.";
+    }
+
+    out +=
+      `\n\nTechnical detail: Sigma Z = ${sigmaZ.toFixed(3)}. ` +
+      "Values above 1 widen the standard U-chart limits; values below 1 narrow them.";
+  }
+
+  return out;
+}
+
   function buildLatestPeriodSummary(ctx) {
     const chartType = ctx.chartType;
 
@@ -1131,6 +1190,16 @@ function buildXmRLimitsAnswer(ctx) {
     "why are these limits different"
   ]);
 
+const asksUPrime =
+  includesAny(q, [
+    "u prime",
+    "laney u",
+    "sigma z",
+    "why u prime",
+    "why am i using u prime",
+    "why are these limits different"
+  ]);
+
     // Prefer chart-aware answers for clearly chart-specific questions
     const asksWhatChartSays =
       includesAll(q, ["what", "chart", "telling"]) ||
@@ -1186,6 +1255,7 @@ function buildXmRLimitsAnswer(ctx) {
 
     if (hasChart && asksXmRLimits) return buildXmRLimitsAnswer(ctx);   
     if (hasChart && ctx.chartType === "pprime" && asksPPrime) {return buildPPrimeExplanation(ctx);} 
+    if (hasChart && ctx.chartType === "uprime" && asksUPrime) {return buildUPrimeExplanation(ctx);}
     if (hasChart && asksRulesUsed) return describeRulesForCurrentChart(ctx.chartType);    
     if (hasChart && asksWhatChartSays) return buildWhatChartTellingMe(ctx);
     if (hasChart && asksChanged && ctx.chartType === "xmr") return buildXmRChangeAnswer(ctx);
