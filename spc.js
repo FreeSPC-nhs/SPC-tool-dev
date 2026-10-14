@@ -5130,6 +5130,345 @@ function computePPrime(points, baselineCount = null) {
   };
 }
 
+function computePDispersionDiagnostic(
+  points,
+  baselineCount = null
+) {
+  const nPts =
+    Array.isArray(points)
+      ? points.length
+      : 0;
+
+  const baseN =
+    baselineCount && baselineCount >= 1
+      ? Math.min(baselineCount, nPts)
+      : nPts;
+
+  const base =
+    (points || [])
+      .slice(0, baseN)
+      .filter(p =>
+        Number.isFinite(Number(p.y)) &&
+        Number.isFinite(Number(p.n)) &&
+        Number(p.n) > 0 &&
+        Number(p.y) >= 0 &&
+        Number(p.y) <= Number(p.n)
+      )
+      .map(p => ({
+        d: Number(p.y),
+        n: Number(p.n)
+      }));
+
+  const m = base.length;
+
+  if (m < 4) {
+    return {
+      ok: false,
+      reason:
+        "Too few usable subgroups for the dispersion check."
+    };
+  }
+
+  const sumD =
+    base.reduce(
+      (acc, p) => acc + p.d,
+      0
+    );
+
+  const sumN =
+    base.reduce(
+      (acc, p) => acc + p.n,
+      0
+    );
+
+  const nBar =
+    sumN / m;
+
+  const pBar =
+    sumN > 0
+      ? sumD / sumN
+      : NaN;
+
+  if (
+    !Number.isFinite(nBar) ||
+    nBar <= 0 ||
+    !Number.isFinite(pBar) ||
+    pBar <= 0 ||
+    pBar >= 1
+  ) {
+    return {
+      ok: false,
+      reason:
+        "The dispersion check could not be calculated for these data."
+    };
+  }
+
+  // -------------------------------------------------
+  // P-chart diagnostic:
+  // adjust each count to the average subgroup size
+  // and apply the arcsine-square-root transformation.
+  // -------------------------------------------------
+  const transformed =
+    base
+      .map(p => {
+        const adjustedCount =
+          (p.d / p.n) * nBar;
+
+        const fraction =
+          (adjustedCount + 0.375) /
+          (nBar + 0.75);
+
+        const safeFraction =
+          Math.max(
+            0,
+            Math.min(1, fraction)
+          );
+
+        return Math.asin(
+          Math.sqrt(safeFraction)
+        );
+      })
+      .filter(Number.isFinite)
+      .sort((a, b) => a - b);
+
+  if (transformed.length < 4) {
+    return {
+      ok: false,
+      reason:
+        "The dispersion check could not be calculated for these data."
+    };
+  }
+
+  // Inverse standard-normal CDF.
+  // Uses the existing normalCdf() helper via binary search.
+  function inverseNormalCdf(probability) {
+    if (
+      !Number.isFinite(probability) ||
+      probability <= 0 ||
+      probability >= 1
+    ) {
+      return NaN;
+    }
+
+    let low = -8;
+    let high = 8;
+
+    for (let i = 0; i < 60; i++) {
+      const mid =
+        (low + high) / 2;
+
+      if (normalCdf(mid) < probability) {
+        low = mid;
+      } else {
+        high = mid;
+      }
+    }
+
+    return (low + high) / 2;
+  }
+
+  // Give tied transformed values the same
+  // normal score using their average rank.
+  const ranked = [];
+
+  let i = 0;
+
+  while (i < transformed.length) {
+    let j = i + 1;
+
+    while (
+      j < transformed.length &&
+      Math.abs(
+        transformed[j] -
+        transformed[i]
+      ) <= 1e-12
+    ) {
+      j++;
+    }
+
+    // Array indices i ... j-1 correspond
+    // to ranks i+1 ... j.
+    const meanRank =
+      ((i + 1) + j) / 2;
+
+    const probability =
+      (meanRank - 0.375) /
+      (transformed.length + 0.25);
+
+    const normalScore =
+      inverseNormalCdf(probability);
+
+    for (let k = i; k < j; k++) {
+      ranked.push({
+        x: transformed[k],
+        y: normalScore
+      });
+    }
+
+    i = j;
+  }
+
+  function quantile(sortedValues, q) {
+    if (!sortedValues.length) {
+      return NaN;
+    }
+
+    const position =
+      (sortedValues.length - 1) * q;
+
+    const lower =
+      Math.floor(position);
+
+    const upper =
+      Math.ceil(position);
+
+    if (lower === upper) {
+      return sortedValues[lower];
+    }
+
+    const fraction =
+      position - lower;
+
+    return (
+      sortedValues[lower] +
+      (
+        sortedValues[upper] -
+        sortedValues[lower]
+      ) * fraction
+    );
+  }
+
+  const q1 =
+    quantile(transformed, 0.25);
+
+  const q3 =
+    quantile(transformed, 0.75);
+
+  // Published diagnostic uses only the
+  // middle 50% for the fitted line.
+  const middle =
+    ranked.filter(item =>
+      item.x >= q1 &&
+      item.x <= q3 &&
+      Number.isFinite(item.y)
+    );
+
+  if (middle.length < 2) {
+    return {
+      ok: false,
+      reason:
+        "There were not enough usable values for the dispersion check."
+    };
+  }
+
+  const meanX =
+    middle.reduce(
+      (acc, item) => acc + item.x,
+      0
+    ) / middle.length;
+
+  const meanY =
+    middle.reduce(
+      (acc, item) => acc + item.y,
+      0
+    ) / middle.length;
+
+  let numerator = 0;
+  let denominator = 0;
+
+  middle.forEach(item => {
+    numerator +=
+      (item.x - meanX) *
+      (item.y - meanY);
+
+    denominator +=
+      Math.pow(
+        item.x - meanX,
+        2
+      );
+  });
+
+  if (
+    !Number.isFinite(denominator) ||
+    denominator <= 0
+  ) {
+    return {
+      ok: false,
+      reason:
+        "There was too little variation to calculate the dispersion check."
+    };
+  }
+
+  const slope =
+    numerator / denominator;
+
+  if (
+    !Number.isFinite(slope) ||
+    slope <= 0
+  ) {
+    return {
+      ok: false,
+      reason:
+        "The dispersion check could not be calculated reliably."
+    };
+  }
+
+  const observedVariation =
+    1 / slope;
+
+  const expectedVariation =
+    1 /
+    Math.sqrt(
+      4 * nBar
+    );
+
+  const ratio =
+    (
+      observedVariation /
+      expectedVariation
+    ) * 100;
+
+  // 95% upper confidence limit for the
+  // observed/expected variation ratio.
+  const upperLimit =
+    Math.exp(
+      0.185 +
+      (5.62 / m) +
+      (
+        0.274 /
+        (nBar * pBar)
+      )
+    ) * 100;
+
+  // Published method uses a fixed
+  // lower confidence limit of 60%.
+  const lowerLimit = 60;
+
+  let status = "expected";
+
+  if (ratio > upperLimit) {
+    status = "overdispersed";
+  } else if (ratio < lowerLimit) {
+    status = "underdispersed";
+  }
+
+  return {
+    ok: true,
+    m,
+    nBar,
+    pBar,
+    observedVariation,
+    expectedVariation,
+    ratio,
+    lowerLimit,
+    upperLimit,
+    status,
+    recommendPPrime:
+      status === "overdispersed" ||
+      status === "underdispersed"
+  };
+}
+
 function computeU(points, baselineCount = null) {
   const nPts = points.length;
   const baseN = baselineCount && baselineCount >= 1 ? Math.min(baselineCount, nPts) : nPts;
@@ -7516,6 +7855,47 @@ function renderAttributeMultiSummary(segmentAnalyses, totalPoints) {
         html += `<li><strong>Centre line:</strong> ${fmt(fallbackCL)}</li>`;
       }
     }
+
+if (
+  a.chartType === "p" &&
+  st?.dispersionDiagnostic?.ok
+) {
+  const d =
+    st.dispersionDiagnostic;
+
+  const ratioText =
+    Number(d.ratio).toFixed(1);
+
+  const lowerText =
+    Number(d.lowerLimit).toFixed(1);
+
+  const upperText =
+    Number(d.upperLimit).toFixed(1);
+
+  if (d.status === "overdispersed") {
+    html +=
+      `<li><strong>P vs P′ check:</strong> ` +
+      `Observed variation is <strong>${ratioText}%</strong> of that expected from the binomial model, ` +
+      `which is above the diagnostic upper limit of ${upperText}%. ` +
+      `<strong>The data show overdispersion, so a Laney P′ chart should be considered.</strong> ` +
+      `An ordinary P chart may give limits that are too narrow and therefore too many false signals.</li>`;
+
+  } else if (d.status === "underdispersed") {
+    html +=
+      `<li><strong>P vs P′ check:</strong> ` +
+      `Observed variation is <strong>${ratioText}%</strong> of that expected from the binomial model, ` +
+      `which is below the diagnostic lower limit of ${lowerText}%. ` +
+      `<strong>The data show underdispersion, so a Laney P′ chart should be considered.</strong> ` +
+      `An ordinary P chart may give limits that are too wide and potentially hide unusual variation.</li>`;
+
+  } else {
+    html +=
+      `<li><strong>P vs P′ check:</strong> ` +
+      `Observed variation is <strong>${ratioText}%</strong> of that expected from the binomial model. ` +
+      `This is within the diagnostic range of ${lowerText}%–${upperText}%, ` +
+      `so there is no clear dispersion-based reason to prefer P′ over the standard P chart.</li>`;
+  }
+}
 
 if (
   a.chartType === "pprime" &&
@@ -10047,14 +10427,27 @@ const segLCL = lclArr.slice(start, end + 1);
 const uRange = rangeFinite(segUCL);
 const lRange = rangeFinite(segLCL);
 
+const dispersionDiagnostic =
+  computePDispersionDiagnostic(
+    segPoints,
+    segBaselineCountUsed
+  );
+
 a.stats = {
-  cl: segCL.find(v => Number.isFinite(v)),     // p̄
+  cl:
+    segCL.find(
+      v => Number.isFinite(v)
+    ),
+
   uclMin: uRange.min,
   uclMax: uRange.max,
-  uclAvg: meanFinite(segUCL),                  
+  uclAvg: meanFinite(segUCL),
+
   lclMin: lRange.min,
   lclMax: lRange.max,
-  lclAvg: meanFinite(segLCL)                   
+  lclAvg: meanFinite(segLCL),
+
+  dispersionDiagnostic
 };
 
 
