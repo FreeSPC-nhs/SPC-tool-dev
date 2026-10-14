@@ -2536,6 +2536,45 @@ function xbarSConstants(n) {
   return { c4, A3, B3, B4 };
 }
 
+// Estimate process sigma for an X̄–S chart from subgroup standard deviations.
+// This is the variable-subgroup-size extension of the existing S-bar method.
+// When all subgroup sizes are equal, it reduces to s-bar / c4(n).
+function estimateXbarSSigmaFromSbar(sValues, subgroupSizes) {
+  if (
+    !Array.isArray(sValues) ||
+    !Array.isArray(subgroupSizes) ||
+    sValues.length !== subgroupSizes.length ||
+    sValues.length === 0
+  ) {
+    return NaN;
+  }
+
+  let numerator = 0;
+  let denominator = 0;
+
+  for (let i = 0; i < sValues.length; i++) {
+    const s = Number(sValues[i]);
+    const n = Number(subgroupSizes[i]);
+
+    if (!Number.isFinite(s) || !Number.isFinite(n) || n < 2) continue;
+
+    const c4 = c4Constant(n);
+    if (!Number.isFinite(c4) || c4 <= 0 || c4 >= 1) continue;
+
+    const varianceTerm = 1 - c4 * c4;
+    if (!(varianceTerm > 0)) continue;
+
+    const h = (c4 * c4) / varianceTerm;
+
+    numerator += h * (s / c4);
+    denominator += h;
+  }
+
+  return denominator > 0
+    ? numerator / denominator
+    : NaN;
+}
+
 // -----------------------------
 // Draw a second chart in the MR panel (re-uses the existing mrPanel UI)
 // -----------------------------
@@ -6094,6 +6133,7 @@ function drawXbarSChart(points, baselineCount, labels) {
     showError("X̄–S chart needs a third column: Subgroup ID.");
     return;
   }
+
   const subgroupCol = thirdSelect.value;
 
   // Group measurements by subgroup
@@ -6103,11 +6143,17 @@ function drawXbarSChart(points, baselineCount, labels) {
   const xbarVals = [];
   const sVals = [];
   const subgroupLabels = [];
+  const subgroupSizes = [];
 
-  // Build subgroup summaries
+  // Build subgroup summaries.
+  // Only finite measurements count toward subgroup size.
   subgroupKeys.forEach((k) => {
     const arr = groups.get(k) || [];
-    const vals = arr.map(p => p.y).filter(v => isFinite(v));
+    const vals =
+      arr
+        .map(p => p.y)
+        .filter(v => isFinite(v));
+
     if (vals.length < 2) return;
 
     const xbar = mean(vals);
@@ -6116,6 +6162,7 @@ function drawXbarSChart(points, baselineCount, labels) {
     xbarVals.push(xbar);
     sVals.push(s);
     subgroupLabels.push(String(k));
+    subgroupSizes.push(vals.length);
   });
 
   if (xbarVals.length < 4) {
@@ -6123,124 +6170,319 @@ function drawXbarSChart(points, baselineCount, labels) {
     return;
   }
 
-  // Determine subgroup size (most common)
-  const mostCommonSize = (() => {
-    const count = new Map();
-    for (const k of subgroupKeys) {
-      const arr = groups.get(k) || [];
-      const n = arr.length;
-      count.set(n, (count.get(n) || 0) + 1);
-    }
-    const sizes = Array.from(count.keys()).sort((a, b) => a - b);
-    let bestN = sizes[0] || 0, bestC = 0;
-    for (const [n, c] of count.entries()) {
-      if (c > bestC) { bestC = c; bestN = n; }
-    }
-    return bestN;
-  })();
-
-  const nSub = mostCommonSize;
-  if (!nSub || nSub < 2) {
-    showError("X̄–S needs at least 2 measurements per subgroup.");
-    return;
-  }
-
-  const consts = xbarSConstants(nSub);
-  if (!consts) {
-    showError("Could not compute X̄–S constants for this subgroup size.");
-    return;
-  }
-
   const m = xbarVals.length;
 
   // ---- Segment definition from splits (apply to subgroups) ----
-  let effectiveSplits = Array.isArray(splits) ? splits.slice() : [];
-  effectiveSplits = effectiveSplits
-    .filter(i => Number.isInteger(i) && i >= 0 && i < m - 1)
-    .sort((a, b) => a - b);
+  let effectiveSplits =
+    Array.isArray(splits)
+      ? splits.slice()
+      : [];
+
+  effectiveSplits =
+    effectiveSplits
+      .filter(
+        i =>
+          Number.isInteger(i) &&
+          i >= 0 &&
+          i < m - 1
+      )
+      .sort((a, b) => a - b);
 
   const segmentStarts = [0];
   const segmentEnds = [];
-  effectiveSplits.forEach(idx => { segmentEnds.push(idx); segmentStarts.push(idx + 1); });
+
+  effectiveSplits.forEach(idx => {
+    segmentEnds.push(idx);
+    segmentStarts.push(idx + 1);
+  });
+
   segmentEnds.push(m - 1);
 
-  const clX = new Array(m).fill(NaN);
-  const uclXArr = new Array(m).fill(NaN);
-  const lclXArr = new Array(m).fill(NaN);
-  const clS = new Array(m).fill(NaN);
-  const uclSArr = new Array(m).fill(NaN);
-  const lclSArr = new Array(m).fill(NaN);
+  const clX =
+    new Array(m).fill(NaN);
 
-  for (let s = 0; s < segmentStarts.length; s++) {
-    const start = segmentStarts[s];
-    const end = segmentEnds[s];
+  const uclXArr =
+    new Array(m).fill(NaN);
 
-    const segX = xbarVals.slice(start, end + 1);
-    const segS = sVals.slice(start, end + 1);
+  const lclXArr =
+    new Array(m).fill(NaN);
+
+  const clS =
+    new Array(m).fill(NaN);
+
+  const uclSArr =
+    new Array(m).fill(NaN);
+
+  const lclSArr =
+    new Array(m).fill(NaN);
+
+  const segmentStats = [];
+
+  for (
+    let s = 0;
+    s < segmentStarts.length;
+    s++
+  ) {
+    const start =
+      segmentStarts[s];
+
+    const end =
+      segmentEnds[s];
+
+    const segX =
+      xbarVals.slice(
+        start,
+        end + 1
+      );
+
+    const segS =
+      sVals.slice(
+        start,
+        end + 1
+      );
+
+    const segN =
+      subgroupSizes.slice(
+        start,
+        end + 1
+      );
 
     const segBaselineCountUsed =
-      (s === 0 && baselineCount && baselineCount >= 2)
-        ? Math.min(baselineCount, segX.length)
+      (
+        s === 0 &&
+        baselineCount &&
+        baselineCount >= 2
+      )
+        ? Math.min(
+            baselineCount,
+            segX.length
+          )
         : segX.length;
 
-    const xbarbar = mean(segX.slice(0, segBaselineCountUsed));
-    const sbar = mean(segS.slice(0, segBaselineCountUsed));
+    const baseX =
+      segX.slice(
+        0,
+        segBaselineCountUsed
+      );
 
-    const uclX = xbarbar + consts.A3 * sbar;
-    const lclX = xbarbar - consts.A3 * sbar;
+    const baseS =
+      segS.slice(
+        0,
+        segBaselineCountUsed
+      );
 
-    const uclS = consts.B4 * sbar;
-    const lclS = consts.B3 * sbar;
+    const baseN =
+      segN.slice(
+        0,
+        segBaselineCountUsed
+      );
 
-    for (let i = start; i <= end; i++) {
-      clX[i] = xbarbar;
-      uclXArr[i] = uclX;
-      lclXArr[i] = lclX;
+    // Overall process mean.
+    // With unequal subgroup sizes, larger subgroups correctly
+    // contribute more observations to the estimate.
+    const totalBaselineN =
+      baseN.reduce(
+        (acc, n) =>
+          acc + n,
+        0
+      );
 
-      clS[i] = sbar;
-      uclSArr[i] = uclS;
-      lclSArr[i] = lclS;
+    const weightedBaselineSum =
+      baseX.reduce(
+        (acc, xbar, i) =>
+          acc +
+          xbar * baseN[i],
+        0
+      );
+
+    const processMean =
+      totalBaselineN > 0
+        ? weightedBaselineSum /
+          totalBaselineN
+        : NaN;
+
+    // Estimate the underlying process standard deviation
+    // using the subgroup-size-adjusted S-bar method.
+    const sigmaHat =
+      estimateXbarSSigmaFromSbar(
+        baseS,
+        baseN
+      );
+
+    if (
+      !Number.isFinite(processMean) ||
+      !Number.isFinite(sigmaHat)
+    ) {
+      showError(
+        "Could not calculate X̄–S limits for these subgroup sizes."
+      );
+      return;
+    }
+
+    segmentStats.push({
+      processMean,
+      sigmaHat,
+      baselineCountUsed:
+        segBaselineCountUsed
+    });
+
+    // Each subgroup receives limits based on its own size.
+    for (
+      let i = start;
+      i <= end;
+      i++
+    ) {
+      const ni =
+        subgroupSizes[i];
+
+      const c4 =
+        c4Constant(ni);
+
+      if (
+        !Number.isFinite(c4) ||
+        c4 <= 0 ||
+        c4 >= 1
+      ) {
+        showError(
+          "Could not calculate X̄–S constants for one or more subgroup sizes."
+        );
+        return;
+      }
+
+      const c5 =
+        Math.sqrt(
+          Math.max(
+            1 - c4 * c4,
+            0
+          )
+        );
+
+      // X̄ chart
+      clX[i] =
+        processMean;
+
+      uclXArr[i] =
+        processMean +
+        (
+          3 *
+          sigmaHat /
+          Math.sqrt(ni)
+        );
+
+      lclXArr[i] =
+        processMean -
+        (
+          3 *
+          sigmaHat /
+          Math.sqrt(ni)
+        );
+
+      // S chart
+      clS[i] =
+        c4 *
+        sigmaHat;
+
+      uclSArr[i] =
+        (
+          c4 +
+          3 * c5
+        ) *
+        sigmaHat;
+
+      lclSArr[i] =
+        Math.max(
+          0,
+          (
+            c4 -
+            3 * c5
+          ) *
+          sigmaHat
+        );
     }
   }
 
-    const flagOnChart =
-    (typeof shouldFlagSpecialCauseOnChart === "function")
+  const flagOnChart =
+    (
+      typeof shouldFlagSpecialCauseOnChart ===
+      "function"
+    )
       ? shouldFlagSpecialCauseOnChart()
       : true;
 
-  const axX = analyzeAttributeChart({
-    chartType: "xbars",
-    labels: subgroupLabels,
-    values: xbarVals,
-    cl: clX,
-    ucl: uclXArr,
-    lcl: lclXArr
-  });
+  const axX =
+    analyzeAttributeChart({
+      chartType: "xbars",
+      labels: subgroupLabels,
+      values: xbarVals,
+      cl: clX,
+      ucl: uclXArr,
+      lcl: lclXArr
+    });
 
-  const axS = analyzeAttributeChart({
-    chartType: "xbars",
-    labels: subgroupLabels,
-    values: sVals,
-    cl: clS,
-    ucl: uclSArr,
-    lcl: lclSArr
-  });
+  const axS =
+    analyzeAttributeChart({
+      chartType: "xbars",
+      labels: subgroupLabels,
+      values: sVals,
+      cl: clS,
+      ucl: uclSArr,
+      lcl: lclSArr
+    });
 
-  const pointColoursX = xbarVals.map((v, i) => {
-    if (!flagOnChart) return SPC_STYLE.seriesBlue;
-    if (axX.flags?.beyond?.[i]) return SPC_STYLE.pointBeyond;
-    if (axX.flags?.special?.[i]) return SPC_STYLE.pointSpecial;
-    return SPC_STYLE.seriesBlue;
-  });
+  const pointColoursX =
+    xbarVals.map(
+      (v, i) => {
+        if (!flagOnChart) {
+          return SPC_STYLE.seriesBlue;
+        }
 
-  const pointColoursS = sVals.map((v, i) => {
-    if (!flagOnChart) return SPC_STYLE.seriesBlue;
-    if (axS.flags?.beyond?.[i]) return SPC_STYLE.pointBeyond;
-    if (axS.flags?.special?.[i]) return SPC_STYLE.pointSpecial;
-    return SPC_STYLE.seriesBlue;
-  });
+        if (
+          axX.flags
+            ?.beyond
+            ?.[i]
+        ) {
+          return SPC_STYLE.pointBeyond;
+        }
 
-  // Draw as a combined chart (your existing approach)
+        if (
+          axX.flags
+            ?.special
+            ?.[i]
+        ) {
+          return SPC_STYLE.pointSpecial;
+        }
+
+        return SPC_STYLE.seriesBlue;
+      }
+    );
+
+  const pointColoursS =
+    sVals.map(
+      (v, i) => {
+        if (!flagOnChart) {
+          return SPC_STYLE.seriesBlue;
+        }
+
+        if (
+          axS.flags
+            ?.beyond
+            ?.[i]
+        ) {
+          return SPC_STYLE.pointBeyond;
+        }
+
+        if (
+          axS.flags
+            ?.special
+            ?.[i]
+        ) {
+          return SPC_STYLE.pointSpecial;
+        }
+
+        return SPC_STYLE.seriesBlue;
+      }
+    );
+
   drawXbarSCombinedChart({
     labels: subgroupLabels,
     xbarVals,
@@ -6255,65 +6497,248 @@ function drawXbarSChart(points, baselineCount, labels) {
     lclSArr
   });
 
-  // Latest period analysis (last segment only)
-  const lastSeg = segmentStarts.length - 1;
-  const start = segmentStarts[lastSeg];
-  const end = segmentEnds[lastSeg];
+  // Latest period analysis
+  const lastSeg =
+    segmentStarts.length - 1;
+
+  const start =
+    segmentStarts[lastSeg];
+
+  const end =
+    segmentEnds[lastSeg];
 
   lastXbarSAnalysis = {
-    xbar: analyzeAttributeChart({
-      chartType: "xbars",
-      labels: subgroupLabels.slice(start, end + 1),
-      values: xbarVals.slice(start, end + 1),
-      cl: clX.slice(start, end + 1),
-      ucl: uclXArr.slice(start, end + 1),
-      lcl: lclXArr.slice(start, end + 1)
-    }),
-    s: analyzeAttributeChart({
-      chartType: "xbars",
-      labels: subgroupLabels.slice(start, end + 1),
-      values: sVals.slice(start, end + 1),
-      cl: clS.slice(start, end + 1),
-      ucl: uclSArr.slice(start, end + 1),
-      lcl: lclSArr.slice(start, end + 1)
-    })
+    xbar:
+      analyzeAttributeChart({
+        chartType: "xbars",
+        labels:
+          subgroupLabels.slice(
+            start,
+            end + 1
+          ),
+        values:
+          xbarVals.slice(
+            start,
+            end + 1
+          ),
+        cl:
+          clX.slice(
+            start,
+            end + 1
+          ),
+        ucl:
+          uclXArr.slice(
+            start,
+            end + 1
+          ),
+        lcl:
+          lclXArr.slice(
+            start,
+            end + 1
+          )
+      }),
+
+    s:
+      analyzeAttributeChart({
+        chartType: "xbars",
+        labels:
+          subgroupLabels.slice(
+            start,
+            end + 1
+          ),
+        values:
+          sVals.slice(
+            start,
+            end + 1
+          ),
+        cl:
+          clS.slice(
+            start,
+            end + 1
+          ),
+        ucl:
+          uclSArr.slice(
+            start,
+            end + 1
+          ),
+        lcl:
+          lclSArr.slice(
+            start,
+            end + 1
+          )
+      })
   };
 
-  lastXbarSAnalysis.periodIndex = lastSeg + 1;
-  lastXbarSAnalysis.periodCount = segmentStarts.length;
-  lastXbarSAnalysis.startIndex = start;
-  lastXbarSAnalysis.endIndex = end;
-  lastXbarSAnalysis.labelStart = subgroupLabels[start];
-  lastXbarSAnalysis.labelEnd = subgroupLabels[end];
+  lastXbarSAnalysis.periodIndex =
+    lastSeg + 1;
 
-   lastXbarSAnalysis.stats = {
-    subgroupSize: nSub,
-    xbarbar: clX[start],
-    sbar: clS[start],
-    uclX: uclXArr[start],
-    lclX: lclXArr[start],
-    uclS: uclSArr[start],
-    lclS: lclSArr[start]
+  lastXbarSAnalysis.periodCount =
+    segmentStarts.length;
+
+  lastXbarSAnalysis.startIndex =
+    start;
+
+  lastXbarSAnalysis.endIndex =
+    end;
+
+  lastXbarSAnalysis.labelStart =
+    subgroupLabels[start];
+
+  lastXbarSAnalysis.labelEnd =
+    subgroupLabels[end];
+
+  const latestSizes =
+    subgroupSizes.slice(
+      start,
+      end + 1
+    );
+
+  const latestUniqueSizes =
+    Array.from(
+      new Set(latestSizes)
+    );
+
+  const variableSubgroupSizes =
+    latestUniqueSizes.length > 1;
+
+  const latestXUcl =
+    uclXArr
+      .slice(start, end + 1)
+      .filter(Number.isFinite);
+
+  const latestXLcl =
+    lclXArr
+      .slice(start, end + 1)
+      .filter(Number.isFinite);
+
+  const latestSCl =
+    clS
+      .slice(start, end + 1)
+      .filter(Number.isFinite);
+
+  const latestSUcl =
+    uclSArr
+      .slice(start, end + 1)
+      .filter(Number.isFinite);
+
+  const latestSLcl =
+    lclSArr
+      .slice(start, end + 1)
+      .filter(Number.isFinite);
+
+  const latestSegmentStats =
+    segmentStats[lastSeg] || {};
+
+  lastXbarSAnalysis.stats = {
+    subgroupSize:
+      variableSubgroupSizes
+        ? null
+        : latestSizes[0],
+
+    subgroupSizes:
+      latestSizes.slice(),
+
+    subgroupSizeMin:
+      Math.min(...latestSizes),
+
+    subgroupSizeMax:
+      Math.max(...latestSizes),
+
+    variableSubgroupSizes,
+
+    processSigma:
+      latestSegmentStats.sigmaHat,
+
+    baselineCountUsed:
+      latestSegmentStats.baselineCountUsed,
+
+    xbarbar:
+      latestSegmentStats.processMean,
+
+    sbar:
+      variableSubgroupSizes
+        ? null
+        : clS[start],
+
+    uclX:
+      variableSubgroupSizes
+        ? null
+        : uclXArr[start],
+
+    lclX:
+      variableSubgroupSizes
+        ? null
+        : lclXArr[start],
+
+    uclS:
+      variableSubgroupSizes
+        ? null
+        : uclSArr[start],
+
+    lclS:
+      variableSubgroupSizes
+        ? null
+        : lclSArr[start],
+
+    xUclMin:
+      latestXUcl.length
+        ? Math.min(...latestXUcl)
+        : NaN,
+
+    xUclMax:
+      latestXUcl.length
+        ? Math.max(...latestXUcl)
+        : NaN,
+
+    xLclMin:
+      latestXLcl.length
+        ? Math.min(...latestXLcl)
+        : NaN,
+
+    xLclMax:
+      latestXLcl.length
+        ? Math.max(...latestXLcl)
+        : NaN,
+
+    sClMin:
+      latestSCl.length
+        ? Math.min(...latestSCl)
+        : NaN,
+
+    sClMax:
+      latestSCl.length
+        ? Math.max(...latestSCl)
+        : NaN,
+
+    sUclMin:
+      latestSUcl.length
+        ? Math.min(...latestSUcl)
+        : NaN,
+
+    sUclMax:
+      latestSUcl.length
+        ? Math.max(...latestSUcl)
+        : NaN,
+
+    sLclMin:
+      latestSLcl.length
+        ? Math.min(...latestSLcl)
+        : NaN,
+
+    sLclMax:
+      latestSLcl.length
+        ? Math.max(...latestSLcl)
+        : NaN
   };
 
-  if (typeof renderXbarSSummary === "function") {
-    renderXbarSSummary(lastXbarSAnalysis, subgroupLabels.length);
-  } else if (summaryDiv) {
-    const xStable = lastXbarSAnalysis.xbar.isStable;
-    const sStable = lastXbarSAnalysis.s.isStable;
-
-    summaryDiv.innerHTML = `
-      <h3>X̄–S summary (latest period)</h3>
-      <ul>
-        <li><strong>Coverage:</strong> subgroups ${start + 1}–${end + 1}.</li>
-        <li><strong>Typical subgroup size:</strong> ${nSub} measurement${nSub === 1 ? "" : "s"} per subgroup.</li>
-        <li><strong>X̄ chart centre line:</strong> ${Number.isFinite(clX[start]) ? clX[start].toFixed(3) : "not available"}; limits: LCL = ${Number.isFinite(lclXArr[start]) ? lclXArr[start].toFixed(3) : "not available"}, UCL = ${Number.isFinite(uclXArr[start]) ? uclXArr[start].toFixed(3) : "not available"}.</li>
-        <li><strong>S chart centre line:</strong> ${Number.isFinite(clS[start]) ? clS[start].toFixed(3) : "not available"}; limits: LCL = ${Number.isFinite(lclSArr[start]) ? lclSArr[start].toFixed(3) : "not available"}, UCL = ${Number.isFinite(uclSArr[start]) ? uclSArr[start].toFixed(3) : "not available"}.</li>
-        <li><strong>X̄ chart:</strong> ${xStable ? "stable (no clear signal of change)." : ("signal(s): " + lastXbarSAnalysis.xbar.signals.join("; "))}</li>
-        <li><strong>S chart:</strong> ${sStable ? "stable (no clear signal of change)." : ("signal(s): " + lastXbarSAnalysis.s.signals.join("; "))}</li>
-        <li><strong>Tip:</strong> If the S chart is unstable, the X̄ limits may not be reliable until the spread settles.</li>
-      </ul>
-    `;
+  if (
+    typeof renderXbarSSummary ===
+    "function"
+  ) {
+    renderXbarSSummary(
+      lastXbarSAnalysis,
+      subgroupLabels.length
+    );
   }
 }
 
@@ -7953,28 +8378,49 @@ function findShiftWindow(values, cl, shiftLength) {
 
   for (let i = 0; i < values.length; i++) {
     const v = values[i];
-    if (!isFinite(v) || !isFinite(cl)) {
+
+    const centre =
+      Array.isArray(cl)
+        ? cl[i]
+        : cl;
+
+    if (
+      !isFinite(v) ||
+      !isFinite(centre)
+    ) {
       run = 0;
       side = 0;
       continue;
     }
 
-    const s = v > cl ? 1 : (v < cl ? -1 : 0);
+    const s =
+      v > centre
+        ? 1
+        : (
+            v < centre
+              ? -1
+              : 0
+          );
+
     if (s === 0) {
       run = 0;
       side = 0;
       continue;
     }
 
-    if (s === side) run += 1;
-    else {
+    if (s === side) {
+      run += 1;
+    } else {
       side = s;
       run = 1;
     }
 
     if (run >= shiftLength) {
       return {
-        start: i - shiftLength + 1,
+        start:
+          i -
+          shiftLength +
+          1,
         end: i,
         side
       };
@@ -7983,6 +8429,7 @@ function findShiftWindow(values, cl, shiftLength) {
 
   return null;
 }
+
 
 function findTrendWindow(values, trendLength) {
   let inc = 1;
@@ -8175,7 +8622,10 @@ function analyzeAttributeChart({ chartType, labels, values, cl, ucl, lcl }) {
   const uclArr = Array.isArray(ucl) ? ucl : new Array(n).fill(ucl);
   const lclArr = Array.isArray(lcl) ? lcl : new Array(n).fill(lcl);
 
-  const clScalar = clArr.find(v => Number.isFinite(v));
+  const hasFiniteCentreLine =
+  clArr.some(
+    v => Number.isFinite(v)
+  );
 
   // 1) Beyond limits
   let outOfControl = [];
@@ -8191,8 +8641,16 @@ function analyzeAttributeChart({ chartType, labels, values, cl, ucl, lcl }) {
 
   // 2) Shift / run
   let shiftWindow = null;
-  if (rs.allowRunShift && Number.isFinite(clScalar)) {
-    shiftWindow = findShiftWindow(values, clScalar, rs.shiftLength);
+  if (
+  rs.allowRunShift &&
+  hasFiniteCentreLine
+) {
+  shiftWindow =
+    findShiftWindow(
+      values,
+      clArr,
+      rs.shiftLength
+    );
     if (shiftWindow) {
       const sideText = shiftWindow.side > 0 ? "above" : "below";
       const aLab = labels?.[shiftWindow.start] ?? `point ${shiftWindow.start + 1}`;
@@ -9488,108 +9946,260 @@ if (target !== null) {
   }
 }
 
-function renderXbarSSummary(latestAnalysis, totalSubgroups) {
-  if (!summaryDiv || !latestAnalysis) return;
-
-  const x = latestAnalysis.xbar;
-  const s = latestAnalysis.s;
-
-  const xStable = !!x?.isStable;
-  const sStable = !!s?.isStable;
-
-  const periodIndex = latestAnalysis.periodIndex || 1;
-  const periodCount = latestAnalysis.periodCount || 1;
-  const startIndex = latestAnalysis.startIndex ?? 0;
-  const endIndex = latestAnalysis.endIndex ?? 0;
-  const labelStart = latestAnalysis.labelStart;
-  const labelEnd = latestAnalysis.labelEnd;
-
-  const stats = latestAnalysis.stats || {};
-  const subgroupSizeText = Number.isFinite(stats.subgroupSize)
-    ? `${stats.subgroupSize}`
-    : "not stated";
-
-  const xbarbarText = Number.isFinite(stats.xbarbar)
-    ? stats.xbarbar.toFixed(3)
-    : "not available";
-
-  const sbarText = Number.isFinite(stats.sbar)
-    ? stats.sbar.toFixed(3)
-    : "not available";
-
-  const uclXText = Number.isFinite(stats.uclX)
-    ? stats.uclX.toFixed(3)
-    : "not available";
-
-  const lclXText = Number.isFinite(stats.lclX)
-    ? stats.lclX.toFixed(3)
-    : "not available";
-
-  const uclSText = Number.isFinite(stats.uclS)
-    ? stats.uclS.toFixed(3)
-    : "not available";
-
-  const lclSText = Number.isFinite(stats.lclS)
-    ? stats.lclS.toFixed(3)
-    : "not available";
-
-  const base = `subgroups ${startIndex + 1}–${endIndex + 1}`;
-  const rangeText =
-    (typeof getAxisType === "function" &&
-      getAxisType() === "date" &&
-      labelStart !== undefined &&
-      labelEnd !== undefined)
-      ? `${base} (${formatDateOnlyLabel(labelStart)} to ${formatDateOnlyLabel(labelEnd)})`
-      : base;
-
-  const xSignals = Array.isArray(x?.signals) ? x.signals : [];
-  const sSignals = Array.isArray(s?.signals) ? s.signals : [];
-
-  let overallInterpretation = "";
-  if (xStable && sStable) {
-    overallInterpretation =
-      "Both the subgroup averages (X̄) and within-subgroup variation (S) look stable in the latest period. No clear special-cause signals were detected in the latest X̄–S period. This suggests the process may be behaving consistently, but it should still be monitored and interpreted with local context.";
-  } else if (!xStable && sStable) {
-    overallInterpretation =
-      "The subgroup averages (X̄) show special-cause signals, but the within-subgroup variation (S) looks stable. This suggests that the process level may have shifted while within-group variation stayed broadly consistent.";
-  } else if (xStable && !sStable) {
-    overallInterpretation =
-      "The subgroup averages (X̄) look stable, but the within-subgroup variation (S) shows special-cause signals. This suggests the average level may be steady while consistency within subgroups has changed.";
-  } else {
-    overallInterpretation =
-      "Both the subgroup averages (X̄) and the within-subgroup variation (S) show special-cause signals. This suggests the process level and its consistency may both have changed.";
+function renderXbarSSummary(
+  latestAnalysis,
+  totalSubgroups
+) {
+  if (
+    !summaryDiv ||
+    !latestAnalysis
+  ) {
+    return;
   }
 
-  let html = `<h3>X̄–S summary (latest period)</h3>`;
-  html += `<p>Total number of subgroups: <strong>${totalSubgroups}</strong>. `;
-  html += `Showing interpretation for <strong>period ${periodIndex} of ${periodCount}</strong>.</p>`;
+  const x =
+    latestAnalysis.xbar;
 
-  html += `<div class="pdf-avoid-break">`;
-  html += `<ul>`;
-  html += `<li><strong>Coverage:</strong> ${rangeText}.</li>`;
-  html += `<li><strong>Typical subgroup size:</strong> ${subgroupSizeText} measurement${subgroupSizeText === "1" ? "" : "s"} per subgroup.</li>`;
-  html += `<li><strong>X̄ chart centre line:</strong> ${xbarbarText}; limits: LCL = ${lclXText}, UCL = ${uclXText}.</li>`;
-  html += `<li><strong>S chart centre line:</strong> ${sbarText}; limits: LCL = ${lclSText}, UCL = ${uclSText}.</li>`;
+  const s =
+    latestAnalysis.s;
+
+  const xStable =
+    !!x?.isStable;
+
+  const sStable =
+    !!s?.isStable;
+
+  const periodIndex =
+    latestAnalysis.periodIndex || 1;
+
+  const periodCount =
+    latestAnalysis.periodCount || 1;
+
+  const startIndex =
+    latestAnalysis.startIndex ?? 0;
+
+  const endIndex =
+    latestAnalysis.endIndex ?? 0;
+
+  const labelStart =
+    latestAnalysis.labelStart;
+
+  const labelEnd =
+    latestAnalysis.labelEnd;
+
+  const stats =
+    latestAnalysis.stats || {};
+
+  const fmt =
+    (value) =>
+      Number.isFinite(value)
+        ? Number(value).toFixed(3)
+        : "not available";
+
+  const variableSubgroupSizes =
+    !!stats.variableSubgroupSizes;
+
+  const subgroupSizeText =
+    (
+      variableSubgroupSizes &&
+      Number.isFinite(
+        stats.subgroupSizeMin
+      ) &&
+      Number.isFinite(
+        stats.subgroupSizeMax
+      )
+    )
+      ? (
+          `${stats.subgroupSizeMin}–` +
+          `${stats.subgroupSizeMax} ` +
+          "(varies by subgroup)"
+        )
+      : Number.isFinite(
+          stats.subgroupSize
+        )
+        ? `${stats.subgroupSize}`
+        : "not stated";
+
+  const xbarbarText =
+    fmt(stats.xbarbar);
+
+  const sigmaText =
+    fmt(stats.processSigma);
+
+  const base =
+    `subgroups ${startIndex + 1}–${endIndex + 1}`;
+
+  const rangeText =
+    (
+      typeof getAxisType ===
+        "function" &&
+      getAxisType() === "date" &&
+      labelStart !== undefined &&
+      labelEnd !== undefined
+    )
+      ? (
+          `${base} (` +
+          `${formatDateOnlyLabel(labelStart)} ` +
+          `to ` +
+          `${formatDateOnlyLabel(labelEnd)})`
+        )
+      : base;
+
+  const xSignals =
+    Array.isArray(x?.signals)
+      ? x.signals
+      : [];
+
+  const sSignals =
+    Array.isArray(s?.signals)
+      ? s.signals
+      : [];
+
+  let overallInterpretation = "";
+
+  if (
+    xStable &&
+    sStable
+  ) {
+    overallInterpretation =
+      "Both the subgroup averages (X̄) and within-subgroup variation (S) look stable in the latest period. " +
+      "No clear special-cause signals were detected in the latest X̄–S period. " +
+      "This suggests the process may be behaving consistently, but it should still be monitored and interpreted with local context.";
+
+  } else if (
+    !xStable &&
+    sStable
+  ) {
+    overallInterpretation =
+      "The subgroup averages (X̄) show special-cause signals, but the within-subgroup variation (S) looks stable. " +
+      "This suggests that the process level may have shifted while within-group variation stayed broadly consistent.";
+
+  } else if (
+    xStable &&
+    !sStable
+  ) {
+    overallInterpretation =
+      "The subgroup averages (X̄) look stable, but the within-subgroup variation (S) shows special-cause signals. " +
+      "This suggests the average level may be steady while consistency within subgroups has changed.";
+
+  } else {
+    overallInterpretation =
+      "Both the subgroup averages (X̄) and the within-subgroup variation (S) show special-cause signals. " +
+      "This suggests the process level and its consistency may both have changed.";
+  }
+
+  let html =
+    `<h3>X̄–S summary (latest period)</h3>`;
+
+  html +=
+    `<p>Total number of subgroups: ` +
+    `<strong>${totalSubgroups}</strong>. ` +
+    `Showing interpretation for ` +
+    `<strong>period ${periodIndex} of ${periodCount}</strong>.</p>`;
+
+  html +=
+    `<div class="pdf-avoid-break">`;
+
+  html +=
+    `<ul>`;
+
+  html +=
+    `<li><strong>Coverage:</strong> ` +
+    `${rangeText}.</li>`;
+
+  html +=
+    `<li><strong>Subgroup size:</strong> ` +
+    `${subgroupSizeText} ` +
+    `measurement${stats.subgroupSize === 1 ? "" : "s"} ` +
+    `per subgroup.</li>`;
+
+  if (variableSubgroupSizes) {
+    html +=
+      `<li>` +
+      `<strong>X̄ chart centre line:</strong> ` +
+      `${xbarbarText}; ` +
+      `<strong>control limits vary with subgroup size:</strong> ` +
+      `LCL range = ${fmt(stats.xLclMin)}–${fmt(stats.xLclMax)}, ` +
+      `UCL range = ${fmt(stats.xUclMin)}–${fmt(stats.xUclMax)}.` +
+      `</li>`;
+
+    html +=
+      `<li>` +
+      `<strong>S chart:</strong> ` +
+      `the expected S and its control limits vary with subgroup size. ` +
+      `Centre-line range = ${fmt(stats.sClMin)}–${fmt(stats.sClMax)}; ` +
+      `LCL range = ${fmt(stats.sLclMin)}–${fmt(stats.sLclMax)}; ` +
+      `UCL range = ${fmt(stats.sUclMin)}–${fmt(stats.sUclMax)}.` +
+      `</li>`;
+
+    html +=
+      `<li>` +
+      `<strong>Estimated process standard deviation:</strong> ` +
+      `${sigmaText}. ` +
+      `SimpleSPC uses the actual size of each subgroup when calculating its limits.` +
+      `</li>`;
+
+  } else {
+    html +=
+      `<li>` +
+      `<strong>X̄ chart centre line:</strong> ` +
+      `${xbarbarText}; limits: ` +
+      `LCL = ${fmt(stats.lclX)}, ` +
+      `UCL = ${fmt(stats.uclX)}.` +
+      `</li>`;
+
+    html +=
+      `<li>` +
+      `<strong>S chart centre line:</strong> ` +
+      `${fmt(stats.sbar)}; limits: ` +
+      `LCL = ${fmt(stats.lclS)}, ` +
+      `UCL = ${fmt(stats.uclS)}.` +
+      `</li>`;
+  }
 
   if (xStable) {
-    html += `<li><strong>X̄ chart:</strong> stable (no clear signal of change in subgroup averages).</li>`;
+    html +=
+      `<li>` +
+      `<strong>X̄ chart:</strong> ` +
+      `stable (no clear signal of change in subgroup averages).` +
+      `</li>`;
   } else {
-    html += `<li><strong>X̄ chart:</strong> signal(s): ${xSignals.join("; ")}.</li>`;
+    html +=
+      `<li>` +
+      `<strong>X̄ chart:</strong> ` +
+      `signal(s): ${xSignals.join("; ")}.` +
+      `</li>`;
   }
 
   if (sStable) {
-    html += `<li><strong>S chart:</strong> stable (no clear signal of change in within-subgroup variation).</li>`;
+    html +=
+      `<li>` +
+      `<strong>S chart:</strong> ` +
+      `stable (no clear signal of change in within-subgroup variation).` +
+      `</li>`;
   } else {
-    html += `<li><strong>S chart:</strong> signal(s): ${sSignals.join("; ")}.</li>`;
+    html +=
+      `<li>` +
+      `<strong>S chart:</strong> ` +
+      `signal(s): ${sSignals.join("; ")}.` +
+      `</li>`;
   }
 
-  html += `<li><strong>Interpretation:</strong> ${overallInterpretation}</li>`;
-  html += `</ul>`;
-  html += `</div>`;
+  html +=
+    `<li>` +
+    `<strong>Interpretation:</strong> ` +
+    `${overallInterpretation}` +
+    `</li>`;
 
-  summaryDiv.innerHTML = html;
+  html +=
+    `</ul>`;
+
+  html +=
+    `</div>`;
+
+  summaryDiv.innerHTML =
+    html;
 }
-
 // Approximate standard normal CDF Φ(z)
 function normalCdf(z) {
   // Abramowitz & Stegun approximation
