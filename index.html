@@ -46,7 +46,12 @@
   </div>
 </div>
 
-<button id="resetButton" type="button" style="margin-left:0.5rem;">Reset chart</button>
+<button
+  id="resetButton"
+  type="button"
+  style="margin-left:0.5rem;"
+  title="Keep your loaded data and selected columns, but reset chart settings including targets, splits, annotations, rules and formatting."
+>Reset chart</button>
 <button type="button" style="margin-left:0.5rem;" onclick="toggleHelpSection()">Help &amp; guidance</button>
 <button type="button" style="margin-left:0.5rem;" onclick="toggleSpcHelper()">SPC helper</button>
 
@@ -65,7 +70,11 @@
 <button class="tab-btn" data-tab="tab-chart">Chart</button>
 <button class="tab-btn" data-tab="tab-labels">Labels</button>
 <button class="tab-btn" data-tab="tab-axes">Axes</button>
-<button class="tab-btn" data-tab="tab-baseline">Baseline</button>
+<button
+  class="tab-btn"
+  data-tab="tab-baseline"
+  title="Set an initial baseline period or a performance target"
+>Baseline</button>
 <button class="tab-btn" data-tab="tab-rules">Rules</button>
 </div>
 
@@ -85,14 +94,25 @@
     <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" />
 
     <div class="hint small-hint">
-      Expected columns: a date/time column and a numeric column.
-    </div>
+  The columns you need depend on the chart type.
+  Most SPC charts need a time or sequence column and
+  a measurement. Some also need counts and denominators.
+  Pareto charts need a category column and can optionally
+  use a frequency/count column.
+</div>
 
     <button id="openDataEditorButton" type="button">
       Open data editor (paste/type data)
     </button>
 
-    <button id="clearDataButton" type="button" class="clear-data-button">
+    <button
+  id="clearDataButton"
+  type="button"
+  class="clear-data-button"
+  title="Remove the loaded data and reset the chart. Save your work first if you want to reopen it later."
+>
+  Clear data &amp; chart
+</button>
     Clear data &amp; chart
     </button>
 
@@ -293,7 +313,34 @@
   </label>
 
   <div id="mrDisplayOptions" class="mr-mode">
-    <span id="mrDisplayModeLabel" class="mr-mode-label">MR display</span>
+    <span class="label-with-tooltip">
+
+  <span id="mrDisplayModeLabel" class="mr-mode-label">
+    MR display
+  </span>
+
+  <span
+    class="help-tooltip"
+    tabindex="0"
+    aria-label="Secondary chart display help"
+  >
+    ?
+    <span class="help-tooltip-text">
+      XmR charts can show a Moving Range (MR) chart,
+      which helps explain the variation between
+      consecutive measurements.
+
+      X-bar and S charts can show an S chart,
+      which displays variation within subgroups.
+
+      Current shows the latest analysis period only.
+      All shows the full history, including split periods.
+
+      Use the checkbox to show or hide the secondary chart.
+    </span>
+  </span>
+
+</span>
 
     <label class="mr-radio">
       <input type="radio" name="mrDisplayMode" value="last" checked />
@@ -666,7 +713,39 @@ Y-axis label
 
 <div class="panel">
 
-<h3 style="margin-top:0.8rem;">Baseline data</h3>
+
+<h3 style="margin-top:0.8rem;">
+  <span class="label-with-tooltip">
+    Baseline data
+
+    <span
+      class="help-tooltip"
+      tabindex="0"
+      aria-label="Baseline data help"
+    >
+      ?
+      <span class="help-tooltip-text">
+        A baseline is an initial reference period used
+        to understand how your process was performing
+        before later observations.
+
+        Enter the number of points to use as your
+        starting reference. SimpleSPC uses these to
+        calculate the initial centre line and, where
+        applicable, control limits. Later observations
+        remain visible for comparison.
+
+        Leave blank if you do not need a separate
+        initial baseline period.
+
+        Choose a baseline based on your knowledge
+        of the process, not simply to remove
+        inconvenient signals.
+      </span>
+    </span>
+  </span>
+</h3>
+
 
 <label>
 Use first
@@ -970,7 +1049,28 @@ Hide target line
       <div id="reportContent">  
 
         <div class="panel">
-          <strong>Chart:</strong>
+          <strong class="label-with-tooltip">
+  Chart:
+
+  <span
+    class="help-tooltip"
+    tabindex="0"
+    aria-label="Chart right-click menu help"
+  >
+    ?
+    <span class="help-tooltip-text">
+      Right-click the chart for additional options.
+
+      Depending on the chart type, you can add annotations,
+      create or remove splits, exclude or reinclude investigated
+      data points from limit calculations, manage centre-line
+      labels, and copy or export your chart.
+
+      Some actions require you to right-click directly on
+      a plotted data point.
+    </span>
+  </span>
+</strong>
 
 <div id="firstRunGuide" style="
   display:none;
@@ -1225,8 +1325,7 @@ Hide target line
     </li>
     <li>
       <strong>Sequence / category</strong> – use when observations
-      should be shown in their sequence or by category, without
-      interpreting the labels as dates.
+      should be shown in order without treating their labels as dates.
     </li>
   </ul>
 
@@ -1249,91 +1348,89 @@ Hide target line
   <summary><strong>6. Baselines, splits, targets and the right-click menu</strong></summary>
 
   <p>
-    SimpleSPC lets you investigate and explain patterns in
-    your charts using several additional features.
+    SimpleSPC offers additional features to help you investigate
+    and explain your data.
   </p>
 
   <ul>
     <li>
-      <strong>Baseline</strong> – calculate the initial centre
-      line and limits using an earlier reference period.
+      <strong>Set a baseline:</strong>
+      Open the <strong>Baseline</strong> tab and enter the number
+      of initial points you want to use as a reference period.
+      Leave this blank if you do not need a separate initial baseline.
     </li>
+
     <li>
-      <strong>Splits</strong> – divide the chart into separate
-      periods and recalculate centre lines and limits where
-      a genuine change in the process has occurred.
+      <strong>Set a target:</strong>
+      Open the <strong>Baseline</strong> tab and find
+      <strong>Target</strong>. Enter the level of performance
+      you want to achieve, then select whether values at or
+      above, or at or below, that target are good.
+      You can also show or hide the target line.
+      A target is a performance goal, not a statistical control limit.
     </li>
+
     <li>
-  <strong>Targets</strong> – open the
-  <strong>Baseline</strong> tab, enter your
-  target value, and choose whether being at or above
-  or at or below the target is good. The chart will
-  update automatically. A target represents the level
-  of performance you want to achieve, not a statistical
-  control limit.
-</li>
+      <strong>Add a split:</strong>
+      Right-click a plotted point and choose
+      <strong>Splits</strong>, then
+      <strong>Add split after this point</strong>.
+      This divides the chart into separate analysis periods
+      where supported.
+    </li>
+
     <li>
-      <strong>Annotations</strong> – record events, changes
-      or explanations that may help interpret the chart.
+      <strong>Add an annotation:</strong>
+      Right-click a plotted point and use the
+      <strong>Annotations</strong> menu to record
+      an event, intervention or explanation.
     </li>
   </ul>
 
   <p>
-    <strong>Using the right-click menu</strong>
+    <strong>Discover the right-click menu</strong>
   </p>
 
   <p>
-    Right-click directly on the chart to open a menu of
-    additional options. Some actions depend on which chart
-    you are using or which data point you select.
+    Right-click directly on a chart to discover additional
+    options. Available actions depend on the chart type
+    and where you click.
   </p>
 
   <ul>
-    <li>
-      <strong>Add, edit or remove annotations</strong> –
-      right-click near a plotted point to attach an explanation,
-      or manage existing annotations.
-    </li>
-    <li>
-      <strong>Add or remove splits</strong> – use the Splits
-      submenu to mark where a new period begins, or remove
-      a previously added split.
-    </li>
-    <li>
-      <strong>Exclude a data point from limit calculations</strong> –
-      where supported, keep an observation visible on the chart
-      while excluding it from the calculation of the centre line
-      and control limits. You can reinclude it later.
-    </li>
-    <li>
-      <strong>Show or hide centre-line labels</strong> –
-      display calculated centre values, hide individual labels
-      or restore previously hidden labels.
-    </li>
-    <li>
-      <strong>Copy or export</strong> – copy the chart alone,
-      copy the chart with its analysis, or save a PNG image.
-    </li>
+    <li>Add, edit or delete annotations.</li>
+    <li>Add or remove split periods.</li>
+    <li>Exclude or reinclude investigated observations from control-limit calculations.</li>
+    <li>Show, hide or restore centre-line labels.</li>
+    <li>Copy the chart, copy its analysis, or export an image.</li>
   </ul>
 
   <p>
-    <strong>Important:</strong> Only exclude a point from limit
-    calculations after investigating and understanding why it
-    differs, and deciding that it does not represent the routine
-    variation of the process. Excluded observations remain
-    visible. Consider adding an annotation to explain the reason.
+    <strong>Important – excluding data points:</strong>
+    Only exclude an observation from limit calculations after
+    investigating and understanding the reason it differs,
+    and deciding it does not represent routine process variation.
+    Excluded observations remain visible and can be reincluded.
+    Consider annotating the reason for exclusion.
   </p>
 
   <p>
-    For X̄–S charts, exclusion applies to the whole subgroup.
-    Point exclusion and control-limit splits are not applicable
-    to Pareto charts.
+    On X̄–S charts, exclusion applies to an entire subgroup.
+    Pareto charts do not use control-limit splits or point exclusions.
   </p>
 
   <p>
-    Splits should also be based on an investigated and understood
-    change in the process, rather than simply being used to
-    remove an inconvenient statistical signal.
+    Similarly, only use a split when there is good reason
+    to believe the process has changed. Splits should reflect
+    investigated changes, not simply remove inconvenient signals.
+  </p>
+
+  <p>
+    Look for the small <strong>?</strong> symbols beside
+    controls throughout SimpleSPC. Hover over them, or
+    focus them with the keyboard, for additional guidance.
+    You can also ask the <strong>SPC helper</strong> about
+    your chart and its interpretation.
   </p>
 </details>
 
@@ -1436,8 +1533,14 @@ Hide target line
             <li>once you close or refresh the page, unsaved work is no longer retained unless you saved a chart json file</li>
           </ul>
           <p class="hint">
-            Always follow your local information governance guidance before using real patient-identifiable data.
-          </p>
+  <strong>Important:</strong> SimpleSPC is not designed
+  for patient-identifiable or other sensitive personal data.
+  Use anonymised or appropriately aggregated data, and
+  follow your organisation's information-governance,
+  confidentiality and cybersecurity requirements.
+  Remember that saved JSON and portable HTML files
+  contain the data used to create the chart.
+</p>
         </details>
 
         <details>
