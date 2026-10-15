@@ -45,6 +45,7 @@
     case "uprime": return "U′ chart";
     case "t": return "T chart";
     case "g": return "G chart";
+    case "pareto": return "Pareto chart";
     default: return "chart";
   }
 }
@@ -115,6 +116,12 @@
       ? lastRareAnalysis
       : null;
 
+    const paretoCandidate =
+    typeof lastParetoAnalysis !==
+      "undefined"
+      ? lastParetoAnalysis
+      : null;
+
   const isAttributeChart =
     ["c", "p", "pprime", "u", "uprime"].includes(chartType);
 
@@ -153,6 +160,11 @@
         ? rareCandidate
         : null,
 
+    pareto:
+      chartType === "pareto"
+        ? paretoCandidate
+        : null,
+
     xmrPeriods:
       chartType === "xmr"
         ? (window.lastXmRPeriods || null)
@@ -182,6 +194,12 @@ function describeRulesForCurrentChart(chartType) {
     case "run":
       return "For this run chart, SimpleSPC uses run-chart rules such as shifts and, where enabled, trends. Control-limit rules do not apply to run charts.";
 
+    case "pareto":
+  return (
+    "SPC signal rules are not used on a Pareto chart. " +
+    "A Pareto chart ranks categories rather than showing process behaviour over time."
+  );
+
     default:
       return "SimpleSPC uses a conservative, chart-aware rule set. Not every rule is available for every chart type.";
   }
@@ -189,6 +207,18 @@ function describeRulesForCurrentChart(chartType) {
 
   function getSuggestedQuestions(hasChart) {
   const chartType = getChartTypeSafe();
+
+  if (
+    hasChart &&
+    chartType === "pareto"
+  ) {
+    return [
+      "What is my chart telling me?",
+      "What does the 80% line mean?",
+      "Are the biggest categories the causes?",
+      "What should I do next?"
+    ];
+  }
 
   const chartQuestions = [
     "What is my chart telling me?",
@@ -411,6 +441,7 @@ function describeRulesForCurrentChart(chartType) {
     "• U′ chart: rates where the variation is more or less than a standard U chart expects\n" +
     "• X̄–S chart: subgrouped continuous data\n" +
     "• T / G charts: rare events\n\n" +
+    "• Pareto chart: ranks categories by frequency to help focus investigation; it supplements rather than replaces a time-ordered SPC chart\n\n" +
     "For proportion data, SimpleSPC normally starts with a P chart and checks whether P′ better matches the observed variation. " +
     "For rate data with changing opportunity, it normally starts with a U chart and checks whether U′ better matches the observed variation."
 },
@@ -1031,6 +1062,15 @@ function buildSigmaZExplanation(ctx) {
   function buildLatestPeriodSummary(ctx) {
   const chartType = ctx.chartType;
 
+  if (
+    chartType === "pareto"
+  ) {
+    return (
+      buildParetoAnswer(ctx) +
+      "\n\nA Pareto chart does not assess process stability because the categories are not plotted in time order."
+    );
+  }
+
   if (chartType === "xmr" && ctx.xmr) {
     const a = ctx.xmr;
     const start = (a.startIndex ?? 0) + 1;
@@ -1498,19 +1538,131 @@ function buildXmRLimitsAnswer(ctx) {
   return out;
 }
 
+function buildParetoAnswer(ctx) {
+  const p =
+    ctx.pareto;
+
+  if (!p) {
+    return (
+      "A Pareto chart ranks categories from most to least frequent. " +
+      "It can help you decide where further investigation or improvement effort may be most useful."
+    );
+  }
+
+  const topName =
+    p.topCategory ||
+    p.items?.[0]
+      ?.category ||
+    "the first category";
+
+  const topCount =
+    finiteNumber(
+      p.topCount
+    )
+      ? p.topCount
+      : p.items?.[0]
+          ?.count;
+
+  const topPct =
+    finiteNumber(
+      p.topShare
+    )
+      ? p.topShare * 100
+      : null;
+
+  let out =
+    `This Pareto chart contains ${p.total} occurrences across ${p.categoryCount} categories. ` +
+    `The categories are ordered from most frequent to least frequent.`;
+
+  if (
+    topName &&
+    finiteNumber(topCount)
+  ) {
+    out +=
+      `\n\nThe largest category is ${topName}, with ${topCount} occurrence${
+        topCount === 1
+          ? ""
+          : "s"
+      }${
+        finiteNumber(topPct)
+          ? ` (${topPct.toFixed(1)}% of the total)`
+          : ""
+      }.`;
+  }
+
+  if (
+    finiteNumber(
+      p.cutoff80Count
+    ) &&
+    finiteNumber(
+      p.cutoff80Pct
+    )
+  ) {
+    out +=
+      `\n\nThe first ${p.cutoff80Count} categor${
+        p.cutoff80Count === 1
+          ? "y"
+          : "ies"
+      } account for about ${p.cutoff80Pct.toFixed(1)}% of the occurrences. ` +
+      "That can help you decide where to investigate first, but the 80% line is a prioritisation guide rather than a statistical limit.";
+  }
+
+  if (
+    finiteNumber(p.total) &&
+    p.total < 30
+  ) {
+    out +=
+      "\n\nThere are fewer than 30 occurrences in this chart, so the ranking may change quite easily as more data are collected.";
+  }
+
+  out +=
+    "\n\nDo not assume that the largest categories are necessarily the causes of the problem. " +
+    "They are ways of grouping the data and should normally prompt further investigation.";
+
+  out +=
+    "\n\nA Pareto chart is not time ordered, so it cannot tell you whether a process is stable or whether a change is statistically significant. " +
+    "Use a run or Shewhart chart alongside it when that question matters.";
+
+  return out;
+}
+
 
   function buildWhatChartTellingMe(ctx) {
   const chartType = ctx.chartType;
 
-  if (chartType === "xmr" && ctx.xmr) {
-    return buildXmRChangeAnswer(ctx);
-  }
+  if (
+  chartType === "pareto"
+) {
+  return buildParetoAnswer(
+    ctx
+  );
+}
 
-  return buildLatestPeriodSummary(ctx);
+if (
+  chartType === "xmr" &&
+  ctx.xmr
+) {
+  return buildXmRChangeAnswer(
+    ctx
+  );
+}
+
+return buildLatestPeriodSummary(
+  ctx
+);
 }
 
 function buildChangeAnswer(ctx) {
   const chartType = ctx.chartType;
+
+  if (
+    chartType === "pareto"
+  ) {
+    return (
+      "A Pareto chart cannot tell whether something has changed over time because it deliberately removes the time order and ranks categories by frequency.\n\n" +
+      buildParetoAnswer(ctx)
+    );
+  }
 
   if (chartType === "xmr" && ctx.xmr) {
     return buildXmRChangeAnswer(ctx);
@@ -1653,6 +1805,16 @@ function buildImprovementAnswer(ctx) {
 }
 
 function buildDecisionAnswer(ctx) {
+
+  if (
+    ctx.chartType === "pareto"
+  ) {
+    return (
+      buildParetoAnswer(ctx) +
+      "\n\nA sensible next step is to investigate the leading categories in more detail, using local knowledge and, where useful, further stratification. Do not assume the category itself is the underlying cause."
+    );
+  }
+
   const latestSummary =
     buildLatestPeriodSummary(ctx);
 

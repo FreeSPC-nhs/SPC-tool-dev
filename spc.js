@@ -661,6 +661,7 @@ function appendLimitExclusionSummary() {
 }
 let lastXmRAnalysis = null;
 let lastRunAnalysis = null;
+let lastParetoAnalysis = null;
 let dataModelDirty = false;
 let gridHeaders = ["Date", "Value"];
 let lastGridHeadersKey = ""; // track changes
@@ -713,8 +714,12 @@ const IMPLEMENTED_CHARTS =
     "uprime",
     "xbars",
     "t",
-    "g"
+    "g",
+    "pareto"
   ]);
+
+const PARETO_COUNT_ROWS =
+  "__pareto_count_rows__";
 
 function isPFamilyChartType(chartType) {
   return chartType === "p" ||
@@ -1755,7 +1760,10 @@ setPressed(yAxisBoldBtn, settings.axes?.y?.font?.weight === "bold");
 // Reapply the saved X-axis type after column intelligence.
 // X̄–S is always categorical by subgroup, so old saved projects
 // that used Date / time are safely normalised to Sequence / category.
-if (chartTypeNow === "xbars") {
+if (
+  chartTypeNow === "xbars" ||
+  chartTypeNow === "pareto"
+) {
   if (typeof setAxisType === "function") {
     setAxisType("sequence");
   } else {
@@ -4338,6 +4346,27 @@ function validateBeforeGenerate() {
     return false;
   }
 
+  if (chartType === "pareto") {
+    const paretoCheck =
+      computeParetoData(
+        rawRows,
+        dateCol,
+        valueCol
+      );
+
+    if (!paretoCheck.ok) {
+      showError(
+        paretoCheck.error
+      );
+
+      return false;
+    }
+
+    // Pareto is categorical, so the ordinary numeric-value
+    // and date-axis safety checks below do not apply.
+    return true;
+  }
+
   // Check at least 3 valid numeric points in the selected value column.
   // (T chart event-dates mode still uses a value selector in the UI for now,
   // so keep this behaviour consistent until that workflow is changed.)
@@ -4765,6 +4794,80 @@ function chooseDefaultsForChart(chartType) {
   // candidates for numeric roles
   const numericCols = allColumns.filter(c => getProfile(c)?.isNumeric && !getProfile(c)?.looksLikeDate);
 
+  if (chartType === "pareto") {
+    const categoryCandidates =
+      allColumns
+        .filter(
+          c =>
+            getProfile(c)?.nonEmpty > 0
+        )
+        .slice()
+        .sort(
+          (a, b) => {
+            function score(col) {
+              const p =
+                getProfile(col);
+
+              const name =
+                String(col || "")
+                  .toLowerCase();
+
+              let s = 0;
+
+              if (!p?.looksLikeDate) {
+                s += 40;
+              } else {
+                s -= 50;
+              }
+
+              if (!p?.isNumeric) {
+                s += 25;
+              }
+
+              if (p?.repeatsOften) {
+                s += 20;
+              }
+
+              if (
+                Number.isFinite(
+                  p?.uniqueRatio
+                ) &&
+                p.uniqueRatio < 0.75
+              ) {
+                s += 10;
+              }
+
+              if (
+                /category|type|reason|cause|group|class|location|ward|unit|issue|complaint|failure/.test(
+                  name
+                )
+              ) {
+                s += 30;
+              }
+
+              return s;
+            }
+
+            return (
+              score(b) -
+              score(a)
+            );
+          }
+        );
+
+    return {
+      xCol:
+        categoryCandidates[0] ||
+        allColumns[0] ||
+        "",
+
+      yCol:
+        PARETO_COUNT_ROWS,
+
+      thirdCol: ""
+    };
+  }
+
   // Helper for count-like numeric columns
   const countLike = numericCols
     .slice()
@@ -4987,6 +5090,28 @@ function applyColumnIntelligence(chartType) {
   const valueItems = getCandidatesForValue(chartType);
   setSelectOptions(valueSelect, valueItems, { includeBlank: true, blankLabel: "(select value)" });
 
+  if (
+    chartType === "pareto" &&
+    valueSelect
+  ) {
+    const countRowsOption =
+      document.createElement(
+        "option"
+      );
+
+    countRowsOption.value =
+      PARETO_COUNT_ROWS;
+
+    countRowsOption.textContent =
+      "(count each row as 1)";
+
+    valueSelect.insertBefore(
+      countRowsOption,
+      valueSelect.options[1] ||
+      null
+    );
+  }
+
   const thirdItems = getCandidatesForThird(chartType);
   if (thirdSelect) {
     if (thirdItems.length) {
@@ -5207,7 +5332,7 @@ function getChartAvailability() {
   const out = {};
   const noDataReason = "Load data to assess which chart types are available.";
 
-  for (const chartType of ["run", "xmr", "c", "p", "pprime", "u","uprime", "xbars", "t", "g"]) {
+  for (const chartType of ["run", "xmr", "c", "p", "pprime", "u","uprime", "xbars", "t", "g", "pareto"]) {
     out[chartType] = { enabled: true, reason: "" };
   }
 
@@ -5655,6 +5780,14 @@ function updateColumnCheckWarning(chartType) {
       <strong>Check your selected columns.</strong>
       For a G chart, the value column should usually represent the number of opportunities,
       cases, or observations between rare events. Check this is not a rate or percentage.
+    `,
+
+        pareto: `
+      <strong>Choose how you want to group the occurrences.</strong>
+      Select the category you want to compare. If every row is one occurrence,
+      choose <strong>(count each row as 1)</strong> for the frequency column.
+      If your data are already summarised, choose the numeric count column instead.
+      Pareto categories help focus investigation but should not automatically be assumed to be causes.
     `
   };
 
@@ -5753,12 +5886,23 @@ updateColumnCheckWarning(chartType);
     g: {
       yLabel: "Opportunities between events",
       thirdHint: "G chart plots opportunities between rare events."
-    }
+    },
+
+        pareto: {
+      		xLabel:   "Category column",
+     		 yLabel:  "Frequency / count column"
+    	 }
+
   };
 
   // ---- Apply config (if defined) ----
   const cfg = chartUI[chartType];
   if (!cfg) return;
+
+if (cfg.xLabel) {
+  xLabelEl.textContent =
+    cfg.xLabel;
+}
 
   if (cfg.yLabel) {
     yLabelEl.textContent = cfg.yLabel;
@@ -5832,7 +5976,8 @@ const axisSequenceRadio =
     "input[name='axisType'][value='sequence']"
   );
 
-if (chartType === "xbars") {
+if (chartType === "xbars" ||
+  chartType === "pareto") {
   // Force the appropriate axis mode.
   if (typeof setAxisType === "function") {
     setAxisType("sequence");
@@ -5850,7 +5995,7 @@ if (chartType === "xbars") {
   if (axisDateRadio) {
     axisDateRadio.disabled = true;
     axisDateRadio.title =
-      "X̄–S charts use subgroup order on the horizontal axis.";
+      "This chart uses categories on the horizontal axis."
   }
 
   if (axisSequenceRadio) {
@@ -10201,6 +10346,16 @@ function getRuleSettingsSafe() {
    ============================================================ */
 
 const RULE_POLICY = {
+
+  // Pareto is a prioritisation / drill-down display, not a control chart.
+  pareto: {
+    beyondLimits: "blocked",
+    runShift: "blocked",
+    trend: "blocked",
+    zone23: "blocked",
+    zone45: "blocked"
+  },
+
   // Attribute charts: conservative defaults only
   c: {
     beyondLimits: "on",
@@ -13287,6 +13442,57 @@ generateButton.addEventListener("click", (evt) => {
 
         const chartType = getSelectedChartType_NoSideEffects();
 
+    if (
+      chartType ===
+      "pareto"
+    ) {
+      if (currentChart) {
+        currentChart.destroy();
+        currentChart = null;
+      }
+
+      if (mrChart) {
+        mrChart.destroy();
+        mrChart = null;
+      }
+
+      if (mrPanel) {
+        mrPanel.style.display =
+          "none";
+      }
+
+      drawParetoChart(
+        rawRows,
+        dateCol,
+        valueCol
+      );
+
+      if (
+        yAxisBoundsManuallyEdited &&
+        currentChart
+      ) {
+        applyCurrentChartYBoundsToInputs(
+          currentChart
+        );
+      }
+
+      if (
+        typeof updateYAxisInputStep ===
+        "function"
+      ) {
+        updateYAxisInputStep();
+      }
+
+      if (
+        typeof clearDataModelDirty ===
+        "function"
+      ) {
+        clearDataModelDirty();
+      }
+
+      return;
+    }
+
     // --- 1) Build points depending on axis type and chart type ---
     let parsedPoints;
 
@@ -14229,6 +14435,673 @@ currentChart = new Chart(chartCanvas, {
     if (typeof renderHelperState === "function") renderHelperState();
   }
 }
+
+
+// -----------------------------
+// Pareto chart
+// -----------------------------
+
+function computeParetoData(
+  rows,
+  categoryCol,
+  countCol
+) {
+  if (
+    !Array.isArray(rows) ||
+    !rows.length
+  ) {
+    return {
+      ok: false,
+      error:
+        "No data are available for the Pareto chart."
+    };
+  }
+
+  if (!categoryCol) {
+    return {
+      ok: false,
+      error:
+        "Please choose a category column for the Pareto chart."
+    };
+  }
+
+  if (!countCol) {
+    return {
+      ok: false,
+      error:
+        "Please choose how the Pareto frequencies should be counted."
+    };
+  }
+
+  const countRowsMode =
+    countCol ===
+    PARETO_COUNT_ROWS;
+
+  const totals =
+    new Map();
+
+  let blankCategoryRows = 0;
+  let invalidCountRows = 0;
+  let sourceRowsUsed = 0;
+
+  for (
+    const row of rows
+  ) {
+    const rawCategory =
+      row?.[categoryCol];
+
+    const category =
+      rawCategory === null ||
+      rawCategory === undefined
+        ? ""
+        : String(
+            rawCategory
+          ).trim();
+
+    if (!category) {
+      blankCategoryRows += 1;
+      continue;
+    }
+
+    let amount = 1;
+
+    if (!countRowsMode) {
+      amount =
+        toNumericValue(
+          row?.[countCol]
+        );
+
+      if (
+        !Number.isFinite(amount) ||
+        amount < 0 ||
+        !Number.isInteger(amount)
+      ) {
+        invalidCountRows += 1;
+        continue;
+      }
+    }
+
+    sourceRowsUsed += 1;
+
+    totals.set(
+      category,
+      (
+        totals.get(category) ||
+        0
+      ) +
+      amount
+    );
+  }
+
+  if (
+    invalidCountRows > 0
+  ) {
+    return {
+      ok: false,
+
+      error:
+        `${invalidCountRows} row${
+          invalidCountRows === 1
+            ? ""
+            : "s"
+        } contain an invalid frequency/count value. ` +
+        "A classic Pareto chart needs non-negative whole-number counts. " +
+        "Please correct those values or choose '(count each row as 1)'."
+    };
+  }
+
+  let items =
+    Array.from(
+      totals.entries()
+    )
+      .map(
+        ([category, count]) => ({
+          category,
+          count
+        })
+      )
+      .filter(
+        item =>
+          Number.isFinite(
+            item.count
+          ) &&
+          item.count > 0
+      );
+
+  items.sort(
+    (a, b) => {
+      if (
+        b.count !==
+        a.count
+      ) {
+        return (
+          b.count -
+          a.count
+        );
+      }
+
+      return String(
+        a.category
+      ).localeCompare(
+        String(
+          b.category
+        )
+      );
+    }
+  );
+
+  if (
+    items.length < 2
+  ) {
+    return {
+      ok: false,
+
+      error:
+        "A Pareto chart needs at least 2 categories with occurrences."
+    };
+  }
+
+  const total =
+    items.reduce(
+      (sum, item) =>
+        sum +
+        item.count,
+      0
+    );
+
+  if (
+    !Number.isFinite(total) ||
+    total <= 0
+  ) {
+    return {
+      ok: false,
+      error:
+        "No positive occurrence counts were found for the Pareto chart."
+    };
+  }
+
+  let running = 0;
+
+  items =
+    items.map(
+      item => {
+        running +=
+          item.count;
+
+        return {
+          ...item,
+
+          share:
+            item.count /
+            total,
+
+          cumulativeCount:
+            running,
+
+          cumulativePct:
+            (
+              running /
+              total
+            ) *
+            100
+        };
+      }
+    );
+
+  const cutoffIndex =
+    items.findIndex(
+      item =>
+        item.cumulativePct >=
+        80
+    );
+
+  const cutoff80Count =
+    cutoffIndex >= 0
+      ? cutoffIndex + 1
+      : items.length;
+
+  const cutoff80Pct =
+    items[
+      cutoff80Count - 1
+    ]?.cumulativePct ??
+    100;
+
+  const top3Count =
+    items
+      .slice(0, 3)
+      .reduce(
+        (sum, item) =>
+          sum +
+          item.count,
+        0
+      );
+
+  return {
+    ok: true,
+
+    chartType:
+      "pareto",
+
+    items,
+    total,
+
+    categoryCount:
+      items.length,
+
+    cutoff80Count,
+    cutoff80Pct,
+
+    top3Count,
+
+    top3Share:
+      top3Count /
+      total,
+
+    countRowsMode,
+
+    sourceRowsUsed,
+    blankCategoryRows
+  };
+}
+
+function drawParetoChart(
+  rows,
+  categoryCol,
+  countCol
+) {
+  if (!chartCanvas) {
+    return;
+  }
+
+  const result =
+    computeParetoData(
+      rows,
+      categoryCol,
+      countCol
+    );
+
+  if (!result.ok) {
+    showError(
+      result.error
+    );
+
+    return;
+  }
+
+  const labels =
+    result.items.map(
+      item =>
+        item.category
+    );
+
+  const counts =
+    result.items.map(
+      item =>
+        item.count
+    );
+
+  const cumulative =
+    result.items.map(
+      item =>
+        item.cumulativePct
+    );
+
+  if (
+    typeof populateAnnotationDateOptions ===
+    "function"
+  ) {
+    populateAnnotationDateOptions(
+      labels
+    );
+  }
+
+  const chartLabels =
+    getChartLabels(
+      "Pareto chart",
+      "Category",
+      "Count"
+    );
+
+  const axisSettings =
+    getAxisSettings();
+
+  currentChart =
+    new Chart(
+      chartCanvas.getContext(
+        "2d"
+      ),
+      {
+        data: {
+          labels,
+
+          datasets: [
+            {
+              type:
+                "bar",
+
+              label:
+                "Count",
+
+              data:
+                counts,
+
+              yAxisID:
+                "y",
+
+              backgroundColor:
+                SPC_STYLE.seriesBlue,
+
+              borderColor:
+                SPC_STYLE.seriesBlue,
+
+              borderWidth:
+                1
+            },
+
+            {
+              type:
+                "line",
+
+              label:
+                "Cumulative %",
+
+              data:
+                cumulative,
+
+              yAxisID:
+                "y1",
+
+              borderColor:
+                SPC_STYLE.centreRed,
+
+              backgroundColor:
+                SPC_STYLE.centreRed,
+
+              borderWidth:
+                2,
+
+              pointRadius:
+                3,
+
+              pointHoverRadius:
+                5,
+
+              fill:
+                false,
+
+              tension:
+                0
+            }
+          ]
+        },
+
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+
+          interaction: {
+            mode: "index",
+            intersect: false
+          },
+
+          plugins: {
+            title:
+              buildChartTitleConfig(
+                chartLabels.title
+              ),
+
+            legend: {
+              display: true,
+              position:
+                "bottom",
+              align:
+                "center"
+            },
+
+            tooltip: {
+              callbacks: {
+                label(context) {
+                  const i =
+                    context.dataIndex;
+
+                  const item =
+                    result.items[i];
+
+                  if (!item) {
+                    return "";
+                  }
+
+                  if (
+                    context.dataset
+                      .yAxisID ===
+                    "y1"
+                  ) {
+                    return (
+                      `Cumulative: ` +
+                      `${item.cumulativePct.toFixed(1)}%`
+                    );
+                  }
+
+                  return (
+                    `Count: ${item.count} ` +
+                    `(${(item.share * 100).toFixed(1)}% of total)`
+                  );
+                },
+
+                afterBody(items) {
+                  const i =
+                    items?.[0]
+                      ?.dataIndex;
+
+                  const item =
+                    result.items[i];
+
+                  if (!item) {
+                    return [];
+                  }
+
+                  return [
+                    `Cumulative through this category: ${item.cumulativePct.toFixed(1)}%`
+                  ];
+                }
+              }
+            },
+
+            annotation: {
+              annotations: {
+                pareto80: {
+                  type:
+                    "line",
+
+                  yScaleID:
+                    "y1",
+
+                  yMin:
+                    80,
+
+                  yMax:
+                    80,
+
+                  borderColor:
+                    "rgba(90,90,90,0.65)",
+
+                  borderWidth:
+                    1,
+
+                  borderDash:
+                    [5, 5]
+                }
+              }
+            }
+          },
+
+          scales: {
+            x:
+              buildCategoryXAxisConfig(
+                chartLabels.xLabel,
+                axisSettings.x,
+                labels
+              ),
+
+            y:
+              buildAxisConfig(
+                chartLabels.yLabel,
+                axisSettings.y,
+                {
+                  beginAtZero:
+                    true
+                }
+              ),
+
+            y1: {
+              type:
+                "linear",
+
+              position:
+                "right",
+
+              min:
+                0,
+
+              max:
+                100,
+
+              grid: {
+                drawOnChartArea:
+                  false
+              },
+
+              title: {
+                display:
+                  true,
+
+                text:
+                  "Cumulative %"
+              },
+
+              ticks: {
+                callback(value) {
+                  return (
+                    `${value}%`
+                  );
+                }
+              }
+            }
+          }
+        }
+      }
+    );
+
+  const top =
+    result.items[0];
+
+  let html =
+    `<h3>Summary (Pareto chart)</h3>`;
+
+  html +=
+    `<p>` +
+    `Total occurrences: ` +
+    `<strong>${result.total}</strong> across ` +
+    `<strong>${result.categoryCount}</strong> categories.` +
+    `</p>`;
+
+  html +=
+    `<ul>`;
+
+  html +=
+    `<li>` +
+    `<strong>Largest category:</strong> ` +
+    `${escapeHtml(top.category)} — ` +
+    `${top.count} occurrence${top.count === 1 ? "" : "s"} ` +
+    `(${(top.share * 100).toFixed(1)}% of the total).` +
+    `</li>`;
+
+  html +=
+    `<li>` +
+    `<strong>Top three categories:</strong> ` +
+    `${result.top3Count} occurrences ` +
+    `(${(result.top3Share * 100).toFixed(1)}% of the total).` +
+    `</li>`;
+
+  html +=
+    `<li>` +
+    `<strong>80% guide:</strong> ` +
+    `the first ${result.cutoff80Count} categor${
+      result.cutoff80Count === 1
+        ? "y"
+        : "ies"
+    } account for ` +
+    `<strong>${result.cutoff80Pct.toFixed(1)}%</strong> ` +
+    `of the occurrences. ` +
+    `The dashed 80% line is a prioritisation guide, not a statistical control limit.` +
+    `</li>`;
+
+  if (
+    result.total < 30
+  ) {
+    html +=
+      `<li>` +
+      `<strong>Caution:</strong> ` +
+      `this Pareto chart contains fewer than 30 occurrences. ` +
+      `With small numbers, the apparent ranking can be unstable, so interpret it cautiously.` +
+      `</li>`;
+  }
+
+  if (
+    result.blankCategoryRows >
+    0
+  ) {
+    html +=
+      `<li>` +
+      `<strong>Data check:</strong> ` +
+      `${result.blankCategoryRows} row${
+        result.blankCategoryRows === 1
+          ? " was"
+          : "s were"
+      } ignored because the category was blank.` +
+      `</li>`;
+  }
+
+  html +=
+    `<li>` +
+    `<strong>Interpretation:</strong> ` +
+    `the categories on the left are the most frequent and may be useful places to focus further investigation or improvement effort. ` +
+    `A category is not automatically a cause of the problem.` +
+    `</li>`;
+
+  html +=
+    `<li>` +
+    `<strong>SPC note:</strong> ` +
+    `a Pareto chart is not time ordered and cannot tell you whether variation is common cause or special cause. ` +
+    `Where relevant, interpret it alongside an appropriate run or Shewhart chart.` +
+    `</li>`;
+
+  html +=
+    `</ul>`;
+
+  summaryDiv.innerHTML =
+    html;
+
+  lastParetoAnalysis = {
+    ...result,
+
+    categoryColumn:
+      categoryCol,
+
+    countColumn:
+      countCol,
+
+    topCategory:
+      top.category,
+
+    topCount:
+      top.count,
+
+    topShare:
+      top.share
+  };
+}
+
 
 // -----------------------------
 // Draw C / P / U charts
@@ -17882,6 +18755,54 @@ function runSimpleSPCRegressionTests() {
   );
 
   // ----------------------------------------------------------
+  // PARETO
+  // ----------------------------------------------------------
+
+  const paretoTest =
+    computeParetoData(
+      [
+        { category: "A" },
+        { category: "A" },
+        { category: "A" },
+        { category: "B" },
+        { category: "B" },
+        { category: "C" }
+      ],
+      "category",
+      PARETO_COUNT_ROWS
+    );
+
+  addBoolean(
+    "Pareto: calculation succeeds",
+    paretoTest.ok,
+    true
+  );
+
+  addNumeric(
+    "Pareto: total occurrences",
+    paretoTest.total,
+    6
+  );
+
+  addText(
+    "Pareto: largest category",
+    paretoTest.items?.[0]?.category,
+    "A"
+  );
+
+  addNumeric(
+    "Pareto: largest category count",
+    paretoTest.items?.[0]?.count,
+    3
+  );
+
+  addNumeric(
+    "Pareto: categories needed to reach 80%",
+    paretoTest.cutoff80Count,
+    2
+  );
+
+  // ----------------------------------------------------------
   // RESULTS
   // ----------------------------------------------------------
 
@@ -18985,7 +19906,8 @@ function getChartTypeDisplayName(chartType) {
     uprime: "U′ chart",
     xbars: "X̄-S chart",
     t: "T chart",
-    g: "G chart"
+    g: "G chart",
+    pareto: "Pareto chart"
   };
   return names[chartType] || "This chart";
 }
@@ -19035,7 +19957,12 @@ function renderRuleExplainerModal(chartType) {
   } else if (chartType === "run") {
     whyText =
       "Run charts do not use control limits. The tool keeps interpretation simple and conservative by default.";
-  } else {
+  } else if (chartType === "pareto") {
+ 	 whyText =
+    		"A Pareto chart is not a time-ordered control chart, so SPC signal rules do not apply. " +
+    		"It ranks categories to help focus investigation and improvement effort.";
+  } else
+	{
     whyText =
       "This tool keeps the default rule set simple and conservative to reduce false alerts.";
   }
@@ -19192,7 +20119,7 @@ function setChartType(chartType) {
     radio.checked = true;
     // If chart type is in the "More chart types" details, open it so the selection is visible
     const details = document.getElementById("moreChartTypesDetails");
-    if (details && ["c", "p", "pprime", "u", "uprime", "xbars", "t", "g"].includes(chartType)) {
+    if (details && ["c", "p", "pprime", "u", "uprime", "xbars", "t", "g", "pareto"].includes(chartType)) {
       details.open = true;
     }
     updateUIForChartType(chartType);
