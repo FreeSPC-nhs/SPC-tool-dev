@@ -5795,29 +5795,34 @@ function updateColumnCheckWarning(chartType) {
       and the third column should identify the subgroup, e.g. day, week, batch, or sample.
     `,
      
+    
     t: tChartInputMode === "gaps"
       ? `
-        <strong>Check your selected columns.</strong>
-        You are using pre-calculated time gaps.
-        The <strong>Value / Y-axis column</strong> should
-        contain the numeric time between consecutive events,
-        for example the number of days.
+        <strong>T chart: using numeric time gaps.</strong><br>
+        Select the column containing the time between
+        consecutive events (e.g. days) as the
+        <strong>Value / Y-axis column</strong>.
+        The X-axis column provides the observation labels.
 
-        The <strong>Date / X-axis column</strong> provides
-        labels for the observations. SimpleSPC uses the
-        numeric gaps directly rather than calculating
-        intervals from event dates.
+        <br><br>
+        <strong>Want to use event dates instead?</strong>
+        Click <strong>Chart setup</strong> above and select
+        <strong>I have event dates</strong>.
       `
       : `
-        <strong>Check your selected columns.</strong>
-        You are using event dates.
-        The <strong>Date / X-axis column</strong> should
-        contain the date or time when each event occurred.
+        <strong>T chart: using event dates.</strong><br>
+        Select the dates or times when events occurred in
+        the <strong>Date / X-axis column</strong>.
+        SimpleSPC calculates the intervals automatically,
+        so the Value / Y-axis column is disabled.
 
-        SimpleSPC calculates the time between consecutive
-        events automatically. The Value / Y-axis column
-        is not used in this mode.
+        <br><br>
+        <strong>Already have the time gaps calculated?</strong>
+        Click <strong>Chart setup</strong> above and select
+        <strong>I already have the gaps</strong>.
+        This will enable the Value / Y-axis column.
       `,
+
 
     g: `
       <strong>Check your selected columns.</strong>
