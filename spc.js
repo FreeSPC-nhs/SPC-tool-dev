@@ -9768,9 +9768,17 @@ const draggableAnnotationLabelsPlugin = {
 
     let drag = null;
 
+    
     function getHitAnnotation(event) {
+      // Pareto charts do not support draggable user annotations.
+      // Their 80% reference line must remain untouched.
+      if (chart.$disableUserAnnotations) {
+        return null;
+      }
+
       const rect = canvas.getBoundingClientRect();
       const mouseX = event.clientX - rect.left;
+
 
       const labels = chart.data.labels || [];
       const xScale = chart.scales.x;
@@ -15024,10 +15032,16 @@ function drawParetoChart(
           }
         }
       }
+
     );
+
+  // Pareto uses Chart.js annotations for its 80% guide,
+  // but does not support draggable user annotations.
+  currentChart.$disableUserAnnotations = true;
 
   const top =
     result.items[0];
+
 
   let html =
     `<h3>Summary (Pareto chart)</h3>`;
@@ -19038,6 +19052,30 @@ function showChartContextMenu(clientX, clientY, pointIndex) {
       : ((typeof getSelectedChartType === "function") ? (getSelectedChartType() || "run") : "run");
 
   const supportsSplits = ["run", "xmr", "c", "p", "pprime", "u", "uprime", "xbars", "t", "g"].includes(chartType);
+
+
+  // User annotations are not supported on Pareto charts.
+  // Hide the annotation submenu, but keep it available
+  // for all other chart types.
+  const annotationMenuGroup =
+    chartContextMenu
+      .querySelector('button[data-action="addAnnotation"]')
+      ?.closest(".context-submenu-wrap");
+
+  if (annotationMenuGroup) {
+    annotationMenuGroup.style.display =
+      chartType === "pareto" ? "none" : "";
+
+    // Hide the accompanying separator too.
+    const separator = annotationMenuGroup.nextElementSibling;
+
+    if (separator?.classList.contains("menu-sep")) {
+      separator.style.display =
+        chartType === "pareto" ? "none" : "";
+    }
+  }
+
+
 
   // ---------- XmR mean labels ----------
 const xmrMeanLabelsGroup =
