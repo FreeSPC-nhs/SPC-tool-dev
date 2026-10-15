@@ -20246,6 +20246,31 @@ function computeRecommendation(answers) {
   };
 }
 
+
+    case "pareto": {
+      const alreadySummarised =
+        answers.paretoDataFormat === "counts";
+
+      return {
+        chartType: "pareto",
+        label: "Pareto chart",
+        reason:
+          "You want to compare categories and identify which " +
+          "account for the most occurrences. A Pareto chart " +
+          "ranks categories from most to least frequent and " +
+          "shows their cumulative percentage. " +
+          (alreadySummarised
+            ? "Your data already contain counts, so select the " +
+              "category column and the numeric frequency/count column. "
+            : "If each row represents one occurrence, select the " +
+              "category column and choose (count each row as 1). ") +
+          "The chart helps prioritise investigation, but does not " +
+          "identify root causes or assess statistical process stability."
+      };
+    }
+
+
+
     case "rare": {
       if (answers.rareType === "opportunities") return { chartType: "g", label: "G", reason: "You have opportunities between rare events." };
       return { chartType: "t", label: "T", reason: "You have time between rare events." };
@@ -20281,6 +20306,7 @@ function renderChartWizard() {
         ${optionButton("A measurement — e.g. waiting time, score, temperature, length of stay", `wizardNext('kind','measurement')`)}
         ${optionButton("A count per time period — e.g. falls per week, complaints per month", `wizardNext('kind','count')`)}
         ${optionButton("A proportion out of a total — e.g. 5 out of 100, pass rate", `wizardNext('kind','proportion')`)}
+	${optionButton("Categories — e.g. reasons for delays, types of complaints", `wizardNext('kind','pareto')`)}
         ${optionButton("Rare events — time or opportunities between events", `wizardNext('kind','rare')`)}
         ${optionButton("Not sure", `wizardNext('kind','unsure')`)}
       </div>
@@ -20315,6 +20341,11 @@ if (s.step === 1 && a.kind === "unsure") {
       )}
 
       ${optionButton(
+        "Categories of occurrences — e.g. complaint types or reasons for delays",
+        `wizardNext('kind','pareto')`
+      )}
+
+      ${optionButton(
         "The time or opportunities between rare events",
         `wizardNext('kind','rare')`
       )}
@@ -20340,6 +20371,43 @@ if (s.step === 1 && a.kind === "unsure") {
 
   return;
 }
+
+
+  if (s.step === 1 && a.kind === "pareto") {
+    chartWizardBody.innerHTML = `
+      <p class="chart-wizard-question">
+        How are your category data recorded?
+      </p>
+
+      <p class="hint small-hint">
+        A Pareto chart compares the frequency of different
+        categories. You can use individual records or data
+        that already contain counts for each category.
+      </p>
+
+      <div class="chart-wizard-options">
+        ${optionButton(
+          "One row per occurrence — e.g. one row for each complaint",
+          `wizardNext('paretoDataFormat','rows')`
+        )}
+
+        ${optionButton(
+          "Summarised counts — e.g. Falls: 20, Delays: 15",
+          `wizardNext('paretoDataFormat','counts')`
+        )}
+
+        ${optionButton(
+          "Not sure",
+          `wizardNext('paretoDataFormat','unsure')`
+        )}
+      </div>
+
+      ${actionButtons}
+    `;
+    return;
+  }
+
+
 
   if (s.step === 1 && a.kind === "measurement") {
     chartWizardBody.innerHTML = `
