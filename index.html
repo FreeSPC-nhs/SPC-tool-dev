@@ -85,22 +85,37 @@
 
   <div class="panel">
 
-    <label for="fileInput"><strong>Add data:</strong></label>
+    
+<div class="label-with-tooltip" style="margin-bottom:0.25rem;">
 
-<span class="help-tooltip" tabindex="0" aria-label="X-axis type help">
-      ?
-      <span class="help-tooltip-text">
-        The columns you need depend on the chart type.
-  Most SPC charts need a time or sequence column and
-  a measurement. Some also need counts and denominators.
-  Pareto charts need a category column and can optionally
-  use a frequency/count column.
-      </span>
+  <label for="fileInput" style="margin:0;">
+    <strong>Add data:</strong>
+  </label>
+
+  <span
+    class="help-tooltip"
+    tabindex="0"
+    aria-label="Data requirements help"
+  >
+    ?
+    <span class="help-tooltip-text">
+      The columns you need depend on the chart type.
+
+      Most SPC charts need a time or sequence column
+      and a measurement. Some also need counts
+      and denominators.
+
+      Pareto charts need a category column and can
+      optionally use a frequency/count column.
     </span>
+  </span>
+
+</div>
+
 
 
     <div class="hint small-hint">
-      Upload a CSV or Excel file, or use the data editor to paste/type/edit data directly.
+      Upload a CSV/Excel file or paste data in the editor.
     </div>
 
     <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" />
@@ -139,21 +154,33 @@
 
 <hr style="margin:1rem 0; border:none; border-top:1px solid #d6dde3;">
 
-<p>
+
+<div class="label-with-tooltip" style="margin:1rem 0 0.5rem;">
+
   <strong>Save an offline copy</strong>
-</p>
 
-<span class="help-tooltip" tabindex="0" aria-label="X-axis type help">
-      ?
-      <span class="help-tooltip-text">
-	Save a self-contained copy of this chart. This can 
-	be shared and opened without having to load this website.
+  <span
+    class="help-tooltip"
+    tabindex="0"
+    aria-label="Portable chart help"
+  >
+    ?
+    <span class="help-tooltip-text">
+      Save a self-contained HTML copy of your chart.
 
-        The HTML file contains the chart data and a fully functional 
-	copy of this tool. Store andshare it in line with your 
-	organisation's information-governance requirements.
-      </span>
+      The file includes your data and a working
+      copy of SimpleSPC. You can open it without
+      an internet connection, make changes and
+      save it again.
+
+      Portable files contain your data.
+      Store and share them in line with your
+      organisation's information-governance
+      requirements.
     </span>
+  </span>
+
+</div>
 <button id="savePortableBtn" type="button" disabled>
   Save portable chart
 </button>
