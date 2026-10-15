@@ -5794,11 +5794,31 @@ function updateColumnCheckWarning(chartType) {
       For an X̄–S chart, the value column should contain the individual measurements,
       and the third column should identify the subgroup, e.g. day, week, batch, or sample.
     `,
-     t: `
-      <strong>Check your selected columns.</strong>
-      For a T chart, the event/date column should identify when each event occurred.
-      The tool will use this to calculate time between events, so check the selected date/event column carefully.
-    `,
+     
+    t: tChartInputMode === "gaps"
+      ? `
+        <strong>Check your selected columns.</strong>
+        You are using pre-calculated time gaps.
+        The <strong>Value / Y-axis column</strong> should
+        contain the numeric time between consecutive events,
+        for example the number of days.
+
+        The <strong>Date / X-axis column</strong> provides
+        labels for the observations. SimpleSPC uses the
+        numeric gaps directly rather than calculating
+        intervals from event dates.
+      `
+      : `
+        <strong>Check your selected columns.</strong>
+        You are using event dates.
+        The <strong>Date / X-axis column</strong> should
+        contain the date or time when each event occurred.
+
+        SimpleSPC calculates the time between consecutive
+        events automatically. The Value / Y-axis column
+        is not used in this mode.
+      `,
+
     g: `
       <strong>Check your selected columns.</strong>
       For a G chart, the value column should usually represent the number of opportunities,
