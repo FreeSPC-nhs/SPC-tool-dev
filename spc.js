@@ -20770,10 +20770,23 @@ if (chartCanvas) {
   });
 }
 
-// Hide menu on click elsewhere / escape / scroll
-document.addEventListener("click", () => hideChartContextMenu());
-document.addEventListener("keydown", (e) => { if (e.key === "Escape") hideChartContextMenu(); });
-document.addEventListener("scroll", () => hideChartContextMenu(), true);
+
+ // Hide the context menu when clicking outside it,
+ // pressing Escape, or scrolling.
+ // Clicking inside the menu should not dismiss it.
+ document.addEventListener("click", (e) => {
+   if (chartContextMenu && chartContextMenu.contains(e.target)) {
+     return;
+   }
+   hideChartContextMenu();
+ });
+
+ document.addEventListener("keydown", (e) => {
+   if (e.key === "Escape") hideChartContextMenu();
+ });
+
+ document.addEventListener("scroll", () => hideChartContextMenu(), true);
+
 
 // Menu actions (right-click menu)
 if (chartContextMenu) {
