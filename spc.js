@@ -635,50 +635,8 @@ function appendLimitExclusionSummary() {
       ? "subgroup"
       : "point";
 
-  let extra = "";
-
-  if (
-    currentChart
-      .$limitExclusionChartType ===
-    "xmr"
-  ) {
-    const periods =
-      Array.isArray(
-        window.lastXmRPeriods
-      )
-        ? window.lastXmRPeriods
-        : [];
-
-    const adjacentMrCount =
-      periods.reduce(
-        (sum, period) =>
-          sum +
-          (
-            Number(
-              period
-                ?.manualAdjacentMRExclusions
-            ) ||
-            0
-          ),
-        0
-      );
-
-    if (
-      adjacentMrCount >
-      0
-    ) {
-      extra =
-        ` For the XmR variation estimate, ${adjacentMrCount} adjacent moving range${
-          adjacentMrCount === 1
-            ? " was"
-            : "s were"
-        } also left out because ${
-          adjacentMrCount === 1
-            ? "it involves"
-            : "they involve"
-        } an excluded point. No artificial moving range is created across an excluded point.`;
-    }
-  }
+  const count =
+    excluded.length;
 
   const note =
     document.createElement(
@@ -689,24 +647,18 @@ function appendLimitExclusionSummary() {
     "limit-exclusion-summary";
 
   note.innerHTML =
-    `<strong>Limit calculation:</strong> ` +
-    `${excluded.length} ${unit}${
-      excluded.length === 1
-        ? ""
-        : "s"
-    } excluded. ` +
-    `Excluded ${unit}${
-      excluded.length === 1
-        ? ""
-        : "s"
-    } remain visible on the chart.` +
-    extra;
+    `<strong>Excluded from limit calculations:</strong> ` +
+    `${count} ${unit}${count === 1 ? "" : "s"}. ` +
+    `${
+      count === 1
+        ? `The excluded ${unit} remains visible on the chart.`
+        : `Excluded ${unit}s remain visible on the chart.`
+    }`;
 
   summaryDiv.appendChild(
     note
   );
 }
-
 let lastXmRAnalysis = null;
 let lastRunAnalysis = null;
 let dataModelDirty = false;
@@ -8605,6 +8557,170 @@ function drawXbarSChart(
       subgroupLabels.length
     );
   }
+}
+
+function computeTLimits(
+  values,
+  baselineCount = null
+) {
+  const vals =
+    (values || [])
+      .map(Number)
+      .filter(
+        v =>
+          Number.isFinite(v) &&
+          v >= 0
+      );
+
+  if (!vals.length) {
+    return {
+      mean: NaN,
+      ucl: NaN,
+      lcl: 0,
+      baselineCountUsed: 0
+    };
+  }
+
+  const baselineCountUsed =
+    (
+      baselineCount &&
+      baselineCount >= 1
+    )
+      ? Math.min(
+          baselineCount,
+          vals.length
+        )
+      : vals.length;
+
+  const base =
+    vals.slice(
+      0,
+      baselineCountUsed
+    );
+
+  const mean =
+    base.reduce(
+      (a, b) => a + b,
+      0
+    ) /
+    base.length;
+
+  const qHigh =
+    0.99865;
+
+  const ucl =
+    -mean *
+    Math.log(
+      1 - qHigh
+    );
+
+  return {
+    mean,
+    ucl,
+    lcl: 0,
+    baselineCountUsed
+  };
+}
+
+function computeGLimits(
+  values,
+  baselineCount = null
+) {
+  const vals =
+    (values || [])
+      .map(Number)
+      .filter(
+        v =>
+          Number.isFinite(v) &&
+          v >= 1
+      );
+
+  if (!vals.length) {
+    return {
+      mean: NaN,
+      p: NaN,
+      ucl: NaN,
+      lcl: NaN,
+      baselineCountUsed: 0
+    };
+  }
+
+  const baselineCountUsed =
+    (
+      baselineCount &&
+      baselineCount >= 1
+    )
+      ? Math.min(
+          baselineCount,
+          vals.length
+        )
+      : vals.length;
+
+  const base =
+    vals.slice(
+      0,
+      baselineCountUsed
+    );
+
+  const mean =
+    base.reduce(
+      (a, b) => a + b,
+      0
+    ) /
+    base.length;
+
+  const p =
+    mean > 0
+      ? 1 / mean
+      : NaN;
+
+  if (
+    !Number.isFinite(p) ||
+    p <= 0 ||
+    p >= 1
+  ) {
+    return {
+      mean,
+      p,
+      ucl: NaN,
+      lcl: NaN,
+      baselineCountUsed
+    };
+  }
+
+  function geomQuantile(
+    q
+  ) {
+    const k =
+      Math.log(
+        1 - q
+      ) /
+      Math.log(
+        1 - p
+      );
+
+    return Math.max(
+      1,
+      Math.ceil(k)
+    );
+  }
+
+  return {
+    mean,
+    p,
+
+    ucl:
+      geomQuantile(
+        0.99865
+      ),
+
+    lcl:
+      geomQuantile(
+        0.00135
+      ),
+
+    baselineCountUsed
+  };
 }
 
 // -----------------------------
@@ -16959,6 +17075,874 @@ tooltip:
     }
   });
 }
+
+// ============================================================
+// SimpleSPC statistical regression tests
+//
+// Development / quality-assurance helper.
+// Nothing runs automatically.
+//
+// To run:
+//   runSimpleSPCRegressionTests()
+//
+// from the browser developer console.
+// ============================================================
+
+function runSimpleSPCRegressionTests() {
+  const results = [];
+
+  function near(
+    actual,
+    expected,
+    tolerance = 1e-9
+  ) {
+    return (
+      Number.isFinite(actual) &&
+      Number.isFinite(expected) &&
+      Math.abs(
+        actual - expected
+      ) <= tolerance
+    );
+  }
+
+  function addNumeric(
+    name,
+    actual,
+    expected,
+    tolerance = 1e-9
+  ) {
+    results.push({
+      test: name,
+      pass:
+        near(
+          actual,
+          expected,
+          tolerance
+        ),
+
+      actual,
+      expected,
+      tolerance
+    });
+  }
+
+  function addBoolean(
+    name,
+    actual,
+    expected
+  ) {
+    results.push({
+      test: name,
+      pass:
+        actual === expected,
+
+      actual,
+      expected,
+      tolerance: ""
+    });
+  }
+
+  function addText(
+    name,
+    actual,
+    expected
+  ) {
+    results.push({
+      test: name,
+      pass:
+        String(actual) ===
+        String(expected),
+
+      actual,
+      expected,
+      tolerance: ""
+    });
+  }
+
+  // ----------------------------------------------------------
+  // RUN CHART
+  // ----------------------------------------------------------
+
+  addNumeric(
+    "Run: median",
+    computeMedian(
+      [1, 2, 3, 4]
+    ),
+    2.5
+  );
+
+  const runShift =
+    findShiftWindow(
+      [
+        6, 7, 8, 9,
+        10, 11, 12, 13
+      ],
+      5,
+      8
+    );
+
+  addBoolean(
+    "Run: 8-point shift detected",
+    !!runShift,
+    true
+  );
+
+  addNumeric(
+    "Run: shift starts at index 0",
+    runShift?.start,
+    0
+  );
+
+  addNumeric(
+    "Run: shift ends at index 7",
+    runShift?.end,
+    7
+  );
+
+  const runTrend =
+    findTrendWindow(
+      [1, 2, 3, 4, 5, 6],
+      6
+    );
+
+  addBoolean(
+    "Run: 6-point trend detected",
+    !!runTrend,
+    true
+  );
+
+  addText(
+    "Run: trend direction",
+    runTrend?.direction,
+    "up"
+  );
+
+  // ----------------------------------------------------------
+  // XmR — ordinary calculation
+  // Independently checked expected values:
+  // mean = 10.4
+  // MR = [1,2,1,2]
+  // MRbar = 1.5
+  // sigma = 1.5 / 1.128
+  // ----------------------------------------------------------
+
+  const xmrPoints =
+    [10, 11, 9, 10, 12]
+      .map(
+        (y, i) => ({
+          x: i,
+          y,
+          label:
+            `P${i + 1}`
+        })
+      );
+
+  const xmr =
+    computeXmR(
+      xmrPoints,
+      null,
+      false,
+      false
+    );
+
+  addNumeric(
+    "XmR: mean",
+    xmr.mean,
+    10.4,
+    1e-10
+  );
+
+  addNumeric(
+    "XmR: average MR",
+    xmr.avgMR,
+    1.5,
+    1e-10
+  );
+
+  addNumeric(
+    "XmR: sigma",
+    xmr.sigma,
+    1.3297872340425534,
+    1e-10
+  );
+
+  addNumeric(
+    "XmR: UCL",
+    xmr.ucl,
+    14.38936170212766,
+    1e-10
+  );
+
+  addNumeric(
+    "XmR: LCL",
+    xmr.lcl,
+    6.410638297872341,
+    1e-10
+  );
+
+  // ----------------------------------------------------------
+  // XmR — MR screening
+  //
+  // Raw MRs:
+  // 1,1,1,1,1,25,1,1,1
+  //
+  // Initial MRbar = 3.666666...
+  // threshold = 12.833333...
+  // 25 is screened
+  // revised MRbar = 1
+  // ----------------------------------------------------------
+
+  const screenPoints =
+    [
+      0, 1, 2, 3, 4,
+      5, 30, 31, 32, 33
+    ]
+      .map(
+        (y, i) => ({
+          x: i,
+          y,
+          label:
+            `S${i + 1}`
+        })
+      );
+
+  const screened =
+    computeXmR(
+      screenPoints,
+      null,
+      false,
+      true
+    );
+
+  addNumeric(
+    "XmR screening: initial average MR",
+    screened.initialAvgMR,
+    3.6666666666666665,
+    1e-10
+  );
+
+  addNumeric(
+    "XmR screening: threshold",
+    screened.mrScreeningThreshold,
+    12.833333333333332,
+    1e-10
+  );
+
+  addNumeric(
+    "XmR screening: revised average MR",
+    screened.avgMR,
+    1,
+    1e-10
+  );
+
+  addNumeric(
+    "XmR screening: number screened",
+    screened.excludedMRCount,
+    1
+  );
+
+  // ----------------------------------------------------------
+  // XmR — manual exclusion
+  //
+  // Excluding the middle value removes both adjacent MRs.
+  // It must NOT create a bridge MR.
+  // ----------------------------------------------------------
+
+  const excludedXmRPoints =
+    [10, 11, 9, 10, 12]
+      .map(
+        (y, i) => ({
+          x: i,
+          y,
+          label:
+            `E${i + 1}`,
+
+          _excludeFromLimits:
+            i === 2
+        })
+      );
+
+  const excludedXmR =
+    computeXmR(
+      excludedXmRPoints,
+      null,
+      false,
+      false
+    );
+
+  addNumeric(
+    "XmR exclusion: mean",
+    excludedXmR.mean,
+    10.75,
+    1e-10
+  );
+
+  addNumeric(
+    "XmR exclusion: average MR",
+    excludedXmR.avgMR,
+    1.5,
+    1e-10
+  );
+
+  addNumeric(
+    "XmR exclusion: adjacent MRs omitted",
+    excludedXmR.manualAdjacentMRExclusions,
+    2
+  );
+
+  addNumeric(
+    "XmR exclusion: effective baseline points",
+    excludedXmR.effectiveBaselinePointCount,
+    4
+  );
+
+  // Fixed baseline-window test.
+  // Point 5 must NOT be pulled into the baseline
+  // to replace the excluded point.
+  const fixedWindowXmR =
+    [
+      { x: 0, y: 10 },
+      {
+        x: 1,
+        y: 100,
+        _excludeFromLimits:
+          true
+      },
+      { x: 2, y: 12 },
+      { x: 3, y: 14 },
+      { x: 4, y: 1000 }
+    ];
+
+  const fixedWindowResult =
+    computeXmR(
+      fixedWindowXmR,
+      4,
+      false,
+      false
+    );
+
+  addNumeric(
+    "XmR exclusion: baseline boundary remains fixed",
+    fixedWindowResult.mean,
+    12,
+    1e-10
+  );
+
+  addNumeric(
+    "XmR exclusion: baseline used count",
+    fixedWindowResult.effectiveBaselinePointCount,
+    3
+  );
+
+  // ----------------------------------------------------------
+  // C CHART
+  // ----------------------------------------------------------
+
+  const cPoints =
+    [
+      5, 4, 6, 5, 5,
+      4, 6, 5, 25, 5,
+      4, 6, 5, 5, 4,
+      6, 5, 5, 4, 6
+    ]
+      .map(
+        (y, i) => ({
+          x: i,
+          y
+        })
+      );
+
+  const cNormal =
+    computeC(
+      cPoints
+    );
+
+  addNumeric(
+    "C: centre line",
+    cNormal.cbar,
+    6,
+    1e-10
+  );
+
+  addNumeric(
+    "C: UCL",
+    cNormal.ucl,
+    13.348469228349533,
+    1e-10
+  );
+
+  const cExcluded =
+    computeC(
+      cPoints.map(
+        (p, i) => ({
+          ...p,
+
+          _excludeFromLimits:
+            i === 8
+        })
+      )
+    );
+
+  addNumeric(
+    "C exclusion: centre line",
+    cExcluded.cbar,
+    5,
+    1e-10
+  );
+
+  addNumeric(
+    "C exclusion: UCL",
+    cExcluded.ucl,
+    11.70820393249937,
+    1e-10
+  );
+
+  // ----------------------------------------------------------
+  // P CHART
+  // ----------------------------------------------------------
+
+  const pPoints = [
+    { y: 10, n: 100 },
+    { y: 18, n: 120 },
+    { y: 6,  n: 80 },
+    { y: 15, n: 110 }
+  ];
+
+  const pResult =
+    computeP(
+      pPoints,
+      null,
+      true
+    );
+
+  addNumeric(
+    "P: p-bar",
+    pResult.pbar,
+    0.11951219512195121,
+    1e-12
+  );
+
+  addNumeric(
+    "P: first UCL",
+    pResult.ucl[0],
+    0.21682926829268293,
+    1e-12
+  );
+
+  addNumeric(
+    "P: first LCL",
+    pResult.lcl[0],
+    0.022195121951219504,
+    1e-12
+  );
+
+  // ----------------------------------------------------------
+  // P′ CHART
+  // ----------------------------------------------------------
+
+  const pPrimeResult =
+    computePPrime(
+      pPoints
+    );
+
+  addNumeric(
+    "P′: p-bar",
+    pPrimeResult.pbar,
+    0.11951219512195121,
+    1e-12
+  );
+
+  addNumeric(
+    "P′: Sigma Z",
+    pPrimeResult.sigmaZ,
+    1.672599851246506,
+    1e-10
+  );
+
+  addNumeric(
+    "P′: first UCL",
+    pPrimeResult.ucl[0],
+    0.2822847172310624,
+    1e-10
+  );
+
+  // Verify that an excluded point also breaks
+  // the Laney z-moving-range sequence.
+  const pPrimeExcluded =
+    computePPrime(
+      pPoints.map(
+        (p, i) => ({
+          ...p,
+
+          _excludeFromLimits:
+            i === 1
+        })
+      )
+    );
+
+  addNumeric(
+    "P′ exclusion: p-bar",
+    pPrimeExcluded.pbar,
+    0.10689655172413794,
+    1e-12
+  );
+
+  addNumeric(
+    "P′ exclusion: only one valid z-MR remains",
+    pPrimeExcluded.baselineMRCount,
+    1
+  );
+
+  addNumeric(
+    "P′ exclusion: Sigma Z",
+    pPrimeExcluded.sigmaZ,
+    1.7052837483437422,
+    1e-10
+  );
+
+  // ----------------------------------------------------------
+  // U CHART
+  // ----------------------------------------------------------
+
+  const uPoints = [
+    { y: 5,  n: 100 },
+    { y: 8,  n: 120 },
+    { y: 3,  n: 90 },
+    { y: 10, n: 110 },
+    { y: 4,  n: 105 }
+  ];
+
+  const uResult =
+    computeU(
+      uPoints
+    );
+
+  addNumeric(
+    "U: u-bar",
+    uResult.ubar,
+    0.05714285714285714,
+    1e-12
+  );
+
+  addNumeric(
+    "U: first UCL",
+    uResult.ucl[0],
+    0.12885657370292075,
+    1e-10
+  );
+
+  addNumeric(
+    "U: first LCL",
+    uResult.lcl[0],
+    0,
+    1e-12
+  );
+
+  // ----------------------------------------------------------
+  // U′ CHART
+  // ----------------------------------------------------------
+
+  const uPrimeResult =
+    computeUPrime(
+      uPoints
+    );
+
+  addNumeric(
+    "U′: u-bar",
+    uPrimeResult.ubar,
+    0.05714285714285714,
+    1e-12
+  );
+
+  addNumeric(
+    "U′: Sigma Z",
+    uPrimeResult.sigmaZ,
+    1.5161730157805888,
+    1e-10
+  );
+
+  addNumeric(
+    "U′: first UCL",
+    uPrimeResult.ucl[0],
+    0.16587325905256314,
+    1e-10
+  );
+
+  // ----------------------------------------------------------
+  // P / U dispersion diagnostics
+  // Independently calculated reference dataset.
+  // ----------------------------------------------------------
+
+  const dispersionPoints = [
+    { y: 4,  n: 100 },
+    { y: 15, n: 110 },
+    { y: 3,  n: 95 },
+    { y: 17, n: 105 },
+    { y: 5,  n: 120 },
+    { y: 18, n: 115 },
+    { y: 4,  n: 90 },
+    { y: 16, n: 100 },
+    { y: 3,  n: 125 },
+    { y: 19, n: 130 },
+    { y: 5,  n: 105 },
+    { y: 17, n: 110 },
+    { y: 4,  n: 115 },
+    { y: 18, n: 120 },
+    { y: 3,  n: 100 },
+    { y: 16, n: 95 },
+    { y: 5,  n: 130 },
+    { y: 20, n: 125 },
+    { y: 4,  n: 110 },
+    { y: 17, n: 105 },
+    { y: 3,  n: 90 },
+    { y: 18, n: 115 },
+    { y: 5,  n: 120 },
+    { y: 19, n: 130 }
+  ];
+
+  const pDiag =
+    computePDispersionDiagnostic(
+      dispersionPoints
+    );
+
+  addBoolean(
+    "P diagnostic: calculation succeeds",
+    pDiag.ok,
+    true
+  );
+
+  addNumeric(
+    "P diagnostic: variation ratio %",
+    pDiag.ratio,
+    535.36162769218,
+    0.05
+  );
+
+  addNumeric(
+    "P diagnostic: upper threshold %",
+    pDiag.upperLimit,
+    155.9951980036352,
+    0.05
+  );
+
+  addText(
+    "P diagnostic: overdispersion",
+    pDiag.status,
+    "overdispersed"
+  );
+
+  const uDiag =
+    computeUDispersionDiagnostic(
+      dispersionPoints
+    );
+
+  addBoolean(
+    "U diagnostic: calculation succeeds",
+    uDiag.ok,
+    true
+  );
+
+  addNumeric(
+    "U diagnostic: variation ratio %",
+    uDiag.ratio,
+    508.5863522156604,
+    0.05
+  );
+
+  addNumeric(
+    "U diagnostic: upper threshold %",
+    uDiag.upperLimit,
+    155.2276973611499,
+    0.05
+  );
+
+  addText(
+    "U diagnostic: overdispersion",
+    uDiag.status,
+    "overdispersed"
+  );
+
+  // ----------------------------------------------------------
+  // X̄–S
+  // ----------------------------------------------------------
+
+  addNumeric(
+    "Xbar-S: c4 for n=5",
+    c4Constant(5),
+    0.9399856029866254,
+    1e-12
+  );
+
+  const equalSigma =
+    estimateXbarSSigmaFromSbar(
+      [2, 2, 2, 2, 2, 2],
+      [5, 5, 5, 5, 5, 5]
+    );
+
+  addNumeric(
+    "Xbar-S: equal-size sigma estimate",
+    equalSigma,
+    2.1276921621409737,
+    1e-10
+  );
+
+  const variableSigma =
+    estimateXbarSSigmaFromSbar(
+      [2, 2, 2, 2, 2, 2],
+      [3, 4, 5, 6, 8, 5]
+    );
+
+  addNumeric(
+    "Xbar-S: variable-size sigma estimate",
+    variableSigma,
+    2.1217839603123774,
+    1e-10
+  );
+
+  addNumeric(
+    "Xbar-S: n=3 Xbar LCL",
+    100 -
+      (
+        3 *
+        variableSigma /
+        Math.sqrt(3)
+      ),
+    96.32496237805425,
+    1e-10
+  );
+
+  addNumeric(
+    "Xbar-S: n=8 Xbar UCL",
+    100 +
+      (
+        3 *
+        variableSigma /
+        Math.sqrt(8)
+      ),
+    102.2504917398246,
+    1e-10
+  );
+
+  // ----------------------------------------------------------
+  // T CHART
+  // ----------------------------------------------------------
+
+  const tResult =
+    computeTLimits(
+      [2, 3, 5, 4]
+    );
+
+  addNumeric(
+    "T: mean time between events",
+    tResult.mean,
+    3.5,
+    1e-12
+  );
+
+  addNumeric(
+    "T: UCL",
+    tResult.ucl,
+    23.126777402861393,
+    1e-10
+  );
+
+  addNumeric(
+    "T: LCL",
+    tResult.lcl,
+    0,
+    1e-12
+  );
+
+  // ----------------------------------------------------------
+  // G CHART
+  // ----------------------------------------------------------
+
+  const gResult =
+    computeGLimits(
+      [5, 7, 6, 8, 4]
+    );
+
+  addNumeric(
+    "G: centre line",
+    gResult.mean,
+    6,
+    1e-12
+  );
+
+  addNumeric(
+    "G: UCL",
+    gResult.ucl,
+    37
+  );
+
+  addNumeric(
+    "G: LCL",
+    gResult.lcl,
+    1
+  );
+
+  // ----------------------------------------------------------
+  // RESULTS
+  // ----------------------------------------------------------
+
+  const passed =
+    results.filter(
+      r => r.pass
+    ).length;
+
+  const failed =
+    results.length -
+    passed;
+
+  console.group(
+    `SimpleSPC regression tests — ${passed}/${results.length} passed`
+  );
+
+  console.table(
+    results.map(
+      r => ({
+        Test: r.test,
+        Result:
+          r.pass
+            ? "PASS"
+            : "FAIL",
+
+        Actual:
+          r.actual,
+
+        Expected:
+          r.expected,
+
+        Tolerance:
+          r.tolerance
+      })
+    )
+  );
+
+  if (failed === 0) {
+    console.log(
+      `✅ All ${passed} statistical regression tests passed.`
+    );
+  } else {
+    console.error(
+      `❌ ${failed} of ${results.length} statistical regression tests failed.`
+    );
+  }
+
+  console.groupEnd();
+
+  return {
+    passed,
+    failed,
+    total:
+      results.length,
+
+    results
+  };
+}
+
+window.runSimpleSPCRegressionTests =
+  runSimpleSPCRegressionTests;
 
 // ---- AI helper function  -----
 
