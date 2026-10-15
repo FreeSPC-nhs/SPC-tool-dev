@@ -2385,12 +2385,23 @@ function getNonBlankGridRows() {
   return data2D.filter(row => row.some(cell => String(cell ?? "").trim() !== ""));
 }
 
+
 function detectHeadersFromGrid() {
   const rows = getNonBlankGridRows();
 
-  // SAFER default:
-  // In this tool, column headings usually live in the grid's column titles already.
-  // Only treat the first row as headers if we actually see "header-like" text.
+  // When editing an existing dataset, the column headings
+  // are already stored separately in the spreadsheet titles.
+  // Do not treat the first observation as a header row.
+  if (
+    dataEditorSourceMode === "manual" &&
+    Array.isArray(rawRows) &&
+    rawRows.length > 0
+  ) {
+    return false;
+  }
+
+  // For a new, empty editor or an Excel worksheet,
+  // retain the existing header-detection behaviour.
   if (rows.length < 2) return false;
 
   return isProbablyHeaderRow(rows[0]);
