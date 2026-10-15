@@ -1127,6 +1127,21 @@ body.sidebar-collapsed .main {
   outline-offset: 2px;
 }
 
+
+/* Position Chart setup close button at the top-right */
+#chartSetupModal .modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 6;
+}
+
+/* Keep the heading clear of the close button */
+#chartSetupModal #chartSetupTitle {
+  padding-right: 3rem;
+}
+
+
 .modal-body {
   overflow: auto;
   padding: 1rem 1.25rem 1.25rem 1.25rem;
