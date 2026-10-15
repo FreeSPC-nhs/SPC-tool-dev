@@ -211,11 +211,15 @@ function describeRulesForCurrentChart(chartType) {
       ? "Why am I using a U′ chart?"
       : null,
 
-    (
+        (
       chartType === "pprime" ||
       chartType === "uprime"
     )
       ? "What does Sigma Z mean?"
+      : null,
+
+    ["xmr", "c", "p", "pprime", "u", "uprime", "xbars"].includes(chartType)
+      ? "When should I exclude a point from limit calculations?"
       : null
   ].filter(Boolean);
 
@@ -334,6 +338,31 @@ function describeRulesForCurrentChart(chartType) {
     "A very large point-to-point jump can inflate the average moving range and make the control limits unusually wide. By default, SimpleSPC screens unusually large moving ranges when estimating routine variation. The original observations and moving ranges are still shown on the chart.\n\n" +
     "SimpleSPC uses the Nelson method: moving ranges greater than 3.5 times the initial average moving range are not used in the variation estimate. You can turn this screening off in Advanced detection options if you want the unscreened calculation."
 },
+    {
+      id: "exclude-point-from-limits",
+      priority: 10,
+      aliases: [
+        "when should i exclude a point from limit calculations",
+        "exclude a point from limit calculations",
+        "exclude point from limits",
+        "ghost a point",
+        "ghosting",
+        "causing out"
+      ],
+      keywords: [
+        ["exclude", "point", "limit"],
+        ["exclude", "calculation"],
+        ["ghosting"],
+        ["causing", "out"]
+      ],
+      answer:
+        "Exclude a point from the limit calculations only after you have investigated it and have good reason to believe it reflects a known special cause rather than the routine variation of the process.\n\n" +
+        "The point is not deleted. It stays visible on the chart, but SimpleSPC does not use it to estimate the centre line or control limits. Do not exclude a point simply because it is high, low, or outside a control limit. First investigate what happened.\n\n" +
+        "If the change represents a lasting new way of working or a new process level, a split is usually more appropriate than excluding the point.\n\n" +
+        "For XmR charts, excluding an observation also leaves out the moving ranges immediately before and after that observation when routine variation is estimated. SimpleSPC does not create an artificial moving range across the excluded point. For X̄–S charts, exclusion applies to the whole plotted subgroup.\n\n" +
+        "Technical note: some SPC texts call this ghosting or causing out a point. It is a way of estimating the process's routine common-cause variation — sometimes called the voice of the process — without allowing an investigated special cause to distort the limits."
+    },
+
     {
       id: "what-is-spc",
       priority: 8,
