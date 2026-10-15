@@ -208,17 +208,7 @@ function describeRulesForCurrentChart(chartType) {
   function getSuggestedQuestions(hasChart) {
   const chartType = getChartTypeSafe();
 
-  if (
-    hasChart &&
-    chartType === "pareto"
-  ) {
-    return [
-      "What is my chart telling me?",
-      "What does the 80% line mean?",
-      "Are the biggest categories the causes?",
-      "What should I do next?"
-    ];
-  }
+  
 
   const chartQuestions = [
     "What is my chart telling me?",
@@ -270,9 +260,18 @@ function describeRulesForCurrentChart(chartType) {
       "Why can’t I use zone rules on P, P′, U, U′, or C charts?"
     ],
 
-    chart:
+        chart:
       hasChart
-        ? chartQuestions
+        ? (
+            chartType === "pareto"
+              ? [
+                  "What is my chart telling me?",
+                  "What does the 80% line mean?",
+                  "Are the biggest categories the causes?",
+                  "What should I do next?"
+                ]
+              : chartQuestions
+          )
         : []
   };
 }
