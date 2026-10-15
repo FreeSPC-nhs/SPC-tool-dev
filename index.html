@@ -677,7 +677,32 @@ points as baseline<br>
 
 <hr>
 
-<h3 style="margin-top:0.8rem;">Target</h3>
+<h3 style="margin-top:0.8rem;">
+  <span class="label-with-tooltip">
+    Target
+
+    <span
+      class="help-tooltip"
+      tabindex="0"
+      aria-label="How to set a target"
+    >
+      ?
+      <span class="help-tooltip-text">
+        Enter the performance level you want to achieve,
+        then choose whether values at or above, or at
+        or below, that level are good.
+
+        A target is a performance goal, not a statistical
+        control limit.
+      </span>
+    </span>
+  </span>
+</h3>
+
+<div class="hint small-hint" style="margin-bottom:0.5rem;">
+  Enter your target value, then choose whether higher
+  or lower values are better.
+</div>
 
 <label>
 Target value
@@ -1169,41 +1194,149 @@ Hide target line
           </p>
         </details>
 
-        <details>
-          <summary><strong>5. X-axis type and chart type</strong></summary>
-          <p>
-            Choose the chart type that matches the kind of data you have:
-          </p>
-          <ul>
-            <li><strong>Run chart</strong> – a simple starting point for values over time.</li>
-            <li><strong>XmR chart</strong> – one continuous observation per time point.</li>
-            <li><strong>X̄–S chart</strong> – grouped continuous measurements with several values per subgroup.</li>
-            <li><strong>P chart</strong> – proportions with numerator and denominator.</li>
-            <li><strong>U chart</strong> – rates with changing opportunity.</li>
-            <li><strong>T / G charts</strong> – rare events.</li>
-	    <li><strong>Pareto chart</strong> – ranks categories from most to least frequent to help identify where improvement effort may have the greatest impact. It is a supplementary analysis rather than a time-ordered SPC chart.</li>
-          </ul>
-          <p>
-            If you are unsure, use the <strong>Help me choose a chart</strong> option.
-          </p>
-        </details>
+        
+<details>
+  <summary><strong>5. X-axis type and chart type</strong></summary>
 
-        <details>
-          <summary><strong>6. Baseline, splits, targets and annotations</strong></summary>
-          <ul>
-            <li><strong>Baseline</strong> lets you calculate the initial centre line and limits using an earlier reference period.</li>
-            <li><strong>Splits</strong> let you recalculate the centre line and limits from a chosen point onward.</li>
-            <li><strong>Targets</strong> show the level you want to achieve, but they are not the same as control limits.</li>
-            <li><strong>Annotations</strong> let you mark events that may help explain a change in the pattern.</li>
-          </ul>
-          <p>
-            In general:
-          </p>
-          <ul>
-            <li>use a <strong>baseline</strong> to compare against an earlier period</li>
-            <li>use a <strong>split</strong> when a later period should be treated as a new system</li>
-          </ul>
-        </details>
+  <p>
+    Choose the chart type that matches the kind of data you have.
+    The main options are:
+  </p>
+
+  <ul>
+    <li><strong>Run chart</strong> – a simple starting point for values over time.</li>
+    <li><strong>XmR chart</strong> – individual continuous measurements, with control limits.</li>
+    <li><strong>X̄–S chart</strong> – continuous measurements collected in subgroups.</li>
+    <li><strong>C chart</strong> – counts where the opportunity for events is reasonably constant.</li>
+    <li><strong>P and Laney P′ charts</strong> – proportions, using a numerator and denominator. P′ adjusts for greater or smaller variation than expected.</li>
+    <li><strong>U and Laney U′ charts</strong> – event rates with changing opportunities. U′ adjusts for greater or smaller variation than expected.</li>
+    <li><strong>T and G charts</strong> – time or opportunities between rare events.</li>
+    <li><strong>Pareto chart</strong> – ranks categories from most to least frequent to help prioritise investigation.</li>
+  </ul>
+
+  <p>
+    <strong>X-axis type:</strong>
+  </p>
+
+  <ul>
+    <li>
+      <strong>Date / time</strong> – use when observations have
+      dates or times and you want to display them chronologically.
+    </li>
+    <li>
+      <strong>Sequence / category</strong> – use when observations
+      should be shown in their sequence or by category, without
+      interpreting the labels as dates.
+    </li>
+  </ul>
+
+  <p>
+    Pareto charts use categories rather than dates. Categories are
+    ranked by frequency, with a cumulative percentage line.
+    They are not time-ordered SPC charts and do not have
+    statistical control limits.
+  </p>
+
+  <p>
+    If you are unsure which chart to use, click
+    <strong>Help me choose</strong>. You can also use
+    <strong>Chart setup</strong> for guidance on the data
+    columns required by the selected chart.
+  </p>
+</details>
+
+<details>
+  <summary><strong>6. Baselines, splits, targets and the right-click menu</strong></summary>
+
+  <p>
+    SimpleSPC lets you investigate and explain patterns in
+    your charts using several additional features.
+  </p>
+
+  <ul>
+    <li>
+      <strong>Baseline</strong> – calculate the initial centre
+      line and limits using an earlier reference period.
+    </li>
+    <li>
+      <strong>Splits</strong> – divide the chart into separate
+      periods and recalculate centre lines and limits where
+      a genuine change in the process has occurred.
+    </li>
+    <li>
+  <strong>Targets</strong> – open the
+  <strong>Baseline</strong> tab, enter your
+  target value, and choose whether being at or above
+  or at or below the target is good. The chart will
+  update automatically. A target represents the level
+  of performance you want to achieve, not a statistical
+  control limit.
+</li>
+    <li>
+      <strong>Annotations</strong> – record events, changes
+      or explanations that may help interpret the chart.
+    </li>
+  </ul>
+
+  <p>
+    <strong>Using the right-click menu</strong>
+  </p>
+
+  <p>
+    Right-click directly on the chart to open a menu of
+    additional options. Some actions depend on which chart
+    you are using or which data point you select.
+  </p>
+
+  <ul>
+    <li>
+      <strong>Add, edit or remove annotations</strong> –
+      right-click near a plotted point to attach an explanation,
+      or manage existing annotations.
+    </li>
+    <li>
+      <strong>Add or remove splits</strong> – use the Splits
+      submenu to mark where a new period begins, or remove
+      a previously added split.
+    </li>
+    <li>
+      <strong>Exclude a data point from limit calculations</strong> –
+      where supported, keep an observation visible on the chart
+      while excluding it from the calculation of the centre line
+      and control limits. You can reinclude it later.
+    </li>
+    <li>
+      <strong>Show or hide centre-line labels</strong> –
+      display calculated centre values, hide individual labels
+      or restore previously hidden labels.
+    </li>
+    <li>
+      <strong>Copy or export</strong> – copy the chart alone,
+      copy the chart with its analysis, or save a PNG image.
+    </li>
+  </ul>
+
+  <p>
+    <strong>Important:</strong> Only exclude a point from limit
+    calculations after investigating and understanding why it
+    differs, and deciding that it does not represent the routine
+    variation of the process. Excluded observations remain
+    visible. Consider adding an annotation to explain the reason.
+  </p>
+
+  <p>
+    For X̄–S charts, exclusion applies to the whole subgroup.
+    Point exclusion and control-limit splits are not applicable
+    to Pareto charts.
+  </p>
+
+  <p>
+    Splits should also be based on an investigated and understood
+    change in the process, rather than simply being used to
+    remove an inconvenient statistical signal.
+  </p>
+</details>
+
 
         <details>
           <summary><strong>7. Interpreting the summary</strong></summary>
