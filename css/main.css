@@ -1584,3 +1584,16 @@ body.pdf-exporting #capability {
   color: var(--control-muted);
 }
 
+
+/* Keep the extended chart list compact and aligned */
+.sidebar #moreChartTypesDetails .chart-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.1rem;
+}
+
+.sidebar #moreChartTypesDetails .radio-pill {
+  margin: 0;
+  padding: 0.18rem 0.2rem;
+}
+
