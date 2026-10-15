@@ -1142,6 +1142,21 @@ body.sidebar-collapsed .main {
 }
 
 
+/* Position Help me choose close button at the top-right */
+#chartWizardModal .modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 6;
+}
+
+/* Keep the heading clear of the close button */
+#chartWizardModal #chartWizardTitle {
+  padding-right: 3rem;
+}
+
+
+
 .modal-body {
   overflow: auto;
   padding: 1rem 1.25rem 1.25rem 1.25rem;
