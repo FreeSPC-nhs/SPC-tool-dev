@@ -16366,61 +16366,238 @@ function buildMrOverlayArray(values, reasons, targetReason) {
   ));
 }
 
-function buildMrMarkerDataset(label, data, colour, pointStyle) {
-  const hasAny = data.some(v => Number.isFinite(v));
-  if (!hasAny) return null;
+function buildMrMarkerDataset(
+  label,
+  data,
+  colour,
+  pointStyle,
+  reasonCode
+) {
+  const hasAny =
+    data.some(
+      v => Number.isFinite(v)
+    );
+
+  if (!hasAny) {
+    return null;
+  }
 
   return {
     label,
     data,
+
+    // Used by the MR-specific legend and tooltip.
+    _mrOmissionMarker: true,
+    _mrOmissionReason: reasonCode,
+
     type: "line",
     showLine: false,
     spanGaps: false,
+
     borderColor: colour,
-    backgroundColor: colour,
+    backgroundColor: "#ffffff",
+
     pointStyle,
-    pointRadius: data.map(v => Number.isFinite(v) ? 6 : 0),
-    pointHoverRadius: data.map(v => Number.isFinite(v) ? 7 : 0),
-    pointBorderColor: "#ffffff",
-    pointBorderWidth: 1.5,
+
+    pointRadius:
+      data.map(
+        v =>
+          Number.isFinite(v)
+            ? 8
+            : 0
+      ),
+
+    pointHoverRadius:
+      data.map(
+        v =>
+          Number.isFinite(v)
+            ? 10
+            : 0
+      ),
+
+    pointBackgroundColor:
+      "#ffffff",
+
+    pointBorderColor:
+      colour,
+
+    pointBorderWidth: 3,
+
     fill: false,
     tension: 0
   };
 }
 
-function buildMrTooltipCallbacks() {
+function buildMrLegendConfig() {
   return {
-    label(context) {
-      const value = context.parsed?.y;
-      if (!Number.isFinite(value)) return null;
+    display: true,
+    position: "bottom",
+    align: "center",
 
-      const label = context.dataset?.label || "";
-      const pretty = formatMrValueForDisplay(value);
+    labels: {
+      usePointStyle: true,
+      boxWidth: 55,
+      boxHeight: 12,
+      padding: 14,
 
-      if (label === "MR omitted (adjacent to excluded point)") {
-        return `Not used in variation estimate: ${pretty} (adjacent to an excluded point)`;
+      generateLabels(chart) {
+        const defaultLabels =
+          Chart.defaults.plugins.legend.labels.generateLabels(
+            chart
+          );
+
+        return defaultLabels.map(
+          label => {
+            const dataset =
+              chart.data.datasets[
+                label.datasetIndex
+              ] || {};
+
+            if (
+              dataset._mrOmissionMarker
+            ) {
+              return {
+                ...label,
+
+                pointStyle:
+                  dataset.pointStyle,
+
+                fillStyle:
+                  dataset.pointBackgroundColor ||
+                  "#ffffff",
+
+                strokeStyle:
+                  dataset.pointBorderColor ||
+                  dataset.borderColor,
+
+                lineWidth:
+                  dataset.pointBorderWidth ||
+                  2,
+
+                lineDash: []
+              };
+            }
+
+            return {
+              ...label,
+
+              pointStyle:
+                "line",
+
+              strokeStyle:
+                dataset.borderColor ||
+                label.strokeStyle,
+
+              fillStyle:
+                "transparent",
+
+              lineWidth:
+                Math.max(
+                  dataset.borderWidth ||
+                  2,
+                  3
+                ),
+
+              lineDash:
+                dataset.borderDash ||
+                [],
+
+              lineCap:
+                "round"
+            };
+          }
+        );
       }
-
-      if (label === "MR omitted (screened as unusually large)") {
-        return `Not used in variation estimate: ${pretty} (screened as unusually large)`;
-      }
-
-      if (label.startsWith("MR average")) {
-        return `${label}: ${pretty}`;
-      }
-
-      if (label.startsWith("MR UCL")) {
-        return `${label}: ${pretty}`;
-      }
-
-      if (label === "Moving range") {
-        return `Moving range: ${pretty}`;
-      }
-
-      return `${label}: ${pretty}`;
     }
   };
 }
+
+function buildMrTooltipOptions() {
+  return {
+    filter(context) {
+      const dataset =
+        context.dataset || {};
+
+      /*
+       * At an omitted MR we deliberately hide the ordinary
+       * "Moving range" tooltip item and show only the explanatory
+       * marker dataset.
+       */
+      if (
+        dataset.label ===
+        "Moving range"
+      ) {
+        const reason =
+          dataset._mrReasons
+            ?.[context.dataIndex];
+
+        return !reason;
+      }
+
+      return true;
+    },
+
+    callbacks: {
+      label(context) {
+        const value =
+          context.parsed?.y;
+
+        if (
+          !Number.isFinite(value)
+        ) {
+          return null;
+        }
+
+        const pretty =
+          formatMrValueForDisplay(
+            value
+          );
+
+        const reason =
+          context.dataset
+            ?._mrOmissionReason;
+
+        if (
+          reason ===
+          "excluded-point"
+        ) {
+          return (
+            `Not used in the variation estimate: ${pretty} ` +
+            `(adjacent to an excluded point)`
+          );
+        }
+
+        if (
+          reason ===
+          "screened-large"
+        ) {
+          return (
+            `Not used in the variation estimate: ${pretty} ` +
+            `(screened as an unusually large moving range)`
+          );
+        }
+
+        const label =
+          context.dataset?.label ||
+          "";
+
+        if (
+          label ===
+          "Moving range"
+        ) {
+          return (
+            `Moving range: ${pretty}`
+          );
+        }
+
+        return (
+          `${label}: ${pretty}`
+        );
+      }
+    }
+  };
+}
+
 
 function drawMrChart(allPoints, labels, segments) {
   // allPoints: full list of points for the current XmR chart (all periods)
@@ -16524,19 +16701,23 @@ function drawMrChart(allPoints, labels, segments) {
     tension: 0
   });
 
-  const excludedMarkerDataset = buildMrMarkerDataset(
-    "MR omitted (adjacent to excluded point)",
+  const excludedMarkerDataset =
+  buildMrMarkerDataset(
+    "Not used: adjacent to excluded point",
     omittedBecauseExcluded,
     OMIT_EXCLUDED_COLOUR,
-    "crossRot"
+    "crossRot",
+    "excluded-point"
   );
   if (excludedMarkerDataset) datasets.push(excludedMarkerDataset);
 
-  const screenedMarkerDataset = buildMrMarkerDataset(
-    "MR omitted (screened as unusually large)",
+  const screenedMarkerDataset =
+  buildMrMarkerDataset(
+    "Not used: unusually large MR screened",
     omittedBecauseScreened,
     OMIT_SCREENED_COLOUR,
-    "triangle"
+    "triangle",
+    "screened-large"
   );
   if (screenedMarkerDataset) datasets.push(screenedMarkerDataset);
 
@@ -16605,8 +16786,11 @@ function drawMrChart(allPoints, labels, segments) {
           text: "Moving Range (MR)",
           font: { size: 14, weight: "bold" }
         },
-        legend: SPC_LEGEND,
-        tooltip: buildMrTooltipCallbacks(),
+        legend:
+  buildMrLegendConfig(),
+
+tooltip:
+  buildMrTooltipOptions(),
         annotation: {
           annotations: (typeof buildAnnotationConfig === "function")
             ? buildAnnotationConfig(labels)
@@ -16670,9 +16854,29 @@ function renderMrChart(mrLabels, mrValues, mrReasons, avgMR, uclMR) {
       borderColor: SPC_STYLE.seriesBlue,
       backgroundColor: SPC_STYLE.seriesBlue,
       borderWidth: 2,
-      pointRadius: mrValues.map(v => Number.isFinite(v) ? 3 : 0),
-      pointHoverRadius: mrValues.map(v => Number.isFinite(v) ? 4 : 0),
-      pointBackgroundColor: basePointColours,
+      _mrReasons:
+  mrReasons.slice(),
+
+pointRadius:
+  mrValues.map(
+    (v, i) =>
+      Number.isFinite(v) &&
+      !mrReasons[i]
+        ? 3
+        : 0
+  ),
+
+pointHoverRadius:
+  mrValues.map(
+    (v, i) =>
+      Number.isFinite(v) &&
+      !mrReasons[i]
+        ? 4
+        : 0
+  ),
+
+pointBackgroundColor:
+  basePointColours,
       pointBorderColor: "#ffffff",
       pointBorderWidth: 1,
       spanGaps: false,
@@ -16699,19 +16903,23 @@ function renderMrChart(mrLabels, mrValues, mrReasons, avgMR, uclMR) {
     }
   ];
 
-  const excludedMarkerDataset = buildMrMarkerDataset(
-    "MR omitted (adjacent to excluded point)",
+  const excludedMarkerDataset =
+  buildMrMarkerDataset(
+    "Not used: adjacent to excluded point",
     omittedBecauseExcluded,
     OMIT_EXCLUDED_COLOUR,
-    "crossRot"
+    "crossRot",
+    "excluded-point"
   );
   if (excludedMarkerDataset) datasets.push(excludedMarkerDataset);
 
-  const screenedMarkerDataset = buildMrMarkerDataset(
-    "MR omitted (screened as unusually large)",
+  const screenedMarkerDataset =
+  buildMrMarkerDataset(
+    "Not used: unusually large MR screened",
     omittedBecauseScreened,
     OMIT_SCREENED_COLOUR,
-    "triangle"
+    "triangle",
+    "screened-large"
   );
   if (screenedMarkerDataset) datasets.push(screenedMarkerDataset);
 
@@ -16727,8 +16935,11 @@ function renderMrChart(mrLabels, mrValues, mrReasons, avgMR, uclMR) {
           text: "Moving Range (MR)",
           font: { size: 14, weight: "bold" }
         },
-        legend: SPC_LEGEND,
-        tooltip: buildMrTooltipCallbacks(),
+        legend:
+  buildMrLegendConfig(),
+
+tooltip:
+  buildMrTooltipOptions(),
         annotation: {
           annotations: (typeof buildAnnotationConfig === "function")
             ? buildAnnotationConfig(mrLabels)
