@@ -16324,10 +16324,108 @@ signals:
 }
 
 
+function formatMrValueForDisplay(v) {
+  if (!Number.isFinite(v)) return "—";
+  return (typeof formatNumber === "function")
+    ? formatNumber(v, 3)
+    : Number(v).toFixed(3);
+}
+
+function buildMrLocalSeries(segmentPoints, segmentResult) {
+  const values = Array(segmentPoints.length).fill(null);
+  const reasons = Array(segmentPoints.length).fill(null);
+
+  const screenedPairs = new Set(
+    Array.isArray(segmentResult?.excludedMRs)
+      ? segmentResult.excludedMRs.map(item => `${item.fromPointIndex}-${item.toPointIndex}`)
+      : []
+  );
+
+  for (let i = 1; i < segmentPoints.length; i++) {
+    const prev = segmentPoints[i - 1];
+    const curr = segmentPoints[i];
+
+    const mr = Math.abs(curr.y - prev.y);
+    values[i] = mr;
+
+    if (prev?._excludeFromLimits || curr?._excludeFromLimits) {
+      reasons[i] = "excluded-point";
+    } else if (screenedPairs.has(`${i - 1}-${i}`)) {
+      reasons[i] = "screened-large";
+    } else {
+      reasons[i] = null;
+    }
+  }
+
+  return { values, reasons };
+}
+
+function buildMrOverlayArray(values, reasons, targetReason) {
+  return values.map((v, i) => (
+    reasons[i] === targetReason && Number.isFinite(v) ? v : null
+  ));
+}
+
+function buildMrMarkerDataset(label, data, colour, pointStyle) {
+  const hasAny = data.some(v => Number.isFinite(v));
+  if (!hasAny) return null;
+
+  return {
+    label,
+    data,
+    type: "line",
+    showLine: false,
+    spanGaps: false,
+    borderColor: colour,
+    backgroundColor: colour,
+    pointStyle,
+    pointRadius: data.map(v => Number.isFinite(v) ? 6 : 0),
+    pointHoverRadius: data.map(v => Number.isFinite(v) ? 7 : 0),
+    pointBorderColor: "#ffffff",
+    pointBorderWidth: 1.5,
+    fill: false,
+    tension: 0
+  };
+}
+
+function buildMrTooltipCallbacks() {
+  return {
+    label(context) {
+      const value = context.parsed?.y;
+      if (!Number.isFinite(value)) return null;
+
+      const label = context.dataset?.label || "";
+      const pretty = formatMrValueForDisplay(value);
+
+      if (label === "MR omitted (adjacent to excluded point)") {
+        return `Not used in variation estimate: ${pretty} (adjacent to an excluded point)`;
+      }
+
+      if (label === "MR omitted (screened as unusually large)") {
+        return `Not used in variation estimate: ${pretty} (screened as unusually large)`;
+      }
+
+      if (label.startsWith("MR average")) {
+        return `${label}: ${pretty}`;
+      }
+
+      if (label.startsWith("MR UCL")) {
+        return `${label}: ${pretty}`;
+      }
+
+      if (label === "Moving range") {
+        return `Moving range: ${pretty}`;
+      }
+
+      return `${label}: ${pretty}`;
+    }
+  };
+}
+
 function drawMrChart(allPoints, labels, segments) {
   // allPoints: full list of points for the current XmR chart (all periods)
   // labels: full x labels used on the X chart
-  // segments: [{ startIndex, endIndex, result }, ...] (same segments you use for X chart)
+  // segments: [{ startIndex, endIndex, result }, ...] (same segments used by X chart)
 
   if (!mrCanvas || !mrPanel) return;
   mrPanel.style.display = "block";
@@ -16335,22 +16433,16 @@ function drawMrChart(allPoints, labels, segments) {
   const strong = mrPanel.querySelector("strong");
   if (strong) strong.textContent = "Moving Range chart:";
 
-  const showAll = (typeof getMrDisplayMode === "function") && (getMrDisplayMode() === "all");
+  const showAll =
+    (typeof getMrDisplayMode === "function") &&
+    (getMrDisplayMode() === "all");
 
-  // House style colours (match main chart)
   const BLUE = SPC_STYLE.seriesBlue;
   const RED = SPC_STYLE.pointBeyond;
   const GREEN = SPC_STYLE.limitGreen;
+  const OMIT_EXCLUDED_COLOUR = "#4b5563";
+  const OMIT_SCREENED_COLOUR = "#f59e0b";
 
-  function mrForValues(values) {
-    const mr = Array(values.length).fill(null); // MR undefined at first point
-    for (let i = 1; i < values.length; i++) {
-      mr[i] = Math.abs(values[i] - values[i - 1]);
-    }
-    return mr;
-  }
-
-  // Helper: compute avg MR from an MR array (ignoring nulls)
   function computeAvgMR(mrArr) {
     const vals = mrArr.filter(v => typeof v === "number" && isFinite(v));
     return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
@@ -16362,31 +16454,56 @@ function drawMrChart(allPoints, labels, segments) {
     if (!lastSeg) return;
 
     const pts = allPoints.slice(lastSeg.startIndex, lastSeg.endIndex + 1);
-    const values = pts.map(p => p.y);
-    const mr = mrForValues(values);
+    const localMr = buildMrLocalSeries(pts, lastSeg.result);
 
-    const avgMR = (lastSeg.result && typeof lastSeg.result.avgMR === "number")
-      ? lastSeg.result.avgMR
-      : computeAvgMR(mr);
+    const mrValues = localMr.values;
+    const mrReasons = localMr.reasons;
+
+    const avgMR =
+      (lastSeg.result && typeof lastSeg.result.avgMR === "number")
+        ? lastSeg.result.avgMR
+        : computeAvgMR(mrValues);
 
     const uclMR = 3.268 * avgMR;
     const mrLabels = labels.slice(lastSeg.startIndex, lastSeg.endIndex + 1);
 
-    renderMrChart(mrLabels, mr, avgMR, uclMR);
+    renderMrChart(mrLabels, mrValues, mrReasons, avgMR, uclMR);
     return;
   }
 
   // ----- ALL PERIODS (WITH SPLITS) -----
-  const valuesAll = allPoints.map(p => p.y);
-  const mrAll = mrForValues(valuesAll);
+  const mrAll = Array(labels.length).fill(null);
+  const mrReasonsAll = Array(labels.length).fill(null);
 
-  // Break MR at the first point of each new segment (no MR across phases)
-  if (segments && segments.length > 1) {
-    for (let i = 1; i < segments.length; i++) {
-      const start = segments[i].startIndex;
-      if (start >= 0 && start < mrAll.length) mrAll[start] = null;
+  (segments || []).forEach(seg => {
+    const pts = allPoints.slice(seg.startIndex, seg.endIndex + 1);
+    const localMr = buildMrLocalSeries(pts, seg.result);
+
+    for (let i = 0; i < localMr.values.length; i++) {
+      const globalIndex = seg.startIndex + i;
+      mrAll[globalIndex] = localMr.values[i];
+      mrReasonsAll[globalIndex] = localMr.reasons[i];
     }
-  }
+  });
+
+  const omittedBecauseExcluded = buildMrOverlayArray(
+    mrAll,
+    mrReasonsAll,
+    "excluded-point"
+  );
+
+  const omittedBecauseScreened = buildMrOverlayArray(
+    mrAll,
+    mrReasonsAll,
+    "screened-large"
+  );
+
+  const basePointColours = mrAll.map((v, i) => {
+    if (!Number.isFinite(v)) return "rgba(0,0,0,0)";
+    if (mrReasonsAll[i] === "excluded-point") return OMIT_EXCLUDED_COLOUR;
+    if (mrReasonsAll[i] === "screened-large") return OMIT_SCREENED_COLOUR;
+    return BLUE;
+  });
 
   const datasets = [];
 
@@ -16397,21 +16514,42 @@ function drawMrChart(allPoints, labels, segments) {
     borderColor: BLUE,
     backgroundColor: BLUE,
     borderWidth: 2,
-    pointRadius: 0,
+    pointRadius: mrAll.map(v => Number.isFinite(v) ? 3 : 0),
+    pointHoverRadius: mrAll.map(v => Number.isFinite(v) ? 4 : 0),
+    pointBackgroundColor: basePointColours,
+    pointBorderColor: "#ffffff",
+    pointBorderWidth: 1,
     spanGaps: false,
     fill: false,
     tension: 0
   });
 
+  const excludedMarkerDataset = buildMrMarkerDataset(
+    "MR omitted (adjacent to excluded point)",
+    omittedBecauseExcluded,
+    OMIT_EXCLUDED_COLOUR,
+    "crossRot"
+  );
+  if (excludedMarkerDataset) datasets.push(excludedMarkerDataset);
+
+  const screenedMarkerDataset = buildMrMarkerDataset(
+    "MR omitted (screened as unusually large)",
+    omittedBecauseScreened,
+    OMIT_SCREENED_COLOUR,
+    "triangle"
+  );
+  if (screenedMarkerDataset) datasets.push(screenedMarkerDataset);
+
   // One pair of lines per period
   (segments || []).forEach((seg, idx) => {
     const pts = allPoints.slice(seg.startIndex, seg.endIndex + 1);
-    const values = pts.map(p => p.y);
-    const mr = mrForValues(values);
+    const localMr = buildMrLocalSeries(pts, seg.result);
+    const mrValues = localMr.values;
 
-    const avgMR = (seg.result && typeof seg.result.avgMR === "number")
-      ? seg.result.avgMR
-      : computeAvgMR(mr);
+    const avgMR =
+      (seg.result && typeof seg.result.avgMR === "number")
+        ? seg.result.avgMR
+        : computeAvgMR(mrValues);
 
     const uclMR = 3.268 * avgMR;
 
@@ -16468,13 +16606,16 @@ function drawMrChart(allPoints, labels, segments) {
           font: { size: 14, weight: "bold" }
         },
         legend: SPC_LEGEND,
+        tooltip: buildMrTooltipCallbacks(),
         annotation: {
           annotations: (typeof buildAnnotationConfig === "function")
             ? buildAnnotationConfig(labels)
             : {}
         }
       },
-            elements: { point: { radius: 0, hoverRadius: 0 } },
+      elements: {
+        point: { radius: 0, hoverRadius: 0 }
+      },
       scales: (() => {
         const axisSettings = getAxisSettings();
         return {
@@ -16486,9 +16627,8 @@ function drawMrChart(allPoints, labels, segments) {
   });
 }
 
-
 // Helper used by "last period only" mode — uses your existing MR canvas/chart variables
-function renderMrChart(mrLabels, mrValues, avgMR, uclMR) {
+function renderMrChart(mrLabels, mrValues, mrReasons, avgMR, uclMR) {
   if (!mrCanvas) return;
 
   if (mrPanel) {
@@ -16501,6 +16641,28 @@ function renderMrChart(mrLabels, mrValues, avgMR, uclMR) {
     mrChart = null;
   }
 
+  const OMIT_EXCLUDED_COLOUR = "#4b5563";
+  const OMIT_SCREENED_COLOUR = "#f59e0b";
+
+  const omittedBecauseExcluded = buildMrOverlayArray(
+    mrValues,
+    mrReasons,
+    "excluded-point"
+  );
+
+  const omittedBecauseScreened = buildMrOverlayArray(
+    mrValues,
+    mrReasons,
+    "screened-large"
+  );
+
+  const basePointColours = mrValues.map((v, i) => {
+    if (!Number.isFinite(v)) return "rgba(0,0,0,0)";
+    if (mrReasons[i] === "excluded-point") return OMIT_EXCLUDED_COLOUR;
+    if (mrReasons[i] === "screened-large") return OMIT_SCREENED_COLOUR;
+    return SPC_STYLE.seriesBlue;
+  });
+
   const datasets = [
     {
       label: "Moving range",
@@ -16508,9 +16670,9 @@ function renderMrChart(mrLabels, mrValues, avgMR, uclMR) {
       borderColor: SPC_STYLE.seriesBlue,
       backgroundColor: SPC_STYLE.seriesBlue,
       borderWidth: 2,
-      pointRadius: 3,
-      pointHoverRadius: 4,
-      pointBackgroundColor: SPC_STYLE.seriesBlue,
+      pointRadius: mrValues.map(v => Number.isFinite(v) ? 3 : 0),
+      pointHoverRadius: mrValues.map(v => Number.isFinite(v) ? 4 : 0),
+      pointBackgroundColor: basePointColours,
       pointBorderColor: "#ffffff",
       pointBorderWidth: 1,
       spanGaps: false,
@@ -16537,6 +16699,22 @@ function renderMrChart(mrLabels, mrValues, avgMR, uclMR) {
     }
   ];
 
+  const excludedMarkerDataset = buildMrMarkerDataset(
+    "MR omitted (adjacent to excluded point)",
+    omittedBecauseExcluded,
+    OMIT_EXCLUDED_COLOUR,
+    "crossRot"
+  );
+  if (excludedMarkerDataset) datasets.push(excludedMarkerDataset);
+
+  const screenedMarkerDataset = buildMrMarkerDataset(
+    "MR omitted (screened as unusually large)",
+    omittedBecauseScreened,
+    OMIT_SCREENED_COLOUR,
+    "triangle"
+  );
+  if (screenedMarkerDataset) datasets.push(screenedMarkerDataset);
+
   mrChart = new Chart(mrCanvas, {
     type: "line",
     data: { labels: mrLabels, datasets },
@@ -16550,16 +16728,17 @@ function renderMrChart(mrLabels, mrValues, avgMR, uclMR) {
           font: { size: 14, weight: "bold" }
         },
         legend: SPC_LEGEND,
+        tooltip: buildMrTooltipCallbacks(),
         annotation: {
           annotations: (typeof buildAnnotationConfig === "function")
             ? buildAnnotationConfig(mrLabels)
             : {}
         }
       },
-            elements: {
+      elements: {
         point: { radius: 0, hoverRadius: 0 }
       },
-            scales: (() => {
+      scales: (() => {
         const axisSettings = getAxisSettings();
         return {
           x: buildCategoryXAxisConfig("", axisSettings.x, mrLabels),
@@ -16569,7 +16748,6 @@ function renderMrChart(mrLabels, mrValues, avgMR, uclMR) {
     }
   });
 }
-
 
 // ---- AI helper function  -----
 
