@@ -87,19 +87,23 @@
 
     <label for="fileInput"><strong>Add data:</strong></label>
 
+<span class="help-tooltip" tabindex="0" aria-label="X-axis type help">
+      ?
+      <span class="help-tooltip-text">
+        The columns you need depend on the chart type.
+  Most SPC charts need a time or sequence column and
+  a measurement. Some also need counts and denominators.
+  Pareto charts need a category column and can optionally
+  use a frequency/count column.
+      </span>
+    </span>
+
+
     <div class="hint small-hint">
       Upload a CSV or Excel file, or use the data editor to paste/type/edit data directly.
     </div>
 
     <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" />
-
-    <div class="hint small-hint">
-  The columns you need depend on the chart type.
-  Most SPC charts need a time or sequence column and
-  a measurement. Some also need counts and denominators.
-  Pareto charts need a category column and can optionally
-  use a frequency/count column.
-</div>
 
     <button id="openDataEditorButton" type="button">
       Open data editor (paste/type data)
@@ -113,8 +117,7 @@
 >
   Clear data &amp; chart
 </button>
-    Clear data &amp; chart
-    </button>
+
 
     <hr class="section-divider" />
 
@@ -140,18 +143,20 @@
   <strong>Save an offline copy</strong>
 </p>
 
-<div class="hint small-hint">
-  Save a self-contained copy of this chart. This can be shared and opened without having to load this website.
-</div>
+<span class="help-tooltip" tabindex="0" aria-label="X-axis type help">
+      ?
+      <span class="help-tooltip-text">
+	Save a self-contained copy of this chart. This can 
+	be shared and opened without having to load this website.
 
+        The HTML file contains the chart data and a fully functional 
+	copy of this tool. Store andshare it in line with your 
+	organisation's information-governance requirements.
+      </span>
+    </span>
 <button id="savePortableBtn" type="button" disabled>
   Save portable chart
 </button>
-
-<div class="hint small-hint">
-  The HTML file contains the chart data and a fully functional copy of this tool. Store and
-  share it in line with your organisation's information-governance requirements.
-</div>
 
   </div>
 
