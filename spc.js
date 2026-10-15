@@ -18926,7 +18926,9 @@ const hasChart =
                 !!lastRareAnalysis &&
                 lastRareAnalysis.chartType === helperChartType
               )
-            : false;
+            : helperChartType === "pareto"
+              ? !!lastParetoAnalysis
+              : false;
 
   // 1) Intro text
   if (!hasChart) {
