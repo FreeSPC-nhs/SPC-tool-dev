@@ -3975,12 +3975,24 @@ function drawXbarSCombinedChart({
 
   if (!mrCanvas) return;
 
-  const sLabels =
-    getChartLabels(
-      "S chart",
-      "Subgroup",
-      "S"
-    );
+  
+  // The secondary S chart needs its own default labels,
+  // but must not overwrite the shared Labels-tab fields.
+  // Preserve any labels deliberately entered by the user.
+  const sLabels = {
+    title: chartTitleManuallyEdited
+      ? mainLabels.title
+      : "S chart",
+
+    xLabel: xAxisLabelManuallyEdited
+      ? mainLabels.xLabel
+      : "Subgroup",
+
+    yLabel: yAxisLabelManuallyEdited
+      ? mainLabels.yLabel
+      : "S"
+  };
+
 
   mrChart =
     drawSecondarySPCChart({
@@ -13440,11 +13452,22 @@ generateButton.addEventListener("click", (evt) => {
   clearError();
 
 
+
   if (summaryDiv) summaryDiv.innerHTML = "";
   if (capabilityDiv) capabilityDiv.innerHTML = "";
-
   if (typeof validateAxisSettings === "function" && !validateAxisSettings()) return;
   if (!validateBeforeGenerate()) return;
+
+  // A previous SPC helper answer may describe a different
+  // chart, dataset, target or analysis setting.
+  // Clear it before generating the updated analysis.
+  if (spcHelperOutput) {
+    spcHelperOutput.innerHTML = "";
+  }
+
+  if (aiQuestionInput) {
+    aiQuestionInput.value = "";
+  }
 
   try {
     const dateCol = dateSelect.value;
