@@ -1944,12 +1944,58 @@ function buildDecisionAnswer(ctx) {
     q === "what is the next step" ||
     q === "what should the next step be";
 
-  const hasChart =
+    const hasChart =
     !!ctx.run ||
     !!ctx.xmr ||
     !!ctx.xbars ||
     !!ctx.attribute ||
-    !!ctx.rare;
+    !!ctx.rare ||
+    !!ctx.pareto;
+
+  // Pareto-specific questions
+  if (hasChart && ctx.chartType === "pareto") {
+
+    if (q === "what does the 80% line mean") {
+      const p = ctx.pareto;
+
+      let answer =
+        "The dashed 80% line is a guide to help prioritise " +
+        "further investigation. It is not a statistical control limit. " +
+        "The red cumulative line shows how the percentage of " +
+        "occurrences builds up as categories are added from left to right.";
+
+      if (
+        Number.isFinite(p.cutoff80Count) &&
+        Number.isFinite(p.cutoff80Pct)
+      ) {
+        answer +=
+          `\n\nIn your chart, the first ${p.cutoff80Count} ` +
+          `categories account for ${p.cutoff80Pct.toFixed(1)}% ` +
+          "of all occurrences.";
+      }
+
+      answer +=
+        "\n\nThe 80% line is a useful reference, not a rule " +
+        "that 80% of problems must come from 20% of categories.";
+
+      return answer;
+    }
+
+    if (q === "are the biggest categories the causes") {
+      return (
+        "Not necessarily. A Pareto chart shows which categories " +
+        "contain the most recorded occurrences, but it does not " +
+        "establish what caused them.\n\n" +
+        "The largest categories are often useful starting points " +
+        "for investigation. Look more closely at what happens " +
+        "within those categories, consider how the data were " +
+        "collected, and use local knowledge to identify possible causes.\n\n" +
+        "A frequent category is not automatically a root cause, " +
+        "and a less frequent category may still deserve priority " +
+        "if its consequences are particularly serious."
+      );
+    }
+  }
 
   if (
     hasChart &&
