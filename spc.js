@@ -14168,7 +14168,13 @@ function drawCChart(points, baselineCount, labels) {
       clArr[i] = res.cbar;
       uclArr[i] = res.ucl;
       lclArr[i] = res.lcl;
-      beyond[i] = isFinite(values[i]) && (values[i] > res.ucl || values[i] < res.lcl);
+      beyond[i] =
+  !points[i]?._excludeFromLimits &&
+  isFinite(values[i]) &&
+  (
+    values[i] > res.ucl ||
+    values[i] < res.lcl
+  );
     }
   }
 
