@@ -503,6 +503,15 @@ function attachLimitExclusionContext(
 ) {
   if (!chart) return;
 
+  /*
+   * Store exclusion metadata directly on the Chart instance.
+   *
+   * IMPORTANT:
+   * Do not modify chart.options here. Once Chart.js has created a chart,
+   * chart.options is backed by internal resolver/proxy objects. Mutating
+   * those objects from here can cause recursive proxy updates and can also
+   * interfere with the annotation drag plugin.
+   */
   chart.$limitExclusionChartType =
     chartType;
 
@@ -523,66 +532,17 @@ function attachLimitExclusionContext(
       ? excludedIndices.slice()
       : [];
 
-  chart.options.plugins =
-    chart.options.plugins || {};
-
-  chart.options.plugins.tooltip =
-    chart.options.plugins.tooltip ||
-    {};
-
-  chart.options.plugins.tooltip.callbacks =
-    chart.options.plugins
-      .tooltip.callbacks ||
-    {};
-
-  const existingAfterBody =
-    chart.options.plugins
-      .tooltip.callbacks
-      .afterBody;
-
-  chart.options.plugins
-    .tooltip.callbacks
-    .afterBody =
-    (items) => {
-      const base =
-        typeof existingAfterBody ===
-          "function"
-          ? existingAfterBody(
-              items
-            )
-          : [];
-
-      const index =
-        items?.[0]
-          ?.dataIndex;
-
-      const extra =
-        Number.isInteger(
-          index
-        ) &&
-        chart
-          .$limitExcludedIndices
-          .includes(index)
-          ? [
-              "Excluded from limit calculations"
-            ]
-          : [];
-
-      const baseArr =
-        Array.isArray(base)
-          ? base
-          : (
-              base
-                ? [base]
-                : []
-            );
-
-      return baseArr.concat(
-        extra
-      );
-    };
-
-  chart.update("none");
+  /*
+   * The exclusion marker plugin reads the metadata above.
+   * draw() is sufficient to paint the marker and does not re-resolve
+   * the whole Chart.js options tree.
+   */
+  if (
+    typeof chart.draw ===
+    "function"
+  ) {
+    chart.draw();
+  }
 }
 
 function attachRowLimitExclusionContext(
@@ -864,29 +824,6 @@ const SPC_LEGEND = {
   position: "bottom",
   align: "center",
 
-  onClick(
-    e,
-    legendItem,
-    legend
-  ) {
-    // The exclusion legend item is explanatory,
-    // not a real dataset, so clicking it does nothing.
-    if (
-      !Number.isInteger(
-        legendItem?.datasetIndex
-      ) ||
-      legendItem.datasetIndex < 0
-    ) {
-      return;
-    }
-
-    Chart.defaults.plugins.legend.onClick(
-      e,
-      legendItem,
-      legend
-    );
-  },
-
   labels: {
     usePointStyle: true,
     pointStyle: "line",
@@ -896,78 +833,46 @@ const SPC_LEGEND = {
 
     generateLabels(chart) {
       const defaultLabels =
-        Chart.defaults.plugins
-          .legend.labels
-          .generateLabels(
-            chart
-          );
-
-      const labels =
-        defaultLabels.map(
-          label => {
-            const dataset =
-              chart.data.datasets[
-                label.datasetIndex
-              ] || {};
-
-            return {
-              ...label,
-              pointStyle:
-                "line",
-
-              strokeStyle:
-                dataset.borderColor ||
-                label.strokeStyle,
-
-              fillStyle:
-                "transparent",
-
-              lineWidth:
-                Math.max(
-                  dataset.borderWidth ||
-                  2,
-                  3
-                ),
-
-              lineDash:
-                dataset.borderDash ||
-                [],
-
-              lineCap:
-                "round"
-            };
-          }
+        Chart.defaults.plugins.legend.labels.generateLabels(
+          chart
         );
 
-      if (
-        Array.isArray(
-          chart
-            .$limitExcludedIndices
-        ) &&
-        chart
-          .$limitExcludedIndices
-          .length
-      ) {
-        labels.push({
-          text:
-            "Excluded from limit calculations",
+      return defaultLabels.map(
+        label => {
+          const dataset =
+            chart.data.datasets[
+              label.datasetIndex
+            ] || {};
 
-          fillStyle:
-            "#ffffff",
+          return {
+            ...label,
 
-          strokeStyle:
-            "#333333",
+            pointStyle:
+              "line",
 
-          pointStyle:
-            "crossRot",
+            strokeStyle:
+              dataset.borderColor ||
+              label.strokeStyle,
 
-          lineWidth: 2,
-          hidden: false,
-          datasetIndex: -1
-        });
-      }
+            fillStyle:
+              "transparent",
 
-      return labels;
+            lineWidth:
+              Math.max(
+                dataset.borderWidth ||
+                2,
+                3
+              ),
+
+            lineDash:
+              dataset.borderDash ||
+              [],
+
+            lineCap:
+              "round"
+          };
+        }
+      );
     }
   }
 };
