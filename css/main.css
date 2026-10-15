@@ -1156,6 +1156,20 @@ body.sidebar-collapsed .main {
 }
 
 
+/* Position Rules explainer close button at the top-right */
+#ruleExplainerModal .modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 6;
+}
+
+/* Keep the heading clear of the close button */
+#ruleExplainerModal #ruleExplainerTitle {
+  padding-right: 3rem;
+}
+
+
 
 .modal-body {
   overflow: auto;
