@@ -1585,15 +1585,23 @@ body.pdf-exporting #capability {
 }
 
 
-/* Keep the extended chart list compact and aligned */
+
+/* Keep extended chart options on separate, compact lines */
 .sidebar #moreChartTypesDetails .chart-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex-wrap: nowrap !important;
   gap: 0.1rem;
 }
 
+/* Keep each radio button next to its chart name */
 .sidebar #moreChartTypesDetails .radio-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: auto;
   margin: 0;
   padding: 0.18rem 0.2rem;
+  text-align: left;
 }
-
