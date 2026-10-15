@@ -1,43 +1,71 @@
-# FreeSPC – Simple SPC Web Tool
 
-A free, open-source, browser-based Statistical Process Control (SPC) tool for quality improvement, operational monitoring and service-performance analysis.
+# SimpleSPC — Free browser-based Statistical Process Control tool
 
-**Use the tool:** https://freespc-nhs.github.io/spc-web-tool/
+SimpleSPC is a free, open-source, browser-based tool for Statistical Process Control (SPC), Pareto analysis, quality improvement and service-performance monitoring.
+
+**Use SimpleSPC:** https://FreeSPC-nhs.github.io/spc-web-tool/
 
 **Source code:** https://github.com/FreeSPC-nhs/spc-web-tool
 
-FreeSPC was developed independently and is intended particularly to support NHS improvement work, although anyone may use it. It is not a formally supported NHS product or service.
+SimpleSPC was developed independently, particularly to support NHS quality-improvement work, although anyone may use it. It is not a formally supported NHS product or service.
 
-> **Important:** The tool is intended for anonymous, aggregated or otherwise non-identifiable data. It is not designed for patient-identifiable information or special-category personal data.
+> **Important:** SimpleSPC is intended for anonymous, aggregated or otherwise non-identifiable data. It is not designed for patient-identifiable information or special-category personal data.
 
-## What the tool does
+## What SimpleSPC does
 
-FreeSPC lets you load, enter and edit time-series data and create SPC charts directly in a web browser.
+SimpleSPC lets you upload CSV or Excel files, enter or edit data directly, and create statistical charts without installing specialist software.
 
-Current chart types include:
+All calculations and data processing take place locally in your web browser.
 
-- Run charts
-- XmR charts
-- C charts
-- P charts
-- U charts
-- X̄–S charts
-- T charts
-- G charts
+### Available charts
 
-Depending on the chart type, the tool also supports features such as baselines, process splits, targets, annotations, SPC signal rules, chart formatting, chart export, copying charts to the clipboard, saving projects for later use, and creating self-contained portable copies that can be used offline.
+- **Run chart** — monitors values over time using a median and run-chart rules.
+- **XmR chart** — monitors individual measurements using a mean and control limits, with optional moving-range analysis.
+- **X̄–S chart** — examines subgroup averages and variation within subgroups.
+- **C chart** — monitors event or defect counts when opportunities are reasonably constant.
+- **P chart** — monitors proportions, using a numerator and denominator.
+- **Laney P′ chart** — adjusts P-chart limits when observed variation differs from standard binomial expectations.
+- **U chart** — monitors event rates when the number of opportunities varies.
+- **Laney U′ chart** — adjusts U-chart limits when observed variation differs from standard Poisson expectations.
+- **T chart** — monitors time between rare events.
+- **G chart** — monitors opportunities between rare events.
+- **Pareto chart** — compares categories by frequency and shows cumulative percentages to help prioritise investigation.
 
-The tool is intended to support quality improvement and understanding of process behaviour over time. It is not intended for:
+Pareto charts are not time-ordered SPC charts and do not assess statistical process stability.
 
-- clinical diagnosis
-- treatment decisions
-- automated decisions about individuals
-- patient-level risk stratification
-- direct-care workflows
+### Key features
 
-Users remain responsible for interpretation, governance, operational decisions and improvement actions.
+Depending on the chart type, SimpleSPC provides:
+
+- **Chart selection guidance** and setup instructions for different data types.
+- **SPC signal detection** to help distinguish routine variation from evidence of change.
+- **Baselines and split periods** with recalculated centre lines and control limits where appropriate.
+- **Investigated-point exclusions**, keeping excluded observations visible while excluding them from control-limit estimation.
+- **XmR moving-range screening** and explanations of how process variation is estimated.
+- **P and U dispersion diagnostics**, which can recommend switching to Laney P′ or U′ charts.
+- **Performance targets**, including conditional estimates of future outcomes meeting a target where statistically appropriate.
+- **Annotations, centre-line labels and chart formatting**, including options accessed by right-clicking charts.
+- **A contextual SPC helper**, providing plain-language explanations of charts, results and statistical concepts.
+- **Chart export and copying**, including options for sharing charts and summaries.
+- **Editable JSON project saves**, allowing charts and settings to be reopened later.
+- **Portable offline HTML files**, containing the application, chart data and settings in a self-contained file that can be reopened and edited without an internet connection.
+
+### Intended use and limitations
+
+SimpleSPC is designed to support quality improvement, operational monitoring, education and understanding of process behaviour.
+
+It is not intended for:
+
+- Clinical diagnosis
+- Treatment decisions
+- Automated decisions about individuals
+- Patient-level risk stratification
+- Direct-care workflows
+
+Statistical signals and capability estimates require appropriate interpretation. Users remain responsible for organisational decisions, information governance and improvement actions.
 
 ---
+
 
 ## Privacy and data handling
 
@@ -45,17 +73,17 @@ Users remain responsible for interpretation, governance, operational decisions a
 
 The SPC calculations and processing of the data you load are performed by JavaScript running in your web browser.
 
-FreeSPC does **not** have an application backend, application database or user-account system. The application does not intentionally send the contents of an uploaded dataset to a FreeSPC server, analytics service or external AI service.
+SimpleSPC does **not** have an application backend, application database or user-account system. The application does not intentionally send the contents of an uploaded dataset to a SimpleSPC server, analytics service or external AI service.
 
-The JavaScript libraries required by FreeSPC are stored within the project repository and are served as part of the application rather than being loaded at runtime from third-party content-delivery networks.
+The JavaScript libraries required by SimpleSPC are stored within the project repository and are served as part of the application rather than being loaded at runtime from third-party content-delivery networks.
 
 There are some important details behind the phrase “processed in your browser”, explained below.
 
 ### How browser-only processing works
 
-FreeSPC is a static web application hosted using GitHub Pages.
+SimpleSPC is a static web application hosted using GitHub Pages.
 
-When you open the online version, your browser downloads the HTML, CSS, JavaScript and supporting libraries that make up the application from the FreeSPC GitHub Pages site.
+When you open the online version, your browser downloads the HTML, CSS, JavaScript and supporting libraries that make up the application from the SimpleSPC GitHub Pages site.
 
 After the application has loaded, data selected through the file picker or entered in the data editor are read and processed by JavaScript in the browser.
 
@@ -71,7 +99,7 @@ flowchart LR
     B -->|Optional save / export| G[JSON, HTML, image, PDF or clipboard on your device]
 ```
 
-There is no FreeSPC application server receiving the dataset and no server-side SPC calculation service.
+There is no SimpleSPC application server receiving the dataset and no server-side SPC calculation service.
 
 ### What happens when I open a CSV or Excel file?
 
@@ -81,7 +109,7 @@ For Excel workbooks, the application reads the selected file using the browser's
 
 The resulting working data are held in JavaScript memory while you are using the page and are used to calculate and display the SPC chart.
 
-Saved FreeSPC JSON project files are opened using the browser `FileReader` API and are also processed locally.
+Saved SimpleSPC JSON project files are opened using the browser `FileReader` API and are also processed locally.
 
 ### Is my dataset stored by the website?
 
@@ -93,7 +121,7 @@ Working chart data are held in browser memory for the active page/session. Refre
 
 ### What happens when I save my work?
 
-FreeSPC provides two ways to save an editable chart.
+SimpleSPC provides two ways to save an editable chart.
 
 #### JSON project file
 
@@ -101,13 +129,13 @@ FreeSPC provides two ways to save an editable chart.
 
 The application creates this file in the browser and downloads it to your device. It is not intentionally uploaded to an application server as part of that process.
 
-A JSON project can later be reopened using **Open saved chart** in FreeSPC.
+A JSON project can later be reopened using **Open saved chart** in SimpleSPC.
 
 #### Portable HTML file
 
 **Save portable chart** creates a self-contained `.html` file containing:
 
-- the FreeSPC application
+- the SimpleSPC application
 - the JavaScript and CSS needed to run it
 - the underlying chart data
 - the selected chart type and columns
@@ -117,7 +145,7 @@ A JSON project can later be reopened using **Open saved chart** in FreeSPC.
 - splits and annotations
 - labels and presentation settings
 
-The saved HTML file can be opened directly in a modern web browser without returning to the FreeSPC website and can be used without an internet connection.
+The saved HTML file can be opened directly in a modern web browser without returning to the SimpleSPC website and can be used without an internet connection.
 
 A portable chart remains editable. After opening it, you can change the data or settings and use **Save portable chart** again to create an updated copy.
 
@@ -127,7 +155,7 @@ The browser will normally download a new file rather than automatically overwrit
 
 Both JSON project files and portable HTML files contain the underlying data used to create the chart.
 
-Once downloaded, those files are outside FreeSPC's control. They should therefore be stored, shared and deleted in accordance with your organisation's normal information-governance, confidentiality and cybersecurity requirements.
+Once downloaded, those files are outside SimpleSPC's control. They should therefore be stored, shared and deleted in accordance with your organisation's normal information-governance, confidentiality and cybersecurity requirements.
 
 The same general principle applies to exported chart images, PDFs, clipboard content, screenshots and presentations: once information has been copied or exported from the application, its subsequent handling is the user's responsibility.
 
@@ -135,13 +163,13 @@ The same general principle applies to exported chart images, PDFs, clipboard con
 
 ## Working offline
 
-FreeSPC portable HTML files are designed to allow a saved chart to be used without access to the online version of the tool.
+SimpleSPC portable HTML files are designed to allow a saved chart to be used without access to the online version of the tool.
 
 A portable HTML file contains the application code, required supporting libraries, project data and chart settings in a single file.
 
 To use one:
 
-1. Create your chart using FreeSPC.
+1. Create your chart using SimpleSPC.
 2. Select **Save portable chart**.
 3. Save the resulting `.html` file to an appropriate location.
 4. Open the file directly in a modern web browser.
@@ -158,7 +186,7 @@ Browser or organisational security policies may affect some browser features whe
 
 ## Sensitive or identifiable information
 
-FreeSPC is intended to process data such as:
+SimpleSPC is intended to process data such as:
 
 - anonymous operational data
 - aggregated quality or safety measures
@@ -186,7 +214,7 @@ Browser-local processing reduces the application's exposure to uploaded data, bu
 
 Users should apply data minimisation and use anonymised or appropriately aggregated data wherever possible.
 
-Organisations remain responsible for deciding whether FreeSPC is appropriate for their intended use, complying with their own information-governance and data-protection policies, and completing any local DPIA or governance review that may be required.
+Organisations remain responsible for deciding whether SimpleSPC is appropriate for their intended use, complying with their own information-governance and data-protection policies, and completing any local DPIA or governance review that may be required.
 
 The public version does not technically block a user from entering identifiable information, so appropriate use relies on user and organisational governance.
 
@@ -200,13 +228,13 @@ The application does not intentionally send uploaded chart data to:
 - advertising services
 - behavioural telemetry services
 - external AI/LLM services
-- a FreeSPC backend or database
+- a SimpleSPC backend or database
 
 The SPC Helper uses locally defined responses rather than sending questions or chart data to an external AI service.
 
 ### Locally hosted dependencies
 
-FreeSPC uses a number of open-source JavaScript libraries for functionality such as:
+SimpleSPC uses a number of open-source JavaScript libraries for functionality such as:
 
 - chart rendering
 - chart annotations
@@ -215,9 +243,9 @@ FreeSPC uses a number of open-source JavaScript libraries for functionality such
 - spreadsheet-style data editing
 - PDF and image export
 
-These runtime dependencies are stored within the FreeSPC repository and are served as part of the application rather than being loaded from third-party CDNs at runtime.
+These runtime dependencies are stored within the SimpleSPC repository and are served as part of the application rather than being loaded from third-party CDNs at runtime.
 
-This means that using the normal hosted version requires the browser to retrieve the FreeSPC application files from GitHub Pages, but the application does not need to contact separate CDN providers to obtain its runtime JavaScript libraries.
+This means that using the normal hosted version requires the browser to retrieve the SimpleSPC application files from GitHub Pages, but the application does not need to contact separate CDN providers to obtain its runtime JavaScript libraries.
 
 Portable HTML files embed the application code and required dependencies directly in the saved file, allowing them to run without retrieving those files from GitHub Pages.
 
@@ -255,7 +283,7 @@ For example, in the source code you can inspect the functions that:
 
 You can also observe the behaviour yourself using ordinary browser developer tools:
 
-1. Open FreeSPC.
+1. Open SimpleSPC.
 2. Open your browser's **Developer Tools**.
 3. Select the **Network** panel.
 4. Allow the page to finish loading.
@@ -267,7 +295,7 @@ You can also observe the behaviour yourself using ordinary browser developer too
 
 You will normally see network requests when the online page initially loads because the browser must obtain the application files from GitHub Pages.
 
-Loading data and performing SPC calculations do not intentionally send the selected dataset to a FreeSPC application backend.
+Loading data and performing SPC calculations do not intentionally send the selected dataset to a SimpleSPC application backend.
 
 A portable HTML file can also be tested with the computer disconnected from the internet. The file should open and provide its core SPC functionality using the code and data embedded within the file itself.
 
@@ -302,7 +330,7 @@ This architecture is intended to minimise the amount of operational data exposed
 
 ## Running the tool locally
 
-Because FreeSPC is a static web application, it can also be run from a local web server for development, review or testing.
+Because SimpleSPC is a static web application, it can also be run from a local web server for development, review or testing.
 
 If you use Git:
 
@@ -326,13 +354,13 @@ The runtime JavaScript dependencies required by the application are stored withi
 
 If you simply want to continue working with a particular saved chart offline, you do not need to run a local web server.
 
-Use **Save portable chart** in FreeSPC and then open the downloaded `.html` file directly in your browser.
+Use **Save portable chart** in SimpleSPC and then open the downloaded `.html` file directly in your browser.
 
 ---
 
 ## Intended use, governance and limitations
 
-FreeSPC provides SPC visualisation and interpretation support. It does not make automated decisions about individuals.
+SimpleSPC provides SPC visualisation and interpretation support. It does not make automated decisions about individuals.
 
 It is not intended to substitute for professional judgement, organisational governance, or a regulated clinical/statistical system where one is required.
 
@@ -346,7 +374,7 @@ Portable HTML and JSON project files contain the underlying chart data and shoul
 
 ## Open source and licence
 
-FreeSPC is released under the **MIT License**. See [`LICENSE`](LICENSE).
+SimpleSPC is released under the **MIT License**. See [`LICENSE`](https://github.com/FreeSPC-nhs/spc-web-tool/blob/main/LICENSE).
 
 The intention is to keep the tool genuinely free and reusable. Subject to the MIT licence terms, anyone may:
 
@@ -360,9 +388,9 @@ The intention is to keep the tool genuinely free and reusable. Subject to the MI
 
 You do not need to ask permission to do those things.
 
-The MIT licence requires the copyright and licence notice to be retained in copies or substantial portions of the software. Anyone who receives the MIT-licensed FreeSPC code continues to receive the permissions granted by that licence; a third party cannot retrospectively withdraw those permissions from copies already released under MIT.
+The MIT licence requires the copyright and licence notice to be retained in copies or substantial portions of the software. Anyone who receives the MIT-licensed SimpleSPC code continues to receive the permissions granted by that licence; a third party cannot retrospectively withdraw those permissions from copies already released under MIT.
 
-Third-party libraries included in the project may be distributed under their own licences. The MIT licence for FreeSPC does not replace the licence terms of those third-party components.
+Third-party libraries included in the project may be distributed under their own licences. The MIT licence for SimpleSPC does not replace the licence terms of those third-party components.
 
 The software is provided **“as is”**, without warranty, as set out in the licence.
 
@@ -370,7 +398,7 @@ The software is provided **“as is”**, without warranty, as set out in the li
 
 ## Development and maintenance
 
-FreeSPC is independently developed and maintained on a **best-efforts basis**. It is not operated as a formally supported software service.
+SimpleSPC is independently developed and maintained on a **best-efforts basis**. It is not operated as a formally supported software service.
 
 There is no fixed development roadmap, release schedule, service-level agreement or guarantee of ongoing support.
 
@@ -393,8 +421,8 @@ GitHub Issues may be used for feedback if the Issues feature is enabled for the 
 The privacy-by-design approach is based on:
 
 - browser-local processing of the working dataset
-- no FreeSPC application backend or server-side dataset processing
-- no FreeSPC application database or user accounts
+- no SimpleSPC application backend or server-side dataset processing
+- no SimpleSPC application database or user accounts
 - runtime libraries stored with and served as part of the application
 - no intentional analytics or behavioural telemetry
 - no external AI processing
@@ -402,10 +430,10 @@ The privacy-by-design approach is based on:
 - user-controlled local saving of JSON and portable HTML project files
 - intended use with anonymous, aggregated or otherwise non-identifiable data
 
-The principal residual risk is inappropriate data being entered, displayed, copied, exported, saved or shared by users, together with normal browser/device and local-file security risks, rather than server-side storage by the FreeSPC application itself.
+The principal residual risk is inappropriate data being entered, displayed, copied, exported, saved or shared by users, together with normal browser/device and local-file security risks, rather than server-side storage by the SimpleSPC application itself.
 
 ---
 
 ## Licence
 
-MIT License. See [`LICENSE`](LICENSE) for the full text.
+MIT License. See [`LICENSE`](https://github.com/FreeSPC-nhs/spc-web-tool/blob/main/LICENSE) for the full text.
