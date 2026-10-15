@@ -1269,11 +1269,27 @@ Hide target line
 
         <details>
           <summary><strong>3. Preparing and loading your data</strong></summary>
-          <p>Your data usually need at least:</p>
-          <ul>
-            <li>a <strong>time or order column</strong> (for example month, week, date, or sequence)</li>
-            <li>a <strong>value column</strong> (the measure you want to plot)</li>
-          </ul>
+          <p>
+  The columns you need depend on the chart type.
+  Most SPC charts need a time or sequence column and
+  a measurement or count.
+</p>
+
+<ul>
+  <li>
+    <strong>P, P′, U and U′ charts</strong> also need
+    a denominator or opportunities column.
+  </li>
+  <li>
+    <strong>X̄–S charts</strong> need a subgroup
+    identifier and individual measurement values.
+  </li>
+  <li>
+    <strong>Pareto charts</strong> need a category
+    column, with an optional frequency/count column
+    if your data are already summarised.
+  </li>
+</ul>
 
           <div class="modal-note">
             <strong>You can now load data in three ways:</strong>
@@ -1562,7 +1578,12 @@ Hide target line
           <ul>
             <li>data are not sent to a server</li>
             <li>uploaded files are processed locally in your browser session</li>
-            <li>once you close or refresh the page, unsaved work is no longer retained unless you saved a chart json file</li>
+            <li>
+  Unsaved work may be lost when you close or refresh
+  the page. Use <strong>Save chart</strong> (JSON)
+  or <strong>Save portable chart</strong> (HTML)
+  to keep a copy of your work.
+</li>
           </ul>
           <p class="hint">
   <strong>Important:</strong> SimpleSPC is not designed
