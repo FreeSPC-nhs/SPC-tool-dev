@@ -127,127 +127,159 @@
 
 <div class="tab-panels">
 
+
 <!-- TAB 1: DATA -->
 <div id="tab-data" class="tab-panel active">
 
   <div class="panel">
 
-    
-<div class="label-with-tooltip" style="margin-bottom:0.25rem;">
+    <div class="label-with-tooltip" style="margin-bottom:0.25rem;">
 
-  <label for="fileInput" style="margin:0;">
-    <strong>Add data:</strong>
-  </label>
+      <label for="fileInput" style="margin:0;">
+        <strong data-i18n="data.addHeading">Add data:</strong>
+      </label>
 
-  <span
-    class="help-tooltip"
-    tabindex="0"
-    aria-label="Data requirements help"
-  >
-    ?
-    <span class="help-tooltip-text">
-      The columns you need depend on the chart type.
+      <span
+        class="help-tooltip"
+        tabindex="0"
+        aria-label="Data requirements help"
+        data-i18n-aria-label="data.requirementsAria"
+      >
+        ?
+        <span class="help-tooltip-text"
+              data-i18n="data.requirementsTooltip">
+          The columns you need depend on the chart type.
+          Most SPC charts need a time or sequence column
+          and a measurement. Some also need counts
+          and denominators.
 
-      Most SPC charts need a time or sequence column
-      and a measurement. Some also need counts
-      and denominators.
+          Pareto charts need a category column and can
+          optionally use a frequency/count column.
+        </span>
+      </span>
 
-      Pareto charts need a category column and can
-      optionally use a frequency/count column.
-    </span>
-  </span>
+    </div>
 
-</div>
-
-
-
-    <div class="hint small-hint">
+    <div class="hint small-hint"
+         data-i18n="data.uploadHint">
       Upload a CSV/Excel file or paste data in the editor.
     </div>
 
-    <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" />
+    <input type="file"
+           id="fileInput"
+           accept=".csv,.xlsx,.xls" />
 
-    <button id="openDataEditorButton" type="button">
+    <button id="openDataEditorButton"
+            type="button"
+            data-i18n="data.openEditor">
       Open data editor (paste/type data)
     </button>
 
     <button
-  id="clearDataButton"
-  type="button"
-  class="clear-data-button"
-  title="Remove the loaded data and reset the chart. Save your work first if you want to reopen it later."
->
-  Clear data &amp; chart
-</button>
+      id="clearDataButton"
+      type="button"
+      class="clear-data-button"
+      title="Remove the loaded data and reset the chart. Save your work first if you want to reopen it later."
+      data-i18n="data.clear"
+      data-i18n-title="data.clearTitle"
+    >
+      Clear data &amp; chart
+    </button>
 
-
-    
     <hr class="section-divider" />
 
-    <div class="label-with-tooltip" style="margin:0 0 0.25rem;">
-      <strong>Save or open a chart</strong>
+    <div class="label-with-tooltip"
+         style="margin:0 0 0.25rem;">
+      <strong data-i18n="data.saveHeading">
+        Save or open a chart
+      </strong>
     </div>
 
-    <div class="helper-note" style="margin-top:0;">
+    <div class="helper-note"
+         style="margin-top:0;"
+         data-i18n="data.saveHint">
       Save your chart, data and settings as a JSON file
       to reopen and edit later.
     </div>
 
-
     <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.4rem;">
-      <button id="exportSettingsBtn" type="button" disabled>
-      Save chart
+
+      <button id="exportSettingsBtn"
+              type="button"
+              data-i18n="data.saveButton"
+              disabled>
+        Save chart
       </button>
 
-      <button id="importSettingsBtn" type="button">
+      <button id="importSettingsBtn"
+              type="button"
+              data-i18n="data.openButton">
         Open saved chart
       </button>
+
     </div>
 
-    <input id="importSettingsFileInput" type="file" accept=".json,application/json" style="display:none;" />
+    <input
+      id="importSettingsFileInput"
+      type="file"
+      accept=".json,application/json"
+      style="display:none;"
+    />
 
+    <hr class="section-divider" />
 
-<hr class="section-divider" />
-<div class="label-with-tooltip" style="margin:0 0 0.5rem;">
+    <div class="label-with-tooltip"
+         style="margin:0 0 0.5rem;">
 
+      <strong data-i18n="data.portableHeading">
+        Save an offline copy
+      </strong>
 
-  <strong>Save an offline copy</strong>
+      <span
+        class="help-tooltip"
+        tabindex="0"
+        aria-label="Portable chart help"
+        data-i18n-aria-label="data.portableAria"
+      >
+        ?
+        <span class="help-tooltip-text"
+              data-i18n="data.portableTooltip">
+          Save a self-contained HTML copy of your chart.
 
-  <span
-    class="help-tooltip"
-    tabindex="0"
-    aria-label="Portable chart help"
-  >
-    ?
-    <span class="help-tooltip-text">
-      Save a self-contained HTML copy of your chart.
+          The file includes your data and a working
+          copy of SimpleSPC. You can open it without
+          an internet connection, make changes and
+          save it again.
 
-      The file includes your data and a working
-      copy of SimpleSPC. You can open it without
-      an internet connection, make changes and
-      save it again.
+          Portable files contain your data.
+          Store and share them in line with your
+          organisation's information-governance
+          requirements.
+        </span>
+      </span>
 
-      Portable files contain your data.
-      Store and share them in line with your
-      organisation's information-governance
-      requirements.
-    </span>
-  </span>
+    </div>
 
-</div>
-<button id="savePortableBtn" type="button" disabled>
-  Save portable chart
-</button>
+    <button id="savePortableBtn"
+            type="button"
+            data-i18n="data.portableButton"
+            disabled>
+      Save portable chart
+    </button>
 
   </div>
 
 </div>
+
+
 <!-- TAB 2: CHART -->
 <div id="tab-chart" class="tab-panel">
 
 <div class="panel">
 
-<div id="noDataYetHint" class="hint">
+<div id="noDataYetHint"
+     class="hint"
+     data-i18n="chart.noData">
   Load data to enable chart and column selection.
 </div>
 
@@ -262,14 +294,22 @@
     background:#f3f8fc;
   "
 >
-  <strong>New data loaded</strong>
 
-  <div class="hint" style="margin-top:0.25rem;">
+  <strong data-i18n="chart.newDataHeading">
+    New data loaded
+  </strong>
+
+  <div class="hint"
+       style="margin-top:0.25rem;"
+       data-i18n="chart.newDataQuestion">
     Would you like help choosing the most appropriate chart for these data?
   </div>
 
   <div style="display:flex; gap:0.4rem; flex-wrap:wrap; margin-top:0.55rem;">
-    <button id="newDataHelpChooseBtn" type="button">
+
+    <button id="newDataHelpChooseBtn"
+            type="button"
+            data-i18n="chart.helpChoose">
       Help me choose
     </button>
 
@@ -277,28 +317,37 @@
       id="newDataChooseManuallyBtn"
       type="button"
       class="help-btn"
+      data-i18n="chart.chooseManually"
     >
       Choose manually
     </button>
+
   </div>
+
 </div>
 
-<strong class="field-label">Chart type:</strong>
+<strong class="field-label"
+        data-i18n="chart.typeHeading">
+  Chart type:
+</strong>
+
 
 <div class="radio-row chart-row">
+
   <label class="radio-pill">
     <input type="radio" name="chartType" value="run" checked />
-    Run chart
+    <span data-i18n="chart.run">Run chart</span>
   </label>
 
   <label class="radio-pill">
     <input type="radio" name="chartType" value="xmr" />
-    XmR chart
+    <span data-i18n="chart.xmr">XmR chart</span>
   </label>
+
 </div>
 
 <details id="moreChartTypesDetails" class="more-types">
-  <summary>More chart types</summary>
+  <summary data-i18n="chart.moreTypes">More chart types</summary>
 
   <div
     class="radio-row chart-row"
@@ -382,13 +431,23 @@
 <div id="chartTypeAvailabilityHint" class="hint small-hint" style="margin-top:0.35rem;" aria-live="polite"></div>
 
 <div style="display:flex; gap:0.4rem; flex-wrap:wrap; margin-top:0.5rem; margin-bottom:0.5rem;">
-  <button id="helpChooseChartBtn" type="button" class="help-btn">
-    Help me choose
-  </button>
+  
+<button id="helpChooseChartBtn"
+        type="button"
+        class="help-btn"
+        data-i18n="chart.helpChoose">
+  Help me choose
+</button>
 
-  <button id="chartSetupBtn" type="button" class="help-btn">
-    Chart setup
-  </button>
+
+  
+<button id="chartSetupBtn"
+        type="button"
+        class="help-btn"
+        data-i18n="chart.setup">
+  Chart setup
+</button>
+
 </div>
 
 <!-- Secondary chart options (MR for XmR, S chart for X̄–S) -->
