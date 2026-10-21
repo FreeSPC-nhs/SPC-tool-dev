@@ -26,9 +26,34 @@
 
 </head>
 
+
 <body>
-  <h1>Simple SPC Web Tool</h1>
-  <p class="sub">Upload data and create SPC charts in your browser. Data never leaves your browser.</p>
+
+<div style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem; flex-wrap:wrap;">
+
+  <h1 data-i18n="app.title" style="margin:0 0 0.25rem;">
+    Simple SPC Web Tool
+  </h1>
+
+  <label for="languageSelect"
+         style="display:flex; align-items:center; gap:0.4rem; font-size:0.9rem; margin:0 0 0.25rem;">
+
+    <span data-i18n="language.label">Language</span>
+
+    <select id="languageSelect"
+            style="margin:0; padding:0.35rem; min-width:110px;">
+      <option value="en">English</option>
+      <option value="fr">Français</option>
+    </select>
+
+  </label>
+
+</div>
+
+<p class="sub" data-i18n="app.subtitle">
+  Upload data and create SPC charts in your browser. Data never leaves your browser.
+</p>
+
 
 <div class="panel" id="exportButtons" style="margin-top:0.5rem;">
 <button id="toggleSidebarButton" class="sidebar-toggle" style="margin-left:0.5rem;"> Hide controls</button>
@@ -46,36 +71,58 @@
   </div>
 </div>
 
+
 <button
   id="resetButton"
   type="button"
   style="margin-left:0.5rem;"
+  data-i18n="buttons.reset"
+  data-i18n-title="buttons.resetTitle"
   title="Keep your loaded data and selected columns, but reset chart settings including targets, splits, annotations, rules and formatting."
 >Reset chart</button>
-<button type="button" style="margin-left:0.5rem;" onclick="toggleHelpSection()">Help &amp; guidance</button>
-<button type="button" style="margin-left:0.5rem;" onclick="toggleSpcHelper()">SPC helper</button>
+
+<button type="button" style="margin-left:0.5rem;" onclick="toggleHelpSection()" data-i18n="buttons.help">Help &amp; guidance</button>
+<button type="button" style="margin-left:0.5rem;" onclick="toggleSpcHelper()" data-i18n="buttons.spcHelper">SPC helper</button>
 
 <div id="errorMessage" class="error"></div>
 </div>
 
-<p class="sub">Add your data, choose your chart and settings, then click 'Generate / Recalculate' when needed. You can upload CSV or Excel files, clean data in the editor, and save chart to reopen later. Not sure about SPC? Ask the helper.</p>
+<p class="sub" data-i18n="app.intro">Add your data, choose your chart and settings, then click 'Generate / Recalculate' when needed. You can upload CSV or Excel files, clean data in the editor, and save chart to reopen later. Not sure about SPC? Ask the helper.</p>
 
 <div class="layout">
     <!-- SIDEBAR: all controls -->
     <aside class="sidebar">
 <div class="tab-container">
 
+
 <div class="tab-bar">
-<button class="tab-btn active" data-tab="tab-data">Data</button>
-<button class="tab-btn" data-tab="tab-chart">Chart</button>
-<button class="tab-btn" data-tab="tab-labels">Labels</button>
-<button class="tab-btn" data-tab="tab-axes">Axes</button>
-<button
-  class="tab-btn"
-  data-tab="tab-baseline"
-  title="Set an initial baseline period or a performance target"
->Baseline</button>
-<button class="tab-btn" data-tab="tab-rules">Rules</button>
+
+  <button class="tab-btn active"
+          data-tab="tab-data"
+          data-i18n="tabs.data">Data</button>
+
+  <button class="tab-btn"
+          data-tab="tab-chart"
+          data-i18n="tabs.chart">Chart</button>
+
+  <button class="tab-btn"
+          data-tab="tab-labels"
+          data-i18n="tabs.labels">Labels</button>
+
+  <button class="tab-btn"
+          data-tab="tab-axes"
+          data-i18n="tabs.axes">Axes</button>
+
+  <button class="tab-btn"
+          data-tab="tab-baseline"
+          data-i18n="tabs.baseline"
+          data-i18n-title="tabs.baselineTitle"
+          title="Set an initial baseline period or a performance target">Baseline</button>
+
+  <button class="tab-btn"
+          data-tab="tab-rules"
+          data-i18n="tabs.rules">Rules</button>
+
 </div>
 
 <div class="tab-panels">

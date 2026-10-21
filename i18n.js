@@ -20,11 +20,26 @@
     // Portable HTML files may not have access to browser storage.
   }
 
+  
   function registerLanguage(code, entries) {
     if (!code || !entries || typeof entries !== "object") return;
-    dictionaries[code] = { ...(dictionaries[code] || {}), ...entries };
-    if (code === currentLanguage) document.documentElement.lang = code;
+
+    dictionaries[code] = {
+      ...(dictionaries[code] || {}),
+      ...entries
+    };
+
+    if (code === currentLanguage) {
+      document.documentElement.lang = code;
+    }
+
+    // Also supports translations loaded after the page is ready,
+    // including when scripts are restored from portable HTML.
+    if (document.readyState !== "loading") {
+      updatePageText();
+    }
   }
+
 
   function translate(key, values = {}) {
     const text = dictionaries[currentLanguage]?.[key]
@@ -59,28 +74,85 @@
   }
 
 
-  // Update text in HTML elements marked with data-i18n.
+  
+  // Update interface text and translated attributes.
   function updatePageText() {
+
+    // Simple text elements only: do not mark elements
+    // containing icons, inputs or other nested controls.
     document.querySelectorAll("[data-i18n]").forEach(element => {
       const key = element.getAttribute("data-i18n");
+
       if (key) {
         element.textContent = translate(key);
       }
     });
+
+    // Translate tooltips, placeholders and accessibility labels.
+    ["title", "placeholder", "aria-label"].forEach(attribute => {
+      const marker = "data-i18n-" + attribute;
+
+      document.querySelectorAll("[" + marker + "]").forEach(element => {
+        const key = element.getAttribute(marker);
+
+        if (key) {
+          element.setAttribute(attribute, translate(key));
+        }
+      });
+    });
+
+    // Keep the language selector synchronised.
+    const selector = document.getElementById("languageSelect");
+
+    if (selector) {
+      selector.value = currentLanguage;
+    }
   }
 
-  // Translate marked elements when the page first loads.
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", updatePageText);
-  } else {
+  function initialisePageLanguage() {
+
+    // Use English if a previously remembered language
+    // is not available in this version of the application.
+    if (
+      !Object.prototype.hasOwnProperty.call(dictionaries, currentLanguage) &&
+      Object.prototype.hasOwnProperty.call(dictionaries, "en")
+    ) {
+      currentLanguage = "en";
+    }
+
+    document.documentElement.lang = currentLanguage;
+
+    const selector = document.getElementById("languageSelect");
+
+    if (selector) {
+      selector.value = currentLanguage;
+
+      selector.addEventListener("change", () => {
+        if (!setLanguage(selector.value)) {
+          selector.value = currentLanguage;
+        }
+      });
+    }
+
     updatePageText();
   }
 
-  // Refresh translated elements when the language changes.
+  // Initialise once the HTML has loaded.
+  if (document.readyState === "loading") {
+    document.addEventListener(
+      "DOMContentLoaded",
+      initialisePageLanguage
+    );
+  } else {
+    initialisePageLanguage();
+  }
+
+  // Update the interface whenever the language changes.
   document.addEventListener(
     "simplespc:languagechange",
     updatePageText
   );
+
 
   window.SimpleSPCi18n = {
     registerLanguage,
