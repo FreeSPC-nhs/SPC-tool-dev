@@ -470,7 +470,7 @@
     aria-label="Secondary chart display help"
   >
     ?
-    <span class="help-tooltip-text">
+    <span class="help-tooltip-text" data-i18n="chart.secondary.helpText">
       XmR charts can show a Moving Range (MR) chart,
       which helps explain the variation between
       consecutive measurements.
@@ -489,12 +489,12 @@
 
     <label class="mr-radio">
       <input type="radio" name="mrDisplayMode" value="last" checked />
-      <span>Current</span>
+      <span data-i18n="chart.secondary.current">Current</span>
     </label>
 
     <label class="mr-radio">
       <input type="radio" name="mrDisplayMode" value="all" />
-      <span>All</span>
+      <span data-i18n="chart.secondary.all">All</span>
     </label>
 
     <span id="mrDisplaySubhint" class="mr-subhint">(includes splits)</span>
@@ -503,7 +503,7 @@
 
 <hr />
 
-<strong class="field-label">Choose columns:</strong>
+<strong class="field-label" data-i18n="chart.columns.heading">Choose columns:</strong>
 
 <div
   id="columnCheckWarning"
