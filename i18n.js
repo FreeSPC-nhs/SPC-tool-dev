@@ -58,10 +58,35 @@
     return true;
   }
 
+
+  // Update text in HTML elements marked with data-i18n.
+  function updatePageText() {
+    document.querySelectorAll("[data-i18n]").forEach(element => {
+      const key = element.getAttribute("data-i18n");
+      if (key) {
+        element.textContent = translate(key);
+      }
+    });
+  }
+
+  // Translate marked elements when the page first loads.
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", updatePageText);
+  } else {
+    updatePageText();
+  }
+
+  // Refresh translated elements when the language changes.
+  document.addEventListener(
+    "simplespc:languagechange",
+    updatePageText
+  );
+
   window.SimpleSPCi18n = {
     registerLanguage,
     translate,
     setLanguage,
     getLanguage: () => currentLanguage
   };
-})(); 
+})();
+
