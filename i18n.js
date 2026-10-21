@@ -64,4 +64,4 @@
     setLanguage,
     getLanguage: () => currentLanguage
   };
-})();
+})(); 
