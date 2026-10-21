@@ -25,6 +25,18 @@ window.SimpleSPCi18n.registerLanguage("en", {
   "tabs.labels": "Labels",
   "tabs.axes": "Axes",
   "tabs.baseline": "Baseline",
-  "tabs.rules": "Rules"
+  
+  "tabs.rules": "Rules",
+
+  // Language selector
+  "language.label": "Language",
+
+  // Introduction
+  "app.intro": "Add your data, choose your chart and settings, then click 'Generate / Recalculate' when needed. You can upload CSV or Excel files, clean data in the editor, and save chart to reopen later. Not sure about SPC? Ask the helper.",
+
+  // Tooltips
+  "buttons.resetTitle": "Keep your loaded data and selected columns, but reset chart settings including targets, splits, annotations, rules and formatting.",
+
+  "tabs.baselineTitle": "Set an initial baseline period or a performance target"
 
 });
