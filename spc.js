@@ -2314,6 +2314,15 @@ function guessColumns(rows) {
 
 
 
+
+function chartPanelText(key, englishFallback) {
+  const translated = window.SimpleSPCi18n?.translate?.(key);
+
+  return (typeof translated === "string" && translated !== key)
+    ? translated
+    : englishFallback;
+}
+
 function updateMrToggleVisibility() {
   if (!showMRCheckbox || !mrPanel) return;
 
@@ -2323,30 +2332,65 @@ function updateMrToggleVisibility() {
   const displayModeLabel = document.getElementById("mrDisplayModeLabel");
   const displaySubhint = document.getElementById("mrDisplaySubhint");
 
-  const showSecondaryToggle = (chartType === "xmr" || chartType === "xbars");
+  const showSecondaryToggle =
+    (chartType === "xmr" || chartType === "xbars");
+
   const showMR = !!showMRCheckbox.checked;
 
-  // Show the checkbox row for XmR and X̄–S
   if (mrToggleRow) {
-    mrToggleRow.style.display = showSecondaryToggle ? "block" : "none";
+    mrToggleRow.style.display =
+      showSecondaryToggle ? "block" : "none";
   }
 
-  // Relabel based on chart type
   if (chartType === "xmr") {
-    if (toggleLabel) toggleLabel.textContent = "Show MR";
-    if (displayModeLabel) displayModeLabel.textContent = "MR display";
-    if (displaySubhint) displaySubhint.textContent = "(includes splits)";
-    if (mrDisplayOptions) mrDisplayOptions.style.display = showMR ? "flex" : "none";
+    if (toggleLabel) {
+      toggleLabel.textContent =
+        chartPanelText("chart.secondary.showMR", "Show MR");
+    }
+
+    if (displayModeLabel) {
+      displayModeLabel.textContent =
+        chartPanelText("chart.secondary.mrDisplay", "MR display");
+    }
+
+    if (displaySubhint) {
+      displaySubhint.textContent =
+        chartPanelText("chart.secondary.includesSplits", "(includes splits)");
+    }
+
+    if (mrDisplayOptions) {
+      mrDisplayOptions.style.display = showMR ? "flex" : "none";
+    }
+
   } else if (chartType === "xbars") {
-    if (toggleLabel) toggleLabel.textContent = "Show S chart";
-    if (displayModeLabel) displayModeLabel.textContent = "S chart display";
-    if (displaySubhint) displaySubhint.textContent = "(includes splits)";
-    if (mrDisplayOptions) mrDisplayOptions.style.display = showMR ? "flex" : "none";
+    if (toggleLabel) {
+      toggleLabel.textContent =
+        chartPanelText("chart.secondary.showS", "Show S chart");
+    }
+
+    if (displayModeLabel) {
+      displayModeLabel.textContent =
+        chartPanelText("chart.secondary.sDisplay", "S chart display");
+    }
+
+    if (displaySubhint) {
+      displaySubhint.textContent =
+        chartPanelText("chart.secondary.includesSplits", "(includes splits)");
+    }
+
+    if (mrDisplayOptions) {
+      mrDisplayOptions.style.display = showMR ? "flex" : "none";
+    }
+
   } else {
-    if (mrDisplayOptions) mrDisplayOptions.style.display = "none";
+    if (mrDisplayOptions) {
+      mrDisplayOptions.style.display = "none";
+    }
+
     hideMrPanelNow();
   }
 }
+
 
 function isProbablyHeaderRow(row) {
   // Heuristic: headers tend to be non-numeric strings; data tends to be numeric/date-ish.
@@ -4069,7 +4113,7 @@ dataModelDirty = false;
 
   // --- Reset optional third-column UI ---
   if (thirdColumnRow) thirdColumnRow.style.display = "none";
-  if (thirdLabelEl) thirdLabelEl.textContent = "Denominator / opportunities";
+  if (thirdLabelEl) thirdLabelEl.textContent = chartPanelText("chart.columns.thirdDefault", "Denominator / opportunities");
   if (thirdHintEl) thirdHintEl.textContent = "";
   if (uRateMultiplierSelect) {
   uRateMultiplierSelect.value = "1";
@@ -5851,6 +5895,111 @@ function updateColumnCheckWarning(chartType) {
   columnCheckWarning.style.display = "block";
 }
 
+
+function refreshDynamicChartPanelLanguage(
+  chartType = getSelectedChartType_NoSideEffects()
+) {
+  if (!xLabelEl || !yLabelEl || !thirdLabelEl || !thirdHintEl) {
+    return;
+  }
+
+  const t = chartPanelText;
+  const isTGaps =
+    (typeof tChartInputMode !== "undefined" &&
+     tChartInputMode === "gaps");
+
+  const labels = {
+    run: {},
+
+    xmr: {
+      y: t("chart.columns.xmrY", "Measure (used for XmR limits)")
+    },
+
+    c: {
+      y: t("chart.columns.cY", "Count (c) per time period")
+    },
+
+    p: {
+      y: t("chart.columns.pY", "Numerator: defectives (d)"),
+      third: t("chart.columns.pThird", "Denominator: total (n)"),
+      hint: t("chart.columns.pHint", "P chart plots a proportion: d out of n.")
+    },
+
+    pprime: {
+      y: t("chart.columns.pY", "Numerator: defectives (d)"),
+      third: t("chart.columns.pThird", "Denominator: total (n)"),
+      hint: t(
+        "chart.columns.pprimeHint",
+        "P′ chart plots a proportion: d out of n, with Laney-adjusted control limits."
+      )
+    },
+
+    u: {
+      y: t("chart.columns.uY", "Numerator: defects (c)"),
+      third: t("chart.columns.uThird", "Denominator: opportunities (n)"),
+      hint: t(
+        "chart.columns.uHint",
+        "U chart plots defects per opportunity: c per n."
+      )
+    },
+
+    uprime: {
+      y: t("chart.columns.uY", "Numerator: defects (c)"),
+      third: t("chart.columns.uThird", "Denominator: opportunities (n)"),
+      hint: t(
+        "chart.columns.uprimeHint",
+        "U′ chart plots defects per opportunity, with Laney-adjusted control limits."
+      )
+    },
+
+    xbars: {
+      y: t("chart.columns.xbarsY", "Measurement value"),
+      third: t(
+        "chart.columns.xbarsThird",
+        "Subgroup ID (e.g. day / week / sample)"
+      ),
+      hint: t(
+        "chart.columns.xbarsHint",
+        "X̄–S needs multiple measurements per subgroup. The horizontal axis uses subgroup order automatically."
+      )
+    },
+
+    t: {
+      y: isTGaps
+        ? t("chart.columns.tGapsY", "Time between events (e.g. days)")
+        : t("chart.columns.tDatesY", "Value column not used (T chart uses dates)"),
+      hint: isTGaps
+        ? t("chart.columns.tGapsHint", "T chart plots time between rare events (using your numeric gaps).")
+        : t("chart.columns.tDatesHint", "T chart plots time between rare events (calculated from event dates).")
+    },
+
+    g: {
+      y: t("chart.columns.gY", "Opportunities between events"),
+      hint: t(
+        "chart.columns.gHint",
+        "G chart plots opportunities between rare events."
+      )
+    },
+
+    pareto: {
+      x: t("chart.columns.paretoX", "Category column"),
+      y: t("chart.columns.paretoY", "Frequency / count column")
+    }
+  };
+
+  const selected = labels[chartType] || {};
+
+  xLabelEl.textContent =
+    selected.x || t("chart.columns.xDefault", "Date / X-axis column");
+
+  yLabelEl.textContent =
+    selected.y || t("chart.columns.yDefault", "Value / Y-axis column");
+
+  thirdLabelEl.textContent = selected.third || "";
+  thirdHintEl.textContent = selected.hint || "";
+}
+
+
 function updateUIForChartType(chartType) {
   if (!xLabelEl || !yLabelEl || !thirdColumnRow) return;
 
@@ -5964,9 +6113,15 @@ if (cfg.xLabel) {
     thirdLabelEl.textContent = cfg.thirdLabel;
   }
 
+  
   if (cfg.thirdHint) {
     thirdHintEl.textContent = cfg.thirdHint;
   }
+
+  // Translate labels after the existing chart-specific
+  // English labels have been applied.
+  refreshDynamicChartPanelLanguage(chartType);
+
 
   // ------------------------------------------------------------
   // Levels 1–3 glue:
@@ -6080,6 +6235,13 @@ if (typeof updateMrToggleVisibility === "function") {
 }
 }
 
+
+document.addEventListener("simplespc:languagechange", () => {
+  // Refresh the dynamic text without recalculating charts
+  // or changing any selected data columns.
+  updateMrToggleVisibility();
+  refreshDynamicChartPanelLanguage();
+});
 
 
 function parseTabularTextWithHeaderDetection(text) {
