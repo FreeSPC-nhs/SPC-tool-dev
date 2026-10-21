@@ -69,7 +69,47 @@ window.SimpleSPCi18n.registerLanguage("en", {
 "chart.run": "Run chart",
 "chart.xmr": "XmR chart",
 "chart.moreTypes": "More chart types",
-"chart.setup": "Chart setup"
+
+"chart.setup": "Chart setup",
+
+// SECONDARY MR / S CHART CONTROLS
+"chart.secondary.showMR": "Show MR",
+"chart.secondary.showS": "Show S chart",
+"chart.secondary.mrDisplay": "MR display",
+"chart.secondary.sDisplay": "S chart display",
+"chart.secondary.includesSplits": "(includes splits)",
+"chart.secondary.current": "Current",
+"chart.secondary.all": "All",
+"chart.secondary.helpAria": "Secondary chart display help",
+"chart.secondary.helpText": "XmR charts can show a Moving Range (MR) chart, which helps explain the variation between consecutive measurements. X-bar and S charts can show an S chart, which displays variation within subgroups. Current shows the latest analysis period only. All shows the full history, including split periods. Use the checkbox to show or hide the secondary chart.",
+
+// COLUMN SELECTION
+"chart.columns.heading": "Choose columns:",
+"chart.columns.xDefault": "Date / X-axis column",
+"chart.columns.yDefault": "Value / Y-axis column",
+"chart.columns.thirdDefault": "Denominator / opportunities",
+"chart.columns.xmrY": "Measure (used for XmR limits)",
+"chart.columns.cY": "Count (c) per time period",
+"chart.columns.pY": "Numerator: defectives (d)",
+"chart.columns.pThird": "Denominator: total (n)",
+"chart.columns.pHint": "P chart plots a proportion: d out of n.",
+"chart.columns.pprimeHint": "P′ chart plots a proportion: d out of n, with Laney-adjusted control limits.",
+"chart.columns.uY": "Numerator: defects (c)",
+"chart.columns.uThird": "Denominator: opportunities (n)",
+"chart.columns.uHint": "U chart plots defects per opportunity: c per n.",
+"chart.columns.uprimeHint": "U′ chart plots defects per opportunity, with Laney-adjusted control limits.",
+"chart.columns.xbarsY": "Measurement value",
+"chart.columns.xbarsThird": "Subgroup ID (e.g. day / week / sample)",
+"chart.columns.xbarsHint": "X̄–S needs multiple measurements per subgroup. The horizontal axis uses subgroup order automatically.",
+"chart.columns.tGapsY": "Time between events (e.g. days)",
+"chart.columns.tDatesY": "Value column not used (T chart uses dates)",
+"chart.columns.tGapsHint": "T chart plots time between rare events (using your numeric gaps).",
+"chart.columns.tDatesHint": "T chart plots time between rare events (calculated from event dates).",
+"chart.columns.gY": "Opportunities between events",
+"chart.columns.gHint": "G chart plots opportunities between rare events.",
+"chart.columns.paretoX": "Category column",
+"chart.columns.paretoY": "Frequency / count column"
+
 
 
 });

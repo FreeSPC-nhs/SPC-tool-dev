@@ -70,7 +70,47 @@ window.SimpleSPCi18n.registerLanguage("fr", {
 "chart.run": "Graphique chronologique",
 "chart.xmr": "Carte XmR",
 "chart.moreTypes": "Autres types de graphiques",
-"chart.setup": "Paramètres du graphique"
+
+"chart.setup": "Paramètres du graphique",
+
+// CONTRÔLES DES CARTES SECONDAIRES MR / S
+"chart.secondary.showMR": "Afficher la carte MR",
+"chart.secondary.showS": "Afficher la carte S",
+"chart.secondary.mrDisplay": "Affichage MR",
+"chart.secondary.sDisplay": "Affichage de la carte S",
+"chart.secondary.includesSplits": "(phases incluses)",
+"chart.secondary.current": "Période actuelle",
+"chart.secondary.all": "Toutes",
+"chart.secondary.helpAria": "Aide sur l'affichage de la carte secondaire",
+"chart.secondary.helpText": "Les cartes XmR peuvent afficher une carte des étendues mobiles (MR), qui permet d'étudier la variation entre deux mesures consécutives. Les cartes X̄–S peuvent afficher une carte S, qui représente la variation au sein des sous-groupes. Période actuelle affiche uniquement la dernière période d'analyse. Toutes affiche l'historique complet, y compris les différentes phases. Utilisez la case à cocher pour afficher ou masquer la carte secondaire.",
+
+// SÉLECTION DES COLONNES
+"chart.columns.heading": "Choisir les colonnes :",
+"chart.columns.xDefault": "Date / colonne de l'axe X",
+"chart.columns.yDefault": "Valeur / colonne de l'axe Y",
+"chart.columns.thirdDefault": "Dénominateur / opportunités",
+"chart.columns.xmrY": "Mesure (utilisée pour les limites XmR)",
+"chart.columns.cY": "Nombre (c) par période",
+"chart.columns.pY": "Numérateur : unités non conformes (d)",
+"chart.columns.pThird": "Dénominateur : total (n)",
+"chart.columns.pHint": "La carte P représente une proportion : d sur n.",
+"chart.columns.pprimeHint": "La carte P′ représente une proportion : d sur n, avec des limites de contrôle ajustées selon la méthode de Laney.",
+"chart.columns.uY": "Numérateur : non-conformités (c)",
+"chart.columns.uThird": "Dénominateur : opportunités (n)",
+"chart.columns.uHint": "La carte U représente le nombre de non-conformités par opportunité : c sur n.",
+"chart.columns.uprimeHint": "La carte U′ représente le nombre de non-conformités par opportunité, avec des limites de contrôle ajustées selon la méthode de Laney.",
+"chart.columns.xbarsY": "Valeur mesurée",
+"chart.columns.xbarsThird": "Identifiant du sous-groupe (jour / semaine / échantillon)",
+"chart.columns.xbarsHint": "La carte X̄–S nécessite plusieurs mesures par sous-groupe. L'axe horizontal utilise automatiquement l'ordre des sous-groupes.",
+"chart.columns.tGapsY": "Temps entre les événements (par ex. en jours)",
+"chart.columns.tDatesY": "Colonne de valeurs non utilisée (la carte T utilise les dates)",
+"chart.columns.tGapsHint": "La carte T représente le temps entre des événements rares à partir des intervalles numériques fournis.",
+"chart.columns.tDatesHint": "La carte T représente le temps entre des événements rares, calculé à partir des dates des événements.",
+"chart.columns.gY": "Opportunités entre les événements",
+"chart.columns.gHint": "La carte G représente le nombre d'opportunités entre des événements rares.",
+"chart.columns.paretoX": "Colonne des catégories",
+"chart.columns.paretoY": "Colonne des fréquences / effectifs"
+
 
 
 });
