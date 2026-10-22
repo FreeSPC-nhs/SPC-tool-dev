@@ -20403,184 +20403,280 @@ function getChartTypeDisplayName(chartType) {
   return names[chartType] || "This chart";
 }
 
+
 function describeRuleStatus(status, labels) {
-  if (status === "on") {
-    return `<li><strong>${labels.name}:</strong> used by default.</li>`;
-  }
-  if (status === "optional") {
-    return `<li><strong>${labels.name}:</strong> available in advanced settings, off by default.</li>`;
-  }
-  if (status === "warn") {
-    return `<li><strong>${labels.name}:</strong> advanced only, off by default, with a warning before use.</li>`;
-  }
-  return `<li><strong>${labels.name}:</strong> not offered for this chart type.</li>`;
+  const descriptions = {
+    on: [
+      "explainer.status.on",
+      "used by default."
+    ],
+    optional: [
+      "explainer.status.optional",
+      "available in advanced settings, off by default."
+    ],
+    warn: [
+      "explainer.status.warn",
+      "advanced only, off by default, with a warning before use."
+    ]
+  };
+
+  const [key, fallback] = descriptions[status] || [
+    "explainer.status.unavailable",
+    "not offered for this chart type."
+  ];
+
+  return `<li><strong>${labels.name}:</strong> ${chartPanelText(key, fallback)}</li>`;
 }
+
 
 function renderRuleExplainerModal(chartType) {
   const body = document.getElementById("ruleExplainerBody");
   const subtitle = document.getElementById("ruleExplainerSubtitle");
+
   if (!body || !subtitle) return;
 
+  const t = chartPanelText;
   const policy = getRulePolicy(chartType);
-  const chartName = getChartTypeDisplayName(chartType);
 
-  subtitle.textContent =
-    `${chartName}: this tool uses a conservative, chart-aware rule policy designed to reduce false alerts.`;
+  const chartName = t(
+    "explainer.chart." + chartType,
+    getChartTypeDisplayName(chartType)
+  );
 
-  let whyText = "";
+  subtitle.textContent = t(
+    "explainer.subtitle",
+    `${chartName}: this tool uses a conservative, chart-aware rule policy designed to reduce false alerts.`,
+    { chart: chartName }
+  );
+
+  // Select the explanation appropriate to this chart family.
+  // The statistical rule policy itself is not changed.
+  let family = "general";
+
   if (
-  chartType === "c" ||
-  chartType === "p" ||
-  chartType === "pprime" ||
-  isUFamilyChartType(chartType)
-) {
-    whyText =
-      "Attribute charts use a conservative rule set here. Zone rules are blocked because they can create misleading alerts, especially when limits vary or counts are low.";
+    chartType === "c" ||
+    chartType === "p" ||
+    chartType === "pprime" ||
+    isUFamilyChartType(chartType)
+  ) {
+    family = "attribute";
   } else if (chartType === "t" || chartType === "g") {
-    whyText =
-      "Rare-event charts are naturally irregular. Run and trend rules can create false signals, so they are advanced-only and warning-gated.";
-  } else if (chartType === "xmr") {
-    whyText =
-      "XmR charts are used for individual measurements over time. SimpleSPC keeps the default interpretation deliberately simple, while additional pattern rules and calculation options are available for users who need them.";
-  } else if (chartType === "xbars") {
-    whyText =
-      "X̄-S charts are the chart family where advanced rule sets are most defensible, but the default remains conservative to reduce false alarms.";
-  } else if (chartType === "run") {
-    whyText =
-      "Run charts do not use control limits. The tool keeps interpretation simple and conservative by default.";
-  } else if (chartType === "pareto") {
- 	 whyText =
-    		"A Pareto chart is not a time-ordered control chart, so SPC signal rules do not apply. " +
-    		"It ranks categories to help focus investigation and improvement effort.";
-  } else
-	{
-    whyText =
-      "This tool keeps the default rule set simple and conservative to reduce false alerts.";
+    family = "rare";
+  } else if (
+    ["xmr", "xbars", "run", "pareto"].includes(chartType)
+  ) {
+    family = chartType;
   }
 
+  const whyEnglish = {
+    attribute:
+      "Attribute charts use a conservative rule set here. Zone rules are blocked because they can create misleading alerts, especially when limits vary or counts are low.",
+    rare:
+      "Rare-event charts are naturally irregular. Run and trend rules can create false signals, so they are advanced-only and warning-gated.",
+    xmr:
+      "XmR charts are used for individual measurements over time. SimpleSPC keeps the default interpretation deliberately simple, while additional pattern rules and calculation options are available for users who need them.",
+    xbars:
+      "X̄-S charts are the chart family where advanced rule sets are most defensible, but the default remains conservative to reduce false alarms.",
+    run:
+      "Run charts do not use control limits. The tool keeps interpretation simple and conservative by default.",
+    pareto:
+      "A Pareto chart is not a time-ordered control chart, so SPC signal rules do not apply. It ranks categories to help focus investigation and improvement effort.",
+    general:
+      "This tool keeps the default rule set simple and conservative to reduce false alerts."
+  };
+
+  const whyText = t(
+    "explainer.why." + family,
+    whyEnglish[family]
+  );
+
+  // Additional technical explanation for XmR charts.
   let xmrCalculationHtml = "";
 
-if (chartType === "xmr") {
-  const screeningOn =
-    screenLargeMRsCheckbox
+  if (chartType === "xmr") {
+    const screeningOn = screenLargeMRsCheckbox
       ? screenLargeMRsCheckbox.checked
       : true;
 
-  xmrCalculationHtml = `
+    const state = screeningOn
+      ? t("explainer.on", "ON")
+      : t("explainer.off", "OFF");
+
+    xmrCalculationHtml = `
+      <hr style="margin:0.9rem 0;">
+
+      <div class="hint">
+        <strong>${t(
+          "explainer.xmr.heading",
+          "How XmR limits are set"
+        )}</strong>
+      </div>
+
+      <div class="hint" style="margin-top:0.5rem;">
+        ${t(
+          "explainer.xmr.intro",
+          "XmR charts estimate routine variation from the differences between consecutive points. These differences are called <strong>moving ranges</strong>."
+        )}
+      </div>
+
+      <div class="hint" style="margin-top:0.5rem;">
+        ${t(
+          "explainer.xmr.largeJump",
+          "A very large jump between two points can make the estimated variation too large and produce control limits that are too wide. By default, FreeSPC screens unusually large moving ranges when setting XmR limits. The original data points and moving ranges are still shown on the chart."
+        )}
+      </div>
+
+      <div class="hint" style="margin-top:0.5rem;">
+        ${t(
+          "explainer.xmr.technical",
+          "<strong>Technical detail:</strong> FreeSPC uses the Nelson method. Moving ranges greater than 3.5 times the initial average moving range are not used when estimating routine variation."
+        )}
+      </div>
+
+      <div class="hint" style="margin-top:0.5rem;">
+        ${t(
+          "explainer.xmr.current",
+          `<strong>Current setting:</strong> moving-range screening is <strong>${state}</strong>. You can change this under <em>Advanced detection options</em>.`,
+          { state }
+        )}
+      </div>
+
+      <div class="hint" style="margin-top:0.75rem;">
+        ${t(
+          "explainer.xmr.split",
+          "<strong>What happens when you add a split?</strong> A split tells FreeSPC that you want to treat the data before and after that point as different process periods. Each period gets its own mean and control limits, and the moving range across the split is not used."
+        )}
+      </div>
+
+      <div class="hint" style="margin-top:0.5rem;">
+        ${t(
+          "explainer.xmr.minimum",
+          `FreeSPC needs at least <strong>${MIN_XMR_LIMIT_POINTS} points</strong> to interpret the XmR limits for a period. If a split creates a shorter period, the limits are shown as provisional and FreeSPC does not label that period as showing routine or special-cause variation yet.`,
+          { points: MIN_XMR_LIMIT_POINTS }
+        )}
+      </div>
+    `;
+  }
+
+  const ruleNames = {
+    beyond: t("explainer.rule.beyond", "Beyond limits"),
+    run: t("explainer.rule.run", "Run rule"),
+    trend: t("explainer.rule.trend", "Trend rule"),
+    zone23: t(
+      "explainer.rule.zone23",
+      "2 of 3 in the outer third"
+    ),
+    zone45: t(
+      "explainer.rule.zone45",
+      "4 of 5 beyond 1-sigma"
+    )
+  };
+
+  body.innerHTML = `
+    <div class="hint">
+      <strong>${chartName}</strong>
+    </div>
+
+    <div class="hint" style="margin-top:0.5rem;">
+      ${whyText}
+    </div>
+
+    ${xmrCalculationHtml}
+
     <hr style="margin:0.9rem 0;">
 
     <div class="hint">
-      <strong>How XmR limits are set</strong>
+      <strong>${t(
+        "explainer.checksHeading",
+        "What this chart checks by default"
+      )}</strong>
     </div>
 
-    <div class="hint" style="margin-top:0.5rem;">
-      XmR charts estimate routine variation from the differences between
-      consecutive points. These differences are called
-      <strong>moving ranges</strong>.
-    </div>
-
-    <div class="hint" style="margin-top:0.5rem;">
-      A very large jump between two points can make the estimated variation
-      too large and produce control limits that are too wide.
-      By default, FreeSPC screens unusually large moving ranges when setting
-      XmR limits. The original data points and moving ranges are still shown
-      on the chart.
-    </div>
-
-    <div class="hint" style="margin-top:0.5rem;">
-      <strong>Technical detail:</strong>
-      FreeSPC uses the Nelson method. Moving ranges greater than
-      3.5 times the initial average moving range are not used when estimating
-      routine variation.
-    </div>
-
-    <div class="hint" style="margin-top:0.5rem;">
-      <strong>Current setting:</strong>
-      moving-range screening is
-      <strong>${screeningOn ? "ON" : "OFF"}</strong>.
-      You can change this under <em>Advanced detection options</em>.
-    </div>
-
-    <div class="hint" style="margin-top:0.75rem;">
-      <strong>What happens when you add a split?</strong>
-      A split tells FreeSPC that you want to treat the data before and after
-      that point as different process periods. Each period gets its own mean
-      and control limits, and the moving range across the split is not used.
-    </div>
-
-    <div class="hint" style="margin-top:0.5rem;">
-      FreeSPC needs at least
-      <strong>${MIN_XMR_LIMIT_POINTS} points</strong>
-      to interpret the XmR limits for a period. If a split creates a shorter
-      period, the limits are shown as provisional and FreeSPC does not label
-      that period as showing routine or special-cause variation yet.
-    </div>
-  `;
-}
-
-  body.innerHTML = `
-  <div class="hint">
-    <strong>${chartName}</strong>
-  </div>
-
-  <div class="hint" style="margin-top:0.5rem;">
-    ${whyText}
-  </div>
-
-  ${xmrCalculationHtml}
-
-  <hr style="margin:0.9rem 0;">
-
-  <div class="hint">
-    <strong>What this chart checks by default</strong>
-  </div>
     <ul style="margin-top:0.5rem;">
-      ${describeRuleStatus(policy.beyondLimits, { name: "Beyond limits" })}
-      ${describeRuleStatus(policy.runShift, { name: "Run rule" })}
-      ${describeRuleStatus(policy.trend, { name: "Trend rule" })}
-      ${describeRuleStatus(policy.zone23, { name: "2 of 3 in the outer third" })}
-      ${describeRuleStatus(policy.zone45, { name: "4 of 5 beyond 1-sigma" })}
+      ${describeRuleStatus(
+        policy.beyondLimits,
+        { name: ruleNames.beyond }
+      )}
+      ${describeRuleStatus(
+        policy.runShift,
+        { name: ruleNames.run }
+      )}
+      ${describeRuleStatus(
+        policy.trend,
+        { name: ruleNames.trend }
+      )}
+      ${describeRuleStatus(
+        policy.zone23,
+        { name: ruleNames.zone23 }
+      )}
+      ${describeRuleStatus(
+        policy.zone45,
+        { name: ruleNames.zone45 }
+      )}
     </ul>
 
     <hr style="margin:0.9rem 0;">
 
     <div class="hint">
-      <strong>Why some rules are limited</strong>
-    </div>
-    <div class="hint" style="margin-top:0.5rem;">
-      This tool is designed for reliable interpretation in healthcare and public-service settings.
-      It prefers fewer, more trustworthy signals over a noisier rule set that may create false alerts.
+      <strong>${t(
+        "explainer.limitedHeading",
+        "Why some rules are limited"
+      )}</strong>
     </div>
 
     <div class="hint" style="margin-top:0.5rem;">
-      A “signal” can trigger meetings, concern, investigation, or action. To reduce wasted effort and alert fatigue,
-      some rules are restricted to chart types where they are more dependable.
+      ${t(
+        "explainer.limited1",
+        "This tool is designed for reliable interpretation in healthcare and public-service settings. It prefers fewer, more trustworthy signals over a noisier rule set that may create false alerts."
+      )}
+    </div>
+
+    <div class="hint" style="margin-top:0.5rem;">
+      ${t(
+        "explainer.limited2",
+        "A “signal” can trigger meetings, concern, investigation, or action. To reduce wasted effort and alert fatigue, some rules are restricted to chart types where they are more dependable."
+      )}
     </div>
 
     <hr style="margin:0.9rem 0;">
 
     <div class="hint">
-      <strong>Plain-English rule definitions</strong>
+      <strong>${t(
+        "explainer.definitionsHeading",
+        "Plain-English rule definitions"
+      )}</strong>
     </div>
 
     <div class="hint" style="margin-top:0.5rem;">
-      <strong>Beyond limits:</strong> a point above the upper limit or below the lower limit.
+      ${t(
+        "explainer.definition.beyond",
+        "<strong>Beyond limits:</strong> a point above the upper limit or below the lower limit."
+      )}
     </div>
 
     <div class="hint" style="margin-top:0.5rem;">
-      <strong>Run rule:</strong> a sustained run of points on one side of the centre line.
+      ${t(
+        "explainer.definition.run",
+        "<strong>Run rule:</strong> a sustained run of points on one side of the centre line."
+      )}
     </div>
 
     <div class="hint" style="margin-top:0.5rem;">
-      <strong>Trend rule:</strong> a sustained pattern of consecutive increases or decreases.
+      ${t(
+        "explainer.definition.trend",
+        "<strong>Trend rule:</strong> a sustained pattern of consecutive increases or decreases."
+      )}
     </div>
 
     <div class="hint" style="margin-top:0.5rem;">
-      <strong>Zone rules:</strong> extra pattern rules based on how far points sit from the centre line.
-      These are the least portable rules, so they are only offered on chart types where they are more defensible.
+      ${t(
+        "explainer.definition.zone",
+        "<strong>Zone rules:</strong> extra pattern rules based on how far points sit from the centre line. These are the least portable rules, so they are only offered on chart types where they are more defensible."
+      )}
     </div>
   `;
 }
+
 
 function openRuleExplainerForCurrentChart() {
   const chartType =
@@ -20591,6 +20687,24 @@ function openRuleExplainerForCurrentChart() {
   renderRuleExplainerModal(chartType);
   toggleRuleExplainerModal(true);
 }
+
+
+document.addEventListener("simplespc:languagechange", () => {
+  const modal = document.getElementById("ruleExplainerModal");
+
+  // Only refresh if the Rule Explainer is currently open.
+  if (!modal || !modal.classList.contains("visible")) {
+    return;
+  }
+
+  const chartType =
+    getSelectedChartType_NoSideEffects() || "run";
+
+  // Rebuild explanatory text in the selected language.
+  // Does not alter rules, settings or calculations.
+  renderRuleExplainerModal(chartType);
+});
+
 
 // -----------------------------
 // Chart chooser wizard (Help me choose)
