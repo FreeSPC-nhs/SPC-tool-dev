@@ -234,7 +234,60 @@ window.SimpleSPCi18n.registerLanguage("fr", {
 "baseline.atOrAbove": "Une valeur supérieure ou égale à l'objectif est favorable",
 "baseline.atOrBelow": "Une valeur inférieure ou égale à l'objectif est favorable",
 "baseline.hideTarget": "Masquer la ligne d'objectif",
-"baseline.showTarget": "Afficher la ligne d'objectif"
+
+"baseline.showTarget": "Afficher la ligne d'objectif",
+
+// PANNEAU DES RÈGLES
+"rules.heading": "Règles de détection",
+"rules.explainer": "Explication des règles",
+
+"rules.shift": "Longueur d'une série (décalage)",
+"rules.shiftAria": "Aide sur la règle de décalage",
+"rules.shiftHelp": "Nombre de points consécutifs du même côté de la ligne centrale nécessaires pour détecter un décalage. Valeur par défaut : 8.",
+
+"rules.trend": "Longueur de la tendance",
+"rules.trendAria": "Aide sur la règle de tendance",
+"rules.trendHelp": "Nombre d'augmentations ou de diminutions consécutives nécessaires pour détecter une tendance. Valeur par défaut : 6. Ce paramètre est utilisé uniquement lorsque la règle de tendance est disponible et activée.",
+
+"rules.advanced": "Options de détection avancées",
+"rules.enableTrend": "Activer la règle de tendance",
+"rules.enableTrendHelp": "Recherche une succession prolongée d'augmentations ou de diminutions consécutives. La longueur requise est définie par le paramètre Longueur de la tendance ci-dessus.",
+"rules.advancedCaution": "Option avancée — peut augmenter le nombre de fausses alertes.",
+
+"rules.rareLabel": "Règles de séries et de tendances pour les cartes T/G",
+"rules.rareAria": "Aide sur les règles pour événements rares",
+"rules.rareHelp": "Active la détection des séries et des tendances sur les cartes T et G pour événements rares. Ces types de cartes présentent naturellement des irrégularités ; les règles de détection de motifs doivent donc être utilisées avec prudence.",
+"rules.rareCaution": "Option avancée — les cartes d'événements rares peuvent produire de faux signaux de séries ou de tendances.",
+
+"rules.clamp": "Limiter la LIC à zéro",
+"rules.clampAria": "Aide sur la limite inférieure de contrôle",
+"rules.clampHelp": "Si la limite inférieure de contrôle calculée est négative, afficher la LIC à zéro à la place. Utile pour les mesures telles que les dénombrements ou les durées, qui ne peuvent pas être négatives.",
+
+"rules.zoneIntro": "Règles de zones facultatives (désactivées par défaut). À utiliser uniquement pour les types de cartes qui les prennent en charge.",
+"rules.zone23": "Appliquer la règle « 2 points sur 3 dans le tiers extérieur »",
+"rules.zone45": "Appliquer la règle « 4 points sur 5 au-delà de 1 sigma »",
+"rules.zoneCaution": "Les règles supplémentaires de détection de motifs peuvent augmenter les fausses alertes sur les cartes XmR / individuelles. Elles sont désactivées par défaut et ne doivent être utilisées qu'en comprenant ce compromis.",
+
+"rules.mrHeading": "Calcul des limites XmR",
+"rules.mrAria": "Aide sur le filtrage des étendues mobiles XmR",
+"rules.mrHelp": "Une variation très importante entre deux points consécutifs peut rendre les limites de contrôle XmR trop larges. Lorsque cette option est activée, SimpleSPC conserve tous les points et toutes les étendues mobiles sur le graphique, mais n'utilise pas les étendues mobiles anormalement grandes pour estimer la variation habituelle. La méthode de Nelson est utilisée : les étendues mobiles supérieures à 3,5 fois la moyenne initiale des étendues mobiles sont exclues de l'estimation de la variation.",
+"rules.mrScreen": "Exclure les variations exceptionnellement grandes du calcul des limites",
+
+"rules.conservative": "Cette carte utilise un ensemble de règles prudent, conçu pour permettre une interprétation fiable.",
+"rules.flag": "Signaler les causes spéciales sur le graphique",
+"rules.colourBlind": "Couleurs et symboles adaptés aux personnes daltoniennes",
+
+// INFOBULLES DYNAMIQUES
+"rules.disabledTrend": "La règle de tendance n'est pas proposée pour ce type de carte.",
+"rules.enableTrendFirst": "Cochez « Activer la règle de tendance » pour utiliser ce paramètre.",
+"rules.enableRareFirst": "Activez les règles de séries et de tendances pour ce type de carte afin d'utiliser ce paramètre.",
+"rules.rareOnly": "Utilisé uniquement pour les cartes T et G.",
+"rules.zoneBlocked": "Les règles de zones ne sont pas disponibles pour ce type de carte, car elles pourraient produire des alertes trompeuses.",
+
+// CONFIRMATIONS POUR LES ÉVÉNEMENTS RARES
+"rules.rareConfirmImmediate": "Les cartes T et G présentent naturellement des irrégularités.\n\nLes règles de séries et de tendances peuvent produire de faux signaux sur ce type de carte et sont désactivées par défaut.\n\nN'activez ces règles que si vous comprenez ce compromis.",
+"rules.rareConfirmOnce": "Option avancée : règles de séries et de tendances sur les cartes {chart}\n\nCes motifs apparaissent souvent par hasard sur les cartes T/G et peuvent augmenter les fausses alertes.\n\nActiver malgré tout ?"
+
 
 
 

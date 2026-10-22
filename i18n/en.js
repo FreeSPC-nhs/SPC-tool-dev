@@ -233,7 +233,60 @@ window.SimpleSPCi18n.registerLanguage("en", {
 "baseline.atOrAbove": "At or above target is good",
 "baseline.atOrBelow": "At or below target is good",
 "baseline.hideTarget": "Hide target line",
-"baseline.showTarget": "Show target line"
+
+"baseline.showTarget": "Show target line",
+
+// RULES PANEL
+"rules.heading": "Detection rules",
+"rules.explainer": "Rule explainer",
+
+"rules.shift": "Shift (run) length",
+"rules.shiftAria": "Shift rule help",
+"rules.shiftHelp": "Number of consecutive points on the same side of the centre line required to flag a shift. Default: 8.",
+
+"rules.trend": "Trend length",
+"rules.trendAria": "Trend rule help",
+"rules.trendHelp": "Number of consecutive increases or decreases required to flag a trend. Default: 6. This setting is only used when the trend rule is available and enabled.",
+
+"rules.advanced": "Advanced detection options",
+"rules.enableTrend": "Enable trend rule",
+"rules.enableTrendHelp": "Looks for a sustained sequence of consecutive increases or decreases. The required length is set by the Trend length control above.",
+"rules.advancedCaution": "Advanced option — may increase false alerts.",
+
+"rules.rareLabel": "Run & trend rules for T/G charts",
+"rules.rareAria": "Rare event rules help",
+"rules.rareHelp": "Enables run and trend detection on T and G rare-event charts. These chart types are naturally irregular, so pattern rules should be used cautiously.",
+"rules.rareCaution": "Advanced option — rare-event charts can produce false run/trend signals.",
+
+"rules.clamp": "Clamp LCL at zero",
+"rules.clampAria": "Clamp LCL help",
+"rules.clampHelp": "If the calculated lower control limit is below zero, display the LCL at zero instead. Useful for measures such as counts or times that cannot be negative.",
+
+"rules.zoneIntro": "Optional zone rules (off by default). Use only on chart types where they are supported.",
+"rules.zone23": "Apply “2 out of 3 in the outer third” rule",
+"rules.zone45": "Apply “4 out of 5 beyond 1-sigma” rule",
+"rules.zoneCaution": "Additional pattern rules can increase false alerts on XmR / individuals charts. They are off by default and should only be used when you understand the trade-off.",
+
+"rules.mrHeading": "XmR limit calculation",
+"rules.mrAria": "XmR moving range screening help",
+"rules.mrHelp": "A very large jump between two consecutive points can make XmR control limits too wide. When this is on, SimpleSPC keeps all data points and moving ranges on the chart, but does not use unusually large moving ranges to estimate routine variation. Uses the Nelson method: moving ranges greater than 3.5 times the initial average moving range are excluded from the variation estimate.",
+"rules.mrScreen": "Screen unusually large jumps when setting limits",
+
+"rules.conservative": "This chart uses a conservative rule set designed for reliable interpretation.",
+"rules.flag": "Flag special-cause signals on the chart",
+"rules.colourBlind": "Colour-blind friendly colours and symbols",
+
+// DYNAMIC RULE CONTROL TOOLTIPS
+"rules.disabledTrend": "Trend rule is not offered for this chart type.",
+"rules.enableTrendFirst": "Tick 'Enable trend rule' to use this setting.",
+"rules.enableRareFirst": "Enable run & trend rules for this chart type to use this setting.",
+"rules.rareOnly": "Only used for T and G charts.",
+"rules.zoneBlocked": "Zone rules are not available for this chart type because they may create misleading alerts.",
+
+// CONFIRMATIONS WHEN ENABLING RARE-EVENT RULES
+"rules.rareConfirmImmediate": "T and G charts are naturally irregular.\n\nRun and trend rules may create false signals on this chart type and are off by default.\n\nOnly enable these rules if you understand this trade-off.",
+"rules.rareConfirmOnce": "Advanced option: Run & trend rules on {chart} charts\n\nThese patterns often happen by chance on T/G charts and can increase false alerts.\n\nEnable anyway?"
+
 
 
 
