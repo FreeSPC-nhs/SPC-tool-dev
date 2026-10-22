@@ -1975,10 +1975,10 @@
   <div class="modal-backdrop" aria-hidden="true" onclick="toggleRuleExplainerModal(false)"></div>
 
   <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="ruleExplainerTitle">
-    <button type="button" class="modal-close" aria-label="Close rule explainer" onclick="toggleRuleExplainerModal(false)">×</button>
+    <button type="button" class="modal-close" aria-label="Close rule explainer" data-i18n-aria-label="explainer.closeAria" onclick="toggleRuleExplainerModal(false)">×</button>
 
     <section class="panel" style="display:block; margin:0;">
-      <h2 id="ruleExplainerTitle">SPC rule explainer</h2>
+      <h2 id="ruleExplainerTitle" data-i18n="explainer.title">SPC rule explainer</h2>
       <p class="sub" id="ruleExplainerSubtitle">
         This tool uses a conservative, chart-aware rule policy designed to reduce false alerts.
       </p>
@@ -1988,7 +1988,7 @@
       </div>
 	
       <div style="display:flex; justify-content:flex-end; margin-top:1rem;">
-        <button type="button" onclick="toggleRuleExplainerModal(false)">Close</button>
+        <button type="button" onclick="toggleRuleExplainerModal(false)" data-i18n="explainer.close">Close</button>
       </div>
     </section>
   </div>
