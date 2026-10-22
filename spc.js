@@ -2315,8 +2315,9 @@ function guessColumns(rows) {
 
 
 
-function chartPanelText(key, englishFallback) {
-  const translated = window.SimpleSPCi18n?.translate?.(key);
+
+function chartPanelText(key, englishFallback, values = {}) {
+  const translated = window.SimpleSPCi18n?.translate?.(key, values);
 
   return (typeof translated === "string" && translated !== key)
     ? translated
@@ -5395,6 +5396,62 @@ function getSelectedOrSuggestedValueColumn(chartType) {
   return "";
 }
 
+
+function localiseChartAvailability(availability) {
+  const keys = {
+    xmr: "chart.availability.xmr",
+    c: "chart.availability.c",
+    p: "chart.availability.p",
+    pprime: "chart.availability.pprime",
+    u: "chart.availability.u",
+    uprime: "chart.availability.uprime",
+    xbars: "chart.availability.xbars",
+    t: "chart.availability.t",
+    g: "chart.availability.g"
+  };
+
+  const hasData =
+    Array.isArray(rawRows) && rawRows.length > 0;
+
+  for (const [chartType, state] of Object.entries(availability)) {
+    if (state.enabled || !state.reason) continue;
+
+    // No dataset: every disabled chart uses the
+    // same translated explanation.
+    if (!hasData) {
+      state.reason = chartPanelText(
+        "chart.availability.noData",
+        state.reason
+      );
+      continue;
+    }
+
+    const key = keys[chartType];
+    if (!key) continue;
+
+    // XmR messages include the selected column name.
+    const values = {};
+
+    if (chartType === "xmr") {
+      values.column =
+        getSelectedOrSuggestedValueColumn("xmr") ||
+        chartPanelText(
+          "chart.availability.selectedColumn",
+          "the selected value column"
+        );
+    }
+
+    state.reason = chartPanelText(
+      key,
+      state.reason,
+      values
+    );
+  }
+
+  return availability;
+}
+
+
 function getChartAvailability() {
   const out = {};
   const noDataReason = "Load data to assess which chart types are available.";
@@ -5408,10 +5465,12 @@ function getChartAvailability() {
       if (key === "run") continue;
       out[key] = { enabled: false, reason: noDataReason };
     }
-    return out;
+    
+    return localiseChartAvailability(out);
   }
 
   const numericNonDateCols = allColumns.filter(c => {
+
     const p = getProfile(c);
     return p?.isNumeric && !p?.looksLikeDate;
   });
@@ -5513,10 +5572,13 @@ function getChartAvailability() {
     };
   }
 
-  return out;
+  
+  return localiseChartAvailability(out);
 }
 
+
 function applyChartTypeAvailability() {
+
   const availability = getChartAvailability();
   let selectedInput = document.querySelector("input[name='chartType']:checked");
   let selectedType = selectedInput?.value || "run";
@@ -5562,6 +5624,25 @@ function refreshChartTypeAvailability() {
   }
   return availability;
 }
+
+
+function refreshChartAvailabilityTextOnly() {
+  const availability = getChartAvailability();
+
+  // Refresh tooltips without enabling/disabling controls
+  // or changing the currently selected chart type.
+  for (const [chartType, state] of Object.entries(availability)) {
+    const input = getChartTypeRadioInput(chartType);
+    const label = getChartTypeRadioLabel(chartType);
+    const reason = state.reason || "";
+
+    if (input) input.title = reason;
+    if (label) label.title = reason;
+  }
+
+  syncChartTypeAvailabilityMessage();
+}
+
 
 function isSelectedChartTypeAvailable() {
   const availability = getChartAvailability();
@@ -6236,12 +6317,18 @@ if (typeof updateMrToggleVisibility === "function") {
 }
 
 
+
 document.addEventListener("simplespc:languagechange", () => {
-  // Refresh the dynamic text without recalculating charts
-  // or changing any selected data columns.
+  // Refresh translated interface messages only.
+  // Do not recalculate charts or change user selections.
   updateMrToggleVisibility();
   refreshDynamicChartPanelLanguage();
+
+  refreshChartAvailabilityTextOnly();
+  updateDateFormatWarning();
+  updateDateControlsState();
 });
+
 
 
 function parseTabularTextWithHeaderDetection(text) {
@@ -13158,6 +13245,7 @@ function detectNumericDateStyle(values) {
   return { style: "unknown", ambiguousCount };
 }
 
+
 function updateDateFormatWarning() {
   if (!dateFormatWarning) return;
 
@@ -13169,76 +13257,111 @@ function updateDateFormatWarning() {
 
   const col = dateSelect.value;
   const axisType = getCheckedRadioValue("axisType");
+
   if (axisType !== "date") return;
 
   const values = rawRows
     .map(r => r?.[col])
-    .filter(v => v !== null && v !== undefined && String(v).trim() !== "");
+    .filter(v =>
+      v !== null &&
+      v !== undefined &&
+      String(v).trim() !== ""
+    );
 
   if (!values.length) return;
 
   const result = detectNumericDateStyle(values);
   const pref = getDateFormatPreference();
 
+  // Only the messages have been translated.
+  // Date detection and warning conditions are unchanged.
+
   if (result.style === "mixed") {
-    dateFormatWarning.textContent =
-      "Warning: this column appears to contain a mixture of UK-style and US-style numeric dates. Please standardise the dates if possible.";
+    dateFormatWarning.textContent = chartPanelText(
+      "chart.warning.mixedDates",
+      "Warning: this column appears to contain a mixture of UK-style and US-style numeric dates. Please standardise the dates if possible."
+    );
     dateFormatWarning.style.display = "block";
     return;
   }
 
   if (pref === "uk" && result.style === "us") {
-    dateFormatWarning.textContent =
-      "Warning: these dates look like US month-first dates (mm/dd/yyyy), but UK day-first is selected. Some rows may be ignored. Try switching to US month-first or Auto-detect.";
+    dateFormatWarning.textContent = chartPanelText(
+      "chart.warning.usDatesUkSelected",
+      "Warning: these dates look like US month-first dates (mm/dd/yyyy), but UK day-first is selected. Some rows may be ignored. Try switching to US month-first or Auto-detect."
+    );
     dateFormatWarning.style.display = "block";
     return;
   }
 
   if (pref === "us" && result.style === "uk") {
-    dateFormatWarning.textContent =
-      "Warning: these dates look like UK day-first dates (dd/mm/yyyy), but US month-first is selected. Some rows may be ignored. Try switching to UK day-first or Auto-detect.";
+    dateFormatWarning.textContent = chartPanelText(
+      "chart.warning.ukDatesUsSelected",
+      "Warning: these dates look like UK day-first dates (dd/mm/yyyy), but US month-first is selected. Some rows may be ignored. Try switching to UK day-first or Auto-detect."
+    );
     dateFormatWarning.style.display = "block";
     return;
   }
 
   if (result.ambiguousCount > 0) {
     if (pref === "uk") {
-      dateFormatWarning.textContent =
-        "This column contains ambiguous numeric dates. They will currently be interpreted as UK day-first dates (dd/mm/yyyy).";
+      dateFormatWarning.textContent = chartPanelText(
+        "chart.warning.ambiguousUk",
+        "This column contains ambiguous numeric dates. They will currently be interpreted as UK day-first dates (dd/mm/yyyy)."
+      );
       dateFormatWarning.style.display = "block";
       return;
     }
 
     if (pref === "us") {
-      dateFormatWarning.textContent =
-        "This column contains ambiguous numeric dates. They will currently be interpreted as US month-first dates (mm/dd/yyyy).";
+      dateFormatWarning.textContent = chartPanelText(
+        "chart.warning.ambiguousUs",
+        "This column contains ambiguous numeric dates. They will currently be interpreted as US month-first dates (mm/dd/yyyy)."
+      );
       dateFormatWarning.style.display = "block";
       return;
     }
 
     if (pref === "auto" && result.style === "unknown") {
-      dateFormatWarning.textContent =
-        "This column contains ambiguous numeric dates and the tool cannot confidently auto-detect the style. It will fall back to UK day-first dates unless you choose another option.";
+      dateFormatWarning.textContent = chartPanelText(
+        "chart.warning.ambiguousAuto",
+        "This column contains ambiguous numeric dates and the tool cannot confidently auto-detect the style. It will fall back to UK day-first dates unless you choose another option."
+      );
       dateFormatWarning.style.display = "block";
       return;
     }
 
     if (pref === "iso-only") {
-      dateFormatWarning.textContent =
-        "This column contains numeric slash/hyphen dates. In 'ISO / Excel dates only' mode, ambiguous numeric dates may not be interpreted as dates.";
+      dateFormatWarning.textContent = chartPanelText(
+        "chart.warning.ambiguousIso",
+        "This column contains numeric slash/hyphen dates. In 'ISO / Excel dates only' mode, ambiguous numeric dates may not be interpreted as dates."
+      );
       dateFormatWarning.style.display = "block";
       return;
     }
   }
 }
 
+
 function updateDateControlsState() {
-  const axisType = document.querySelector("input[name='axisType']:checked")?.value;
+  const axisType =
+    document.querySelector("input[name='axisType']:checked")?.value;
 
   const isDateMode = axisType === "date";
 
   if (dateFormatPreferenceSelect) {
     dateFormatPreferenceSelect.disabled = !isDateMode;
+  }
+
+  const dateFormatRow = document.getElementById("dateFormatRow");
+
+  if (dateFormatRow) {
+    dateFormatRow.title = isDateMode
+      ? ""
+      : chartPanelText(
+          "chart.dateFormat.disabled",
+          "Date-format selection is only available when the X-axis type is Date / time."
+        );
   }
 }
 
