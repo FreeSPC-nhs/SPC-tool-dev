@@ -4250,19 +4250,21 @@ function drawXbarSCombinedChart({
   // The secondary S chart needs its own default labels,
   // but must not overwrite the shared Labels-tab fields.
   // Preserve any labels deliberately entered by the user.
+  
   const sLabels = {
     title: chartTitleManuallyEdited
       ? mainLabels.title
-      : "S chart",
+      : translateAutomaticChartLabel("S chart"),
 
     xLabel: xAxisLabelManuallyEdited
       ? mainLabels.xLabel
-      : "Subgroup",
+      : translateAutomaticChartLabel("Subgroup"),
 
     yLabel: yAxisLabelManuallyEdited
       ? mainLabels.yLabel
-      : "S"
+      : translateAutomaticChartLabel("S")
   };
+
 
 
   mrChart =
@@ -10127,25 +10129,202 @@ function validateAxisSettings() {
 	
 
 // Get title / axis labels with fallbacks
+
+/*
+ * Keep the original automatic labels so the chart can
+ * change language without recalculation.
+ *
+ * User-entered and imported labels remain separate.
+ */
+let lastAutoChartDefaults = null;
+
+function translateAutomaticChartLabel(englishText) {
+  const text = String(englishText ?? "");
+
+  const keys = {
+    "Run Chart": "auto.title.run",
+    "X Chart": "auto.title.xmr",
+    "C chart": "auto.title.c",
+    "P chart": "auto.title.p",
+    "P′ chart": "auto.title.pprime",
+    "U chart": "auto.title.u",
+    "U′ chart": "auto.title.uprime",
+    "T chart": "auto.title.t",
+    "T chart (gaps)": "auto.title.tGaps",
+    "G chart": "auto.title.g",
+    "Pareto chart": "auto.title.pareto",
+    "X̄ chart": "auto.title.xbar",
+    "S chart": "auto.title.s",
+
+    "Date": "auto.axis.date",
+    "Value": "auto.axis.value",
+    "Category": "auto.axis.category",
+    "Count": "auto.axis.count",
+    "Subgroup": "auto.axis.subgroup",
+    "Proportion / %": "auto.axis.proportion",
+    "Rate per opportunity": "auto.axis.rate",
+    "Opportunities between events": "auto.axis.opportunities",
+    "Time between events": "auto.axis.time",
+    "Time between events (days)": "auto.axis.timeDays",
+    "Cumulative %": "auto.axis.cumulative",
+    "S": "auto.axis.s"
+  };
+
+  // U charts may use a selected rate multiplier.
+  const rateMatch =
+    /^Rate per ([\d,.\s]+) opportunities$/.exec(text);
+
+  if (rateMatch) {
+    return chartPanelText(
+      "auto.axis.rateN",
+      text,
+      { n: rateMatch[1] }
+    );
+  }
+
+  const key = keys[text];
+
+  // Preserve anything not recognised as an application default.
+  return key ? chartPanelText(key, text) : text;
+}
+
+
+// Get title / axis labels while protecting custom text.
 function getChartLabels(defaultTitle, defaultX, defaultY) {
+
+  lastAutoChartDefaults = {
+    title: defaultTitle || "",
+    x: defaultX || "",
+    y: defaultY || "",
+    chartType: getSelectedChartType_NoSideEffects()
+  };
+
   if (chartTitleInput && !chartTitleManuallyEdited) {
-    chartTitleInput.value = defaultTitle || "";
+    chartTitleInput.value =
+      translateAutomaticChartLabel(defaultTitle);
   }
 
   if (xAxisLabelInput && !xAxisLabelManuallyEdited) {
-    xAxisLabelInput.value = defaultX || "";
+    xAxisLabelInput.value =
+      translateAutomaticChartLabel(defaultX);
   }
 
   if (yAxisLabelInput && !yAxisLabelManuallyEdited) {
-    yAxisLabelInput.value = defaultY || "";
+    yAxisLabelInput.value =
+      translateAutomaticChartLabel(defaultY);
   }
 
-  const title = chartTitleInput ? chartTitleInput.value.trim() : (defaultTitle || "");
-  const xLabel = xAxisLabelInput ? xAxisLabelInput.value.trim() : (defaultX || "");
-  const yLabel = yAxisLabelInput ? yAxisLabelInput.value.trim() : (defaultY || "");
+  const title = chartTitleInput
+    ? chartTitleInput.value.trim()
+    : translateAutomaticChartLabel(defaultTitle);
+
+  const xLabel = xAxisLabelInput
+    ? xAxisLabelInput.value.trim()
+    : translateAutomaticChartLabel(defaultX);
+
+  const yLabel = yAxisLabelInput
+    ? yAxisLabelInput.value.trim()
+    : translateAutomaticChartLabel(defaultY);
 
   return { title, xLabel, yLabel };
 }
+
+
+function refreshAutomaticChartLabelsLanguage() {
+  if (!currentChart || !lastAutoChartDefaults) return;
+
+  const defaults = lastAutoChartDefaults;
+
+  // MAIN CHART TITLE
+  if (!chartTitleManuallyEdited) {
+    const title =
+      translateAutomaticChartLabel(defaults.title);
+
+    if (chartTitleInput) {
+      chartTitleInput.value = title;
+    }
+
+    if (currentChart.options?.plugins?.title) {
+      currentChart.options.plugins.title.text = title;
+    }
+  }
+
+  // MAIN X-AXIS LABEL
+  if (!xAxisLabelManuallyEdited) {
+    const label =
+      translateAutomaticChartLabel(defaults.x);
+
+    if (xAxisLabelInput) {
+      xAxisLabelInput.value = label;
+    }
+
+    if (currentChart.options?.scales?.x?.title) {
+      currentChart.options.scales.x.title.text = label;
+    }
+  }
+
+  // MAIN Y-AXIS LABEL
+  if (!yAxisLabelManuallyEdited) {
+    const label =
+      translateAutomaticChartLabel(defaults.y);
+
+    if (yAxisLabelInput) {
+      yAxisLabelInput.value = label;
+    }
+
+    if (currentChart.options?.scales?.y?.title) {
+      currentChart.options.scales.y.title.text = label;
+    }
+  }
+
+  // PARETO SECONDARY PERCENTAGE AXIS
+  if (
+    defaults.chartType === "pareto" &&
+    currentChart.options?.scales?.y1?.title
+  ) {
+    currentChart.options.scales.y1.title.text =
+      translateAutomaticChartLabel("Cumulative %");
+  }
+
+  // X-BAR / S SECONDARY CHART
+  if (defaults.chartType === "xbars" && mrChart) {
+
+    if (
+      !chartTitleManuallyEdited &&
+      mrChart.options?.plugins?.title
+    ) {
+      mrChart.options.plugins.title.text =
+        translateAutomaticChartLabel("S chart");
+    }
+
+    if (
+      !xAxisLabelManuallyEdited &&
+      mrChart.options?.scales?.x?.title
+    ) {
+      mrChart.options.scales.x.title.text =
+        translateAutomaticChartLabel("Subgroup");
+    }
+
+    if (
+      !yAxisLabelManuallyEdited &&
+      mrChart.options?.scales?.y?.title
+    ) {
+      mrChart.options.scales.y.title.text =
+        translateAutomaticChartLabel("S");
+    }
+
+    mrChart.update("none");
+  }
+
+  // Redraw presentation only.
+  // Do not rerun SPC calculations.
+  currentChart.update("none");
+}
+
+document.addEventListener(
+  "simplespc:languagechange",
+  refreshAutomaticChartLabelsLanguage
+);
 
 
 function populateAnnotationDateOptions(labels) {
@@ -14781,8 +14960,10 @@ if (chartType === "run") {
       lcl: lclArr,
       yAxisSuggestedMin: 0,
       yAxisSuggestedMax: Math.max(...gaps, ...uclArr.filter(isFinite)),
-      chartTitleFallback: chartTitleInput?.value || "T chart (gaps)",
-      yAxisLabelFallback: yAxisLabelInput?.value || "Time between events",
+      
+chartTitleFallback: "T chart (gaps)",
+yAxisLabelFallback: "Time between events",
+
       showUCL: true,
       showLCL: false
     });
@@ -15663,13 +15844,12 @@ tooltip: {
                   false
               },
 
-              title: {
-                display:
-                  true,
+              
+title: {
+  display: true,
+  text: translateAutomaticChartLabel("Cumulative %")
+},
 
-                text:
-                  "Cumulative %"
-              },
 
               ticks: {
                 callback(value) {
