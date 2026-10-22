@@ -145,7 +145,34 @@ window.SimpleSPCi18n.registerLanguage("en", {
 "chart.dateFormat.uk": "UK / day-first (dd/mm/yyyy)",
 "chart.dateFormat.us": "US / month-first (mm/dd/yyyy)",
 "chart.dateFormat.auto": "Auto-detect",
-"chart.dateFormat.iso": "ISO / Excel dates only"
+
+"chart.dateFormat.iso": "ISO / Excel dates only",
+
+// CHART AVAILABILITY MESSAGES
+"chart.availability.noData": "Load data to assess which chart types are available.",
+"chart.availability.selectedColumn": "the selected value column",
+"chart.availability.xmr": "Less than 12 data points available in \"{column}\" — this is a minimum requirement for a valid XmR chart.",
+"chart.availability.c": "No non-negative whole-number count column is available yet — C charts need counts per time period.",
+"chart.availability.p": "No suitable numerator/denominator pair is available yet — P charts need two whole-number columns where the numerator is part of the denominator.",
+"chart.availability.pprime": "No suitable numerator/denominator pair is available yet — P′ charts need two whole-number columns where the numerator is part of the denominator.",
+"chart.availability.u": "No suitable count/opportunities pair is available yet — U charts need a whole-number count column plus a positive opportunities column.",
+"chart.availability.uprime": "No suitable count/opportunities pair is available yet — U′ charts need a whole-number count column plus a positive opportunities column.",
+"chart.availability.xbars": "X̄–S charts need a numeric measurement column and a subgroup column with repeated subgroup labels.",
+"chart.availability.t": "T charts need either event dates or a numeric time-between-events column.",
+"chart.availability.g": "G charts need a whole-number column where all values are at least 1, because they plot opportunities between rare events.",
+
+// DATE-FORMAT WARNINGS
+"chart.warning.mixedDates": "Warning: this column appears to contain a mixture of UK-style and US-style numeric dates. Please standardise the dates if possible.",
+"chart.warning.usDatesUkSelected": "Warning: these dates look like US month-first dates (mm/dd/yyyy), but UK day-first is selected. Some rows may be ignored. Try switching to US month-first or Auto-detect.",
+"chart.warning.ukDatesUsSelected": "Warning: these dates look like UK day-first dates (dd/mm/yyyy), but US month-first is selected. Some rows may be ignored. Try switching to UK day-first or Auto-detect.",
+"chart.warning.ambiguousUk": "This column contains ambiguous numeric dates. They will currently be interpreted as UK day-first dates (dd/mm/yyyy).",
+"chart.warning.ambiguousUs": "This column contains ambiguous numeric dates. They will currently be interpreted as US month-first dates (mm/dd/yyyy).",
+"chart.warning.ambiguousAuto": "This column contains ambiguous numeric dates and the tool cannot confidently auto-detect the style. It will fall back to UK day-first dates unless you choose another option.",
+"chart.warning.ambiguousIso": "This column contains numeric slash/hyphen dates. In 'ISO / Excel dates only' mode, ambiguous numeric dates may not be interpreted as dates.",
+
+// DISABLED DATE-FORMAT CONTROL
+"chart.dateFormat.disabled": "Date-format selection is only available when the X-axis type is Date / time."
+
 
 
 
