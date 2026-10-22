@@ -376,7 +376,32 @@ window.SimpleSPCi18n.registerLanguage("en", {
 // SECONDARY CHART HEADINGS
 "results.mrHeading": "Moving Range chart:",
 "results.sHeading": "S chart:",
-"results.mrCanvasTitle": "Moving Range (MR)"
+
+"results.mrCanvasTitle": "Moving Range (MR)",
+
+// CHART LEGENDS
+"visual.value": "Value",
+"visual.centreLine": "Centre line",
+"visual.median": "Median",
+"visual.ucl": "UCL",
+"visual.lcl": "LCL",
+"visual.target": "Target",
+"visual.xbar": "X̄",
+"visual.count": "Count",
+"visual.cumulative": "Cumulative %",
+"visual.movingRange": "Moving range",
+"visual.mrAverage": "MR average",
+"visual.mrUcl": "MR UCL",
+"visual.mrAveragePeriod": "MR average (Period {period})",
+"visual.mrUclPeriod": "MR UCL (Period {period})",
+"visual.omittedExcluded": "Not used: adjacent to excluded point",
+"visual.omittedScreened": "Not used: unusually large MR screened",
+
+// MR CHART HOVER TOOLTIPS
+"visual.mrTooltip": "Moving range: {value}",
+"visual.mrExcludedTooltip": "Not used in the variation estimate: {value} (adjacent to an excluded point)",
+"visual.mrScreenedTooltip": "Not used in the variation estimate: {value} (screened as an unusually large moving range)"
+
 
 
 

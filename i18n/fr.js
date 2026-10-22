@@ -377,7 +377,32 @@ window.SimpleSPCi18n.registerLanguage("fr", {
 // TITRES DES CARTES SECONDAIRES
 "results.mrHeading": "Carte des étendues mobiles :",
 "results.sHeading": "Carte S :",
-"results.mrCanvasTitle": "Étendues mobiles (MR)"
+
+"results.mrCanvasTitle": "Étendues mobiles (MR)",
+
+// LÉGENDES DES CARTES
+"visual.value": "Valeur",
+"visual.centreLine": "Ligne centrale",
+"visual.median": "Médiane",
+"visual.ucl": "LSC",
+"visual.lcl": "LIC",
+"visual.target": "Objectif",
+"visual.xbar": "X̄",
+"visual.count": "Effectif",
+"visual.cumulative": "Pourcentage cumulé",
+"visual.movingRange": "Étendue mobile",
+"visual.mrAverage": "Moyenne des étendues mobiles",
+"visual.mrUcl": "LSC des étendues mobiles",
+"visual.mrAveragePeriod": "Moyenne des étendues mobiles (période {period})",
+"visual.mrUclPeriod": "LSC des étendues mobiles (période {period})",
+"visual.omittedExcluded": "Non utilisée : adjacente à un point exclu",
+"visual.omittedScreened": "Non utilisée : étendue mobile exceptionnellement grande",
+
+// INFOBULLES DE LA CARTE DES ÉTENDUES MOBILES
+"visual.mrTooltip": "Étendue mobile : {value}",
+"visual.mrExcludedTooltip": "Non utilisée pour estimer la variation : {value} (adjacente à un point exclu)",
+"visual.mrScreenedTooltip": "Non utilisée pour estimer la variation : {value} (étendue mobile exceptionnellement grande, écartée du calcul)"
+
 
 
 
