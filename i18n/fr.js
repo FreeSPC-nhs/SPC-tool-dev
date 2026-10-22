@@ -350,7 +350,35 @@ window.SimpleSPCi18n.registerLanguage("fr", {
 "explainer.xmr.split": "<strong>Que se passe-t-il lorsque vous ajoutez un changement de phase ?</strong> FreeSPC traite les données avant et après ce point comme deux périodes distinctes du processus. Chaque période possède sa propre moyenne et ses propres limites de contrôle ; l'étendue mobile qui franchit la séparation n'est pas utilisée.",
 "explainer.xmr.minimum": "FreeSPC nécessite au moins <strong>{points} points</strong> pour interpréter les limites XmR d'une période. Si un changement de phase crée une période plus courte, les limites sont présentées comme provisoires et FreeSPC ne conclut pas encore que cette période présente uniquement une variation habituelle ou des causes spéciales.",
 "explainer.on": "ACTIVÉ",
-"explainer.off": "DÉSACTIVÉ"
+"explainer.off": "DÉSACTIVÉ",
+
+// ZONE DES RÉSULTATS
+"results.chartHeading": "Graphique :",
+"results.chartHelpAria": "Aide sur le menu contextuel du graphique",
+"results.chartHelp": "Faites un clic droit sur le graphique pour accéder à des options supplémentaires. Selon le type de carte, vous pouvez ajouter des annotations, créer ou supprimer des changements de phase, exclure ou réintégrer des points étudiés dans le calcul des limites, gérer les libellés des lignes centrales et copier ou exporter votre graphique. Certaines actions nécessitent un clic droit directement sur un point de données.",
+
+// GUIDE DE DÉMARRAGE
+"results.quickStart": "Démarrage rapide :",
+"results.quick1": "Importez un fichier CSV ou Excel, ou ouvrez l'éditeur de données pour coller ou saisir des données",
+"results.quick2Before": "Si nécessaire, corrigez les données ou supprimez les lignes et colonnes inutiles dans l'éditeur, puis cliquez sur",
+"results.quickApply": "Appliquer les données",
+"results.quick3": "Choisissez le type de carte et vérifiez les colonnes X et Y",
+"results.quick4Before": "Cliquez sur",
+"results.quick4After": "si les modifications ne sont pas prises en compte automatiquement",
+"results.quick5": "Ajoutez des titres, des libellés, des objectifs, des changements de phase ou des annotations selon vos besoins",
+"results.quick6Before": "Faites un clic droit sur le graphique pour accéder aux options supplémentaires et utilisez",
+"results.quick6After": "si vous souhaitez reprendre votre travail ultérieurement",
+
+// CONTRÔLES DYNAMIQUES
+"results.hideControls": "Masquer les paramètres",
+"results.showControls": "Afficher les paramètres",
+"results.needsRecalc": "Modifications enregistrées — cliquez sur Générer / Recalculer",
+
+// TITRES DES CARTES SECONDAIRES
+"results.mrHeading": "Carte des étendues mobiles :",
+"results.sHeading": "Carte S :",
+"results.mrCanvasTitle": "Étendues mobiles (MR)"
+
 
 
 

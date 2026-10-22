@@ -349,7 +349,35 @@ window.SimpleSPCi18n.registerLanguage("en", {
 "explainer.xmr.split": "<strong>What happens when you add a split?</strong> A split tells FreeSPC that you want to treat the data before and after that point as different process periods. Each period gets its own mean and control limits, and the moving range across the split is not used.",
 "explainer.xmr.minimum": "FreeSPC needs at least <strong>{points} points</strong> to interpret the XmR limits for a period. If a split creates a shorter period, the limits are shown as provisional and FreeSPC does not label that period as showing routine or special-cause variation yet.",
 "explainer.on": "ON",
-"explainer.off": "OFF"
+"explainer.off": "OFF",
+
+// RESULTS AREA
+"results.chartHeading": "Chart:",
+"results.chartHelpAria": "Chart right-click menu help",
+"results.chartHelp": "Right-click the chart for additional options. Depending on the chart type, you can add annotations, create or remove splits, exclude or reinclude investigated data points from limit calculations, manage centre-line labels, and copy or export your chart. Some actions require you to right-click directly on a plotted data point.",
+
+// QUICK START GUIDE
+"results.quickStart": "Quick start:",
+"results.quick1": "Upload a CSV or Excel file, or open the Data editor to paste/type data",
+"results.quick2Before": "If needed, clean or trim the data in the Data editor, then click",
+"results.quickApply": "Apply data",
+"results.quick3": "Select your chart type and confirm the X and Y columns",
+"results.quick4Before": "Click",
+"results.quick4After": "if changes do not load automatically",
+"results.quick5": "Add titles, labels, targets, splits, or annotations as needed",
+"results.quick6Before": "Right-click the chart for additional options, and use",
+"results.quick6After": "if you want to return later",
+
+// DYNAMIC CONTROLS
+"results.hideControls": "Hide controls",
+"results.showControls": "Show controls",
+"results.needsRecalc": "Changes saved — click Generate / Recalculate",
+
+// SECONDARY CHART HEADINGS
+"results.mrHeading": "Moving Range chart:",
+"results.sHeading": "S chart:",
+"results.mrCanvasTitle": "Moving Range (MR)"
+
 
 
 
