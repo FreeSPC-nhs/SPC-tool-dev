@@ -286,7 +286,71 @@ window.SimpleSPCi18n.registerLanguage("fr", {
 
 // CONFIRMATIONS POUR LES ÉVÉNEMENTS RARES
 "rules.rareConfirmImmediate": "Les cartes T et G présentent naturellement des irrégularités.\n\nLes règles de séries et de tendances peuvent produire de faux signaux sur ce type de carte et sont désactivées par défaut.\n\nN'activez ces règles que si vous comprenez ce compromis.",
-"rules.rareConfirmOnce": "Option avancée : règles de séries et de tendances sur les cartes {chart}\n\nCes motifs apparaissent souvent par hasard sur les cartes T/G et peuvent augmenter les fausses alertes.\n\nActiver malgré tout ?"
+
+"rules.rareConfirmOnce": "Option avancée : règles de séries et de tendances sur les cartes {chart}\n\nCes motifs apparaissent souvent par hasard sur les cartes T/G et peuvent augmenter les fausses alertes.\n\nActiver malgré tout ?",
+
+// FENÊTRE D'EXPLICATION DES RÈGLES
+"explainer.title": "Explication des règles SPC",
+"explainer.close": "Fermer",
+"explainer.closeAria": "Fermer l'explication des règles",
+"explainer.subtitle": "{chart} : cet outil utilise des règles prudentes, adaptées au type de carte, afin de limiter les fausses alertes.",
+
+// NOMS DES CARTES
+"explainer.chart.run": "Graphique chronologique",
+"explainer.chart.xmr": "Carte XmR",
+"explainer.chart.c": "Carte C",
+"explainer.chart.p": "Carte P",
+"explainer.chart.pprime": "Carte P′",
+"explainer.chart.u": "Carte U",
+"explainer.chart.uprime": "Carte U′",
+"explainer.chart.xbars": "Carte X̄–S",
+"explainer.chart.t": "Carte T",
+"explainer.chart.g": "Carte G",
+"explainer.chart.pareto": "Diagramme de Pareto",
+
+// POURQUOI LES RÈGLES DIFFÈRENT
+"explainer.why.attribute": "Les cartes pour données attributaires utilisent ici un ensemble de règles prudent. Les règles de zones sont désactivées, car elles peuvent produire des alertes trompeuses, notamment lorsque les limites varient ou que les dénombrements sont faibles.",
+"explainer.why.rare": "Les cartes d'événements rares présentent naturellement des irrégularités. Les règles de séries et de tendances peuvent produire de faux signaux ; leur activation est donc réservée aux options avancées et accompagnée d'un avertissement.",
+"explainer.why.xmr": "Les cartes XmR suivent des mesures individuelles dans le temps. SimpleSPC conserve volontairement une interprétation simple par défaut, tout en proposant des règles supplémentaires de détection de motifs et des options de calcul pour les utilisateurs qui en ont besoin.",
+"explainer.why.xbars": "Les cartes X̄–S constituent la famille de cartes pour laquelle des règles avancées sont les plus justifiables, mais les règles activées par défaut restent prudentes pour limiter les fausses alertes.",
+"explainer.why.run": "Les graphiques chronologiques n'utilisent pas de limites de contrôle. L'outil privilégie par défaut une interprétation simple et prudente.",
+"explainer.why.pareto": "Un diagramme de Pareto n'est pas une carte de contrôle ordonnée dans le temps : les règles de détection des signaux SPC ne s'y appliquent donc pas. Il classe les catégories pour orienter les investigations et les actions d'amélioration.",
+"explainer.why.general": "Cet outil privilégie par défaut un ensemble de règles simple et prudent afin de limiter les fausses alertes.",
+
+// RÈGLES APPLICABLES
+"explainer.checksHeading": "Ce que cette carte vérifie par défaut",
+"explainer.rule.beyond": "Points au-delà des limites",
+"explainer.rule.run": "Règle des séries",
+"explainer.rule.trend": "Règle de tendance",
+"explainer.rule.zone23": "2 points sur 3 dans le tiers extérieur",
+"explainer.rule.zone45": "4 points sur 5 au-delà de 1 sigma",
+"explainer.status.on": "appliquée par défaut.",
+"explainer.status.optional": "disponible dans les options avancées, désactivée par défaut.",
+"explainer.status.warn": "réservée aux options avancées, désactivée par défaut, avec un avertissement avant utilisation.",
+"explainer.status.unavailable": "non proposée pour ce type de carte.",
+
+// POURQUOI CERTAINES RÈGLES SONT LIMITÉES
+"explainer.limitedHeading": "Pourquoi certaines règles sont limitées",
+"explainer.limited1": "Cet outil est conçu pour favoriser une interprétation fiable dans les secteurs de la santé et des services publics. Il privilégie un nombre réduit de signaux plus fiables plutôt qu'un ensemble de règles produisant davantage de fausses alertes.",
+"explainer.limited2": "Un « signal » peut entraîner des réunions, des inquiétudes, des investigations ou des actions. Pour réduire les efforts inutiles et la fatigue liée aux alertes, certaines règles sont réservées aux types de cartes pour lesquels elles sont les plus fiables.",
+
+// DÉFINITIONS DES RÈGLES
+"explainer.definitionsHeading": "Définitions simples des règles",
+"explainer.definition.beyond": "<strong>Points au-delà des limites :</strong> un point au-dessus de la limite supérieure ou au-dessous de la limite inférieure de contrôle.",
+"explainer.definition.run": "<strong>Règle des séries :</strong> une suite prolongée de points du même côté de la ligne centrale.",
+"explainer.definition.trend": "<strong>Règle de tendance :</strong> une succession prolongée d'augmentations ou de diminutions consécutives.",
+"explainer.definition.zone": "<strong>Règles de zones :</strong> règles supplémentaires fondées sur la distance des points par rapport à la ligne centrale. Leur applicabilité est plus limitée ; elles ne sont proposées que pour les types de cartes où leur usage est le mieux justifié.",
+
+// EXPLICATION TECHNIQUE DES CARTES XMR
+"explainer.xmr.heading": "Comment sont calculées les limites XmR",
+"explainer.xmr.intro": "Les cartes XmR estiment la variation habituelle à partir des différences entre les points consécutifs, appelées <strong>étendues mobiles</strong>.",
+"explainer.xmr.largeJump": "Un écart très important entre deux points peut surestimer la variation et produire des limites de contrôle trop larges. Par défaut, FreeSPC écarte les étendues mobiles exceptionnellement grandes de l'estimation utilisée pour calculer les limites XmR. Les points et les étendues mobiles d'origine restent visibles sur la carte.",
+"explainer.xmr.technical": "<strong>Détail technique :</strong> FreeSPC utilise la méthode de Nelson. Les étendues mobiles supérieures à 3,5 fois la moyenne initiale des étendues mobiles ne sont pas utilisées pour estimer la variation habituelle.",
+"explainer.xmr.current": "<strong>Paramètre actuel :</strong> le filtrage des étendues mobiles est <strong>{state}</strong>. Vous pouvez modifier ce réglage dans les <em>Options de détection avancées</em>.",
+"explainer.xmr.split": "<strong>Que se passe-t-il lorsque vous ajoutez un changement de phase ?</strong> FreeSPC traite les données avant et après ce point comme deux périodes distinctes du processus. Chaque période possède sa propre moyenne et ses propres limites de contrôle ; l'étendue mobile qui franchit la séparation n'est pas utilisée.",
+"explainer.xmr.minimum": "FreeSPC nécessite au moins <strong>{points} points</strong> pour interpréter les limites XmR d'une période. Si un changement de phase crée une période plus courte, les limites sont présentées comme provisoires et FreeSPC ne conclut pas encore que cette période présente uniquement une variation habituelle ou des causes spéciales.",
+"explainer.on": "ACTIVÉ",
+"explainer.off": "DÉSACTIVÉ"
 
 
 

@@ -285,7 +285,72 @@ window.SimpleSPCi18n.registerLanguage("en", {
 
 // CONFIRMATIONS WHEN ENABLING RARE-EVENT RULES
 "rules.rareConfirmImmediate": "T and G charts are naturally irregular.\n\nRun and trend rules may create false signals on this chart type and are off by default.\n\nOnly enable these rules if you understand this trade-off.",
-"rules.rareConfirmOnce": "Advanced option: Run & trend rules on {chart} charts\n\nThese patterns often happen by chance on T/G charts and can increase false alerts.\n\nEnable anyway?"
+
+"rules.rareConfirmOnce": "Advanced option: Run & trend rules on {chart} charts\n\nThese patterns often happen by chance on T/G charts and can increase false alerts.\n\nEnable anyway?",
+
+// RULE EXPLAINER POP-UP
+"explainer.title": "SPC rule explainer",
+"explainer.close": "Close",
+"explainer.closeAria": "Close rule explainer",
+"explainer.subtitle": "{chart}: this tool uses a conservative, chart-aware rule policy designed to reduce false alerts.",
+
+// CHART NAMES
+"explainer.chart.run": "Run chart",
+"explainer.chart.xmr": "X-MR chart",
+"explainer.chart.c": "C chart",
+"explainer.chart.p": "P chart",
+"explainer.chart.pprime": "P′ chart",
+"explainer.chart.u": "U chart",
+"explainer.chart.uprime": "U′ chart",
+"explainer.chart.xbars": "X̄-S chart",
+"explainer.chart.t": "T chart",
+"explainer.chart.g": "G chart",
+"explainer.chart.pareto": "Pareto chart",
+
+// WHY DIFFERENT CHARTS USE DIFFERENT RULES
+"explainer.why.attribute": "Attribute charts use a conservative rule set here. Zone rules are blocked because they can create misleading alerts, especially when limits vary or counts are low.",
+"explainer.why.rare": "Rare-event charts are naturally irregular. Run and trend rules can create false signals, so they are advanced-only and warning-gated.",
+"explainer.why.xmr": "XmR charts are used for individual measurements over time. SimpleSPC keeps the default interpretation deliberately simple, while additional pattern rules and calculation options are available for users who need them.",
+"explainer.why.xbars": "X̄-S charts are the chart family where advanced rule sets are most defensible, but the default remains conservative to reduce false alarms.",
+"explainer.why.run": "Run charts do not use control limits. The tool keeps interpretation simple and conservative by default.",
+"explainer.why.pareto": "A Pareto chart is not a time-ordered control chart, so SPC signal rules do not apply. It ranks categories to help focus investigation and improvement effort.",
+"explainer.why.general": "This tool keeps the default rule set simple and conservative to reduce false alerts.",
+
+// RULE POLICY
+"explainer.checksHeading": "What this chart checks by default",
+"explainer.rule.beyond": "Beyond limits",
+"explainer.rule.run": "Run rule",
+"explainer.rule.trend": "Trend rule",
+"explainer.rule.zone23": "2 of 3 in the outer third",
+"explainer.rule.zone45": "4 of 5 beyond 1-sigma",
+"explainer.status.on": "used by default.",
+"explainer.status.optional": "available in advanced settings, off by default.",
+"explainer.status.warn": "advanced only, off by default, with a warning before use.",
+"explainer.status.unavailable": "not offered for this chart type.",
+
+// WHY RULES ARE LIMITED
+"explainer.limitedHeading": "Why some rules are limited",
+"explainer.limited1": "This tool is designed for reliable interpretation in healthcare and public-service settings. It prefers fewer, more trustworthy signals over a noisier rule set that may create false alerts.",
+"explainer.limited2": "A “signal” can trigger meetings, concern, investigation, or action. To reduce wasted effort and alert fatigue, some rules are restricted to chart types where they are more dependable.",
+
+// RULE DEFINITIONS
+"explainer.definitionsHeading": "Plain-English rule definitions",
+"explainer.definition.beyond": "<strong>Beyond limits:</strong> a point above the upper limit or below the lower limit.",
+"explainer.definition.run": "<strong>Run rule:</strong> a sustained run of points on one side of the centre line.",
+"explainer.definition.trend": "<strong>Trend rule:</strong> a sustained pattern of consecutive increases or decreases.",
+"explainer.definition.zone": "<strong>Zone rules:</strong> extra pattern rules based on how far points sit from the centre line. These are the least portable rules, so they are only offered on chart types where they are more defensible.",
+
+// XMR TECHNICAL EXPLANATION
+"explainer.xmr.heading": "How XmR limits are set",
+"explainer.xmr.intro": "XmR charts estimate routine variation from the differences between consecutive points. These differences are called <strong>moving ranges</strong>.",
+"explainer.xmr.largeJump": "A very large jump between two points can make the estimated variation too large and produce control limits that are too wide. By default, FreeSPC screens unusually large moving ranges when setting XmR limits. The original data points and moving ranges are still shown on the chart.",
+"explainer.xmr.technical": "<strong>Technical detail:</strong> FreeSPC uses the Nelson method. Moving ranges greater than 3.5 times the initial average moving range are not used when estimating routine variation.",
+"explainer.xmr.current": "<strong>Current setting:</strong> moving-range screening is <strong>{state}</strong>. You can change this under <em>Advanced detection options</em>.",
+"explainer.xmr.split": "<strong>What happens when you add a split?</strong> A split tells FreeSPC that you want to treat the data before and after that point as different process periods. Each period gets its own mean and control limits, and the moving range across the split is not used.",
+"explainer.xmr.minimum": "FreeSPC needs at least <strong>{points} points</strong> to interpret the XmR limits for a period. If a split creates a shorter period, the limits are shown as provisional and FreeSPC does not label that period as showing routine or special-cause variation yet.",
+"explainer.on": "ON",
+"explainer.off": "OFF"
+
 
 
 
