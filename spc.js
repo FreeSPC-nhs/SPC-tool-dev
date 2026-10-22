@@ -3156,6 +3156,75 @@ if (enableRareRunTrendCheckbox) {
 const recalcPrompt = document.getElementById("recalcPrompt");
 const firstRunGuide = document.getElementById("firstRunGuide");
 
+
+function refreshResultsChromeLanguage() {
+
+  // Show / hide controls button
+  if (toggleSidebarButton) {
+    const collapsed =
+      document.body.classList.contains("sidebar-collapsed");
+
+    toggleSidebarButton.textContent = collapsed
+      ? chartPanelText("results.showControls", "Show controls")
+      : chartPanelText("results.hideControls", "Hide controls");
+  }
+
+  // Generate button tooltip when recalculation is required
+  if (generateButton) {
+    const needsRecalc =
+      generateButton.classList.contains("needs-recalc");
+
+    generateButton.title = needsRecalc
+      ? chartPanelText(
+          "results.needsRecalc",
+          "Changes saved — click Generate / Recalculate"
+        )
+      : "";
+  }
+
+  // The secondary panel is shared by XmR and X-bar/S charts.
+  const chartType = getSelectedChartType_NoSideEffects();
+
+  if (mrPanel) {
+    const heading = mrPanel.querySelector("strong");
+
+    if (heading) {
+      heading.textContent = chartType === "xbars"
+        ? chartPanelText("results.sHeading", "S chart:")
+        : chartPanelText(
+            "results.mrHeading",
+            "Moving Range chart:"
+          );
+    }
+  }
+
+  // Update the existing XmR secondary chart title in place.
+  // Leave the X-bar/S chart's separately generated title alone.
+  if (
+    chartType === "xmr" &&
+    mrChart &&
+    mrChart.options?.plugins?.title
+  ) {
+    mrChart.options.plugins.title.text =
+      chartPanelText(
+        "results.mrCanvasTitle",
+        "Moving Range (MR)"
+      );
+
+    mrChart.update("none");
+  }
+}
+
+// Update these elements when the language changes.
+document.addEventListener(
+  "simplespc:languagechange",
+  refreshResultsChromeLanguage
+);
+
+// Apply the remembered language on initial load.
+refreshResultsChromeLanguage();
+
+
 // Treat the Quick start panel as useful empty-state guidance,
 // rather than something shown only once per browser.
 function updateFirstRunGuideVisibility() {
@@ -3189,7 +3258,14 @@ updateFirstRunGuideVisibility();
 function setGenerateNeedsRecalc(needs) {
   if (!generateButton) return;
   generateButton.classList.toggle("needs-recalc", !!needs);
-  generateButton.title = needs ? "Changes saved — click Generate / Recalculate" : "";
+  
+generateButton.title = needs
+  ? chartPanelText(
+      "results.needsRecalc",
+      "Changes saved — click Generate / Recalculate"
+    )
+  : "";
+
 }
 
 function markDataModelDirty() {
@@ -3272,12 +3348,14 @@ if (clearAnnotationsBtn) {
 }
 
 // ---- Toggle sidebar button ----
+
 if (toggleSidebarButton) {
   toggleSidebarButton.addEventListener("click", () => {
-    const collapsed = document.body.classList.toggle("sidebar-collapsed");
-    toggleSidebarButton.textContent = collapsed ? "Show controls" : "Hide controls";
+    document.body.classList.toggle("sidebar-collapsed");
+    refreshResultsChromeLanguage();
   });
 }
+
 
 // ---- CSV / Excel upload & column selection ----
 fileInput.addEventListener("change", async () => {
@@ -4028,10 +4106,12 @@ function drawXbarSCombinedChart({
         "strong"
       );
 
+    
     if (strong) {
       strong.textContent =
-        "S chart:";
+        chartPanelText("results.sHeading", "S chart:");
     }
+
   }
 
   if (!mrCanvas) return;
@@ -18062,7 +18142,14 @@ function drawMrChart(allPoints, labels, segments) {
   mrPanel.style.display = "block";
 
   const strong = mrPanel.querySelector("strong");
-  if (strong) strong.textContent = "Moving Range chart:";
+  
+if (strong) {
+  strong.textContent = chartPanelText(
+    "results.mrHeading",
+    "Moving Range chart:"
+  );
+}
+
 
   const showAll =
     (typeof getMrDisplayMode === "function") &&
@@ -18237,7 +18324,12 @@ function drawMrChart(allPoints, labels, segments) {
       plugins: {
         title: {
           display: true,
-          text: "Moving Range (MR)",
+          
+text: chartPanelText(
+  "results.mrCanvasTitle",
+  "Moving Range (MR)"
+),
+
           font: { size: 14, weight: "bold" }
         },
         legend:
@@ -18271,7 +18363,14 @@ function renderMrChart(mrLabels, mrValues, mrReasons, avgMR, uclMR) {
 
   if (mrPanel) {
     const strong = mrPanel.querySelector("strong");
-    if (strong) strong.textContent = "Moving Range chart:";
+    
+if (strong) {
+  strong.textContent = chartPanelText(
+    "results.mrHeading",
+    "Moving Range chart:"
+  );
+}
+
   }
 
   if (mrChart) {
@@ -18386,7 +18485,12 @@ pointBackgroundColor:
       plugins: {
         title: {
           display: true,
-          text: "Moving Range (MR)",
+          
+text: chartPanelText(
+  "results.mrCanvasTitle",
+  "Moving Range (MR)"
+),
+
           font: { size: 14, weight: "bold" }
         },
         legend:
