@@ -10316,6 +10316,7 @@ function refreshAutomaticChartLabelsLanguage() {
     mrChart.update("none");
   }
 
+
   // Redraw presentation only.
   // Do not rerun SPC calculations.
   currentChart.update("none");
