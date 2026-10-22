@@ -1383,16 +1383,21 @@
       <div id="reportContent">  
 
         <div class="panel">
-          <strong class="label-with-tooltip">
-  Chart:
+          
+<strong class="label-with-tooltip">
+  <span data-i18n="results.chartHeading">Chart:</span>
+
 
   <span
     class="help-tooltip"
     tabindex="0"
     aria-label="Chart right-click menu help"
+    data-i18n-aria-label="results.chartHelpAria"
   >
     ?
-    <span class="help-tooltip-text">
+    
+<span class="help-tooltip-text" data-i18n="results.chartHelp">
+
       Right-click the chart for additional options.
 
       Depending on the chart type, you can add annotations,
@@ -1417,15 +1422,50 @@
   font-size:1.05rem;
   line-height:1.35;
 ">
-  Quick start:
-  <ol style="margin:0.5rem 0 0 1.25rem; padding:0;">
-    <li>Upload a CSV or Excel file, or open the Data editor to paste/type data</li>
-    <li>If needed, clean or trim the data in the Data editor, then click <strong>Apply data</strong></li>
-    <li>Select your chart type and confirm the X and Y columns</li>
-    <li>Click <strong>Generate / Recalculate</strong> if changes do not load automatically</li>
-    <li>Add titles, labels, targets, splits, or annotations as needed</li>
-    <li>Right-click the chart for additional options, and use <strong>Save chart</strong> if you want to return later</li>
-  </ol>
+  
+<span data-i18n="results.quickStart">Quick start:</span>
+
+<ol style="margin:0.5rem 0 0 1.25rem; padding:0;">
+
+  <li data-i18n="results.quick1">
+    Upload a CSV or Excel file, or open the Data editor to paste/type data
+  </li>
+
+  <li>
+    <span data-i18n="results.quick2Before">
+      If needed, clean or trim the data in the Data editor, then click
+    </span>
+    <strong data-i18n="results.quickApply">Apply data</strong>
+  </li>
+
+  <li data-i18n="results.quick3">
+    Select your chart type and confirm the X and Y columns
+  </li>
+
+  <li>
+    <span data-i18n="results.quick4Before">Click</span>
+    <strong data-i18n="buttons.generate">Generate / Recalculate</strong>
+    <span data-i18n="results.quick4After">
+      if changes do not load automatically
+    </span>
+  </li>
+
+  <li data-i18n="results.quick5">
+    Add titles, labels, targets, splits, or annotations as needed
+  </li>
+
+  <li>
+    <span data-i18n="results.quick6Before">
+      Right-click the chart for additional options, and use
+    </span>
+    <strong data-i18n="data.saveButton">Save chart</strong>
+    <span data-i18n="results.quick6After">
+      if you want to return later
+    </span>
+  </li>
+
+</ol>
+
 </div>
 
 <div class="chart-container">
