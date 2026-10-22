@@ -1219,11 +1219,16 @@ if (enableRareRunTrendCheckbox) {
   enableRareRunTrendCheckbox.addEventListener("change", () => {
     if (!enableRareRunTrendCheckbox.checked) return;
 
+    
     const ok = window.confirm(
-      "T and G charts are naturally irregular.\n\n" +
-      "Run and trend rules may create false signals on this chart type and are off by default.\n\n" +
-      "Only enable these rules if you understand this trade-off."
+      chartPanelText(
+        "rules.rareConfirmImmediate",
+        "T and G charts are naturally irregular.\n\n" +
+        "Run and trend rules may create false signals on this chart type and are off by default.\n\n" +
+        "Only enable these rules if you understand this trade-off."
+      )
     );
+
 
     if (!ok) {
       enableRareRunTrendCheckbox.checked = false;
@@ -4548,10 +4553,15 @@ function confirmEnableRareRunTrendOnce(chartType) {
 
   if (alreadyConfirmed) return true;
 
-  const msg =
+  
+  const msg = chartPanelText(
+    "rules.rareConfirmOnce",
     `Advanced option: Run & trend rules on ${chartType.toUpperCase()} charts\n\n` +
-    `These patterns often happen by chance on T/G charts and can increase false alerts.\n\n` +
-    `Enable anyway?`;
+    "These patterns often happen by chance on T/G charts and can increase false alerts.\n\n" +
+    "Enable anyway?",
+    { chart: chartType.toUpperCase() }
+  );
+
 
   const ok = confirm(msg);
 
@@ -5777,6 +5787,82 @@ function findTrendRanges(values, length) {
   return ranges;
 }
 
+
+function refreshRuleTooltipsOnly(
+  chartType = getSelectedChartType_NoSideEffects()
+) {
+  const policy = getRulePolicy(chartType);
+  const isRare = isRareChartType(chartType);
+
+  const t = chartPanelText;
+
+  // Advanced trend option
+  if (enableAdvancedTrendCheckbox) {
+    enableAdvancedTrendCheckbox.title =
+      policy.trend === "optional"
+        ? ""
+        : t(
+            "rules.disabledTrend",
+            "Trend rule is not offered for this chart type."
+          );
+  }
+
+  // Trend length field
+  const trendInput = document.getElementById("trendRulePoints");
+
+  if (trendInput) {
+    if (policy.trend === "optional") {
+      trendInput.title = enableAdvancedTrendCheckbox?.checked
+        ? ""
+        : t(
+            "rules.enableTrendFirst",
+            "Tick 'Enable trend rule' to use this setting."
+          );
+
+    } else if (policy.trend === "warn") {
+      trendInput.title = enableRareRunTrendCheckbox?.checked
+        ? ""
+        : t(
+            "rules.enableRareFirst",
+            "Enable run & trend rules for this chart type to use this setting."
+          );
+
+    } else {
+      trendInput.title = t(
+        "rules.disabledTrend",
+        "Trend rule is not offered for this chart type."
+      );
+    }
+  }
+
+  // Rare-event option
+  if (enableRareRunTrendCheckbox) {
+    enableRareRunTrendCheckbox.title = isRare
+      ? ""
+      : t(
+          "rules.rareOnly",
+          "Only used for T and G charts."
+        );
+  }
+
+  // Zone rules
+  const zoneBlocked = t(
+    "rules.zoneBlocked",
+    "Zone rules are not available for this chart type because they may create misleading alerts."
+  );
+
+  if (ruleTwoOfThreeOuterThirdCheckbox) {
+    ruleTwoOfThreeOuterThirdCheckbox.title =
+      policy.zone23 === "blocked" ? zoneBlocked : "";
+  }
+
+  if (ruleFourOfFiveOneSigmaCheckbox) {
+    ruleFourOfFiveOneSigmaCheckbox.title =
+      policy.zone45 === "blocked" ? zoneBlocked : "";
+  }
+}
+
+
 function updateRuleUIForChartType(chartType) {
   const policy = getRulePolicy(chartType);
   const isRare = isRareChartType(chartType);
@@ -5887,11 +5973,17 @@ if (mrScreeningRow) {
   chartType === "c" ||
   isPFamilyChartType(chartType) ||
   isUFamilyChartType(chartType);
+    
     conservativeRulesMessage.style.display = showConservativeMessage ? "block" : "none";
   }
+
+  // Translate tooltips after the existing rule availability
+  // logic has finished. Do not change any rule settings.
+  refreshRuleTooltipsOnly(chartType);
 }
 
 function updateColumnCheckWarning(chartType) {
+
   if (!columnCheckWarning) return;
 
   const warnings = {
@@ -6329,15 +6421,19 @@ if (typeof updateMrToggleVisibility === "function") {
 
 
 
+
 document.addEventListener("simplespc:languagechange", () => {
   // Refresh translated interface messages only.
   // Do not recalculate charts or change user selections.
   updateMrToggleVisibility();
   refreshDynamicChartPanelLanguage();
-
   refreshChartAvailabilityTextOnly();
   updateDateFormatWarning();
   updateDateControlsState();
+
+  // Refresh Rules panel tooltips without changing
+  // enabled states, checkboxes or statistical settings.
+  refreshRuleTooltipsOnly();
 });
 
 
