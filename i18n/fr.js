@@ -401,7 +401,7 @@ window.SimpleSPCi18n.registerLanguage("fr", {
 // INFOBULLES DE LA CARTE DES ÉTENDUES MOBILES
 "visual.mrTooltip": "Étendue mobile : {value}",
 "visual.mrExcludedTooltip": "Non utilisée pour estimer la variation : {value} (adjacente à un point exclu)",
-"visual.mrScreenedTooltip": "Non utilisée pour estimer la variation : {value} (étendue mobile exceptionnellement grande, écartée du calcul)"
+"visual.mrScreenedTooltip": "Non utilisée pour estimer la variation : {value} (étendue mobile exceptionnellement grande, écartée du calcul)",
 
 // LIBELLÉS SUPPLÉMENTAIRES XMR
 "visual.mean": "Moyenne",
