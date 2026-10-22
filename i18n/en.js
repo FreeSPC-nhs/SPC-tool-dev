@@ -108,7 +108,45 @@ window.SimpleSPCi18n.registerLanguage("en", {
 "chart.columns.gY": "Opportunities between events",
 "chart.columns.gHint": "G chart plots opportunities between rare events.",
 "chart.columns.paretoX": "Category column",
-"chart.columns.paretoY": "Frequency / count column"
+
+"chart.columns.paretoY": "Frequency / count column",
+
+// ADDITIONAL CHART TYPES
+"chart.types.c": "C chart (counts)",
+"chart.types.p": "P chart (proportion)",
+"chart.types.pprime": "P′ chart (Laney)",
+"chart.types.u": "U chart (rate)",
+"chart.types.uprime": "U′ chart (Laney)",
+"chart.types.xbars": "X̄–S chart (subgroups)",
+"chart.types.t": "T chart (time between)",
+"chart.types.g": "G chart (opportunities between)",
+"chart.types.pareto": "Pareto chart (categories)",
+
+// RATE DISPLAY
+"chart.rate.label": "Display rate as:",
+"chart.rate.per1": "Per 1",
+"chart.rate.per10": "Per 10",
+"chart.rate.per100": "Per 100",
+"chart.rate.per1000": "Per 1,000",
+"chart.rate.per10000": "Per 10,000",
+"chart.rate.hint": "Changes the displayed rate only; the underlying U-chart calculation is unchanged.",
+
+// X-AXIS TYPE
+"chart.axis.type": "X-axis type",
+"chart.axis.helpAria": "X-axis type help",
+"chart.axis.help": "Use Date / time for time-series SPC. Use Sequence / category to plot rows in their original order without treating the X-axis values as dates.",
+"chart.axis.date": "Date / time",
+"chart.axis.sequence": "Sequence / category",
+
+// DATE FORMAT
+"chart.dateFormat.label": "Date format for numeric dates",
+"chart.dateFormat.helpAria": "Date format help",
+"chart.dateFormat.help": "Used for ambiguous numeric dates such as 01/02/2024. ISO dates such as 2024-02-01 and Excel dates are recognised automatically.",
+"chart.dateFormat.uk": "UK / day-first (dd/mm/yyyy)",
+"chart.dateFormat.us": "US / month-first (mm/dd/yyyy)",
+"chart.dateFormat.auto": "Auto-detect",
+"chart.dateFormat.iso": "ISO / Excel dates only"
+
 
 
 

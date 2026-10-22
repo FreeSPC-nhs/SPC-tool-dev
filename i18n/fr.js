@@ -109,7 +109,45 @@ window.SimpleSPCi18n.registerLanguage("fr", {
 "chart.columns.gY": "Opportunités entre les événements",
 "chart.columns.gHint": "La carte G représente le nombre d'opportunités entre des événements rares.",
 "chart.columns.paretoX": "Colonne des catégories",
-"chart.columns.paretoY": "Colonne des fréquences / effectifs"
+
+"chart.columns.paretoY": "Colonne des fréquences / effectifs",
+
+// AUTRES TYPES DE GRAPHIQUES
+"chart.types.c": "Carte C (dénombrements)",
+"chart.types.p": "Carte P (proportions)",
+"chart.types.pprime": "Carte P′ (Laney)",
+"chart.types.u": "Carte U (taux)",
+"chart.types.uprime": "Carte U′ (Laney)",
+"chart.types.xbars": "Carte X̄–S (sous-groupes)",
+"chart.types.t": "Carte T (temps entre événements)",
+"chart.types.g": "Carte G (opportunités entre événements)",
+"chart.types.pareto": "Diagramme de Pareto (catégories)",
+
+// AFFICHAGE DES TAUX
+"chart.rate.label": "Afficher le taux pour :",
+"chart.rate.per1": "Pour 1",
+"chart.rate.per10": "Pour 10",
+"chart.rate.per100": "Pour 100",
+"chart.rate.per1000": "Pour 1 000",
+"chart.rate.per10000": "Pour 10 000",
+"chart.rate.hint": "Modifie uniquement l'affichage du taux ; le calcul sous-jacent de la carte U reste inchangé.",
+
+// TYPE D'AXE HORIZONTAL
+"chart.axis.type": "Type d'axe horizontal",
+"chart.axis.helpAria": "Aide sur le type d'axe horizontal",
+"chart.axis.help": "Utilisez Date / heure pour les cartes SPC chronologiques. Utilisez Séquence / catégorie pour afficher les observations dans leur ordre initial sans interpréter les valeurs de l'axe horizontal comme des dates.",
+"chart.axis.date": "Date / heure",
+"chart.axis.sequence": "Séquence / catégorie",
+
+// FORMAT DES DATES
+"chart.dateFormat.label": "Format des dates numériques",
+"chart.dateFormat.helpAria": "Aide sur le format des dates",
+"chart.dateFormat.help": "Utilisé pour les dates numériques ambiguës, comme 01/02/2024. Les dates au format ISO, comme 2024-02-01, et les dates Excel sont reconnues automatiquement.",
+"chart.dateFormat.uk": "Royaume-Uni / jour d'abord (jj/mm/aaaa)",
+"chart.dateFormat.us": "États-Unis / mois d'abord (mm/jj/aaaa)",
+"chart.dateFormat.auto": "Détection automatique",
+"chart.dateFormat.iso": "Dates ISO / Excel uniquement"
+
 
 
 
