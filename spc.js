@@ -772,6 +772,57 @@ function applySpcColourTheme(themeName) {
   Object.assign(SPC_STYLE, theme);
 }
 
+
+/*
+ * Translate chart dataset labels for display only.
+ *
+ * IMPORTANT:
+ * Do not modify dataset.label. Other SPC functions use
+ * the original names for identifying chart elements.
+ */
+function chartDisplayLabel(originalLabel) {
+  const raw = String(originalLabel ?? "");
+
+  // Some MR labels contain an analysis period number.
+  const periodMatch =
+    /^(MR average|MR UCL) \(Period (\d+)\)$/.exec(raw);
+
+  if (periodMatch) {
+    const key = periodMatch[1] === "MR average"
+      ? "visual.mrAveragePeriod"
+      : "visual.mrUclPeriod";
+
+    return chartPanelText(key, raw, {
+      period: periodMatch[2]
+    });
+  }
+
+  const keys = {
+    "Value": "visual.value",
+    "Centre line": "visual.centreLine",
+    "Median": "visual.median",
+    "UCL": "visual.ucl",
+    "LCL": "visual.lcl",
+    "Target": "visual.target",
+    "X̄": "visual.xbar",
+    "Count": "visual.count",
+    "Cumulative %": "visual.cumulative",
+    "Moving range": "visual.movingRange",
+    "MR average": "visual.mrAverage",
+    "MR UCL": "visual.mrUcl",
+    "Not used: adjacent to excluded point":
+      "visual.omittedExcluded",
+    "Not used: unusually large MR screened":
+      "visual.omittedScreened"
+  };
+
+  const key = keys[raw];
+
+  // Preserve unknown labels, including user-supplied text.
+  return key ? chartPanelText(key, raw) : raw;
+}
+
+
 // -----------------------------
 // Shared legend styling
 // Shows line datasets as line samples in the legend instead of filled boxes
@@ -801,11 +852,17 @@ const SPC_LEGEND = {
               label.datasetIndex
             ] || {};
 
+          
           return {
             ...label,
 
+            // Change the legend's displayed text only.
+            // Keep the original dataset label and index.
+            text: chartDisplayLabel(label.text),
+
             pointStyle:
               "line",
+
 
             strokeStyle:
               dataset.borderColor ||
@@ -3220,6 +3277,26 @@ document.addEventListener(
   "simplespc:languagechange",
   refreshResultsChromeLanguage
 );
+
+
+// Refresh the chart drawings so their display-only
+// legend labels use the newly selected language.
+//
+// This does not rebuild datasets, rerun SPC calculations,
+// change exclusions, or modify saved project settings.
+document.addEventListener(
+  "simplespc:languagechange",
+  () => {
+    if (currentChart) {
+      currentChart.update("none");
+    }
+
+    if (mrChart) {
+      mrChart.update("none");
+    }
+  }
+);
+
 
 // Apply the remembered language on initial load.
 refreshResultsChromeLanguage();
@@ -15389,13 +15466,25 @@ function drawParetoChart(
                 chartLabels.title
               ),
 
-            legend: {
-              display: true,
-              position:
-                "bottom",
-              align:
-                "center"
-            },
+            
+legend: {
+  display: true,
+  position: "bottom",
+  align: "center",
+
+  labels: {
+    generateLabels(chart) {
+      const items =
+        Chart.defaults.plugins.legend.labels.generateLabels(chart);
+
+      return items.map(item => ({
+        ...item,
+        text: chartDisplayLabel(item.text)
+      }));
+    }
+  }
+},
+
 
             tooltip: {
               callbacks: {
@@ -17987,14 +18076,16 @@ function buildMrLegendConfig() {
                 label.datasetIndex
               ] || {};
 
-            if (
-              dataset._mrOmissionMarker
-            ) {
-              return {
-                ...label,
+            
+if (dataset._mrOmissionMarker) {
+  return {
+    ...label,
 
-                pointStyle:
-                  dataset.pointStyle,
+    text: chartDisplayLabel(label.text),
+
+    pointStyle:
+      dataset.pointStyle,
+
 
                 fillStyle:
                   dataset.pointBackgroundColor ||
@@ -18012,11 +18103,15 @@ function buildMrLegendConfig() {
               };
             }
 
-            return {
-              ...label,
+            
+return {
+  ...label,
 
-              pointStyle:
-                "line",
+  text: chartDisplayLabel(label.text),
+
+  pointStyle:
+    "line",
+
 
               strokeStyle:
                 dataset.borderColor ||
@@ -18046,24 +18141,20 @@ function buildMrLegendConfig() {
   };
 }
 
+
 function buildMrTooltipOptions() {
   return {
     filter(context) {
-      const dataset =
-        context.dataset || {};
+      const dataset = context.dataset || {};
 
       /*
-       * At an omitted MR we deliberately hide the ordinary
-       * "Moving range" tooltip item and show only the explanatory
-       * marker dataset.
+       * Keep the original internal dataset-name check.
+       * At an omitted MR, show the explanatory marker
+       * rather than an ordinary moving-range tooltip.
        */
-      if (
-        dataset.label ===
-        "Moving range"
-      ) {
+      if (dataset.label === "Moving range") {
         const reason =
-          dataset._mrReasons
-            ?.[context.dataIndex];
+          dataset._mrReasons?.[context.dataIndex];
 
         return !reason;
       }
@@ -18073,60 +18164,47 @@ function buildMrTooltipOptions() {
 
     callbacks: {
       label(context) {
-        const value =
-          context.parsed?.y;
+        const value = context.parsed?.y;
 
-        if (
-          !Number.isFinite(value)
-        ) {
+        if (!Number.isFinite(value)) {
           return null;
         }
 
-        const pretty =
-          formatMrValueForDisplay(
-            value
-          );
+        const pretty = formatMrValueForDisplay(value);
 
         const reason =
-          context.dataset
-            ?._mrOmissionReason;
+          context.dataset?._mrOmissionReason;
 
-        if (
-          reason ===
-          "excluded-point"
-        ) {
-          return (
+        if (reason === "excluded-point") {
+          return chartPanelText(
+            "visual.mrExcludedTooltip",
             `Not used in the variation estimate: ${pretty} ` +
-            `(adjacent to an excluded point)`
+              "(adjacent to an excluded point)",
+            { value: pretty }
           );
         }
 
-        if (
-          reason ===
-          "screened-large"
-        ) {
-          return (
+        if (reason === "screened-large") {
+          return chartPanelText(
+            "visual.mrScreenedTooltip",
             `Not used in the variation estimate: ${pretty} ` +
-            `(screened as an unusually large moving range)`
+              "(screened as an unusually large moving range)",
+            { value: pretty }
           );
         }
 
-        const label =
-          context.dataset?.label ||
-          "";
+        const label = context.dataset?.label || "";
 
-        if (
-          label ===
-          "Moving range"
-        ) {
-          return (
-            `Moving range: ${pretty}`
+        if (label === "Moving range") {
+          return chartPanelText(
+            "visual.mrTooltip",
+            `Moving range: ${pretty}`,
+            { value: pretty }
           );
         }
 
-        return (
-          `${label}: ${pretty}`
-        );
+        // MR average, MR UCL and period-specific series.
+        return `${chartDisplayLabel(label)}: ${pretty}`;
       }
     }
   };
