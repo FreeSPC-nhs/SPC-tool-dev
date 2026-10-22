@@ -655,275 +655,321 @@
 
 </div>
 </div>
+
 <!-- TAB 3: LABELS -->
 <div id="tab-labels" class="tab-panel">
-
 <div class="panel">
 
-<h3 style="margin-top:0.8rem;">Chart labels</h3>
+<h3 style="margin-top:0.8rem;" data-i18n="labels.heading">
+  Chart labels
+</h3>
+
 <label>
-Chart title
-<input type="text" id="chartTitle" />
+  <span data-i18n="labels.title">Chart title</span>
+  <input type="text" id="chartTitle" />
 </label>
 
 <label>
-X-axis label
-<input type="text" id="xAxisLabel" />
+  <span data-i18n="labels.xAxis">X-axis label</span>
+  <input type="text" id="xAxisLabel" />
 </label>
 
 <label>
-Y-axis label
-<input type="text" id="yAxisLabel" />
+  <span data-i18n="labels.yAxis">Y-axis label</span>
+  <input type="text" id="yAxisLabel" />
 </label>
 
 <hr>
 
 <details open>
-  <summary>Title settings</summary>
+  <summary data-i18n="labels.titleSettings">Title settings</summary>
 
-<label>
-  Title font family
-  <select id="chartTitleFontFamily">
-    <option value="">Auto / default</option>
-    <option value="Arial">Arial</option>
-    <option value="Arial Narrow">Arial Narrow</option>
-    <option value="Aptos">Aptos</option>
-    <option value="Calibri">Calibri</option>
-    <option value="Cambria">Cambria</option>
-    <option value="Century Gothic">Century Gothic</option>
-    <option value="Georgia">Georgia</option>
-    <option value="Helvetica">Helvetica</option>
-    <option value="Segoe UI">Segoe UI</option>
-    <option value="Tahoma">Tahoma</option>
-    <option value="Trebuchet MS">Trebuchet MS</option>
-    <option value="Verdana">Verdana</option>
-    <option value="Gill Sans">Gill Sans</option>
-    <option value="Lucida Sans Unicode">Lucida Sans Unicode</option>
-    <option value="Book Antiqua">Book Antiqua</option>
-    <option value="Garamond">Garamond</option>
-    <option value="Times New Roman">Times New Roman</option>
-  </select>
-</label>
+  <label>
+    <span data-i18n="labels.fontFamily">Title font family</span>
+    <select id="chartTitleFontFamily">
+      <option value="" data-i18n="common.autoDefault">Auto / default</option>
+      <option value="Arial">Arial</option>
+      <option value="Arial Narrow">Arial Narrow</option>
+      <option value="Aptos">Aptos</option>
+      <option value="Calibri">Calibri</option>
+      <option value="Cambria">Cambria</option>
+      <option value="Century Gothic">Century Gothic</option>
+      <option value="Georgia">Georgia</option>
+      <option value="Helvetica">Helvetica</option>
+      <option value="Segoe UI">Segoe UI</option>
+      <option value="Tahoma">Tahoma</option>
+      <option value="Trebuchet MS">Trebuchet MS</option>
+      <option value="Verdana">Verdana</option>
+      <option value="Gill Sans">Gill Sans</option>
+      <option value="Lucida Sans Unicode">Lucida Sans Unicode</option>
+      <option value="Book Antiqua">Book Antiqua</option>
+      <option value="Garamond">Garamond</option>
+      <option value="Times New Roman">Times New Roman</option>
+    </select>
+  </label>
 
-<label>
-  Title font size
-  <input
-    type="number"
-    id="chartTitleFontSize"
-    min="8"
-    max="48"
-    step="1"
-    value="16"
-  />
-</label>
+  <label>
+    <span data-i18n="labels.fontSize">Title font size</span>
+    <input
+      type="number"
+      id="chartTitleFontSize"
+      min="8"
+      max="48"
+      step="1"
+      value="16"
+    />
+  </label>
 
-<div class="font-toggle-row">
-  <button
-    type="button"
-    id="chartTitleBoldBtn"
-    class="font-toggle-btn"
-    aria-pressed="true"
-    title="Bold"
-  ><strong>B</strong></button>
+  <div class="font-toggle-row">
+    <button
+      type="button"
+      id="chartTitleBoldBtn"
+      class="font-toggle-btn"
+      aria-pressed="true"
+      title="Bold"
+      data-i18n-title="common.bold"
+    ><strong>B</strong></button>
 
-  <button
-    type="button"
-    id="chartTitleItalicBtn"
-    class="font-toggle-btn"
-    aria-pressed="false"
-    title="Italic"
-  ><em>I</em></button>
+    <button
+      type="button"
+      id="chartTitleItalicBtn"
+      class="font-toggle-btn"
+      aria-pressed="false"
+      title="Italic"
+      data-i18n-title="common.italic"
+    ><em>I</em></button>
 
-  <button
-    type="button"
-    id="chartTitleUnderlineBtn"
-    class="font-toggle-btn"
-    aria-pressed="false"
-    title="Underline"
-  ><u>U</u></button>
-</div>
+    <button
+      type="button"
+      id="chartTitleUnderlineBtn"
+      class="font-toggle-btn"
+      aria-pressed="false"
+      title="Underline"
+      data-i18n-title="common.underline"
+    ><u>U</u></button>
+  </div>
 
-<label class="radio-pill" style="display:inline-flex; gap:0.5rem; align-items:center;">
-  <input type="checkbox" id="showChartTitle" checked />
-  Show chart title
-</label>
+  <label class="radio-pill"
+         style="display:inline-flex; gap:0.5rem; align-items:center;">
+    <input type="checkbox" id="showChartTitle" checked />
+    <span data-i18n="labels.showTitle">Show chart title</span>
+  </label>
 </details>
 
 </div>
-
 </div>
+
 
 <!-- TAB 4: AXES -->
 <div id="tab-axes" class="tab-panel">
-
 <div class="panel">
 
-<h3 style="margin-top:0.8rem;">Axes</h3>
+<h3 style="margin-top:0.8rem;" data-i18n="axes.heading">
+  Axes
+</h3>
 
 <details open>
-  <summary>X axis</summary>
-<label>
-  X-axis font family
-  <select id="xAxisFontFamily">
-    <option value="">Auto / default</option>
-    <option value="Arial">Arial</option>
-    <option value="Arial Narrow">Arial Narrow</option>
-    <option value="Aptos">Aptos</option>
-    <option value="Calibri">Calibri</option>
-    <option value="Cambria">Cambria</option>
-    <option value="Century Gothic">Century Gothic</option>
-    <option value="Georgia">Georgia</option>
-    <option value="Helvetica">Helvetica</option>
-    <option value="Segoe UI">Segoe UI</option>
-    <option value="Tahoma">Tahoma</option>
-    <option value="Trebuchet MS">Trebuchet MS</option>
-    <option value="Verdana">Verdana</option>
-    <option value="Gill Sans">Gill Sans</option>
-    <option value="Lucida Sans Unicode">Lucida Sans Unicode</option>
-    <option value="Book Antiqua">Book Antiqua</option>
-    <option value="Garamond">Garamond</option>
-    <option value="Times New Roman">Times New Roman</option>
-    <option value="Courier New">Courier New</option>
-  </select>
-</label>
+  <summary data-i18n="axes.xSection">X axis</summary>
 
   <label>
-    X-axis font size
+    <span data-i18n="axes.xFontFamily">X-axis font family</span>
+    <select id="xAxisFontFamily">
+      <option value="" data-i18n="common.autoDefault">Auto / default</option>
+      <option value="Arial">Arial</option>
+      <option value="Arial Narrow">Arial Narrow</option>
+      <option value="Aptos">Aptos</option>
+      <option value="Calibri">Calibri</option>
+      <option value="Cambria">Cambria</option>
+      <option value="Century Gothic">Century Gothic</option>
+      <option value="Georgia">Georgia</option>
+      <option value="Helvetica">Helvetica</option>
+      <option value="Segoe UI">Segoe UI</option>
+      <option value="Tahoma">Tahoma</option>
+      <option value="Trebuchet MS">Trebuchet MS</option>
+      <option value="Verdana">Verdana</option>
+      <option value="Gill Sans">Gill Sans</option>
+      <option value="Lucida Sans Unicode">Lucida Sans Unicode</option>
+      <option value="Book Antiqua">Book Antiqua</option>
+      <option value="Garamond">Garamond</option>
+      <option value="Times New Roman">Times New Roman</option>
+      <option value="Courier New">Courier New</option>
+    </select>
+  </label>
+
+  <label>
+    <span data-i18n="axes.xFontSize">X-axis font size</span>
     <input type="number" id="xAxisFontSize" min="6" step="1" value="11" />
   </label>
 
   <div class="font-toggle-row">
-  <button type="button" id="xAxisItalicBtn" class="font-toggle-btn" aria-pressed="false" title="Italic"><em>I</em></button>
-  <button type="button" id="xAxisBoldBtn" class="font-toggle-btn" aria-pressed="false" title="Bold"><strong>B</strong></button>
-</div>
+    <button type="button"
+            id="xAxisItalicBtn"
+            class="font-toggle-btn"
+            aria-pressed="false"
+            title="Italic"
+            data-i18n-title="common.italic"><em>I</em></button>
+
+    <button type="button"
+            id="xAxisBoldBtn"
+            class="font-toggle-btn"
+            aria-pressed="false"
+            title="Bold"
+            data-i18n-title="common.bold"><strong>B</strong></button>
+  </div>
 
 </details>
 
 <hr>
 
 <details open>
-  <summary>Y axis</summary>
-      <label>
-  <span class="label-with-tooltip">
-    Y-axis minimum
-
-    <span class="help-tooltip" tabindex="0" aria-label="Y-axis range help">
-      ?
-      <span class="help-tooltip-text">
-        Leave the minimum and maximum blank to let the chart choose its range automatically.
-      </span>
-    </span>
-  </span>
-
-  <input type="number" id="yAxisMin" />
-</label>
-
-      <label>
-        Y-axis maximum
-        <input type="number" id="yAxisMax" step="any" />
-      </label>
+  <summary data-i18n="axes.ySection">Y axis</summary>
 
   <label>
-  Y-axis font family
-  <select id="yAxisFontFamily">
-    <option value="">Auto / default</option>
-    <option value="Arial">Arial</option>
-    <option value="Arial Narrow">Arial Narrow</option>
-    <option value="Aptos">Aptos</option>
-    <option value="Calibri">Calibri</option>
-    <option value="Cambria">Cambria</option>
-    <option value="Century Gothic">Century Gothic</option>
-    <option value="Georgia">Georgia</option>
-    <option value="Helvetica">Helvetica</option>
-    <option value="Segoe UI">Segoe UI</option>
-    <option value="Tahoma">Tahoma</option>
-    <option value="Trebuchet MS">Trebuchet MS</option>
-    <option value="Verdana">Verdana</option>
-    <option value="Gill Sans">Gill Sans</option>
-    <option value="Lucida Sans Unicode">Lucida Sans Unicode</option>
-    <option value="Book Antiqua">Book Antiqua</option>
-    <option value="Garamond">Garamond</option>
-    <option value="Times New Roman">Times New Roman</option>
-    <option value="Courier New">Courier New</option>
-  </select>
-</label>
+    <span class="label-with-tooltip">
 
-<label>
-  Y-axis font size
-  <input type="number" id="yAxisFontSize" min="6" step="1" value="11" />
-</label>
+      <span data-i18n="axes.yMin">Y-axis minimum</span>
 
-<label>
-  Y-axis format
-  <select id="yAxisFormat">
-    <option value="auto">Auto</option>
-    <option value="decimal">Decimal</option>
-    <option value="integer">Integer</option>
-    <option value="percent">Percent</option>
-  </select>
-</label>
-
-<label>
-  Y-axis decimal places
-  <select id="yAxisDecimals">
-    <option value="auto">Auto</option>
-    <option value="0">0 dp</option>
-    <option value="1">1 dp</option>
-    <option value="2">2 dp</option>
-    <option value="3">3 dp</option>
-  </select>
-</label>
-
-<label>
-  <span class="label-with-tooltip">
-    Y-axis tick interval
-
-    <span class="help-tooltip" tabindex="0" aria-label="Y-axis tick interval help">
-      ?
-      <span class="help-tooltip-text">
-        Leave blank for automatic spacing. For percentages, enter percentage
-        points: for example, 1 means 1%, and 0.5 means 0.5%.
+      <span class="help-tooltip"
+            tabindex="0"
+            aria-label="Y-axis range help"
+            data-i18n-aria-label="axes.yRangeAria">
+        ?
+        <span class="help-tooltip-text"
+              data-i18n="axes.yRangeHelp">
+          Leave the minimum and maximum blank to let
+          the chart choose its range automatically.
+        </span>
       </span>
+
     </span>
-  </span>
 
-  <input
-    type="number"
-    id="yAxisTickStep"
-    min="0"
-    step="any"
-    placeholder="Auto"
-  />
-</label>
+    <input type="number" id="yAxisMin" />
+  </label>
 
-<div class="font-toggle-row">
-  <button type="button" id="yAxisItalicBtn" class="font-toggle-btn" aria-pressed="false" title="Italic"><em>I</em></button>
-  <button type="button" id="yAxisBoldBtn" class="font-toggle-btn" aria-pressed="false" title="Bold"><strong>B</strong></button>
-</div>
+  <label>
+    <span data-i18n="axes.yMax">Y-axis maximum</span>
+    <input type="number" id="yAxisMax" step="any" />
+  </label>
+
+  <label>
+    <span data-i18n="axes.yFontFamily">Y-axis font family</span>
+    <select id="yAxisFontFamily">
+      <option value="" data-i18n="common.autoDefault">Auto / default</option>
+      <option value="Arial">Arial</option>
+      <option value="Arial Narrow">Arial Narrow</option>
+      <option value="Aptos">Aptos</option>
+      <option value="Calibri">Calibri</option>
+      <option value="Cambria">Cambria</option>
+      <option value="Century Gothic">Century Gothic</option>
+      <option value="Georgia">Georgia</option>
+      <option value="Helvetica">Helvetica</option>
+      <option value="Segoe UI">Segoe UI</option>
+      <option value="Tahoma">Tahoma</option>
+      <option value="Trebuchet MS">Trebuchet MS</option>
+      <option value="Verdana">Verdana</option>
+      <option value="Gill Sans">Gill Sans</option>
+      <option value="Lucida Sans Unicode">Lucida Sans Unicode</option>
+      <option value="Book Antiqua">Book Antiqua</option>
+      <option value="Garamond">Garamond</option>
+      <option value="Times New Roman">Times New Roman</option>
+      <option value="Courier New">Courier New</option>
+    </select>
+  </label>
+
+  <label>
+    <span data-i18n="axes.yFontSize">Y-axis font size</span>
+    <input type="number" id="yAxisFontSize" min="6" step="1" value="11" />
+  </label>
+
+  <label>
+    <span data-i18n="axes.yFormat">Y-axis format</span>
+    <select id="yAxisFormat">
+      <option value="auto" data-i18n="axes.formatAuto">Auto</option>
+      <option value="decimal" data-i18n="axes.formatDecimal">Decimal</option>
+      <option value="integer" data-i18n="axes.formatInteger">Integer</option>
+      <option value="percent" data-i18n="axes.formatPercent">Percent</option>
+    </select>
+  </label>
+
+  <label>
+    <span data-i18n="axes.decimals">Y-axis decimal places</span>
+    <select id="yAxisDecimals">
+      <option value="auto" data-i18n="axes.decimalsAuto">Auto</option>
+      <option value="0" data-i18n="axes.dp0">0 dp</option>
+      <option value="1" data-i18n="axes.dp1">1 dp</option>
+      <option value="2" data-i18n="axes.dp2">2 dp</option>
+      <option value="3" data-i18n="axes.dp3">3 dp</option>
+    </select>
+  </label>
+
+  <label>
+    <span class="label-with-tooltip">
+
+      <span data-i18n="axes.tickInterval">Y-axis tick interval</span>
+
+      <span class="help-tooltip"
+            tabindex="0"
+            aria-label="Y-axis tick interval help"
+            data-i18n-aria-label="axes.tickAria">
+        ?
+        <span class="help-tooltip-text"
+              data-i18n="axes.tickHelp">
+          Leave blank for automatic spacing. For percentages,
+          enter percentage points: for example, 1 means 1%,
+          and 0.5 means 0.5%.
+        </span>
+      </span>
+
+    </span>
+
+    <input
+      type="number"
+      id="yAxisTickStep"
+      min="0"
+      step="any"
+      placeholder="Auto"
+      data-i18n-placeholder="common.auto"
+    />
+  </label>
+
+  <div class="font-toggle-row">
+    <button type="button"
+            id="yAxisItalicBtn"
+            class="font-toggle-btn"
+            aria-pressed="false"
+            title="Italic"
+            data-i18n-title="common.italic"><em>I</em></button>
+
+    <button type="button"
+            id="yAxisBoldBtn"
+            class="font-toggle-btn"
+            aria-pressed="false"
+            title="Bold"
+            data-i18n-title="common.bold"><strong>B</strong></button>
+  </div>
 
 </details>
 
 </div>
-
 </div>
+
 
 <!-- TAB 5: BASELINE -->
 <div id="tab-baseline" class="tab-panel">
-
 <div class="panel">
-
 
 <h3 style="margin-top:0.8rem;">
   <span class="label-with-tooltip">
-    Baseline data
 
-    <span
-      class="help-tooltip"
-      tabindex="0"
-      aria-label="Baseline data help"
-    >
+    <span data-i18n="baseline.heading">Baseline data</span>
+
+    <span class="help-tooltip"
+          tabindex="0"
+          aria-label="Baseline data help"
+          data-i18n-aria-label="baseline.helpAria">
       ?
-      <span class="help-tooltip-text">
+      <span class="help-tooltip-text"
+            data-i18n="baseline.help">
         A baseline is an initial reference period used
         to understand how your process was performing
         before later observations.
@@ -942,30 +988,33 @@ Y-axis label
         inconvenient signals.
       </span>
     </span>
+
   </span>
 </h3>
 
-
 <label>
-Use first
-<input type="number" id="baselinePoints" min="2" step="1">
-points as baseline<br>
-<i>(leave blank if no baseline period)</i>
-</label>	
+  <span data-i18n="baseline.useFirst">Use first</span>
+  <input type="number" id="baselinePoints" min="2" step="1">
+  <span data-i18n="baseline.pointsAsBaseline">points as baseline</span><br>
+  <i data-i18n="baseline.blankHint">
+    (leave blank if no baseline period)
+  </i>
+</label>
 
 <hr>
 
 <h3 style="margin-top:0.8rem;">
   <span class="label-with-tooltip">
-    Target
 
-    <span
-      class="help-tooltip"
-      tabindex="0"
-      aria-label="How to set a target"
-    >
+    <span data-i18n="baseline.targetHeading">Target</span>
+
+    <span class="help-tooltip"
+          tabindex="0"
+          aria-label="How to set a target"
+          data-i18n-aria-label="baseline.targetHelpAria">
       ?
-      <span class="help-tooltip-text">
+      <span class="help-tooltip-text"
+            data-i18n="baseline.targetHelp">
         Enter the performance level you want to achieve,
         then choose whether values at or above, or at
         or below, that level are good.
@@ -974,33 +1023,41 @@ points as baseline<br>
         control limit.
       </span>
     </span>
+
   </span>
 </h3>
 
-<div class="hint small-hint" style="margin-bottom:0.5rem;">
+<div class="hint small-hint"
+     style="margin-bottom:0.5rem;"
+     data-i18n="baseline.targetHint">
   Enter your target value, then choose whether higher
   or lower values are better.
 </div>
 
 <label>
-Target value
-<input type="number" id="targetValue" step="any">
+  <span data-i18n="baseline.targetValue">Target value</span>
+  <input type="number" id="targetValue" step="any">
 </label>
 
 <label>
-<select id="targetDirection">
-<option value="above">At or above target is good</option>
-<option value="below">At or below target is good</option>
-</select>
+  <select id="targetDirection">
+    <option value="above" data-i18n="baseline.atOrAbove">
+      At or above target is good
+    </option>
+    <option value="below" data-i18n="baseline.atOrBelow">
+      At or below target is good
+    </option>
+  </select>
 </label>
 
 <button type="button" id="targetToggleBtn">
-Hide target line
+  Hide target line
 </button>
 
 </div>
-
 </div>
+
+
 
 <!-- TAB 6: RULES -->
 <div id="tab-rules" class="tab-panel">
