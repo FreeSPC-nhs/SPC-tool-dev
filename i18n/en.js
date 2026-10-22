@@ -171,7 +171,70 @@ window.SimpleSPCi18n.registerLanguage("en", {
 "chart.warning.ambiguousIso": "This column contains numeric slash/hyphen dates. In 'ISO / Excel dates only' mode, ambiguous numeric dates may not be interpreted as dates.",
 
 // DISABLED DATE-FORMAT CONTROL
-"chart.dateFormat.disabled": "Date-format selection is only available when the X-axis type is Date / time."
+
+"chart.dateFormat.disabled": "Date-format selection is only available when the X-axis type is Date / time.",
+
+// SHARED FORMATTING LABELS
+"common.autoDefault": "Auto / default",
+"common.auto": "Auto",
+"common.bold": "Bold",
+"common.italic": "Italic",
+"common.underline": "Underline",
+
+// LABELS PANEL
+"labels.heading": "Chart labels",
+"labels.title": "Chart title",
+"labels.xAxis": "X-axis label",
+"labels.yAxis": "Y-axis label",
+"labels.titleSettings": "Title settings",
+"labels.fontFamily": "Title font family",
+"labels.fontSize": "Title font size",
+"labels.showTitle": "Show chart title",
+
+// AXES PANEL
+"axes.heading": "Axes",
+"axes.xSection": "X axis",
+"axes.ySection": "Y axis",
+"axes.xFontFamily": "X-axis font family",
+"axes.xFontSize": "X-axis font size",
+"axes.yMin": "Y-axis minimum",
+"axes.yMax": "Y-axis maximum",
+"axes.yRangeAria": "Y-axis range help",
+"axes.yRangeHelp": "Leave the minimum and maximum blank to let the chart choose its range automatically.",
+"axes.yFontFamily": "Y-axis font family",
+"axes.yFontSize": "Y-axis font size",
+"axes.yFormat": "Y-axis format",
+"axes.formatAuto": "Auto",
+"axes.formatDecimal": "Decimal",
+"axes.formatInteger": "Integer",
+"axes.formatPercent": "Percent",
+"axes.decimals": "Y-axis decimal places",
+"axes.decimalsAuto": "Auto",
+"axes.dp0": "0 dp",
+"axes.dp1": "1 dp",
+"axes.dp2": "2 dp",
+"axes.dp3": "3 dp",
+"axes.tickInterval": "Y-axis tick interval",
+"axes.tickAria": "Y-axis tick interval help",
+"axes.tickHelp": "Leave blank for automatic spacing. For percentages, enter percentage points: for example, 1 means 1%, and 0.5 means 0.5%.",
+
+// BASELINE PANEL
+"baseline.heading": "Baseline data",
+"baseline.helpAria": "Baseline data help",
+"baseline.help": "A baseline is an initial reference period used to understand how your process was performing before later observations. Enter the number of points to use as your starting reference. SimpleSPC uses these to calculate the initial centre line and, where applicable, control limits. Later observations remain visible for comparison. Leave blank if you do not need a separate initial baseline period. Choose a baseline based on your knowledge of the process, not simply to remove inconvenient signals.",
+"baseline.useFirst": "Use first",
+"baseline.pointsAsBaseline": "points as baseline",
+"baseline.blankHint": "(leave blank if no baseline period)",
+"baseline.targetHeading": "Target",
+"baseline.targetHelpAria": "How to set a target",
+"baseline.targetHelp": "Enter the performance level you want to achieve, then choose whether values at or above, or at or below, that level are good. A target is a performance goal, not a statistical control limit.",
+"baseline.targetHint": "Enter your target value, then choose whether higher or lower values are better.",
+"baseline.targetValue": "Target value",
+"baseline.atOrAbove": "At or above target is good",
+"baseline.atOrBelow": "At or below target is good",
+"baseline.hideTarget": "Hide target line",
+"baseline.showTarget": "Show target line"
+
 
 
 

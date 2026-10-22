@@ -172,7 +172,69 @@ window.SimpleSPCi18n.registerLanguage("fr", {
 "chart.warning.ambiguousIso": "Cette colonne contient des dates numériques avec des barres obliques ou des traits d'union. En mode « Dates ISO / Excel uniquement », les dates numériques ambiguës peuvent ne pas être reconnues comme des dates.",
 
 // CONTRÔLE DU FORMAT DES DATES DÉSACTIVÉ
-"chart.dateFormat.disabled": "Le choix du format des dates est disponible uniquement lorsque l'axe horizontal utilise Date / heure."
+
+"chart.dateFormat.disabled": "Le choix du format des dates est disponible uniquement lorsque l'axe horizontal utilise Date / heure.",
+
+// LIBELLÉS COMMUNS DE MISE EN FORME
+"common.autoDefault": "Auto / par défaut",
+"common.auto": "Auto",
+"common.bold": "Gras",
+"common.italic": "Italique",
+"common.underline": "Souligné",
+
+// PANNEAU LIBELLÉS
+"labels.heading": "Libellés du graphique",
+"labels.title": "Titre du graphique",
+"labels.xAxis": "Libellé de l'axe X",
+"labels.yAxis": "Libellé de l'axe Y",
+"labels.titleSettings": "Paramètres du titre",
+"labels.fontFamily": "Police du titre",
+"labels.fontSize": "Taille de police du titre",
+"labels.showTitle": "Afficher le titre du graphique",
+
+// PANNEAU AXES
+"axes.heading": "Axes",
+"axes.xSection": "Axe X",
+"axes.ySection": "Axe Y",
+"axes.xFontFamily": "Police de l'axe X",
+"axes.xFontSize": "Taille de police de l'axe X",
+"axes.yMin": "Minimum de l'axe Y",
+"axes.yMax": "Maximum de l'axe Y",
+"axes.yRangeAria": "Aide sur l'échelle de l'axe Y",
+"axes.yRangeHelp": "Laissez les valeurs minimale et maximale vides pour que le graphique détermine automatiquement son échelle.",
+"axes.yFontFamily": "Police de l'axe Y",
+"axes.yFontSize": "Taille de police de l'axe Y",
+"axes.yFormat": "Format de l'axe Y",
+"axes.formatAuto": "Auto",
+"axes.formatDecimal": "Décimal",
+"axes.formatInteger": "Entier",
+"axes.formatPercent": "Pourcentage",
+"axes.decimals": "Nombre de décimales de l'axe Y",
+"axes.decimalsAuto": "Auto",
+"axes.dp0": "0 décimale",
+"axes.dp1": "1 décimale",
+"axes.dp2": "2 décimales",
+"axes.dp3": "3 décimales",
+"axes.tickInterval": "Intervalle des graduations de l'axe Y",
+"axes.tickAria": "Aide sur l'intervalle des graduations",
+"axes.tickHelp": "Laissez ce champ vide pour un espacement automatique. Pour les pourcentages, indiquez des points de pourcentage : par exemple, 1 correspond à 1 %, et 0.5 correspond à 0,5 %.",
+
+// PANNEAU PÉRIODE DE RÉFÉRENCE
+"baseline.heading": "Données de référence",
+"baseline.helpAria": "Aide sur la période de référence",
+"baseline.help": "Une période de référence est une période initiale utilisée pour comprendre le fonctionnement du processus avant les observations suivantes. Indiquez le nombre de points à utiliser pour établir cette référence. SimpleSPC utilise ces points pour calculer la ligne centrale initiale et, le cas échéant, les limites de contrôle. Les observations suivantes restent visibles pour permettre la comparaison. Laissez ce champ vide si vous n'avez pas besoin d'une période de référence initiale distincte. Choisissez cette période en fonction de votre connaissance du processus, et non simplement pour éliminer des signaux gênants.",
+"baseline.useFirst": "Utiliser les",
+"baseline.pointsAsBaseline": "premiers points comme période de référence",
+"baseline.blankHint": "(laisser vide si aucune période de référence)",
+"baseline.targetHeading": "Objectif",
+"baseline.targetHelpAria": "Aide pour définir un objectif",
+"baseline.targetHelp": "Indiquez le niveau de performance que vous souhaitez atteindre, puis précisez si les valeurs supérieures ou égales, ou inférieures ou égales, à cet objectif sont souhaitables. Un objectif est un niveau de performance visé, et non une limite de contrôle statistique.",
+"baseline.targetHint": "Indiquez votre valeur cible, puis choisissez si des valeurs plus élevées ou plus faibles sont préférables.",
+"baseline.targetValue": "Valeur cible",
+"baseline.atOrAbove": "Une valeur supérieure ou égale à l'objectif est favorable",
+"baseline.atOrBelow": "Une valeur inférieure ou égale à l'objectif est favorable",
+"baseline.hideTarget": "Masquer la ligne d'objectif",
+"baseline.showTarget": "Afficher la ligne d'objectif"
 
 
 
