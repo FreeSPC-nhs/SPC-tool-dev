@@ -442,7 +442,33 @@ window.SimpleSPCi18n.registerLanguage("fr", {
 "auto.axis.time": "Temps entre événements",
 "auto.axis.timeDays": "Temps entre événements (jours)",
 "auto.axis.cumulative": "Pourcentage cumulé",
-"auto.axis.s": "S"
+"auto.axis.s": "S",
+
+// INTRODUCTIONS DES RÉSUMÉS STATISTIQUES
+"summary.heading": "Résumé",
+"summary.xbarsHeading": "Résumé de la carte X̄–S",
+"summary.chart.run": "Graphique chronologique",
+"summary.chart.xmr": "Carte XmR",
+
+"summary.totalPoints": "Nombre total de points :",
+"summary.totalSubgroups": "Nombre total de sous-groupes :",
+"summary.divided": "Le graphique est divisé en",
+"summary.period": "période",
+"summary.periods": "périodes",
+"summary.basedBaseline": "(selon la période de référence et les éventuels changements de phase).",
+"summary.basedSplits": "(selon les changements de phase définis).",
+
+"summary.rateIntro": "Taux affichés pour",
+"summary.opportunity": "opportunité",
+"summary.opportunities": "opportunités",
+
+"summary.note": "Remarque :",
+"summary.rareNote": "Les cartes d'événements rares présentent souvent des distributions asymétriques ; les limites de contrôle peuvent donc ne pas être symétriques comme celles d'une carte XmR.",
+
+"summary.paretoOccurrences": "Nombre total d'occurrences :",
+"summary.paretoAcross": "réparties dans",
+"summary.paretoCategories": "catégories."
+
 
 
 

@@ -440,7 +440,33 @@ window.SimpleSPCi18n.registerLanguage("en", {
 "auto.axis.time": "Time between events",
 "auto.axis.timeDays": "Time between events (days)",
 "auto.axis.cumulative": "Cumulative %",
-"auto.axis.s": "S"
+"auto.axis.s": "S",
+
+// STATISTICAL SUMMARY INTRODUCTIONS
+"summary.heading": "Summary",
+"summary.xbarsHeading": "X̄–S summary",
+"summary.chart.run": "Run chart",
+"summary.chart.xmr": "XmR chart",
+
+"summary.totalPoints": "Total number of points:",
+"summary.totalSubgroups": "Total number of subgroups:",
+"summary.divided": "The chart is divided into",
+"summary.period": "period",
+"summary.periods": "periods",
+"summary.basedBaseline": "(based on the baseline and any splits).",
+"summary.basedSplits": "(based on your splits).",
+
+"summary.rateIntro": "Rates are displayed per",
+"summary.opportunity": "opportunity",
+"summary.opportunities": "opportunities",
+
+"summary.note": "Note:",
+"summary.rareNote": "Rare-event charts are often skewed, so the control limits may not look symmetrical like an XmR chart.",
+
+"summary.paretoOccurrences": "Total occurrences:",
+"summary.paretoAcross": "across",
+"summary.paretoCategories": "categories."
+
 
 
 
