@@ -406,7 +406,13 @@ window.SimpleSPCi18n.registerLanguage("fr", {
 // LIBELLÉS SUPPLÉMENTAIRES XMR
 "visual.mean": "Moyenne",
 "visual.ucl3sigma": "LSC (3σ)",
-"visual.lcl3sigma": "LIC (3σ)"
+"visual.lcl3sigma": "LIC (3σ)",
+
+// INFOBULLES DU DIAGRAMME DE PARETO
+"visual.pareto.count": "Effectif : {count} ({share} % du total)",
+"visual.pareto.cumulative": "Pourcentage cumulé : {percent} %",
+"visual.pareto.through": "Pourcentage cumulé jusqu'à cette catégorie : {percent} %"
+
 
 
 

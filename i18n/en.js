@@ -405,7 +405,13 @@ window.SimpleSPCi18n.registerLanguage("en", {
 // ADDITIONAL XMR LEGEND LABELS
 "visual.mean": "Mean",
 "visual.ucl3sigma": "UCL (3σ)",
-"visual.lcl3sigma": "LCL (3σ)"
+"visual.lcl3sigma": "LCL (3σ)",
+
+// PARETO HOVER TOOLTIPS
+"visual.pareto.count": "Count: {count} ({share}% of total)",
+"visual.pareto.cumulative": "Cumulative: {percent}%",
+"visual.pareto.through": "Cumulative through this category: {percent}%"
+
 
 
 
