@@ -12027,6 +12027,135 @@ function analyzeRareChart({ chartType, labels, values, cl, ucl, lcl }) {
   return analyzeAttributeChart({ chartType, labels, values, cl, ucl, lcl });
 }
 
+
+/*
+ * Statistical summary translation — introductory text only.
+ *
+ * Each generated span stores a translation key.
+ * Its text can then change without regenerating the
+ * summary, reanalysing the data or replacing numbers.
+ */
+function summaryUiText(key, englishFallback) {
+  return (
+    `<span data-summary-i18n="${key}">` +
+    chartPanelText(key, englishFallback) +
+    `</span>`
+  );
+}
+
+
+// Build a translated summary heading.
+function summaryHeading(chartType, englishChartName) {
+  const specialName =
+    chartType === "run" || chartType === "xmr";
+
+  const chartKey = specialName
+    ? "summary.chart." + chartType
+    : "explainer.chart." + chartType;
+
+  return (
+    `<h3>` +
+    summaryUiText("summary.heading", "Summary") +
+    ` (` +
+    summaryUiText(chartKey, englishChartName) +
+    `)</h3>`
+  );
+}
+
+
+// Build the introductory observation and period counts.
+//
+// basis:
+// "baseline" = reference period and splits
+// "splits"   = splits only, when more than one period
+function summaryOpening(
+  totalPoints,
+  periodCount,
+  options = {}
+) {
+  const countType =
+    options.countType === "subgroups"
+      ? "subgroups"
+      : "points";
+
+  const basis = options.basis || "baseline";
+
+  let html = "<p>";
+
+  if (Number.isFinite(totalPoints)) {
+    const labelKey = countType === "subgroups"
+      ? "summary.totalSubgroups"
+      : "summary.totalPoints";
+
+    const fallback = countType === "subgroups"
+      ? "Total number of subgroups:"
+      : "Total number of points:";
+
+    html += summaryUiText(labelKey, fallback);
+    html += ` <strong>${totalPoints}</strong>. `;
+  }
+
+  html += summaryUiText(
+    "summary.divided",
+    "The chart is divided into"
+  );
+
+  html += ` <strong>${periodCount}</strong> `;
+
+  html += periodCount === 1
+    ? summaryUiText("summary.period", "period")
+    : summaryUiText("summary.periods", "periods");
+
+  if (basis === "baseline") {
+    html += " " + summaryUiText(
+      "summary.basedBaseline",
+      "(based on the baseline and any splits)."
+    );
+
+  } else if (periodCount > 1) {
+    html += " " + summaryUiText(
+      "summary.basedSplits",
+      "(based on your splits)."
+    );
+
+  } else {
+    html += ".";
+  }
+
+  html += "</p>";
+
+  return html;
+}
+
+
+// Refresh existing summary text when language changes.
+//
+// This updates only marked spans. All numerical values,
+// user labels, analyses and surrounding HTML are preserved.
+function refreshSummaryLanguage() {
+  if (!summaryDiv) return;
+
+  summaryDiv
+    .querySelectorAll("[data-summary-i18n]")
+    .forEach(element => {
+      const key =
+        element.getAttribute("data-summary-i18n");
+
+      if (key) {
+        element.textContent = chartPanelText(
+          key,
+          element.textContent
+        );
+      }
+    });
+}
+
+document.addEventListener(
+  "simplespc:languagechange",
+  refreshSummaryLanguage
+);
+
+
 function renderAttributeMultiSummary(segmentAnalyses, totalPoints) {
   if (!summaryDiv) return;
 
@@ -12068,27 +12197,45 @@ function renderAttributeMultiSummary(segmentAnalyses, totalPoints) {
         ? "ū"
         : "CL";
 
-  let html =
-    `<h3>Summary (${chartName})</h3>`;
+  
+  let html = summaryHeading(
+    chartType,
+    chartName
+  );
 
-  html +=
-    `<p>Total number of points: <strong>${totalPoints}</strong>. `;
+  html += summaryOpening(
+    totalPoints,
+    segmentAnalyses.length
+  );
 
-  html +=
-    `The chart is divided into <strong>${segmentAnalyses.length}</strong> ` +
-    `period${segmentAnalyses.length !== 1 ? "s" : ""} `;
 
-  html +=
-    `(based on the baseline and any splits).</p>`;
-
+  
   if (isUFamilyChartType(chartType)) {
-    const multiplier =
-      getURateMultiplier();
+    const multiplier = getURateMultiplier();
+
+    html += "<p>";
+
+    html += summaryUiText(
+      "summary.rateIntro",
+      "Rates are displayed per"
+    );
 
     html +=
-      `<p>Rates are displayed per <strong>${formatURateMultiplier(multiplier)}</strong> ` +
-      `${multiplier === 1 ? "opportunity" : "opportunities"}.</p>`;
+      ` <strong>${formatURateMultiplier(multiplier)}</strong> `;
+
+    html += multiplier === 1
+      ? summaryUiText(
+          "summary.opportunity",
+          "opportunity"
+        )
+      : summaryUiText(
+          "summary.opportunities",
+          "opportunities"
+        );
+
+    html += ".</p>";
   }
+
 
   segmentAnalyses.forEach((a, idx) => {
     html +=
@@ -12480,7 +12627,7 @@ function renderAttributeSummary(a) {
     ? "No clear signal of change (routine ups and downs)."
     : "A signal of change is present (worth investigating).";
 
-  let html = `<h3>${chartName} summary</h3>`;
+    let html = summaryHeading(a.chartType, chartName);
   html += `<ul>`;
   html += `<li><strong>What this suggests:</strong> ${stableLine}</li>`;
 
@@ -12541,20 +12688,35 @@ function renderRareChartSummary(aOrSegments, totalPointsMaybe) {
       ? (typeof formatNumber === "function" ? formatNumber(v, 3) : Number(v).toFixed(3))
       : "—";
 
-  // XmR-style header
-  let html = `<h3>Summary (${chartName})</h3>`;
+  
+  // Summary introduction
+  let html = summaryHeading(
+    chartType,
+    chartName
+  );
 
-  if (Number.isFinite(totalPoints)) {
-    html += `<p>Total number of points: <strong>${totalPoints}</strong>. `;
-    html += `The chart is divided into <strong>${segments.length}</strong> period${segments.length !== 1 ? "s" : ""} `;
-    html += `(based on the baseline and any splits).</p>`;
-  } else {
-    html += `<p>The chart is divided into <strong>${segments.length}</strong> period${segments.length !== 1 ? "s" : ""} `;
-    html += `(based on the baseline and any splits).</p>`;
-  }
+  html += summaryOpening(
+    totalPoints,
+    segments.length
+  );
 
-  // Rare-event note (keep it plain-English + accurate)
-  html += `<p><strong>Note:</strong> Rare-event charts are often skewed, so the control limits may not look symmetrical like an XmR chart.</p>`;
+  // Statistical caution about rare-event distributions.
+  html += "<p><strong>";
+
+  html += summaryUiText(
+    "summary.note",
+    "Note:"
+  );
+
+  html += "</strong> ";
+
+  html += summaryUiText(
+    "summary.rareNote",
+    "Rare-event charts are often skewed, so the control limits may not look symmetrical like an XmR chart."
+  );
+
+  html += "</p>";
+
 
   segments.forEach((a, idx) => {
     html += `<div class="pdf-avoid-break">`;
@@ -12718,11 +12880,18 @@ function updateRunSummary(points, medianIgnored, ruleHitsIgnored, baselineCountU
     return ranges;
   }
 
-  let html = `<h3>Summary (Run chart)</h3>`;
-  html += `<p>Total number of points: <strong>${n}</strong>. `;
-  html += `The chart is divided into <strong>${segments.length}</strong> period${segments.length !== 1 ? "s" : ""}`;
-  html += segments.length > 1 ? ` (based on your splits).` : `.`;
-  html += `</p>`;
+  
+  let html = summaryHeading(
+    "run",
+    "Run chart"
+  );
+
+  html += summaryOpening(
+    n,
+    segments.length,
+    { basis: "splits" }
+  );
+
 
   segments.forEach((seg, idx) => {
     const segPoints = points.slice(seg.start, seg.end + 1);
@@ -12860,10 +13029,17 @@ function updateXmRMultiSummary(segments, totalPoints) {
 
   const { shiftLength, trendLength } = rs;
 
-  let html = `<h3>Summary (XmR chart)</h3>`;
-  html += `<p>Total number of points: <strong>${totalPoints}</strong>. `;
-  html += `The chart is divided into <strong>${segments.length}</strong> period${segments.length > 1 ? "s" : ""} `;
-  html += `(based on the baseline and any splits).</p>`;
+  
+  let html = summaryHeading(
+    "xmr",
+    "XmR chart"
+  );
+
+  html += summaryOpening(
+    totalPoints,
+    segments.length
+  );
+
 
   // For capability badge (last period only)
   let lastPeriodSignals = [];
@@ -13371,16 +13547,22 @@ function renderXbarSSummary(
           );
     };
 
-  let html =
-    `<h3>X̄–S summary</h3>`;
+  
+  let html = "<h3>";
 
-  html +=
-    `<p>Total number of subgroups: ` +
-    `<strong>${totalSubgroups}</strong>. ` +
-    `The chart is divided into ` +
-    `<strong>${periods.length}</strong> ` +
-    `period${periods.length === 1 ? "" : "s"} ` +
-    `(based on the baseline and any splits).</p>`;
+  html += summaryUiText(
+    "summary.xbarsHeading",
+    "X̄–S summary"
+  );
+
+  html += "</h3>";
+
+  html += summaryOpening(
+    totalSubgroups,
+    periods.length,
+    { countType: "subgroups" }
+  );
+
 
   periods.forEach(
     (
@@ -15874,15 +16056,35 @@ title: {
     result.items[0];
 
 
-  let html =
-    `<h3>Summary (Pareto chart)</h3>`;
+  
+  let html = summaryHeading(
+    "pareto",
+    "Pareto chart"
+  );
 
-  html +=
-    `<p>` +
-    `Total occurrences: ` +
-    `<strong>${result.total}</strong> across ` +
-    `<strong>${result.categoryCount}</strong> categories.` +
-    `</p>`;
+  html += "<p>";
+
+  html += summaryUiText(
+    "summary.paretoOccurrences",
+    "Total occurrences:"
+  );
+
+  html += ` <strong>${result.total}</strong> `;
+
+  html += summaryUiText(
+    "summary.paretoAcross",
+    "across"
+  );
+
+  html += ` <strong>${result.categoryCount}</strong> `;
+
+  html += summaryUiText(
+    "summary.paretoCategories",
+    "categories."
+  );
+
+  html += "</p>";
+
 
   html +=
     `<ul>`;
