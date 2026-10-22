@@ -797,12 +797,17 @@ function chartDisplayLabel(originalLabel) {
     });
   }
 
+  
   const keys = {
     "Value": "visual.value",
     "Centre line": "visual.centreLine",
+    "Mean": "visual.mean",
     "Median": "visual.median",
     "UCL": "visual.ucl",
     "LCL": "visual.lcl",
+    "UCL (3σ)": "visual.ucl3sigma",
+    "LCL (3σ)": "visual.lcl3sigma",
+
     "Target": "visual.target",
     "X̄": "visual.xbar",
     "Count": "visual.count",
@@ -820,6 +825,54 @@ function chartDisplayLabel(originalLabel) {
 
   // Preserve unknown labels, including user-supplied text.
   return key ? chartPanelText(key, raw) : raw;
+}
+
+
+/*
+ * Translate ordinary Chart.js tooltip dataset names.
+ *
+ * Preserve Chart.js's original tooltip formatting,
+ * values and behaviour. Only translate recognised
+ * dataset-label prefixes.
+ *
+ * Charts with their own specialised tooltip callbacks
+ * (such as MR exclusions and Pareto) keep those callbacks.
+ */
+if (
+  typeof Chart !== "undefined" &&
+  typeof Chart.defaults?.plugins?.tooltip?.callbacks?.label === "function"
+) {
+  const originalTooltipLabel =
+    Chart.defaults.plugins.tooltip.callbacks.label;
+
+  Chart.defaults.plugins.tooltip.callbacks.label =
+    function (context) {
+
+      // Get the original tooltip text from Chart.js.
+      const originalText =
+        originalTooltipLabel.call(this, context);
+
+      const internalLabel = context.dataset?.label;
+
+      if (
+        typeof originalText !== "string" ||
+        typeof internalLabel !== "string"
+      ) {
+        return originalText;
+      }
+
+      // Only replace the ordinary "Dataset: value" prefix.
+      // Preserve custom tooltip strings and numeric formatting.
+      if (!originalText.startsWith(internalLabel + ":")) {
+        return originalText;
+      }
+
+      const displayLabel =
+        chartDisplayLabel(internalLabel);
+
+      return displayLabel +
+        originalText.slice(internalLabel.length);
+    };
 }
 
 
