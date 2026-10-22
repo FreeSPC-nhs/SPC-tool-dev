@@ -410,7 +410,38 @@ window.SimpleSPCi18n.registerLanguage("en", {
 // PARETO HOVER TOOLTIPS
 "visual.pareto.count": "Count: {count} ({share}% of total)",
 "visual.pareto.cumulative": "Cumulative: {percent}%",
-"visual.pareto.through": "Cumulative through this category: {percent}%"
+"visual.pareto.through": "Cumulative through this category: {percent}%",
+
+// AUTOMATIC CHART TITLES
+"auto.title.run": "Run Chart",
+"auto.title.xmr": "X Chart",
+"auto.title.c": "C chart",
+"auto.title.p": "P chart",
+"auto.title.pprime": "P′ chart",
+"auto.title.u": "U chart",
+"auto.title.uprime": "U′ chart",
+"auto.title.t": "T chart",
+"auto.title.tGaps": "T chart (gaps)",
+"auto.title.g": "G chart",
+"auto.title.pareto": "Pareto chart",
+"auto.title.xbar": "X̄ chart",
+"auto.title.s": "S chart",
+
+// AUTOMATIC AXIS LABELS
+"auto.axis.date": "Date",
+"auto.axis.value": "Value",
+"auto.axis.category": "Category",
+"auto.axis.count": "Count",
+"auto.axis.subgroup": "Subgroup",
+"auto.axis.proportion": "Proportion / %",
+"auto.axis.rate": "Rate per opportunity",
+"auto.axis.rateN": "Rate per {n} opportunities",
+"auto.axis.opportunities": "Opportunities between events",
+"auto.axis.time": "Time between events",
+"auto.axis.timeDays": "Time between events (days)",
+"auto.axis.cumulative": "Cumulative %",
+"auto.axis.s": "S"
+
 
 
 

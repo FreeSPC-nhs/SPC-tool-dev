@@ -411,7 +411,39 @@ window.SimpleSPCi18n.registerLanguage("fr", {
 // INFOBULLES DU DIAGRAMME DE PARETO
 "visual.pareto.count": "Effectif : {count} ({share} % du total)",
 "visual.pareto.cumulative": "Pourcentage cumulé : {percent} %",
-"visual.pareto.through": "Pourcentage cumulé jusqu'à cette catégorie : {percent} %"
+
+"visual.pareto.through": "Pourcentage cumulé jusqu'à cette catégorie : {percent} %",
+
+// TITRES AUTOMATIQUES DES CARTES
+"auto.title.run": "Graphique chronologique",
+"auto.title.xmr": "Carte X (valeurs individuelles)",
+"auto.title.c": "Carte C",
+"auto.title.p": "Carte P",
+"auto.title.pprime": "Carte P′",
+"auto.title.u": "Carte U",
+"auto.title.uprime": "Carte U′",
+"auto.title.t": "Carte T",
+"auto.title.tGaps": "Carte T (intervalles)",
+"auto.title.g": "Carte G",
+"auto.title.pareto": "Diagramme de Pareto",
+"auto.title.xbar": "Carte X̄",
+"auto.title.s": "Carte S",
+
+// LIBELLÉS AUTOMATIQUES DES AXES
+"auto.axis.date": "Date",
+"auto.axis.value": "Valeur",
+"auto.axis.category": "Catégorie",
+"auto.axis.count": "Effectif",
+"auto.axis.subgroup": "Sous-groupe",
+"auto.axis.proportion": "Proportion / %",
+"auto.axis.rate": "Taux par opportunité",
+"auto.axis.rateN": "Taux pour {n} opportunités",
+"auto.axis.opportunities": "Opportunités entre événements",
+"auto.axis.time": "Temps entre événements",
+"auto.axis.timeDays": "Temps entre événements (jours)",
+"auto.axis.cumulative": "Pourcentage cumulé",
+"auto.axis.s": "S"
+
 
 
 
