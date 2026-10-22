@@ -15539,54 +15539,65 @@ legend: {
 },
 
 
-            tooltip: {
-              callbacks: {
-                label(context) {
-                  const i =
-                    context.dataIndex;
+            
+tooltip: {
+  callbacks: {
+    label(context) {
+      const i = context.dataIndex;
+      const item = result.items[i];
 
-                  const item =
-                    result.items[i];
+      if (!item) {
+        return "";
+      }
 
-                  if (!item) {
-                    return "";
-                  }
+      // Cumulative percentage dataset
+      if (context.dataset.yAxisID === "y1") {
+        const percent =
+          item.cumulativePct.toFixed(1);
 
-                  if (
-                    context.dataset
-                      .yAxisID ===
-                    "y1"
-                  ) {
-                    return (
-                      `Cumulative: ` +
-                      `${item.cumulativePct.toFixed(1)}%`
-                    );
-                  }
+        return chartPanelText(
+          "visual.pareto.cumulative",
+          `Cumulative: ${percent}%`,
+          { percent }
+        );
+      }
 
-                  return (
-                    `Count: ${item.count} ` +
-                    `(${(item.share * 100).toFixed(1)}% of total)`
-                  );
-                },
+      // Count dataset
+      const share =
+        (item.share * 100).toFixed(1);
 
-                afterBody(items) {
-                  const i =
-                    items?.[0]
-                      ?.dataIndex;
+      return chartPanelText(
+        "visual.pareto.count",
+        `Count: ${item.count} (${share}% of total)`,
+        {
+          count: item.count,
+          share
+        }
+      );
+    },
 
-                  const item =
-                    result.items[i];
+    afterBody(items) {
+      const i = items?.[0]?.dataIndex;
+      const item = result.items[i];
 
-                  if (!item) {
-                    return [];
-                  }
+      if (!item) {
+        return [];
+      }
 
-                  return [
-                    `Cumulative through this category: ${item.cumulativePct.toFixed(1)}%`
-                  ];
-                }
-              }
-            },
+      const percent =
+        item.cumulativePct.toFixed(1);
+
+      return [
+        chartPanelText(
+          "visual.pareto.through",
+          `Cumulative through this category: ${percent}%`,
+          { percent }
+        )
+      ];
+    }
+  }
+},
+
 
             annotation: {
               annotations: {
