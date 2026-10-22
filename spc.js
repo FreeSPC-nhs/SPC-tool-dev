@@ -2513,10 +2513,21 @@ document.querySelectorAll("input[name='mrDisplayMode']").forEach(r => {
 const targetToggleBtn = document.getElementById("targetToggleBtn");
 let targetEnabled = true;
 
+
 function updateTargetToggleBtn() {
   if (!targetToggleBtn) return;
-  targetToggleBtn.textContent = targetEnabled ? "Hide target line" : "Show target line";
+
+  targetToggleBtn.textContent = targetEnabled
+    ? chartPanelText("baseline.hideTarget", "Hide target line")
+    : chartPanelText("baseline.showTarget", "Show target line");
 }
+
+// Update the button text when the language changes.
+// This does not alter the current target or chart.
+document.addEventListener(
+  "simplespc:languagechange",
+  updateTargetToggleBtn
+);
 
 function getChartTitleSettings() {
   const size = Number(chartTitleFontSizeInput?.value);
