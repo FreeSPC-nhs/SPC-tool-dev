@@ -402,7 +402,10 @@ window.SimpleSPCi18n.registerLanguage("en", {
 "visual.mrExcludedTooltip": "Not used in the variation estimate: {value} (adjacent to an excluded point)",
 "visual.mrScreenedTooltip": "Not used in the variation estimate: {value} (screened as an unusually large moving range)"
 
-
+// ADDITIONAL XMR LEGEND LABELS
+"visual.mean": "Mean",
+"visual.ucl3sigma": "UCL (3σ)",
+"visual.lcl3sigma": "LCL (3σ)"
 
 
 

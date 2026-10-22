@@ -403,7 +403,10 @@ window.SimpleSPCi18n.registerLanguage("fr", {
 "visual.mrExcludedTooltip": "Non utilisée pour estimer la variation : {value} (adjacente à un point exclu)",
 "visual.mrScreenedTooltip": "Non utilisée pour estimer la variation : {value} (étendue mobile exceptionnellement grande, écartée du calcul)"
 
-
+// LIBELLÉS SUPPLÉMENTAIRES XMR
+"visual.mean": "Moyenne",
+"visual.ucl3sigma": "LSC (3σ)",
+"visual.lcl3sigma": "LIC (3σ)"
 
 
 
