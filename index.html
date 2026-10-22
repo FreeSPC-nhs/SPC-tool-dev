@@ -1059,246 +1059,324 @@
 
 
 
+
 <!-- TAB 6: RULES -->
 <div id="tab-rules" class="tab-panel">
-
 <div class="panel">
 
-<div style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem;">
-  <strong>Detection rules</strong>
+  <div style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem;">
+    <strong data-i18n="rules.heading">Detection rules</strong>
 
-  <button id="ruleExplainerBtn" type="button" class="help-btn">
-    Rule explainer
-  </button>
-</div>
+    <button id="ruleExplainerBtn"
+            type="button"
+            class="help-btn"
+            data-i18n="rules.explainer">
+      Rule explainer
+    </button>
+  </div>
 
-<div style="margin-top:0.75rem;">
-  <label>
-  <span class="label-with-tooltip">
-    Shift (run) length
-
-    <span class="help-tooltip" tabindex="0" aria-label="Shift rule help">
-      ?
-      <span class="help-tooltip-text">
-        Number of consecutive points on the same side of the centre line
-        required to flag a shift. Default: 8.
-      </span>
-    </span>
-  </span>
-
-  <input
-    type="number"
-    id="shiftRulePoints"
-    min="3"
-    step="1"
-    value="8"
-    style="width:6rem;"
-  />
-</label>
-</div>
-
-<div>
-  <label>
-  <span class="label-with-tooltip">
-    Trend length
-
-    <span class="help-tooltip" tabindex="0" aria-label="Trend rule help">
-      ?
-      <span class="help-tooltip-text">
-        Number of consecutive increases or decreases required to flag a trend.
-        Default: 6. This setting is only used when the trend rule is available
-        and enabled.
-      </span>
-    </span>
-  </span>
-
-  <input
-    type="number"
-    id="trendRulePoints"
-    min="3"
-    step="1"
-    value="6"
-    style="width:6rem;"
-  />
-</label>
-</div>
-
-<hr />
-
-<details id="advancedRulesDetails" style="margin-top:0.25rem;">
-  <summary>Advanced detection options</summary>
-
-  <div class="panel" style="margin-top:0.25rem; padding:0.25rem;">
-    <div id="advancedTrendRow" style="display:none; margin-top:0;">
-      <label class="radio-pill" style="display:inline-flex; gap:0.5rem; align-items:center;">
-  <input type="checkbox" id="enableAdvancedTrend" />
-
-  <span class="label-with-tooltip">
-    Enable trend rule
-
-    <span class="help-tooltip" tabindex="0" aria-label="Trend rule help">
-      ?
-      <span class="help-tooltip-text">
-        Looks for a sustained sequence of consecutive increases or decreases.
-        The required length is set by the Trend length control above.
-      </span>
-    </span>
-  </span>
-</label>
-
-<div class="hint small-hint" style="margin-top:0.15rem;">
-  Advanced option — may increase false alerts.
-</div>
-    </div>
-
-    <div id="rareRulesRow" style="display:none; margin-top:0.25rem;">
-     <label class="radio-pill" style="display:inline-flex; gap:0.5rem; align-items:center;">
-  <input type="checkbox" id="enableRareRunTrend" />
-
-  <span class="label-with-tooltip">
-    Run &amp; trend rules for T/G charts
-
-    <span class="help-tooltip" tabindex="0" aria-label="Rare event rules help">
-      ?
-      <span class="help-tooltip-text">
-        Enables run and trend detection on T and G rare-event charts.
-        These chart types are naturally irregular, so pattern rules should be used cautiously.
-      </span>
-    </span>
-  </span>
-</label>
-
-<div class="hint small-hint" style="margin-top:0.25rem;">
-  Advanced option — rare-event charts can produce false run/trend signals.
-</div>
-    </div>
-
-    <div id="lclClampRow" style="display:none; margin-top:0.25rem;">
-      <label class="radio-pill" style="display:inline-flex; gap:0.5rem; align-items:center;">
-  <input type="checkbox" id="clampLclAtZero" />
-
-  <span class="label-with-tooltip">
-    Clamp LCL at zero
-
-    <span class="help-tooltip" tabindex="0" aria-label="Clamp LCL help">
-      ?
-      <span class="help-tooltip-text">
-        If the calculated lower control limit is below zero, display the LCL at zero instead.
-        Useful for measures such as counts or times that cannot be negative.
-      </span>
-    </span>
-  </span>
-</label>
-    </div>
-
-    <div id="zoneRulesSection" style="display:none; margin-top:0.25rem;">
-      <div class="hint small-hint" style="margin-top:0;">
-        Optional zone rules (off by default). Use only on chart types where they are supported.
-      </div>
-
-      <label class="radio-pill" style="display:inline-flex; gap:0.5rem; align-items:center; margin-top:0.25rem;">
-        <input type="checkbox" id="ruleTwoOfThreeOuterThird" />
-        Apply “2 out of 3 in the outer third” rule
-      </label>
-
-      <label class="radio-pill" style="display:inline-flex; gap:0.5rem; align-items:center; margin-top:0.25rem;">
-        <input type="checkbox" id="ruleFourOfFiveOneSigma" />
-        Apply “4 out of 5 beyond 1-sigma” rule
-      </label>
-
-      <div id="advancedContinuousCaution" class="hint small-hint" style="display:none; margin-top:0.25rem;">
-        Additional pattern rules can increase false alerts on XmR / individuals charts. They are off by default and should only be used when you understand the trade-off.
-      </div>
-    </div>
-
-    <div
-  id="mrScreeningRow"
-  style="
-    display:none;
-    margin-top:0.9rem;
-    padding-top:0.75rem;
-    border-top:1px solid #d6dde3;
-  "
->
-  <div class="hint small-hint" style="margin-top:0;">
-    <strong>
+  <div style="margin-top:0.75rem;">
+    <label>
       <span class="label-with-tooltip">
-        XmR limit calculation
+        <span data-i18n="rules.shift">Shift (run) length</span>
 
-        <span
-          class="help-tooltip"
-          tabindex="0"
-          aria-label="XmR moving range screening help"
-        >
+        <span class="help-tooltip"
+              tabindex="0"
+              aria-label="Shift rule help"
+              data-i18n-aria-label="rules.shiftAria">
           ?
-          <span class="help-tooltip-text">
-            A very large jump between two consecutive points can make XmR
-            control limits too wide. When this is on, SimpleSPC keeps all data
-            points and moving ranges on the chart, but does not use unusually
-            large moving ranges to estimate routine variation. Uses the Nelson
-            method: moving ranges greater than 3.5 times the initial average
-            moving range are excluded from the variation estimate.
+          <span class="help-tooltip-text"
+                data-i18n="rules.shiftHelp">
+            Number of consecutive points on the same side
+            of the centre line required to flag a shift.
+            Default: 8.
           </span>
         </span>
       </span>
-    </strong>
-  </div>
 
-  <div
-    style="
-      display:grid;
-      grid-template-columns:auto minmax(0, 1fr);
-      column-gap:0.5rem;
-      align-items:start;
-      margin-top:0.45rem;
-      width:100%;
-      box-sizing:border-box;
-    "
-  >
-    <input
-      type="checkbox"
-      id="screenLargeMRs"
-      checked
-      style="margin:0.15rem 0 0 0;"
-    />
-
-    <label
-      for="screenLargeMRs"
-      style="
-        display:block;
-        margin:0;
-        padding:0;
-        width:auto;
-        min-width:0;
-        white-space:normal;
-        line-height:1.35;
-      "
-    >
-      Screen unusually large jumps when setting limits
+      <input type="number"
+             id="shiftRulePoints"
+             min="3"
+             step="1"
+             value="8"
+             style="width:6rem;" />
     </label>
   </div>
-</div>
 
-    <div id="conservativeRulesMessage" class="hint small-hint" style="display:none; margin-top:0.75rem;">
-      This chart uses a conservative rule set designed for reliable interpretation.
-    </div>
+  <div>
+    <label>
+      <span class="label-with-tooltip">
+        <span data-i18n="rules.trend">Trend length</span>
+
+        <span class="help-tooltip"
+              tabindex="0"
+              aria-label="Trend rule help"
+              data-i18n-aria-label="rules.trendAria">
+          ?
+          <span class="help-tooltip-text"
+                data-i18n="rules.trendHelp">
+            Number of consecutive increases or decreases
+            required to flag a trend. Default: 6.
+            This setting is only used when the trend rule
+            is available and enabled.
+          </span>
+        </span>
+      </span>
+
+      <input type="number"
+             id="trendRulePoints"
+             min="3"
+             step="1"
+             value="6"
+             style="width:6rem;" />
+    </label>
   </div>
-</details>
 
-<hr />
+  <hr />
 
-<label class="radio-pill" style="display:inline-flex; gap:0.5rem; align-items:center;">
-  <input type="checkbox" id="flagSpecialCauseOnChart" checked />
-  Flag special-cause signals on the chart
-</label>
+  <details id="advancedRulesDetails" style="margin-top:0.25rem;">
 
-	<label class="radio-pill" style="display:inline-flex; gap:0.5rem; align-items:center;">
-  	<input type="checkbox" id="colourBlindMode" />
-  	Colour-blind friendly colours and symbols
-	</label>
+    <summary data-i18n="rules.advanced">
+      Advanced detection options
+    </summary>
+
+    <div class="panel" style="margin-top:0.25rem; padding:0.25rem;">
+
+      <div id="advancedTrendRow"
+           style="display:none; margin-top:0;">
+
+        <label class="radio-pill"
+               style="display:inline-flex; gap:0.5rem; align-items:center;">
+          <input type="checkbox" id="enableAdvancedTrend" />
+
+          <span class="label-with-tooltip">
+            <span data-i18n="rules.enableTrend">
+              Enable trend rule
+            </span>
+
+            <span class="help-tooltip"
+                  tabindex="0"
+                  aria-label="Trend rule help"
+                  data-i18n-aria-label="rules.trendAria">
+              ?
+              <span class="help-tooltip-text"
+                    data-i18n="rules.enableTrendHelp">
+                Looks for a sustained sequence of consecutive
+                increases or decreases. The required length
+                is set by the Trend length control above.
+              </span>
+            </span>
+          </span>
+        </label>
+
+        <div class="hint small-hint"
+             style="margin-top:0.15rem;"
+             data-i18n="rules.advancedCaution">
+          Advanced option — may increase false alerts.
+        </div>
+      </div>
+
+      <div id="rareRulesRow"
+           style="display:none; margin-top:0.25rem;">
+
+        <label class="radio-pill"
+               style="display:inline-flex; gap:0.5rem; align-items:center;">
+          <input type="checkbox" id="enableRareRunTrend" />
+
+          <span class="label-with-tooltip">
+            <span data-i18n="rules.rareLabel">
+              Run &amp; trend rules for T/G charts
+            </span>
+
+            <span class="help-tooltip"
+                  tabindex="0"
+                  aria-label="Rare event rules help"
+                  data-i18n-aria-label="rules.rareAria">
+              ?
+              <span class="help-tooltip-text"
+                    data-i18n="rules.rareHelp">
+                Enables run and trend detection on T and G
+                rare-event charts. These chart types are
+                naturally irregular, so pattern rules
+                should be used cautiously.
+              </span>
+            </span>
+          </span>
+        </label>
+
+        <div class="hint small-hint"
+             style="margin-top:0.25rem;"
+             data-i18n="rules.rareCaution">
+          Advanced option — rare-event charts can produce
+          false run/trend signals.
+        </div>
+      </div>
+
+      <div id="lclClampRow"
+           style="display:none; margin-top:0.25rem;">
+
+        <label class="radio-pill"
+               style="display:inline-flex; gap:0.5rem; align-items:center;">
+          <input type="checkbox" id="clampLclAtZero" />
+
+          <span class="label-with-tooltip">
+            <span data-i18n="rules.clamp">
+              Clamp LCL at zero
+            </span>
+
+            <span class="help-tooltip"
+                  tabindex="0"
+                  aria-label="Clamp LCL help"
+                  data-i18n-aria-label="rules.clampAria">
+              ?
+              <span class="help-tooltip-text"
+                    data-i18n="rules.clampHelp">
+                If the calculated lower control limit is
+                below zero, display the LCL at zero instead.
+                Useful for measures such as counts or times
+                that cannot be negative.
+              </span>
+            </span>
+          </span>
+        </label>
+      </div>
+
+      <div id="zoneRulesSection"
+           style="display:none; margin-top:0.25rem;">
+
+        <div class="hint small-hint"
+             style="margin-top:0;"
+             data-i18n="rules.zoneIntro">
+          Optional zone rules (off by default).
+          Use only on chart types where they are supported.
+        </div>
+
+        <label class="radio-pill"
+               style="display:inline-flex; gap:0.5rem; align-items:center; margin-top:0.25rem;">
+          <input type="checkbox" id="ruleTwoOfThreeOuterThird" />
+          <span data-i18n="rules.zone23">
+            Apply “2 out of 3 in the outer third” rule
+          </span>
+        </label>
+
+        <label class="radio-pill"
+               style="display:inline-flex; gap:0.5rem; align-items:center; margin-top:0.25rem;">
+          <input type="checkbox" id="ruleFourOfFiveOneSigma" />
+          <span data-i18n="rules.zone45">
+            Apply “4 out of 5 beyond 1-sigma” rule
+          </span>
+        </label>
+
+        <div id="advancedContinuousCaution"
+             class="hint small-hint"
+             style="display:none; margin-top:0.25rem;"
+             data-i18n="rules.zoneCaution">
+          Additional pattern rules can increase false alerts
+          on XmR / individuals charts. They are off by default
+          and should only be used when you understand the trade-off.
+        </div>
+      </div>
+
+      <div id="mrScreeningRow"
+           style="
+             display:none;
+             margin-top:0.9rem;
+             padding-top:0.75rem;
+             border-top:1px solid #d6dde3;
+           ">
+
+        <div class="hint small-hint" style="margin-top:0;">
+          <strong>
+            <span class="label-with-tooltip">
+              <span data-i18n="rules.mrHeading">
+                XmR limit calculation
+              </span>
+
+              <span class="help-tooltip"
+                    tabindex="0"
+                    aria-label="XmR moving range screening help"
+                    data-i18n-aria-label="rules.mrAria">
+                ?
+                <span class="help-tooltip-text"
+                      data-i18n="rules.mrHelp">
+                  A very large jump between two consecutive
+                  points can make XmR control limits too wide.
+                  When this is on, SimpleSPC keeps all data
+                  points and moving ranges on the chart, but
+                  does not use unusually large moving ranges
+                  to estimate routine variation.
+
+                  Uses the Nelson method: moving ranges greater
+                  than 3.5 times the initial average moving
+                  range are excluded from the variation estimate.
+                </span>
+              </span>
+            </span>
+          </strong>
+        </div>
+
+        <div style="
+          display:grid;
+          grid-template-columns:auto minmax(0, 1fr);
+          column-gap:0.5rem;
+          align-items:start;
+          margin-top:0.45rem;
+          width:100%;
+          box-sizing:border-box;
+        ">
+          <input type="checkbox"
+                 id="screenLargeMRs"
+                 checked
+                 style="margin:0.15rem 0 0 0;" />
+
+          <label for="screenLargeMRs"
+                 style="
+                   display:block;
+                   margin:0;
+                   padding:0;
+                   width:auto;
+                   min-width:0;
+                   white-space:normal;
+                   line-height:1.35;
+                 "
+                 data-i18n="rules.mrScreen">
+            Screen unusually large jumps when setting limits
+          </label>
+        </div>
+      </div>
+
+      <div id="conservativeRulesMessage"
+           class="hint small-hint"
+           style="display:none; margin-top:0.75rem;"
+           data-i18n="rules.conservative">
+        This chart uses a conservative rule set designed
+        for reliable interpretation.
+      </div>
+
+    </div>
+  </details>
+
+  <hr />
+
+  <label class="radio-pill"
+         style="display:inline-flex; gap:0.5rem; align-items:center;">
+    <input type="checkbox" id="flagSpecialCauseOnChart" checked />
+    <span data-i18n="rules.flag">
+      Flag special-cause signals on the chart
+    </span>
+  </label>
+
+  <label class="radio-pill"
+         style="display:inline-flex; gap:0.5rem; align-items:center;">
+    <input type="checkbox" id="colourBlindMode" />
+    <span data-i18n="rules.colourBlind">
+      Colour-blind friendly colours and symbols
+    </span>
+  </label>
 
 </div>
-</div>    </aside>
+</div>
+</aside>
 
 <!-- MAIN AREA: charts + analysis -->
     <main class="main">
