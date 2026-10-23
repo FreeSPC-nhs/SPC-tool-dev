@@ -904,7 +904,11 @@ window.SimpleSPCi18n.registerLanguage("fr", {
 "project.settingsQueued": "Paramètres chargés. Importez maintenant vos données CSV ou Excel ; l'outil appliquera automatiquement ces paramètres.",
 "project.unsupported": "Ce fichier ne semble pas être un projet SPC ou un fichier de paramètres pris en charge.",
 "project.invalidJson": "Impossible de lire ce fichier JSON. Vérifiez qu'il s'agit d'un export valide de cet outil.",
-"project.restoreFailed": "Les données existantes n'ont pas pu être restaurées après la réinitialisation du graphique."
+"project.restoreFailed": "Les données existantes n'ont pas pu être restaurées après la réinitialisation du graphique.",
+
+// VALIDATION AVANT GÉNÉRATION DU GRAPHIQUE
+"validation.selectColumns": "Veuillez sélectionner une colonne pour l'axe X et une colonne de valeurs."
+
 
 
 

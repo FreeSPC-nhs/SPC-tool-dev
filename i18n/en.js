@@ -901,7 +901,10 @@ window.SimpleSPCi18n.registerLanguage("en", {
 "project.settingsQueued": "Settings loaded. Now upload your CSV or Excel data and the tool will apply these settings automatically.",
 "project.unsupported": "That file doesn’t look like a supported SPC project or settings file.",
 "project.invalidJson": "Could not read that JSON file. Please check it is a valid export from this tool.",
-"project.restoreFailed": "The existing data could not be restored after resetting the chart."
+"project.restoreFailed": "The existing data could not be restored after resetting the chart.",
+
+// CHART GENERATION VALIDATION
+"validation.selectColumns": "Please choose both an X-axis column and a value column."
 
 
 
