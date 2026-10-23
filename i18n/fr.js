@@ -467,10 +467,45 @@ window.SimpleSPCi18n.registerLanguage("fr", {
 
 "summary.paretoOccurrences": "Nombre total d'occurrences :",
 "summary.paretoAcross": "réparties dans",
-"summary.paretoCategories": "catégories."
+"summary.paretoCategories": "catégories.",
 
+// TITRES DES PÉRIODES ET COUVERTURE
+"summary.periodLabel": "Période",
+"summary.singlePeriod": "Période unique",
+"summary.initialSegment": "(segment initial / période de référence)",
+"summary.of": "sur",
+"summary.coverage": "Période couverte :",
+"summary.point": "point",
+"summary.points": "points",
+"summary.subgroups": "sous-groupes",
+"summary.to": "à",
 
+// MESURES STATISTIQUES
+"summary.mean": "Moyenne",
+"summary.medianPeriod": "Médiane (cette période)",
+"summary.centreLine": "Ligne centrale",
+"summary.controlLimits": "limites de contrôle",
+"summary.lowerLimit": "LIC",
+"summary.upperLimit": "LSC",
+"summary.range": "intervalle",
+"summary.estimatedSigma": "σ estimé (à partir des étendues mobiles)",
+"summary.averageMr": "moyenne des étendues mobiles",
+"summary.centreGap": "Ligne centrale (intervalle moyen entre événements)",
+"summary.centreOpportunities": "Ligne centrale (nombre moyen d'opportunités)",
+"summary.upperLimitLabel": "limite supérieure",
+"summary.centreAndLimits": "Ligne centrale et limites",
+"summary.notAvailable": "(non disponible)",
 
+// MESURES DES CARTES X-BAR / S
+"summary.subgroupSize": "Taille du sous-groupe",
+"summary.measurement": "mesure",
+"summary.measurements": "mesures",
+"summary.perSubgroup": "par sous-groupe",
+"summary.variesSubgroup": "(variable selon le sous-groupe)",
+"summary.notStated": "non précisé",
+"summary.xbarCentre": "Ligne centrale de la carte X̄",
+"summary.sCentre": "Ligne centrale de la carte S",
+"summary.estimatedProcessSd": "Écart-type estimé du processus"
 
 
 

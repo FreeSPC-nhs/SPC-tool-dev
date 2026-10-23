@@ -465,12 +465,45 @@ window.SimpleSPCi18n.registerLanguage("en", {
 
 "summary.paretoOccurrences": "Total occurrences:",
 "summary.paretoAcross": "across",
-"summary.paretoCategories": "categories."
+"summary.paretoCategories": "categories.",
 
+// PERIOD HEADINGS AND COVERAGE
+"summary.periodLabel": "Period",
+"summary.singlePeriod": "Single period",
+"summary.initialSegment": "(initial segment / baseline)",
+"summary.of": "of",
+"summary.coverage": "Coverage:",
+"summary.point": "point",
+"summary.points": "points",
+"summary.subgroups": "subgroups",
+"summary.to": "to",
 
+// STATISTICAL MEASURES
+"summary.mean": "Mean",
+"summary.medianPeriod": "Median (this period)",
+"summary.centreLine": "Centre line",
+"summary.controlLimits": "control limits",
+"summary.lowerLimit": "LCL",
+"summary.upperLimit": "UCL",
+"summary.range": "range",
+"summary.estimatedSigma": "Estimated σ (from MR)",
+"summary.averageMr": "average MR",
+"summary.centreGap": "Centre line (average gap)",
+"summary.centreOpportunities": "Centre line (average opportunities)",
+"summary.upperLimitLabel": "upper limit",
+"summary.centreAndLimits": "Centre line and limits",
+"summary.notAvailable": "(not available)",
 
-
-
+// X-BAR / S MEASURES
+"summary.subgroupSize": "Subgroup size",
+"summary.measurement": "measurement",
+"summary.measurements": "measurements",
+"summary.perSubgroup": "per subgroup",
+"summary.variesSubgroup": "(varies by subgroup)",
+"summary.notStated": "not stated",
+"summary.xbarCentre": "X̄ chart centre line",
+"summary.sCentre": "S chart centre line",
+"summary.estimatedProcessSd": "Estimated process standard deviation"
 
 
 
