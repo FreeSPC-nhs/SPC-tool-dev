@@ -13739,14 +13739,20 @@ function renderXbarSSummary(
               .filter(Boolean)
           : [];
 
-      return signals.length
-        ? (
-            `signal(s): ` +
-            `${signals.join("; ")}.`
-          )
-        : (
-            "one or more special-cause signals were detected."
-          );
+      
+       return signals.length
+         ? (
+             summaryUiText(
+               "summary.xbars.signals",
+               "signal(s):"
+             ) +
+             ` ${signals.join("; ")}.`
+           )
+         : summaryUiText(
+             "summary.xbars.signalDetected",
+             "one or more special-cause signals were detected."
+           );
+
     };
 
   
@@ -13831,34 +13837,34 @@ function renderXbarSSummary(
             );
 
 
-      let interpretation =
-        "";
+      
+      let interpretation = "";
 
-      if (
-        xStable &&
-        sStable
-      ) {
-        interpretation =
-          "Both the subgroup averages (X̄) and within-subgroup variation (S) look stable in this period.";
+      if (xStable && sStable) {
+        interpretation = summaryUiText(
+          "summary.xbars.bothStable",
+          "Both the subgroup averages (X̄) and within-subgroup variation (S) look stable in this period."
+        );
 
-      } else if (
-        !xStable &&
-        sStable
-      ) {
-        interpretation =
-          "The subgroup averages (X̄) show special-cause signals, while within-subgroup variation (S) looks stable.";
+      } else if (!xStable && sStable) {
+        interpretation = summaryUiText(
+          "summary.xbars.xUnstable",
+          "The subgroup averages (X̄) show special-cause signals, while within-subgroup variation (S) looks stable."
+        );
 
-      } else if (
-        xStable &&
-        !sStable
-      ) {
-        interpretation =
-          "The subgroup averages (X̄) look stable, while within-subgroup variation (S) shows special-cause signals.";
+      } else if (xStable && !sStable) {
+        interpretation = summaryUiText(
+          "summary.xbars.sUnstable",
+          "The subgroup averages (X̄) look stable, while within-subgroup variation (S) shows special-cause signals."
+        );
 
       } else {
-        interpretation =
-          "Both the subgroup averages (X̄) and within-subgroup variation (S) show special-cause signals.";
+        interpretation = summaryUiText(
+          "summary.xbars.bothUnstable",
+          "Both the subgroup averages (X̄) and within-subgroup variation (S) show special-cause signals."
+        );
       }
+
 
       html +=
         `<div class="pdf-avoid-break">`;
@@ -13928,44 +13934,122 @@ function renderXbarSSummary(
             ? stats.excludedBaselineCount
             : 0;
 
+        
+        const firstSubgroups =
+          stats.baselineCountUsed === 1
+            ? summaryUiText(
+                "summary.xbars.firstOne",
+                "the first subgroup (1)"
+              )
+            : (
+                summaryUiText(
+                  "summary.xbars.firstMany",
+                  "the first"
+                ) +
+                ` ${stats.baselineCountUsed} ` +
+                summaryUiText(
+                  "summary.xbars.subgroupsMany",
+                  "subgroups"
+                )
+              );
+
+        const defineWindow =
+          stats.baselineCountUsed === 1
+            ? summaryUiText(
+                "summary.xbars.windowOne",
+                "defines the calculation window;"
+              )
+            : summaryUiText(
+                "summary.xbars.windowMany",
+                "define the calculation window;"
+              );
+
+        const excludedText =
+          excludedBaseline
+            ? (
+                `, ${excludedBaseline} ` +
+                (
+                  excludedBaseline === 1
+                    ? summaryUiText(
+                        "summary.xbars.excludedOne",
+                        "excluded"
+                      )
+                    : summaryUiText(
+                        "summary.xbars.excludedMany",
+                        "excluded"
+                      )
+                )
+              )
+            : "";
+
         html +=
-          `<li>` +
-          `<strong>Baseline:</strong> ` +
-          `the first ${stats.baselineCountUsed} subgroup${stats.baselineCountUsed === 1 ? "" : "s"} define the calculation window; ` +
-          `${usedBaseline} used to estimate the limits` +
-          `${
-            excludedBaseline
-              ? `, ${excludedBaseline} excluded`
-              : ""
-          }.` +
-          `</li>`;
+          `<li><strong>` +
+          summaryUiText(
+            "summary.xbars.baseline",
+            "Baseline"
+          ) +
+          `:</strong> ` +
+          firstSubgroups + " " +
+          defineWindow + " " +
+          usedBaseline + " " +
+          summaryUiText(
+            "summary.xbars.usedEstimate",
+            "used to estimate the limits"
+          ) +
+          excludedText +
+          `.</li>`;
+
       }
 
       if (
         variableSubgroupSizes
       ) {
+        
         html +=
           `<li>` +
-          `<strong>${summaryUiText("summary.xbarCentre", "X̄ chart centre line")}:</strong> ` +
+          `<strong>${summaryUiText(
+            "summary.xbarCentre",
+            "X̄ chart centre line"
+          )}:</strong> ` +
           `${fmt(stats.xbarbar)}; ` +
-          `<strong>control limits vary with subgroup size:</strong> ` +
-          `LCL range = ` +
-          `${fmt(stats.xLclMin)}–${fmt(stats.xLclMax)}, ` +
-          `UCL range = ` +
-          `${fmt(stats.xUclMin)}–${fmt(stats.xUclMax)}.` +
+          `<strong>${summaryUiText(
+            "summary.xbars.limitsVary",
+            "control limits vary with subgroup size"
+          )}:</strong> ` +
+          `${summaryUiText(
+            "summary.xbars.lclRange",
+            "LCL range"
+          )} = ${fmt(stats.xLclMin)}–${fmt(stats.xLclMax)}, ` +
+          `${summaryUiText(
+            "summary.xbars.uclRange",
+            "UCL range"
+          )} = ${fmt(stats.xUclMin)}–${fmt(stats.xUclMax)}.` +
           `</li>`;
 
         html +=
           `<li>` +
-          `<strong>S chart:</strong> ` +
-          `the expected S and its control limits vary with subgroup size. ` +
-          `Centre-line range = ` +
-          `${fmt(stats.sClMin)}–${fmt(stats.sClMax)}; ` +
-          `LCL range = ` +
-          `${fmt(stats.sLclMin)}–${fmt(stats.sLclMax)}; ` +
-          `UCL range = ` +
-          `${fmt(stats.sUclMin)}–${fmt(stats.sUclMax)}.` +
+          `<strong>${summaryUiText(
+            "summary.xbars.sChart",
+            "S chart"
+          )}:</strong> ` +
+          `${summaryUiText(
+            "summary.xbars.sLimitsVary",
+            "the expected S and its control limits vary with subgroup size."
+          )} ` +
+          `${summaryUiText(
+            "summary.xbars.centreRange",
+            "Centre-line range"
+          )} = ${fmt(stats.sClMin)}–${fmt(stats.sClMax)}; ` +
+          `${summaryUiText(
+            "summary.xbars.lclRange",
+            "LCL range"
+          )} = ${fmt(stats.sLclMin)}–${fmt(stats.sLclMax)}; ` +
+          `${summaryUiText(
+            "summary.xbars.uclRange",
+            "UCL range"
+          )} = ${fmt(stats.sUclMin)}–${fmt(stats.sUclMax)}.` +
           `</li>`;
+
 
         html +=
           `<li>` +
@@ -13974,46 +14058,76 @@ function renderXbarSSummary(
           `</li>`;
 
       } else {
+        
         html +=
           `<li>` +
-          `<strong>${summaryUiText("summary.xbarCentre", "X̄ chart centre line")}:</strong> ` +
-          `${fmt(stats.xbarbar)}; limits: ` +
-          `LCL = ${fmt(stats.lclX)}, ` +
-          `UCL = ${fmt(stats.uclX)}.` +
+          `<strong>${summaryUiText(
+            "summary.xbarCentre",
+            "X̄ chart centre line"
+          )}:</strong> ` +
+          `${fmt(stats.xbarbar)}; ` +
+          `${summaryUiText(
+            "summary.xbars.limits",
+            "limits"
+          )}: ` +
+          `${summaryUiText("summary.lowerLimit", "LCL")} = ${fmt(stats.lclX)}, ` +
+          `${summaryUiText("summary.upperLimit", "UCL")} = ${fmt(stats.uclX)}.` +
           `</li>`;
 
         html +=
           `<li>` +
-          `<strong>${summaryUiText("summary.sCentre", "S chart centre line")}:</strong> ` +
-          `${fmt(stats.sbar)}; limits: ` +
-          `LCL = ${fmt(stats.lclS)}, ` +
-          `UCL = ${fmt(stats.uclS)}.` +
+          `<strong>${summaryUiText(
+            "summary.sCentre",
+            "S chart centre line"
+          )}:</strong> ` +
+          `${fmt(stats.sbar)}; ` +
+          `${summaryUiText(
+            "summary.xbars.limits",
+            "limits"
+          )}: ` +
+          `${summaryUiText("summary.lowerLimit", "LCL")} = ${fmt(stats.lclS)}, ` +
+          `${summaryUiText("summary.upperLimit", "UCL")} = ${fmt(stats.uclS)}.` +
           `</li>`;
+
       }
 
+      
       html +=
-        `<li>` +
-        `<strong>X̄ chart:</strong> ` +
-        `${signalText(
+        `<li><strong>${summaryUiText(
+          "summary.xbars.xChart",
+          "X̄ chart"
+        )}:</strong> ` +
+        signalText(
           x,
-          "stable (no clear signal of change in subgroup averages)."
-        )}` +
+          summaryUiText(
+            "summary.xbars.stableX",
+            "stable (no clear signal of change in subgroup averages)."
+          )
+        ) +
         `</li>`;
 
       html +=
-        `<li>` +
-        `<strong>S chart:</strong> ` +
-        `${signalText(
+        `<li><strong>${summaryUiText(
+          "summary.xbars.sChart",
+          "S chart"
+        )}:</strong> ` +
+        signalText(
           s,
-          "stable (no clear signal of change in within-subgroup variation)."
-        )}` +
+          summaryUiText(
+            "summary.xbars.stableS",
+            "stable (no clear signal of change in within-subgroup variation)."
+          )
+        ) +
         `</li>`;
 
       html +=
-        `<li>` +
-        `<strong>Interpretation:</strong> ` +
-        `${interpretation}` +
+        `<li><strong>${summaryUiText(
+          "summary.xbars.interpretation",
+          "Interpretation"
+        )}:</strong> ` +
+        interpretation +
         `</li>`;
+
 
       html += `</ul>`;
       html += `</div>`;
@@ -14035,40 +14149,45 @@ function renderXbarSSummary(
       ?.s
       ?.isStable;
 
+  
   let latestText = "";
 
-  if (
-    latestXStable &&
-    latestSStable
-  ) {
-    latestText =
-      "The latest period looks stable on both parts of the X̄–S chart. " +
-      "That means the current process level and within-subgroup variation are behaving broadly consistently under the current rule settings.";
+  if (latestXStable && latestSStable) {
+    latestText = summaryUiText(
+      "summary.xbars.latestBothStable",
+      "The latest period looks stable on both parts of the X̄–S chart. That means the current process level and within-subgroup variation are behaving broadly consistently under the current rule settings."
+    );
 
-  } else if (
-    !latestXStable &&
-    latestSStable
-  ) {
-    latestText =
-      "The latest period shows possible change in the subgroup averages, while within-subgroup variation remains stable.";
+  } else if (!latestXStable && latestSStable) {
+    latestText = summaryUiText(
+      "summary.xbars.latestXUnstable",
+      "The latest period shows possible change in the subgroup averages, while within-subgroup variation remains stable."
+    );
 
-  } else if (
-    latestXStable &&
-    !latestSStable
-  ) {
-    latestText =
-      "The latest period shows possible change in within-subgroup variation, while the subgroup averages remain stable.";
+  } else if (latestXStable && !latestSStable) {
+    latestText = summaryUiText(
+      "summary.xbars.latestSUnstable",
+      "The latest period shows possible change in within-subgroup variation, while the subgroup averages remain stable."
+    );
 
   } else {
-    latestText =
-      "The latest period shows possible special-cause variation in both the subgroup averages and within-subgroup variation.";
+    latestText = summaryUiText(
+      "summary.xbars.latestBothUnstable",
+      "The latest period shows possible special-cause variation in both the subgroup averages and within-subgroup variation."
+    );
   }
 
+
+  
   html +=
     `<div class="pdf-avoid-break">` +
-    `<p><strong>Latest period:</strong> ` +
+    `<p><strong>${summaryUiText(
+      "summary.xbars.latestPeriod",
+      "Latest period"
+    )}:</strong> ` +
     `${latestText}</p>` +
     `</div>`;
+
 
   summaryDiv.innerHTML =
     html;
