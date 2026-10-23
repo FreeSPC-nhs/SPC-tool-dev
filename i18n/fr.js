@@ -689,7 +689,43 @@ window.SimpleSPCi18n.registerLanguage("fr", {
 "summary.attr.trendDecreasing": "points en diminution régulière (de",
 
 "summary.attr.zone23": "Zone : 2 points sur 3 dans le tiers extérieur (de",
-"summary.attr.zone45": "Zone : 4 points sur 5 au-delà de 1 sigma (de"
+"summary.attr.zone45": "Zone : 4 points sur 5 au-delà de 1 sigma (de",
+
+  // DIAGNOSTICS LANEY P / P'
+  "summary.laney.p.suggest": "La carte P′ pourrait être mieux adaptée à ces données.",
+  "summary.laney.p.over": "Les proportions varient davantage d'un point à l'autre que ne le prévoit une carte P standard pour ces tailles d'échantillon. Les limites d'une carte P standard peuvent donc être trop étroites et générer des alertes supplémentaires. Une carte P′ ajuste les limites pour tenir compte de cette variation supplémentaire, tout en conservant les mêmes proportions et la même ligne centrale.",
+  "summary.laney.p.under": "Les proportions varient moins d'un point à l'autre que ne le prévoit une carte P standard. Les limites de contrôle standard peuvent donc être trop larges et rendre les changements réels plus difficiles à détecter. Une carte P′ ajuste les limites pour mieux refléter la variation effectivement observée.",
+  "summary.laney.p.normalTitle": "Une carte P standard semble adaptée à ces données.",
+  "summary.laney.p.normal": "La variation observée se situe dans la plage attendue pour des données de proportions avec ces tailles d'échantillon. Il n'y a donc pas de raison évidente de privilégier une carte P′.",
+
+  "summary.laney.p.prime.over": "Ces données varient davantage que ne le prévoit une carte P standard ; la carte P′ utilise donc des limites de contrôle plus larges.",
+  "summary.laney.p.prime.under": "Ces données varient moins que ne le prévoit une carte P standard ; la carte P′ utilise donc des limites de contrôle plus étroites.",
+  "summary.laney.p.prime.normal": "La variation observée est très proche de celle attendue pour une carte P standard ; l'ajustement est donc faible.",
+
+  // DIAGNOSTICS LANEY U / U'
+  "summary.laney.u.suggest": "La carte U′ pourrait être mieux adaptée à ces données.",
+  "summary.laney.u.over": "Les taux varient davantage d'un point à l'autre que ne le prévoit une carte U standard, compte tenu du nombre d'opportunités. Les limites d'une carte U standard peuvent donc être trop étroites et générer des alertes supplémentaires. Une carte U′ ajuste les limites pour tenir compte de cette variation supplémentaire, tout en conservant les mêmes taux et la même ligne centrale.",
+  "summary.laney.u.under": "Les taux varient moins d'un point à l'autre que ne le prévoit une carte U standard. Les limites de contrôle standard peuvent donc être trop larges et rendre les changements réels plus difficiles à détecter. Une carte U′ ajuste les limites pour mieux refléter la variation effectivement observée.",
+  "summary.laney.u.normalTitle": "Une carte U standard semble adaptée à ces données.",
+  "summary.laney.u.normal": "La variation observée se situe dans la plage attendue pour des données de taux de non-conformités. Il n'y a donc pas de raison évidente de privilégier une carte U′.",
+
+  "summary.laney.u.prime.over": "Ces données varient davantage que ne le prévoit une carte U standard ; la carte U′ utilise donc des limites de contrôle plus larges.",
+  "summary.laney.u.prime.under": "Ces données varient moins que ne le prévoit une carte U standard ; la carte U′ utilise donc des limites de contrôle plus étroites.",
+  "summary.laney.u.prime.normal": "La variation observée est très proche de celle attendue pour une carte U standard ; l'ajustement est donc faible.",
+
+  // DIAGNOSTICS DE DISPERSION COMMUNS
+  "summary.laney.technicalCheck": "Vérification technique",
+  "summary.laney.observedVariation": "variation observée",
+  "summary.laney.ofExpected": "de la variation attendue",
+  "summary.laney.diagnosticUpper": "limite diagnostique supérieure",
+  "summary.laney.diagnosticLower": "limite diagnostique inférieure",
+  "summary.laney.expectedRange": "plage attendue",
+  "summary.laney.switchP": "Utiliser plutôt la carte P′",
+  "summary.laney.switchU": "Utiliser plutôt la carte U′",
+  "summary.laney.whyDifferent": "Pourquoi ces limites sont-elles différentes ?",
+  "summary.laney.adjustmentBenefit": "Cet ajustement permet aux limites de contrôle de mieux refléter la variation effectivement observée dans les données.",
+  "summary.laney.technicalDetail": "Détail technique"
+
 
 
 

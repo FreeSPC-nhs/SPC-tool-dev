@@ -687,7 +687,43 @@ window.SimpleSPCi18n.registerLanguage("en", {
 "summary.attr.trendDecreasing": "points steadily decreasing (from",
 
 "summary.attr.zone23": "Zone: 2 of 3 points in the outer third (from",
-"summary.attr.zone45": "Zone: 4 of 5 points beyond 1-sigma (from"
+"summary.attr.zone45": "Zone: 4 of 5 points beyond 1-sigma (from",
+
+  // LANEY P / P-PRIME DIAGNOSTICS
+  "summary.laney.p.suggest": "P′ may be a better fit for these data.",
+  "summary.laney.p.over": "The proportions vary more from point to point than a standard P chart expects for these sample sizes. This can make a standard P chart produce limits that are too narrow and create extra alerts. A P′ chart adjusts the limits for this extra variation while keeping the same proportions and centre line.",
+  "summary.laney.p.under": "The proportions vary less from point to point than a standard P chart expects. This can make standard P-chart limits too wide and make genuine changes harder to detect. A P′ chart adjusts the limits to better match the variation actually seen in the data.",
+  "summary.laney.p.normalTitle": "A standard P chart looks appropriate for these data.",
+  "summary.laney.p.normal": "The amount of variation is within the range expected for proportion data of these sample sizes, so there is no clear reason to use a P′ chart instead.",
+
+  "summary.laney.p.prime.over": "These data vary more than a standard P chart expects, so the P′ chart uses wider control limits.",
+  "summary.laney.p.prime.under": "These data vary less than a standard P chart expects, so the P′ chart uses narrower control limits.",
+  "summary.laney.p.prime.normal": "The amount of variation is very close to what a standard P chart expects, so the adjustment is small.",
+
+  // LANEY U / U-PRIME DIAGNOSTICS
+  "summary.laney.u.suggest": "U′ may be a better fit for these data.",
+  "summary.laney.u.over": "The rates vary more from point to point than a standard U chart expects for the amount of opportunity. This can make a standard U chart produce limits that are too narrow and create extra alerts. A U′ chart adjusts the limits for this extra variation while keeping the same rates and centre line.",
+  "summary.laney.u.under": "The rates vary less from point to point than a standard U chart expects. This can make standard U-chart limits too wide and make genuine changes harder to detect. A U′ chart adjusts the limits to better match the variation actually seen in the data.",
+  "summary.laney.u.normalTitle": "A standard U chart looks appropriate for these data.",
+  "summary.laney.u.normal": "The amount of variation is within the range expected for defect-rate data, so there is no clear reason to use a U′ chart instead.",
+
+  "summary.laney.u.prime.over": "These data vary more than a standard U chart expects, so the U′ chart uses wider control limits.",
+  "summary.laney.u.prime.under": "These data vary less than a standard U chart expects, so the U′ chart uses narrower control limits.",
+  "summary.laney.u.prime.normal": "The amount of variation is very close to what a standard U chart expects, so the adjustment is small.",
+
+  // SHARED DISPERSION DIAGNOSTICS
+  "summary.laney.technicalCheck": "Technical check",
+  "summary.laney.observedVariation": "observed variation",
+  "summary.laney.ofExpected": "of expected",
+  "summary.laney.diagnosticUpper": "diagnostic upper limit",
+  "summary.laney.diagnosticLower": "diagnostic lower limit",
+  "summary.laney.expectedRange": "expected range",
+  "summary.laney.switchP": "Use P′ chart instead",
+  "summary.laney.switchU": "Use U′ chart instead",
+  "summary.laney.whyDifferent": "Why are these limits different?",
+  "summary.laney.adjustmentBenefit": "This helps the control limits better reflect the amount of variation actually seen in the data.",
+  "summary.laney.technicalDetail": "Technical detail"
+
 
 
 
