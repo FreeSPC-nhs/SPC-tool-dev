@@ -13031,10 +13031,18 @@ function renderRareChartSummary(aOrSegments, totalPointsMaybe) {
     }
 
 
-    // Baseline
+    
+    // Baseline — presentation only.
     if (a.baselineCountUsed != null) {
-      html += `<li><strong>Baseline for this period:</strong> first ${a.baselineCountUsed} points used to calculate centre line and limits.</li>`;
+      html +=
+        `<li><strong>` +
+        summaryUiText(
+          "summary.rare.baseline",
+          "Initial points in this period used to calculate the centre line and limits"
+        ) +
+        `:</strong> <strong>${a.baselineCountUsed}</strong>.</li>`;
     }
+
 
     
     // Stats: centre line + limits
@@ -13088,30 +13096,102 @@ function renderRareChartSummary(aOrSegments, totalPointsMaybe) {
     }
 
 
-    // Signals
+    
+    // Signals — reuse the tested attribute-chart display translator.
+    // Never modify the original a.signals array.
     if (!a.isStable && Array.isArray(a.signals) && a.signals.length) {
-      html += `<li><strong>Signals:</strong> ${a.signals.join("; ")}.</li>`;
+      html +=
+        `<li><strong>` +
+        summaryUiText(
+          "summary.attr.signals",
+          "Signals"
+        ) +
+        `:</strong> ` +
+        a.signals.map(attributeSignalDisplayHtml).join("; ") +
+        `.</li>`;
     }
 
-    // Interpretation (XmR-style)
-    const interpretation = a.isStable
-      ? "No clear special-cause signals were detected in this period. The pattern is consistent with routine/common variation."
-      : "Special-cause signals were detected in this period (pattern inconsistent with routine variation).";
 
-    html += `<li><strong>Interpretation:</strong> ${interpretation}</li>`;
+    
+    // Interpretation — preserve the existing a.isStable decision.
+    const interpretation = a.isStable
+      ? summaryUiText(
+          "summary.rare.stable",
+          "No clear special-cause signals were detected in this period. The pattern is consistent with routine/common variation."
+        )
+      : summaryUiText(
+          "summary.rare.unstable",
+          "Special-cause signals were detected in this period (pattern inconsistent with routine variation)."
+        );
+
+    html +=
+      `<li><strong>` +
+      summaryUiText(
+        "summary.xbars.interpretation",
+        "Interpretation"
+      ) +
+      `:</strong> ${interpretation}</li>`;
+
 
     // “Better” guidance (rare charts often need this)
-    html += `<li><strong>Interpreting “better”:</strong> If the event is something you want to avoid, longer gaps (or more opportunities between events) are usually better. If it’s something you want more often, shorter gaps may be better.</li>`;
+    
+    html +=
+      `<li><strong>` +
+      summaryUiText(
+        "summary.rare.betterHeading",
+        "Interpreting “better”"
+      ) +
+      `:</strong> ` +
+      summaryUiText(
+        "summary.rare.better",
+        "If the event is something you want to avoid, longer gaps (or more opportunities between events) are usually better. If it is something you want more often, shorter gaps may be better."
+      ) +
+      `</li>`;
+
 
     // “What next” guidance (brief, not bossy)
-    html += a.isStable
-      ? `<li><strong>What to do next:</strong> If performance isn’t good enough, focus on improving the system rather than reacting to individual points.</li>`
-      : `<li><strong>What to do next:</strong> Look for a real-world explanation (process, staffing, demand, detection/definition changes). If it was planned, consider a new baseline after things settle.</li>`;
+    
+    const nextSteps = a.isStable
+      ? summaryUiText(
+          "summary.rare.nextStable",
+          "If performance isn't good enough, focus on improving the system rather than reacting to individual points."
+        )
+      : summaryUiText(
+          "summary.rare.nextUnstable",
+          "Look for a real-world explanation (process, staffing, demand, detection/definition changes). If it was planned, consider a new baseline after things settle."
+        );
+
+    html +=
+      `<li><strong>` +
+      summaryUiText(
+        "summary.rare.nextHeading",
+        "What to do next"
+      ) +
+      `:</strong> ${nextSteps}</li>`;
+
 
     // Data reminder
-    html += (chartType === "t")
-      ? `<li><strong>Data reminder:</strong> This chart uses the time between events (e.g., days between incidents).</li>`
-      : `<li><strong>Data reminder:</strong> This chart uses opportunities between events (values should be 1 or more).</li>`;
+    
+    html +=
+      `<li><strong>` +
+      summaryUiText(
+        "summary.rare.dataHeading",
+        "Data reminder"
+      ) +
+      `:</strong> ` +
+      (
+        chartType === "t"
+          ? summaryUiText(
+              "summary.rare.dataT",
+              "This chart uses the time between events (e.g., days between incidents)."
+            )
+          : summaryUiText(
+              "summary.rare.dataG",
+              "This chart uses opportunities between events (values should be 1 or more)."
+            )
+      ) +
+      `</li>`;
+
 
     html += `</ul>`;
     html += `</div>`;
