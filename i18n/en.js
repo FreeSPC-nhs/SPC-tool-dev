@@ -644,7 +644,19 @@ window.SimpleSPCi18n.registerLanguage("en", {
 "summary.xmr.badgeNote": "(Estimated probability of meeting the target in the final period, assuming a stable process and approximate normality.)",
 "summary.xmr.badgeWarning": "Special-cause signals detected in the last period:",
 "summary.xmr.badgeUnreliable": "capability estimates may be unreliable until these signals are understood.",
-"summary.xmr.badgeAction": "Focus on understanding and addressing these causes before relying on capability estimates."
+"summary.xmr.badgeAction": "Focus on understanding and addressing these causes before relying on capability estimates.",
+
+
+"summary.exclusions.heading": "Excluded from limit calculations:",
+"summary.exclusions.point": "point",
+"summary.exclusions.points": "points",
+"summary.exclusions.subgroup": "subgroup",
+"summary.exclusions.subgroups": "subgroups",
+"summary.exclusions.pointVisible": "The excluded point remains visible on the chart.",
+"summary.exclusions.pointsVisible": "Excluded points remain visible on the chart.",
+"summary.exclusions.subgroupVisible": "The excluded subgroup remains visible on the chart.",
+"summary.exclusions.subgroupsVisible": "Excluded subgroups remain visible on the chart."
+
 
 
 

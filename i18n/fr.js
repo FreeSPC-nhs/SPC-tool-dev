@@ -647,7 +647,18 @@ window.SimpleSPCi18n.registerLanguage("fr", {
 "summary.xmr.badgeNote": "(Probabilité estimée d'atteindre l'objectif pendant la dernière période, sous l'hypothèse d'un processus stable et d'une distribution approximativement normale.)",
 "summary.xmr.badgeWarning": "Signaux de cause spéciale détectés pendant la dernière période :",
 "summary.xmr.badgeUnreliable": "les estimations de capabilité peuvent être peu fiables tant que ces signaux ne sont pas compris.",
-"summary.xmr.badgeAction": "Cherchez à comprendre et à traiter ces causes avant de vous appuyer sur des estimations de capabilité."
+"summary.xmr.badgeAction": "Cherchez à comprendre et à traiter ces causes avant de vous appuyer sur des estimations de capabilité.",
+
+"summary.exclusions.heading": "Exclus du calcul des limites :",
+"summary.exclusions.point": "point",
+"summary.exclusions.points": "points",
+"summary.exclusions.subgroup": "sous-groupe",
+"summary.exclusions.subgroups": "sous-groupes",
+"summary.exclusions.pointVisible": "Le point exclu reste visible sur le graphique.",
+"summary.exclusions.pointsVisible": "Les points exclus restent visibles sur le graphique.",
+"summary.exclusions.subgroupVisible": "Le sous-groupe exclu reste visible sur le graphique.",
+"summary.exclusions.subgroupsVisible": "Les sous-groupes exclus restent visibles sur le graphique."
+
 
 
 
