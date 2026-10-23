@@ -1496,170 +1496,333 @@
     <div class="modal-shell">
       <div class="modal-header">
         <div class="modal-header-text">
-          <h2 id="helpModalTitle">Help &amp; guidance</h2>
-          <p class="sub">
-            A practical guide to loading data, building charts, interpreting SPC signals, and saving your work.
-          </p>
+          <h2 id="helpModalTitle" data-i18n="buttons.help">Help &amp; guidance</h2>
+          
+<p class="sub" data-i18n="help.subtitle">
+  A practical guide to loading data, building charts, interpreting SPC signals, and saving your work.
+</p>
+
         </div>
 
-        <button type="button" class="modal-close" aria-label="Close help" onclick="toggleHelpSection(false)">×</button>
+        
+<button
+  type="button"
+  class="modal-close"
+  aria-label="Close help"
+  data-i18n-aria-label="help.closeAria"
+  onclick="toggleHelpSection(false)">×</button>
+
       </div>
 
       <div class="modal-body">
-        <details open>
-  <summary><strong>1. What this tool does</strong></summary>
+        
+<!-- HELP SECTION 1: WHAT THIS TOOL DOES -->
+<details open>
+  <summary>
+    <strong data-i18n="help.1.title">
+      1. What this tool does
+    </strong>
+  </summary>
 
   <p>
-    <strong>SimpleSPC</strong> is a free, browser-based tool for
-    creating Statistical Process Control (SPC) charts and
-    Pareto charts.
+    <strong>SimpleSPC</strong>
+    <span data-i18n="help.1.intro">
+      is a free, browser-based tool for creating Statistical Process
+      Control (SPC) charts and Pareto charts.
+    </span>
   </p>
 
-  <p>
-    It helps you understand patterns in data, distinguish
-    routine variation from signals of change, and identify
-    opportunities for improvement. All calculations take
-    place locally in your browser. Your data are not
-    uploaded to a server.
+  <p data-i18n="help.1.purpose">
+    It helps you understand patterns in data, distinguish routine
+    variation from signals of change, and identify opportunities
+    for improvement. All calculations take place locally in your
+    browser. Your data are not uploaded to a server.
   </p>
 
-  <p>
+  <p data-i18n="help.1.scope">
     SimpleSPC is designed for learning, quality improvement,
-    service monitoring and practical analysis. It is not
-    intended to replace a regulated statistical package.
+    service monitoring and practical analysis. It is not intended
+    to replace a regulated statistical package.
   </p>
 
-  <p><strong>Available charts:</strong></p>
+  <p>
+    <strong data-i18n="help.1.available">
+      Available charts:
+    </strong>
+  </p>
 
   <ul>
     <li>
-      <strong>Run chart</strong> – shows values in time or
-      sequence order, using a median and simple rules to
-      identify non-random patterns.
+      <strong data-i18n="help.chart.runName">Run chart</strong>
+      –
+      <span data-i18n="help.chart.runDesc">
+        shows values in time or sequence order, using a median
+        and simple rules to identify non-random patterns.
+      </span>
     </li>
 
     <li>
-      <strong>XmR chart</strong> – shows individual measurements
-      with a mean and control limits, alongside an optional
-      moving-range chart.
+      <strong data-i18n="help.chart.xmrName">XmR chart</strong>
+      –
+      <span data-i18n="help.chart.xmrDesc">
+        shows individual measurements with a mean and control
+        limits, alongside an optional moving-range chart.
+      </span>
     </li>
 
     <li>
-      <strong>X̄–S chart</strong> – examines averages and
-      variation within groups of continuous measurements.
+      <strong data-i18n="help.chart.xbarsName">X̄–S chart</strong>
+      –
+      <span data-i18n="help.chart.xbarsDesc">
+        examines averages and variation within groups of
+        continuous measurements.
+      </span>
     </li>
 
     <li>
-      <strong>C chart</strong> – monitors counts of events
-      or defects when the opportunity for events is
-      reasonably constant.
+      <strong data-i18n="help.chart.cName">C chart</strong>
+      –
+      <span data-i18n="help.chart.cDesc">
+        monitors counts of events or defects when the opportunity
+        for events is reasonably constant.
+      </span>
     </li>
 
     <li>
-      <strong>P and Laney P′ charts</strong> – monitor
-      proportions, such as the percentage of patients
-      experiencing an event. P′ adjusts control limits
-      when observed variation differs from that expected
-      by a standard P chart.
+      <strong data-i18n="help.chart.pName">
+        P and Laney P′ charts
+      </strong>
+      –
+      <span data-i18n="help.chart.pDesc">
+        monitor proportions, such as the percentage of patients
+        experiencing an event. P′ adjusts control limits when
+        observed variation differs from that expected by a
+        standard P chart.
+      </span>
     </li>
 
     <li>
-      <strong>U and Laney U′ charts</strong> – monitor
-      event rates when the number of opportunities varies.
-      U′ adjusts control limits when observed variation
-      differs from that expected by a standard U chart.
+      <strong data-i18n="help.chart.uName">
+        U and Laney U′ charts
+      </strong>
+      –
+      <span data-i18n="help.chart.uDesc">
+        monitor event rates when the number of opportunities
+        varies. U′ adjusts control limits when observed variation
+        differs from that expected by a standard U chart.
+      </span>
     </li>
 
     <li>
-      <strong>T chart</strong> – monitors the time
-      between rare events.
+      <strong data-i18n="help.chart.tName">T chart</strong>
+      –
+      <span data-i18n="help.chart.tDesc">
+        monitors the time between rare events.
+      </span>
     </li>
 
     <li>
-      <strong>G chart</strong> – monitors the number of
-      opportunities between rare events.
+      <strong data-i18n="help.chart.gName">G chart</strong>
+      –
+      <span data-i18n="help.chart.gDesc">
+        monitors the number of opportunities between rare events.
+      </span>
     </li>
 
     <li>
-      <strong>Pareto chart</strong> – ranks categories
-      from most to least frequent to help prioritise
-      investigation and improvement.
+      <strong data-i18n="help.chart.paretoName">
+        Pareto chart
+      </strong>
+      –
+      <span data-i18n="help.chart.paretoDesc">
+        ranks categories from most to least frequent to help
+        prioritise investigation and improvement.
+      </span>
     </li>
   </ul>
 
   <p>
-    <strong>Important:</strong> Pareto charts are different
-    from time-ordered SPC charts. They help identify which
-    categories account for the most occurrences, but do
-    not establish whether a process is stable or whether
-    a change is statistically significant.
+    <strong data-i18n="help.1.importantTitle">
+      Important:
+    </strong>
+    <span data-i18n="help.1.important">
+      Pareto charts are different from time-ordered SPC charts.
+      They help identify which categories account for the most
+      occurrences, but do not establish whether a process is
+      stable or whether a change is statistically significant.
+    </span>
   </p>
-
 </details>
 
-        <details>
-          <summary><strong>2. Quick start</strong></summary>
-          <ol>
-            <li>Load data using CSV, Excel, or the Data editor.</li>
-            <li>Select the chart type and choose the relevant columns.</li>
-            <li>Click <strong>Generate / Recalculate</strong> if the chart does not update automatically.</li>
-            <li>Add titles, labels, targets, splits, or annotations if needed.</li>
-            <li>Review the summary text and chart signals.</li>
-            <li>Save the chart if you want to return to it later.</li>
-          </ol>
-        </details>
 
-        <details>
-          <summary><strong>3. Preparing and loading your data</strong></summary>
-          <p>
-  The columns you need depend on the chart type.
-  Most SPC charts need a time or sequence column and
-  a measurement or count.
-</p>
+<!-- HELP SECTION 2: QUICK START -->
+<details>
+  <summary>
+    <strong data-i18n="help.2.title">
+      2. Quick start
+    </strong>
+  </summary>
 
-<ul>
-  <li>
-    <strong>P, P′, U and U′ charts</strong> also need
-    a denominator or opportunities column.
-  </li>
-  <li>
-    <strong>X̄–S charts</strong> need a subgroup
-    identifier and individual measurement values.
-  </li>
-  <li>
-    <strong>Pareto charts</strong> need a category
-    column, with an optional frequency/count column
-    if your data are already summarised.
-  </li>
-</ul>
+  <ol>
+    <li data-i18n="help.2.step1">
+      Load data using CSV, Excel, or the Data editor.
+    </li>
 
-          <div class="modal-note">
-            <strong>You can now load data in three ways:</strong>
-            <ul>
-              <li><strong>Upload a CSV file</strong></li>
-              <li><strong>Upload an Excel workbook</strong> (<code>.xlsx</code> or <code>.xls</code>)</li>
-              <li><strong>Paste or edit data directly</strong> in the Data editor</li>
-            </ul>
-          </div>
+    <li data-i18n="help.2.step2">
+      Select the chart type and choose the relevant columns.
+    </li>
 
-          <p>
-            If you upload an Excel workbook, the tool opens the <strong>Data editor</strong> so you can inspect the worksheet before importing it.
-            You can switch between worksheets, trim unwanted rows or columns, and then click <strong>Apply data</strong>.
-          </p>
+    <li>
+      <span data-i18n="help.2.step3Before">Click</span>
+      <strong data-i18n="buttons.generate">
+        Generate / Recalculate
+      </strong>
+      <span data-i18n="help.2.step3After">
+        if the chart does not update automatically.
+      </span>
+    </li>
 
-          <p>
-  The tool tries to suggest sensible X and Y columns automatically, but you can change them yourself at any time.
-</p>
+    <li data-i18n="help.2.step4">
+      Add titles, labels, targets, splits, or annotations
+      if needed.
+    </li>
 
-<p>
-  If your date column uses numeric dates such as <strong>01/02/2024</strong>, use the
-  <strong>Date format for numeric dates</strong> setting so the tool interprets them correctly.
-</p>
+    <li data-i18n="help.2.step5">
+      Review the summary text and chart signals.
+    </li>
 
-<p class="hint">
-  Default: <strong>UK day-first (dd/mm/yyyy)</strong>.
-</p>
-        </details>
+    <li data-i18n="help.2.step6">
+      Save the chart if you want to return to it later.
+    </li>
+  </ol>
+</details>
+
+
+<!-- HELP SECTION 3: PREPARING AND LOADING DATA -->
+<details>
+  <summary>
+    <strong data-i18n="help.3.title">
+      3. Preparing and loading your data
+    </strong>
+  </summary>
+
+  <p data-i18n="help.3.intro">
+    The columns you need depend on the chart type.
+    Most SPC charts need a time or sequence column
+    and a measurement or count.
+  </p>
+
+  <ul>
+    <li>
+      <strong data-i18n="help.3.pName">
+        P, P′, U and U′ charts
+      </strong>
+      <span data-i18n="help.3.pDesc">
+        also need a denominator or opportunities column.
+      </span>
+    </li>
+
+    <li>
+      <strong data-i18n="help.3.xbarsName">
+        X̄–S charts
+      </strong>
+      <span data-i18n="help.3.xbarsDesc">
+        need a subgroup identifier and individual
+        measurement values.
+      </span>
+    </li>
+
+    <li>
+      <strong data-i18n="help.3.paretoName">
+        Pareto charts
+      </strong>
+      <span data-i18n="help.3.paretoDesc">
+        need a category column, with an optional
+        frequency/count column if your data
+        are already summarised.
+      </span>
+    </li>
+  </ul>
+
+  <div class="modal-note">
+    <strong data-i18n="help.3.ways">
+      You can now load data in three ways:
+    </strong>
+
+    <ul>
+      <li>
+        <strong data-i18n="help.3.csv">
+          Upload a CSV file
+        </strong>
+      </li>
+
+      <li>
+        <strong data-i18n="help.3.excel">
+          Upload an Excel workbook
+        </strong>
+        (<code>.xlsx</code> or <code>.xls</code>)
+      </li>
+
+      <li>
+        <strong data-i18n="help.3.paste">
+          Paste or edit data directly
+        </strong>
+        <span data-i18n="help.3.pasteAfter">
+          in the Data editor
+        </span>
+      </li>
+    </ul>
+  </div>
+
+  <p>
+    <span data-i18n="help.3.excelBefore">
+      If you upload an Excel workbook, the tool opens the
+    </span>
+    <strong data-i18n="editor.title">
+      Data editor
+    </strong>
+    <span data-i18n="help.3.excelMiddle">
+      so you can inspect the worksheet before importing it.
+      You can switch between worksheets, trim unwanted rows
+      or columns, and then click
+    </span>
+    <strong data-i18n="editor.apply">
+      Apply data
+    </strong>.
+  </p>
+
+  <p data-i18n="help.3.axisAuto">
+    The tool tries to suggest sensible X and Y columns
+    automatically, but you can change them yourself
+    at any time.
+  </p>
+
+  <p>
+    <span data-i18n="help.3.dateBefore">
+      If your date column uses numeric dates such as
+    </span>
+    <strong>01/02/2024</strong>,
+    <span data-i18n="help.3.dateMiddle">
+      use the
+    </span>
+    <strong data-i18n="help.3.dateSetting">
+      Date format for numeric dates
+    </strong>
+    <span data-i18n="help.3.dateAfter">
+      setting so the tool interprets them correctly.
+    </span>
+  </p>
+
+  <p class="hint">
+    <span data-i18n="help.3.default">
+      Default:
+    </span>
+    <strong data-i18n="help.3.defaultFormat">
+      UK day-first (dd/mm/yyyy)
+    </strong>.
+  </p>
+</details>
+
 
         <details>
           <summary><strong>4. Using the Data editor</strong></summary>
