@@ -672,7 +672,22 @@ window.SimpleSPCi18n.registerLanguage("en", {
 "summary.attr.unstable": "Based on the selected rules, special-cause signals were detected in this period (a pattern unlikely to be routine variation alone).",
 
 // ATTRIBUTE CHARTS — STATISTICAL CAUTION
-"summary.attr.caution": "These rules are prompts, not absolute answers. Interpret alongside local context (changes in process, staffing, demand, definitions/coding) and consider basic SPC assumptions (e.g. reasonably consistent measurement and opportunity over time)."
+"summary.attr.caution": "These rules are prompts, not absolute answers. Interpret alongside local context (changes in process, staffing, demand, definitions/coding) and consider basic SPC assumptions (e.g. reasonably consistent measurement and opportunity over time).",
+
+// ATTRIBUTE CHARTS — INDIVIDUAL SIGNAL MESSAGES
+"summary.attr.signalAbove": "One or more points above the upper limit",
+"summary.attr.signalBelow": "One or more points below the lower limit",
+
+"summary.attr.shiftName": "Shift",
+"summary.attr.shiftAbove": "points in a row above the centre line (from",
+"summary.attr.shiftBelow": "points in a row below the centre line (from",
+
+"summary.attr.trendName": "Trend",
+"summary.attr.trendIncreasing": "points steadily increasing (from",
+"summary.attr.trendDecreasing": "points steadily decreasing (from",
+
+"summary.attr.zone23": "Zone: 2 of 3 points in the outer third (from",
+"summary.attr.zone45": "Zone: 4 of 5 points beyond 1-sigma (from"
 
 
 

@@ -674,12 +674,22 @@ window.SimpleSPCi18n.registerLanguage("fr", {
 "summary.attr.unstable": "Selon les règles sélectionnées, des signaux de cause spéciale ont été détectés pendant cette période (un comportement peu susceptible de s'expliquer uniquement par la variation habituelle).",
 
 // CARTES AUX ATTRIBUTS — PRÉCAUTIONS STATISTIQUES
-"summary.attr.caution": "Ces règles sont des indications, et non des réponses définitives. Interprétez les résultats en tenant compte du contexte local (modifications du processus, effectifs, demande, définitions ou codage) et des hypothèses de base des cartes SPC, notamment la comparabilité des mesures et des opportunités d'observation au fil du temps."
+"summary.attr.caution": "Ces règles sont des indications, et non des réponses définitives. Interprétez les résultats en tenant compte du contexte local (modifications du processus, effectifs, demande, définitions ou codage) et des hypothèses de base des cartes SPC, notamment la comparabilité des mesures et des opportunités d'observation au fil du temps.",
 
+// CARTES AUX ATTRIBUTS — SIGNAUX INDIVIDUELS
+"summary.attr.signalAbove": "Un ou plusieurs points dépassent la limite supérieure de contrôle",
+"summary.attr.signalBelow": "Un ou plusieurs points se situent sous la limite inférieure de contrôle",
 
+"summary.attr.shiftName": "Décalage",
+"summary.attr.shiftAbove": "points consécutifs au-dessus de la ligne centrale (de",
+"summary.attr.shiftBelow": "points consécutifs au-dessous de la ligne centrale (de",
 
+"summary.attr.trendName": "Tendance",
+"summary.attr.trendIncreasing": "points en augmentation régulière (de",
+"summary.attr.trendDecreasing": "points en diminution régulière (de",
 
-
+"summary.attr.zone23": "Zone : 2 points sur 3 dans le tiers extérieur (de",
+"summary.attr.zone45": "Zone : 4 points sur 5 au-delà de 1 sigma (de"
 
 
 
