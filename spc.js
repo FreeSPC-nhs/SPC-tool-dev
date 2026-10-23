@@ -12413,15 +12413,57 @@ function renderAttributeMultiSummary(segmentAnalyses, totalPoints) {
           excludedInBaseline
         );
 
+      
+      const baselineDescription =
+        a.baselineCountUsed === 1
+          ? summaryUiText(
+              "summary.attr.firstOne",
+              "the first point (1) defines the baseline window;"
+            )
+          : (
+              summaryUiText(
+                "summary.attr.firstBefore",
+                "the first"
+              ) +
+              ` <strong>${a.baselineCountUsed}</strong> ` +
+              summaryUiText(
+                "summary.attr.firstAfter",
+                "points define the baseline window;"
+              )
+            );
+
       html +=
-        `<li><strong>Baseline for this period:</strong> ` +
-        `first ${a.baselineCountUsed} points define the baseline window; ` +
-        `${usedInBaseline} used to calculate centre line and limits` +
-        `${
-          excludedInBaseline
-            ? `, ${excludedInBaseline} excluded`
-            : ""
-        }.</li>`;
+        `<li><strong>` +
+        summaryUiText(
+          "summary.attr.baselineTitle",
+          "Baseline for this period"
+        ) +
+        `:</strong> ` +
+        baselineDescription +
+        ` <strong>${usedInBaseline}</strong> ` +
+        summaryUiText(
+          "summary.attr.used",
+          "used to calculate centre line and limits"
+        );
+
+      if (excludedInBaseline > 0) {
+        html +=
+          `, <strong>${excludedInBaseline}</strong> ` +
+          (
+            excludedInBaseline === 1
+              ? summaryUiText(
+                  "summary.attr.excludedOne",
+                  "excluded"
+                )
+              : summaryUiText(
+                  "summary.attr.excludedMany",
+                  "excluded"
+                )
+          );
+      }
+
+      html += `.</li>`;
+
     }
 
     // Stats
@@ -12705,24 +12747,52 @@ if (
       Array.isArray(a.signals) &&
       a.signals.length
     ) {
-      html +=
-        `<li><strong>Signals:</strong> ${a.signals.join("; ")}.</li>`;
+      
+html +=
+  `<li><strong>` +
+  summaryUiText(
+    "summary.attr.signals",
+    "Signals"
+  ) +
+  `:</strong> ${a.signals.join("; ")}.</li>`;
+
     }
 
-    // Interpretation
+   
+    // Interpretation — translate the text only.
+    // Preserve the existing a.isStable decision.
     const interpretation =
       a.isStable
-        ? "Based on the selected rules, no clear special-cause signals were detected in this period. This suggests the pattern is consistent with routine (common-cause) variation."
-        : "Based on the selected rules, special-cause signals were detected in this period (a pattern unlikely to be routine variation alone).";
+        ? summaryUiText(
+            "summary.attr.stable",
+            "Based on the selected rules, no clear special-cause signals were detected in this period. This suggests the pattern is consistent with routine (common-cause) variation."
+          )
+        : summaryUiText(
+            "summary.attr.unstable",
+            "Based on the selected rules, special-cause signals were detected in this period (a pattern unlikely to be routine variation alone)."
+          );
 
-    const caution =
-      "These rules are prompts, not absolute answers. Interpret alongside local context (changes in process, staffing, demand, definitions/coding) and consider basic SPC assumptions (e.g. reasonably consistent measurement and opportunity over time).";
+    const caution = summaryUiText(
+      "summary.attr.caution",
+      "These rules are prompts, not absolute answers. Interpret alongside local context (changes in process, staffing, demand, definitions/coding) and consider basic SPC assumptions (e.g. reasonably consistent measurement and opportunity over time)."
+    );
 
     html +=
-      `<li><strong>Interpretation:</strong> ${interpretation}</li>`;
+      `<li><strong>` +
+      summaryUiText(
+        "summary.xbars.interpretation",
+        "Interpretation"
+      ) +
+      `:</strong> ${interpretation}</li>`;
 
     html +=
-      `<li><strong>Note:</strong> ${caution}</li>`;
+      `<li><strong>` +
+      summaryUiText(
+        "summary.note",
+        "Note:"
+      ) +
+      `</strong> ${caution}</li>`;
+
 
     html += `</ul>`;
     html += `</div>`;
