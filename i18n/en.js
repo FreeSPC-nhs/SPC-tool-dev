@@ -722,7 +722,25 @@ window.SimpleSPCi18n.registerLanguage("en", {
   "summary.laney.switchU": "Use U′ chart instead",
   "summary.laney.whyDifferent": "Why are these limits different?",
   "summary.laney.adjustmentBenefit": "This helps the control limits better reflect the amount of variation actually seen in the data.",
-  "summary.laney.technicalDetail": "Technical detail"
+"summary.laney.technicalDetail": "Technical detail",
+
+// T AND G RARE-EVENT SUMMARIES
+"summary.rare.baseline": "Initial points in this period used to calculate the centre line and limits",
+
+"summary.rare.stable": "No clear special-cause signals were detected in this period. The pattern is consistent with routine/common variation.",
+"summary.rare.unstable": "Special-cause signals were detected in this period (pattern inconsistent with routine variation).",
+
+"summary.rare.betterHeading": "Interpreting “better”",
+"summary.rare.better": "If the event is something you want to avoid, longer gaps (or more opportunities between events) are usually better. If it is something you want more often, shorter gaps may be better.",
+
+"summary.rare.nextHeading": "What to do next",
+"summary.rare.nextStable": "If performance isn't good enough, focus on improving the system rather than reacting to individual points.",
+"summary.rare.nextUnstable": "Look for a real-world explanation (process, staffing, demand, detection/definition changes). If it was planned, consider a new baseline after things settle.",
+
+"summary.rare.dataHeading": "Data reminder",
+"summary.rare.dataT": "This chart uses the time between events (e.g., days between incidents).",
+"summary.rare.dataG": "This chart uses opportunities between events (values should be 1 or more)."
+
 
 
 

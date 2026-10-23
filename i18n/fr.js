@@ -724,7 +724,25 @@ window.SimpleSPCi18n.registerLanguage("fr", {
   "summary.laney.switchU": "Utiliser plutôt la carte U′",
   "summary.laney.whyDifferent": "Pourquoi ces limites sont-elles différentes ?",
   "summary.laney.adjustmentBenefit": "Cet ajustement permet aux limites de contrôle de mieux refléter la variation effectivement observée dans les données.",
-  "summary.laney.technicalDetail": "Détail technique"
+"summary.laney.technicalDetail": "Détail technique",
+
+// RÉSUMÉS DES CARTES T ET G
+"summary.rare.baseline": "Points initiaux de cette période utilisés pour calculer la ligne centrale et les limites",
+
+"summary.rare.stable": "Aucun signal clair de cause spéciale n'a été détecté pendant cette période. Le comportement observé est compatible avec une variation habituelle (de cause commune).",
+"summary.rare.unstable": "Des signaux de cause spéciale ont été détectés pendant cette période (un comportement incompatible avec la seule variation habituelle).",
+
+"summary.rare.betterHeading": "Interpréter une amélioration",
+"summary.rare.better": "Si l'événement est indésirable, des intervalles plus longs entre les événements (ou davantage d'opportunités entre eux) sont généralement préférables. Si l'événement est souhaitable, des intervalles plus courts peuvent être préférables.",
+
+"summary.rare.nextHeading": "Que faire ensuite",
+"summary.rare.nextStable": "Si le niveau de performance est insuffisant, privilégiez l'amélioration du processus plutôt que de réagir à chaque point individuel.",
+"summary.rare.nextUnstable": "Recherchez une explication concrète (changement de processus, effectifs, demande, détection ou définition des événements). Si le changement était planifié, envisagez une nouvelle période de référence une fois la situation stabilisée.",
+
+"summary.rare.dataHeading": "Rappel sur les données",
+"summary.rare.dataT": "Cette carte utilise le temps écoulé entre les événements (par exemple, le nombre de jours entre deux incidents).",
+"summary.rare.dataG": "Cette carte utilise le nombre d'opportunités entre les événements (les valeurs doivent être supérieures ou égales à 1)."
+
 
 
 
