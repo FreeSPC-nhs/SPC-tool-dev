@@ -544,7 +544,36 @@ window.SimpleSPCi18n.registerLanguage("en", {
 "summary.xbars.latestBothStable": "The latest period looks stable on both parts of the X̄–S chart. That means the current process level and within-subgroup variation are behaving broadly consistently under the current rule settings.",
 "summary.xbars.latestXUnstable": "The latest period shows possible change in the subgroup averages, while within-subgroup variation remains stable.",
 "summary.xbars.latestSUnstable": "The latest period shows possible change in within-subgroup variation, while the subgroup averages remain stable.",
-"summary.xbars.latestBothUnstable": "The latest period shows possible special-cause variation in both the subgroup averages and within-subgroup variation."
+"summary.xbars.latestBothUnstable": "The latest period shows possible special-cause variation in both the subgroup averages and within-subgroup variation.",
+
+// RUN CHART — BASELINE
+"summary.run.baselineFirst": "Baseline for this period: first",
+"summary.run.baselinePoints": "points used to calculate the median.",
+"summary.run.baselineAll": "Baseline for this period: all points in this period used to calculate the median.",
+
+// RUN CHART — SIGNAL DESCRIPTIONS
+"summary.run.shiftBefore": "a sustained shift (≥",
+"summary.run.shiftAfter": "points on one side of the median)",
+"summary.run.trendBefore": "a sustained trend (≥",
+"summary.run.trendAfter": "points increasing or decreasing)",
+"summary.run.outlier": "an unusual outlier (\"astronomical\" point)",
+
+// RUN CHART — INTERPRETATION
+"summary.run.noSignals": "No clear special-cause signals detected in this period (no sustained shift, trend, or unusual outlier). This pattern is consistent with common variation, but always interpret in context.",
+"summary.run.hasSignals": "This period shows special-cause signals:",
+
+// RUN CHART — WHERE TO INVESTIGATE
+"summary.run.where": "Where to look:",
+"summary.run.whereShift": "shift around points",
+"summary.run.whereTrend": "trend around points",
+"summary.run.whereOutlierOne": "outlier at point",
+"summary.run.whereOutlierMany": "outlier at points",
+"summary.run.increasing": "increasing",
+"summary.run.decreasing": "decreasing",
+
+// RUN CHART — SPLIT EXPLANATION
+"summary.run.splitNote": "Each period is summarised separately because splits suggest the process may have changed over time."
+
 
 
 

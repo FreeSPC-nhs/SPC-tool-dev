@@ -547,7 +547,35 @@ window.SimpleSPCi18n.registerLanguage("fr", {
 "summary.xbars.latestBothStable": "La dernière période semble stable sur les deux parties de la carte X̄–S. Cela signifie que le niveau actuel du processus et la variation au sein des sous-groupes présentent un comportement globalement cohérent selon les règles de détection actuellement sélectionnées.",
 "summary.xbars.latestXUnstable": "La dernière période présente un changement possible dans les moyennes des sous-groupes, tandis que la variation au sein des sous-groupes reste stable.",
 "summary.xbars.latestSUnstable": "La dernière période présente un changement possible dans la variation au sein des sous-groupes, tandis que les moyennes des sous-groupes restent stables.",
-"summary.xbars.latestBothUnstable": "La dernière période présente des signes possibles de variation due à des causes spéciales, aussi bien dans les moyennes des sous-groupes que dans la variation au sein des sous-groupes."
+"summary.xbars.latestBothUnstable": "La dernière période présente des signes possibles de variation due à des causes spéciales, aussi bien dans les moyennes des sous-groupes que dans la variation au sein des sous-groupes.",
+
+// GRAPHIQUE CHRONOLOGIQUE — RÉFÉRENCE
+"summary.run.baselineFirst": "Période de référence : les",
+"summary.run.baselinePoints": "premiers points sont utilisés pour calculer la médiane.",
+"summary.run.baselineAll": "Période de référence : tous les points de cette période sont utilisés pour calculer la médiane.",
+
+// GRAPHIQUE CHRONOLOGIQUE — SIGNAUX
+"summary.run.shiftBefore": "un décalage prolongé (≥",
+"summary.run.shiftAfter": "points du même côté de la médiane)",
+"summary.run.trendBefore": "une tendance prolongée (≥",
+"summary.run.trendAfter": "points en augmentation ou en diminution)",
+"summary.run.outlier": "une valeur exceptionnellement éloignée (point « astronomique »)",
+
+// GRAPHIQUE CHRONOLOGIQUE — INTERPRÉTATION
+"summary.run.noSignals": "Aucun signal clair de cause spéciale n'a été détecté pendant cette période (pas de décalage prolongé, de tendance prolongée ni de valeur exceptionnellement éloignée). Ce comportement est compatible avec une variation habituelle, mais doit toujours être interprété dans son contexte.",
+"summary.run.hasSignals": "Cette période présente des signaux de cause spéciale :",
+
+// GRAPHIQUE CHRONOLOGIQUE — POINTS À EXAMINER
+"summary.run.where": "Points à examiner :",
+"summary.run.whereShift": "décalage autour des points",
+"summary.run.whereTrend": "tendance autour des points",
+"summary.run.whereOutlierOne": "valeur exceptionnellement éloignée au point",
+"summary.run.whereOutlierMany": "valeurs exceptionnellement éloignées aux points",
+"summary.run.increasing": "croissante",
+"summary.run.decreasing": "décroissante",
+
+// GRAPHIQUE CHRONOLOGIQUE — CHANGEMENTS DE PHASE
+"summary.run.splitNote": "Chaque période est résumée séparément, car les changements de phase suggèrent que le processus a pu évoluer au fil du temps."
 
 
 
