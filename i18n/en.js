@@ -809,7 +809,47 @@ window.SimpleSPCi18n.registerLanguage("en", {
 "context.tip.annotationMissingEdit": "There is no annotation at this point to edit.",
 "context.tip.annotationPointDelete": "Right-click near a data point to delete an annotation.",
 "context.tip.annotationMissingDelete": "There is no annotation at this point to delete.",
-"context.tip.annotationNone": "There are no annotations to clear."
+"context.tip.annotationNone": "There are no annotations to clear.",
+
+// CHART ACTION DIALOGS
+"dialog.noChart": "Please generate a chart first.",
+"dialog.nearPoint": "Right-click near a plotted point first.",
+"dialog.notInWindow": "This point is not part of the current limit-estimation window.",
+
+// EXCLUDING OBSERVATIONS
+"dialog.excludePoint": "Exclude this point from the limit calculations?\n\nThe point will stay visible on the chart, but it will not be used to estimate the centre line or control limits.\n\nOnly do this after you have investigated it and have good reason to believe it reflects a known special cause rather than the routine variation of the process.\n\nDo not exclude a point simply because it is unusually high or low. If it represents a lasting change in the process, use a split instead.",
+"dialog.excludeSubgroup": "Exclude this subgroup from the limit calculations?\n\nThe subgroup will stay visible on the chart, but it will not be used to estimate the centre line or control limits.\n\nOnly do this after you have investigated it and have good reason to believe it reflects a known special cause rather than the routine variation of the process.\n\nDo not exclude a point simply because it is unusually high or low. If it represents a lasting change in the process, use a split instead.",
+"dialog.excludedPointNote": "Point excluded from the limit calculations. It will remain visible on the chart.\n\nWould you like to add an annotation explaining why it was excluded?",
+"dialog.excludedSubgroupNote": "Subgroup excluded from the limit calculations. It will remain visible on the chart.\n\nWould you like to add an annotation explaining why it was excluded?",
+
+// ANNOTATIONS
+"dialog.annotationFor": "Annotation for {label}:",
+"dialog.newAnnotationFor": "New annotation for {label}:",
+"dialog.editAnnotationFor": "Edit annotation for {label}:",
+"dialog.annotationPositionMissing": "Could not determine the selected x-position for annotation.",
+"dialog.annotationBlank": "Annotation text cannot be blank.",
+"dialog.editWhich": "Edit which annotation?",
+"dialog.deleteWhich": "Delete which annotation?",
+"dialog.annotationsAt": "Annotations at {label}:",
+"dialog.chooseNumber": "Type a number from 1 to {count}:",
+"dialog.invalidNumber": "Please enter a valid number.",
+"dialog.noEditAt": "There are no annotations to edit at {label}.",
+"dialog.noDeleteAt": "There are no annotations to delete at {label}.",
+"dialog.deleteAnnotation": "Delete this annotation?\n\n\"{label}\"",
+"dialog.clearAnnotations": "Clear all annotations?",
+
+// SPLIT VALIDATION
+"dialog.splitUnavailable": "Splits / recalculating limits are not available for this chart type.",
+"dialog.splitInvalid": "Please select a valid split point.",
+"dialog.splitLast": "You can’t split after the last point.",
+
+// COPY AND EXPORT FEEDBACK
+"dialog.copyDone": "Chart image copied to clipboard.",
+"dialog.copyAnalysisDone": "Chart + analysis image copied to clipboard.",
+"dialog.actionFailed": "Sorry — that action failed in this browser. Try 'Save chart(s) as…' instead.",
+"dialog.pdfImageFailed": "Could not build the PDF export image.",
+"dialog.pdfLibraryMissing": "PDF export library not available."
+
 
 
 

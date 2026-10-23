@@ -811,7 +811,48 @@ window.SimpleSPCi18n.registerLanguage("fr", {
 "context.tip.annotationMissingEdit": "Aucune annotation ne peut être modifiée à ce point.",
 "context.tip.annotationPointDelete": "Faites un clic droit près d'un point pour supprimer une annotation.",
 "context.tip.annotationMissingDelete": "Aucune annotation ne peut être supprimée à ce point.",
-"context.tip.annotationNone": "Aucune annotation à supprimer."
+"context.tip.annotationNone": "Aucune annotation à supprimer.",
+
+// DIALOGUES DES ACTIONS SUR LES CARTES
+"dialog.noChart": "Veuillez d'abord générer un graphique.",
+"dialog.nearPoint": "Faites d'abord un clic droit près d'un point du graphique.",
+"dialog.notInWindow": "Ce point ne fait pas partie de la période utilisée pour le calcul des limites actuelles.",
+
+// EXCLUSION DES OBSERVATIONS
+"dialog.excludePoint": "Exclure ce point du calcul des limites ?\n\nLe point restera visible sur le graphique, mais il ne sera pas utilisé pour estimer la ligne centrale ou les limites de contrôle.\n\nNe procédez à cette exclusion qu'après avoir étudié ce point et si vous avez de bonnes raisons de penser qu'il correspond à une cause spéciale identifiée plutôt qu'à la variation habituelle du processus.\n\nN'excluez pas un point simplement parce que sa valeur est exceptionnellement élevée ou faible. S'il représente un changement durable du processus, utilisez plutôt un changement de phase.",
+"dialog.excludeSubgroup": "Exclure ce sous-groupe du calcul des limites ?\n\nLe sous-groupe restera visible sur le graphique, mais il ne sera pas utilisé pour estimer la ligne centrale ou les limites de contrôle.\n\nNe procédez à cette exclusion qu'après avoir étudié ce sous-groupe et si vous avez de bonnes raisons de penser qu'il correspond à une cause spéciale identifiée plutôt qu'à la variation habituelle du processus.\n\nN'excluez pas un point simplement parce que sa valeur est exceptionnellement élevée ou faible. S'il représente un changement durable du processus, utilisez plutôt un changement de phase.",
+"dialog.excludedPointNote": "Le point a été exclu du calcul des limites. Il restera visible sur le graphique.\n\nSouhaitez-vous ajouter une annotation pour expliquer cette exclusion ?",
+"dialog.excludedSubgroupNote": "Le sous-groupe a été exclu du calcul des limites. Il restera visible sur le graphique.\n\nSouhaitez-vous ajouter une annotation pour expliquer cette exclusion ?",
+
+
+// ANNOTATIONS
+"dialog.annotationFor": "Annotation pour {label} :",
+"dialog.newAnnotationFor": "Nouvelle annotation pour {label} :",
+"dialog.editAnnotationFor": "Modifier l'annotation pour {label} :",
+"dialog.annotationPositionMissing": "Impossible de déterminer la position sélectionnée sur l'axe horizontal pour l'annotation.",
+"dialog.annotationBlank": "Le texte de l'annotation ne peut pas être vide.",
+"dialog.editWhich": "Quelle annotation souhaitez-vous modifier ?",
+"dialog.deleteWhich": "Quelle annotation souhaitez-vous supprimer ?",
+"dialog.annotationsAt": "Annotations pour {label} :",
+"dialog.chooseNumber": "Saisissez un numéro entre 1 et {count} :",
+"dialog.invalidNumber": "Veuillez saisir un numéro valide.",
+"dialog.noEditAt": "Aucune annotation à modifier pour {label}.",
+"dialog.noDeleteAt": "Aucune annotation à supprimer pour {label}.",
+"dialog.deleteAnnotation": "Supprimer cette annotation ?\n\n« {label} »",
+"dialog.clearAnnotations": "Supprimer toutes les annotations ?",
+
+// VALIDATION DES CHANGEMENTS DE PHASE
+"dialog.splitUnavailable": "Les changements de phase et le recalcul des limites ne sont pas disponibles pour ce type de carte.",
+"dialog.splitInvalid": "Veuillez sélectionner un point de changement de phase valide.",
+"dialog.splitLast": "Il n'est pas possible d'ajouter un changement de phase après le dernier point.",
+
+// COPIE ET EXPORTATION
+"dialog.copyDone": "L'image du graphique a été copiée dans le presse-papiers.",
+"dialog.copyAnalysisDone": "L'image du graphique et de l'analyse a été copiée dans le presse-papiers.",
+"dialog.actionFailed": "Cette action a échoué dans ce navigateur. Essayez plutôt d'enregistrer les graphiques au format PNG.",
+"dialog.pdfImageFailed": "Impossible de créer l'image destinée au rapport PDF.",
+"dialog.pdfLibraryMissing": "La bibliothèque d'exportation PDF n'est pas disponible."
+
 
 
 
