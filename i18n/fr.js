@@ -907,7 +907,7 @@ window.SimpleSPCi18n.registerLanguage("fr", {
 "project.restoreFailed": "Les données existantes n'ont pas pu être restaurées après la réinitialisation du graphique.",
 
 // VALIDATION AVANT GÉNÉRATION DU GRAPHIQUE
-"validation.selectColumns": "Veuillez sélectionner une colonne pour l'axe X et une colonne de valeurs."
+"validation.selectColumns": "Veuillez sélectionner une colonne pour l'axe X et une colonne de valeurs.",
 
 //  AIDE ET CONSEILS : SECTIONS 1 À 3
 
