@@ -10401,12 +10401,21 @@ function editAnnotationAtIndex(idx) {
   if (!Number.isInteger(idx) || idx < 0 || idx >= annotations.length) return false;
 
   const current = annotations[idx];
-  const nextText = prompt(`Edit annotation for ${current.date}:`, current.label);
+  
+const nextText = prompt(
+  chartPanelText(
+    "dialog.editAnnotationFor",
+    `Edit annotation for ${current.date}:`,
+    { label: current.date }
+  ),
+  current.label
+);
+
   if (nextText === null) return false;
 
   const trimmed = String(nextText).trim();
   if (!trimmed) {
-    alert("Annotation text cannot be blank.");
+    alert(chartPanelText("dialog.annotationBlank", "Annotation text cannot be blank."));
     return false;
   }
 
@@ -10458,18 +10467,34 @@ function chooseAnnotationAtDate(xVal, mode) {
     .map((a, i) => `${i + 1}. ${a.label}`)
     .join("\n");
 
-  const answer = prompt(
-    `${mode === "edit" ? "Edit which annotation?" : "Delete which annotation?"}\n\n` +
-    `Annotations at ${xVal}:\n\n${numbered}\n\n` +
+  
+  const question = mode === "edit"
+    ? chartPanelText("dialog.editWhich", "Edit which annotation?")
+    : chartPanelText("dialog.deleteWhich", "Delete which annotation?");
+
+  const heading = chartPanelText(
+    "dialog.annotationsAt",
+    `Annotations at ${xVal}:`,
+    { label: xVal }
+  );
+
+  const chooseNumber = chartPanelText(
+    "dialog.chooseNumber",
     `Type a number from 1 to ${existing.length}:`,
+    { count: existing.length }
+  );
+
+  const answer = prompt(
+    `${question}\n\n${heading}\n\n${numbered}\n\n${chooseNumber}`,
     "1"
   );
+
 
   if (answer === null) return null;
 
   const n = Number(answer);
   if (!Number.isInteger(n) || n < 1 || n > existing.length) {
-    alert("Please enter a valid number.");
+    alert(chartPanelText("dialog.invalidNumber", "Please enter a valid number."));
     return null;
   }
 
@@ -21748,7 +21773,7 @@ function addSplitAfterIndex(splitAfterIndex) {
   const labels = currentChart?.data?.labels || [];
   if (labels.length === 0) return;
   if (splitAfterIndex < 0 || splitAfterIndex >= labels.length - 1) {
-    alert("You can’t split after the last point.");
+    alert(chartPanelText("dialog.splitLast", "You can’t split after the last point."));
     return;
   }
 
@@ -22207,7 +22232,9 @@ function downloadCanvasAsPng(canvas, filename) {
 if (downloadBtn) {
   downloadBtn.addEventListener("click", () => {
     if (!currentChart) {
-      alert("Please generate a chart first.");
+      
+alert(chartPanelText("dialog.noChart", "Please generate a chart first."));
+
       return;
     }
     const composite = buildCompositeCanvas({ includeSummaryText: false });
@@ -23144,13 +23171,13 @@ function applySplitFromSidebarSelection() {
   const supportsSplits = ["run", "xmr", "c", "p", "pprime", "u", "uprime", "xbars", "t", "g"].includes(chartType);
 
   if (!supportsSplits) {
-    alert("Splits / recalculating limits are not available for this chart type.");
+    alert(chartPanelText("dialog.splitUnavailable", "Splits / recalculating limits are not available for this chart type."));
     return false;
   }
 
   const idx = parseInt(splitPointSelect.value, 10);
   if (!Number.isInteger(idx) || idx < 0) {
-    alert("Please select a valid split point.");
+    alert(chartPanelText("dialog.splitInvalid", "Please select a valid split point."));
     return false;
   }
 
@@ -23255,6 +23282,25 @@ if (chartCanvas) {
  document.addEventListener("scroll", () => hideChartContextMenu(), true);
 
 
+function translateExclusionDialogReason(reason) {
+  const keys = {
+    "Right-click near a plotted point.":
+      "context.tip.nearPoint",
+    "This point is outside the baseline used to estimate the current limits, so excluding it would not change the limit calculation.":
+      "context.tip.outsideBaseline",
+    "Excluding this point would leave too few included observations to estimate the control limits.":
+      "context.tip.tooFewPoint",
+    "Excluding this subgroup would leave too few included observations to estimate the control limits.":
+      "context.tip.tooFewSubgroup",
+    "Excluding this point would leave no pair of consecutive included observations for the moving-range variation estimate.":
+      "context.tip.noConsecutive"
+  };
+
+  const key = keys[reason];
+  return key ? chartPanelText(key, reason) : reason;
+}
+
+
 // Menu actions (right-click menu)
 if (chartContextMenu) {
   chartContextMenu.addEventListener("click", async (e) => {
@@ -23273,7 +23319,9 @@ if (chartContextMenu) {
     hideChartContextMenu();
 
     if (!currentChart) {
-      alert("Please generate a chart first.");
+      
+alert(chartPanelText("dialog.noChart", "Please generate a chart first."));
+
       return;
     }
 
@@ -23328,9 +23376,9 @@ if (chartContextMenu) {
           clickedPointIndex ===
             undefined
         ) {
-          alert(
-            "Right-click near a plotted point first."
-          );
+          
+alert(chartPanelText("dialog.nearPoint", "Right-click near a plotted point first."));
+
 
           return;
         }
@@ -23368,37 +23416,41 @@ if (chartContextMenu) {
           return;
         }
 
+       
         if (!state.eligible) {
           alert(
-            state.reason ||
-            "This point is not part of the current limit-estimation window."
+            state.reason
+              ? translateExclusionDialogReason(state.reason)
+              : chartPanelText(
+                  "dialog.notInWindow",
+                  "This point is not part of the current limit-estimation window."
+                )
           );
 
           return;
         }
 
+
         const isSubgroup =
           state.chartType ===
           "xbars";
 
-        const ok =
-          window.confirm(
-            `Exclude this ${
-              isSubgroup
-                ? "subgroup"
-                : "point"
-            } from the limit calculations?\n\n` +
+        
+        const englishConfirm =
+          `Exclude this ${isSubgroup ? "subgroup" : "point"} from the limit calculations?\n\n` +
+          `The ${isSubgroup ? "subgroup" : "point"} will stay visible on the chart, but it will not be used to estimate the centre line or control limits.\n\n` +
+          "Only do this after you have investigated it and have good reason to believe it reflects a known special cause rather than the routine variation of the process.\n\n" +
+          "Do not exclude a point simply because it is unusually high or low. If it represents a lasting change in the process, use a split instead.";
 
-            `The ${
-              isSubgroup
-                ? "subgroup"
-                : "point"
-            } will stay visible on the chart, but it will not be used to estimate the centre line or control limits.\n\n` +
+        const ok = window.confirm(
+          chartPanelText(
+            isSubgroup
+              ? "dialog.excludeSubgroup"
+              : "dialog.excludePoint",
+            englishConfirm
+          )
+        );
 
-            "Only do this after you have investigated it and have good reason to believe it reflects a known special cause rather than the routine variation of the process.\n\n" +
-
-            "Do not exclude a point simply because it is unusually high or low. If it represents a lasting change in the process, use a split instead."
-          );
 
         if (!ok) {
           return;
@@ -23419,21 +23471,31 @@ if (chartContextMenu) {
             clickedPointIndex + 1
           }`;
 
-        const addNote =
-          window.confirm(
-            `${
-              isSubgroup
-                ? "Subgroup"
-                : "Point"
-            } excluded from the limit calculations. It will remain visible on the chart.\n\n` +
+        
+        const englishFollowUp =
+          `${isSubgroup ? "Subgroup" : "Point"} excluded from the limit calculations. It will remain visible on the chart.\n\n` +
+          "Would you like to add an annotation explaining why it was excluded?";
 
-            "Would you like to add an annotation explaining why it was excluded?"
-          );
+        const addNote = window.confirm(
+          chartPanelText(
+            isSubgroup
+              ? "dialog.excludedSubgroupNote"
+              : "dialog.excludedPointNote",
+            englishFollowUp
+          )
+        );
+
 
         if (addNote) {
           const text =
             prompt(
-              `Annotation for ${xLabel}:`,
+              
+              chartPanelText(
+                "dialog.annotationFor",
+                `Annotation for ${xLabel}:`,
+                { label: xLabel }
+              ),
+
               ""
             );
 
@@ -23469,9 +23531,7 @@ if (chartContextMenu) {
           clickedPointIndex === null ||
           clickedPointIndex === undefined
         ) {
-          alert(
-            "Right-click near a data point to add an annotation."
-          );
+          alert(chartPanelText("context.tip.annotationPointAdd", "Right-click near a data point to add an annotation."));
           return;
         }
 
@@ -23482,14 +23542,18 @@ if (chartContextMenu) {
           labels?.[clickedPointIndex];
 
         if (!xLabel) {
-          alert(
-            "Could not determine the selected x-position for annotation."
-          );
+          alert(chartPanelText("dialog.annotationPositionMissing", "Could not determine the selected x-position for annotation."));
           return;
         }
 
         const text = prompt(
-          `New annotation for ${xLabel}:`,
+          
+chartPanelText(
+  "dialog.newAnnotationFor",
+  `New annotation for ${xLabel}:`,
+  { label: xLabel }
+),
+
           ""
         );
 
@@ -23499,9 +23563,7 @@ if (chartContextMenu) {
           String(text).trim();
 
         if (!trimmed) {
-          alert(
-            "Annotation text cannot be blank."
-          );
+          alert(chartPanelText("dialog.annotationBlank", "Annotation text cannot be blank."));
           return;
         }
 
@@ -23528,7 +23590,12 @@ if (chartContextMenu) {
       }
       if (action === "editAnnotation") {
         if (clickedPointIndex === null || clickedPointIndex === undefined) {
-          alert("Right-click near a data point to edit an annotation.");
+          
+alert(chartPanelText(
+  "context.tip.annotationPointEdit",
+  "Right-click near a data point to edit an annotation."
+));
+
           return;
         }
 
@@ -23536,13 +23603,24 @@ if (chartContextMenu) {
         const xLabel = labels?.[clickedPointIndex];
 
         if (!xLabel) {
-          alert("Could not determine the selected x-position for annotation.");
+          
+alert(chartPanelText(
+  "dialog.annotationPositionMissing",
+  "Could not determine the selected x-position for annotation."
+));
+
           return;
         }
 
         const chosen = chooseAnnotationAtDate(xLabel, "edit");
         if (!chosen) {
-          alert(`There are no annotations to edit at ${xLabel}.`);
+          
+alert(chartPanelText(
+  "dialog.noEditAt",
+  `There are no annotations to edit at ${xLabel}.`,
+  { label: xLabel }
+));
+
           return;
         }
 
@@ -23553,7 +23631,12 @@ if (chartContextMenu) {
 
       if (action === "deleteAnnotation") {
         if (clickedPointIndex === null || clickedPointIndex === undefined) {
-          alert("Right-click near a data point to delete an annotation.");
+          
+alert(chartPanelText(
+  "context.tip.annotationPointDelete",
+  "Right-click near a data point to delete an annotation."
+));
+
           return;
         }
 
@@ -23561,17 +23644,36 @@ if (chartContextMenu) {
         const xLabel = labels?.[clickedPointIndex];
 
         if (!xLabel) {
-          alert("Could not determine the selected x-position for annotation.");
+          
+alert(chartPanelText(
+  "dialog.annotationPositionMissing",
+  "Could not determine the selected x-position for annotation."
+));
+
           return;
         }
 
         const chosen = chooseAnnotationAtDate(xLabel, "delete");
         if (!chosen) {
-          alert(`There are no annotations to delete at ${xLabel}.`);
+          
+alert(chartPanelText(
+  "dialog.noDeleteAt",
+  `There are no annotations to delete at ${xLabel}.`,
+  { label: xLabel }
+));
+
           return;
         }
 
-        const ok = confirm(`Delete this annotation?\n\n"${chosen.label}"`);
+        
+const ok = confirm(
+  chartPanelText(
+    "dialog.deleteAnnotation",
+    `Delete this annotation?\n\n"${chosen.label}"`,
+    { label: chosen.label }
+  )
+);
+
         if (!ok) return;
 
         const changed = deleteAnnotationAtIndex(chosen._idx);
@@ -23582,7 +23684,7 @@ if (chartContextMenu) {
       if (action === "clearAnnotations") {
         if (!annotations || annotations.length === 0) return;
 
-        const ok = confirm("Clear all annotations?");
+        const ok = confirm(chartPanelText("dialog.clearAnnotations", "Clear all annotations?"));
         if (!ok) return;
 
         annotations.length = 0;
@@ -23596,7 +23698,7 @@ if (chartContextMenu) {
 
       if (action === "addSplit") {
         if (clickedPointIndex === null || clickedPointIndex === undefined) {
-          alert("Right-click near a data point to add a split.");
+          alert(chartPanelText("context.tip.splitPoint", "Right-click near a data point to add a split."));
           return;
         }
 
@@ -23642,7 +23744,7 @@ if (chartContextMenu) {
 
     const composite = buildCompositeCanvas({ includeSummaryText: false });
     await copyCanvasToClipboard(composite);
-    alert("Chart image copied to clipboard.");
+    alert(chartPanelText("dialog.copyDone", "Chart image copied to clipboard."));
   } finally {
     if (restoreExportLayout) restoreExportLayout();
   }
@@ -23658,7 +23760,7 @@ if (action === "copyChartsAndAnalysis") {
 
     const composite = buildCompositeCanvas({ includeSummaryText: true });
     await copyCanvasToClipboard(composite);
-    alert("Chart + analysis image copied to clipboard.");
+    alert(chartPanelText("dialog.copyAnalysisDone", "Chart + analysis image copied to clipboard."));
   } finally {
     if (restoreExportLayout) restoreExportLayout();
   }
@@ -23688,7 +23790,7 @@ if (action === "copyChartsAndAnalysis") {
 
     } catch (err) {
       console.error(err);
-      alert("Sorry — that action failed in this browser. Try 'Save chart(s) as…' instead.");
+      alert(chartPanelText("dialog.actionFailed", "Sorry — that action failed in this browser. Try 'Save chart(s) as…' instead."));
     }
   });
 }
@@ -24190,7 +24292,12 @@ document.addEventListener("DOMContentLoaded", initSidebarTabs);
 
 async function exportPdfReport() {
   if (!currentChart) {
-    alert("Please generate a chart first.");
+    
+alert(chartPanelText(
+  "dialog.noChart",
+  "Please generate a chart first."
+));
+
     return;
   }
 
@@ -24201,13 +24308,23 @@ async function exportPdfReport() {
 
     const composite = buildCompositeCanvas({ includeSummaryText: true });
     if (!composite) {
-      alert("Could not build the PDF export image.");
+      
+alert(chartPanelText(
+  "dialog.pdfImageFailed",
+  "Could not build the PDF export image."
+));
+
       return;
     }
 
     const { jsPDF } = window.jspdf || {};
     if (!jsPDF) {
-      alert("PDF export library not available.");
+      
+alert(chartPanelText(
+  "dialog.pdfLibraryMissing",
+  "PDF export library not available."
+));
+
       return;
     }
 
