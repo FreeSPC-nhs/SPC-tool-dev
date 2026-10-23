@@ -646,14 +646,35 @@ function appendLimitExclusionSummary() {
   note.className =
     "limit-exclusion-summary";
 
+  
+  const unitKey = isSubgroup ? "subgroup" : "point";
+  const form = count === 1 ? unitKey : unitKey + "s";
+
+  const englishUnit =
+    count === 1 ? unit : unit + "s";
+
+  const englishVisible = count === 1
+    ? `The excluded ${unit} remains visible on the chart.`
+    : `Excluded ${unit}s remain visible on the chart.`;
+
   note.innerHTML =
-    `<strong>Excluded from limit calculations:</strong> ` +
-    `${count} ${unit}${count === 1 ? "" : "s"}. ` +
-    `${
-      count === 1
-        ? `The excluded ${unit} remains visible on the chart.`
-        : `Excluded ${unit}s remain visible on the chart.`
-    }`;
+    `<strong>` +
+    summaryUiText(
+      "summary.exclusions.heading",
+      "Excluded from limit calculations:"
+    ) +
+    `</strong> ` +
+    `${count} ` +
+    summaryUiText(
+      "summary.exclusions." + form,
+      englishUnit
+    ) +
+    `. ` +
+    summaryUiText(
+      "summary.exclusions." + form + "Visible",
+      englishVisible
+    );
+
 
   summaryDiv.appendChild(
     note
