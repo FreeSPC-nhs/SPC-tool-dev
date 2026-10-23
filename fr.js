@@ -657,7 +657,25 @@ window.SimpleSPCi18n.registerLanguage("fr", {
 "summary.exclusions.pointVisible": "Le point exclu reste visible sur le graphique.",
 "summary.exclusions.pointsVisible": "Les points exclus restent visibles sur le graphique.",
 "summary.exclusions.subgroupVisible": "Le sous-groupe exclu reste visible sur le graphique.",
-"summary.exclusions.subgroupsVisible": "Les sous-groupes exclus restent visibles sur le graphique."
+"summary.exclusions.subgroupsVisible": "Les sous-groupes exclus restent visibles sur le graphique.",
+
+// CARTES AUX ATTRIBUTS — PÉRIODE DE RÉFÉRENCE
+"summary.attr.baselineTitle": "Période de référence pour cette période",
+"summary.attr.firstOne": "le premier point (1) définit la fenêtre de référence ;",
+"summary.attr.firstBefore": "les",
+"summary.attr.firstAfter": "premiers points définissent la fenêtre de référence ;",
+"summary.attr.used": "utilisés pour calculer la ligne centrale et les limites",
+"summary.attr.excludedOne": "exclu du calcul",
+"summary.attr.excludedMany": "exclus du calcul",
+
+// CARTES AUX ATTRIBUTS — SIGNAUX ET INTERPRÉTATION
+"summary.attr.signals": "Signaux",
+"summary.attr.stable": "Selon les règles sélectionnées, aucun signal clair de cause spéciale n'a été détecté pendant cette période. Cela suggère un comportement compatible avec une variation habituelle (de cause commune).",
+"summary.attr.unstable": "Selon les règles sélectionnées, des signaux de cause spéciale ont été détectés pendant cette période (un comportement peu susceptible de s'expliquer uniquement par la variation habituelle).",
+
+// CARTES AUX ATTRIBUTS — PRÉCAUTIONS STATISTIQUES
+"summary.attr.caution": "Ces règles sont des indications, et non des réponses définitives. Interprétez les résultats en tenant compte du contexte local (modifications du processus, effectifs, demande, définitions ou codage) et des hypothèses de base des cartes SPC, notamment la comparabilité des mesures et des opportunités d'observation au fil du temps."
+
 
 
 

@@ -655,12 +655,24 @@ window.SimpleSPCi18n.registerLanguage("en", {
 "summary.exclusions.pointVisible": "The excluded point remains visible on the chart.",
 "summary.exclusions.pointsVisible": "Excluded points remain visible on the chart.",
 "summary.exclusions.subgroupVisible": "The excluded subgroup remains visible on the chart.",
-"summary.exclusions.subgroupsVisible": "Excluded subgroups remain visible on the chart."
+"summary.exclusions.subgroupsVisible": "Excluded subgroups remain visible on the chart.",
 
+// ATTRIBUTE CHARTS — BASELINE EXPLANATIONS
+"summary.attr.baselineTitle": "Baseline for this period",
+"summary.attr.firstOne": "the first point (1) defines the baseline window;",
+"summary.attr.firstBefore": "the first",
+"summary.attr.firstAfter": "points define the baseline window;",
+"summary.attr.used": "used to calculate centre line and limits",
+"summary.attr.excludedOne": "excluded",
+"summary.attr.excludedMany": "excluded",
 
+// ATTRIBUTE CHARTS — SIGNALS AND INTERPRETATION
+"summary.attr.signals": "Signals",
+"summary.attr.stable": "Based on the selected rules, no clear special-cause signals were detected in this period. This suggests the pattern is consistent with routine (common-cause) variation.",
+"summary.attr.unstable": "Based on the selected rules, special-cause signals were detected in this period (a pattern unlikely to be routine variation alone).",
 
-
-
+// ATTRIBUTE CHARTS — STATISTICAL CAUTION
+"summary.attr.caution": "These rules are prompts, not absolute answers. Interpret alongside local context (changes in process, staffing, demand, definitions/coding) and consider basic SPC assumptions (e.g. reasonably consistent measurement and opportunity over time)."
 
 
 
