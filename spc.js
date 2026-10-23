@@ -1966,7 +1966,12 @@ function resetAnnotationsAndSplitsForNewData() {
 
 function loadProjectObject(projectObj) {
   if (!projectObj || typeof projectObj !== "object") {
-    alert("That file could not be read as an SPC project.");
+    
+alert(chartPanelText(
+  "project.invalidObject",
+  "That file could not be read as an SPC project."
+));
+
     return;
   }
 
@@ -1974,7 +1979,12 @@ function loadProjectObject(projectObj) {
   const settings = projectObj?.settings;
 
   if (!Array.isArray(rows) || rows.length === 0) {
-    alert("This project file does not contain any saved data.");
+    
+alert(chartPanelText(
+  "project.noSavedData",
+  "This project file does not contain any saved data."
+));
+
     return;
   }
 
@@ -1982,7 +1992,12 @@ function loadProjectObject(projectObj) {
 
   const ok = loadRows(rows);
   if (!ok) {
-    alert("The project data could not be loaded.");
+    
+alert(chartPanelText(
+  "project.loadFailed",
+  "The project data could not be loaded."
+));
+
     return;
   }
 
@@ -2085,22 +2100,31 @@ function importSettingsOrProjectFromFile(file) {
         } else {
           pendingImportedSettings = parsed;
 
-          alert(
-            "Settings loaded. Now upload your CSV or Excel data and the tool will apply these settings automatically."
-          );
+          
+alert(chartPanelText(
+  "project.settingsQueued",
+  "Settings loaded. Now upload your CSV or Excel data and the tool will apply these settings automatically."
+));
+
         }
 
         return;
       }
 
-      alert(
-        "That file doesn’t look like a supported SPC project or settings file."
-      );
+      
+alert(chartPanelText(
+  "project.unsupported",
+  "That file doesn’t look like a supported SPC project or settings file."
+));
+
 
     } catch (e) {
-      alert(
-        "Could not read that JSON file. Please check it is a valid export from this tool."
-      );
+      
+alert(chartPanelText(
+  "project.invalidJson",
+  "Could not read that JSON file. Please check it is a valid export from this tool."
+));
+
     }
   };
 
@@ -2234,7 +2258,7 @@ function resetStateAfterDataLoad() {
 function prepareForNewImportedChart(rows) {
   // Validate the new data before destroying the current chart.
   if (!rows || rows.length === 0) {
-    showError("No rows found in the data.");
+    showError(chartPanelText("data.noRows", "No rows found in the data."));
     return false;
   }
 
@@ -2245,7 +2269,7 @@ function prepareForNewImportedChart(rows) {
       : [];
 
   if (columns.length === 0) {
-    showError("Could not detect any columns in the data.");
+    showError(chartPanelText("data.noColumns", "Could not detect any columns in the data."));
     return false;
   }
 
@@ -2255,11 +2279,16 @@ function prepareForNewImportedChart(rows) {
     !!dataModelDirty;
 
   if (hasExistingWork) {
-    const ok = window.confirm(
-      "Load these data as a new chart?\n\n" +
-      "This will clear the current data and chart settings. " +
-      "Save the current chart first if you want to reopen it later."
-    );
+    
+const ok = window.confirm(
+  chartPanelText(
+    "data.confirmReplace",
+    "Load these data as a new chart?\n\n" +
+    "This will clear the current data and chart settings. " +
+    "Save the current chart first if you want to reopen it later."
+  )
+);
+
 
     if (!ok) {
       // Allow the same file to be selected again later.
@@ -2588,14 +2617,45 @@ function detectHeadersFromGrid() {
   return isProbablyHeaderRow(rows[0]);
 }
 
+
+function showDataEditorHeaderMessage(kind) {
+  if (!dataEditorHeaderStatus) return;
+
+  const messages = {
+    applyHeadings: [
+      "editor.headerApplyHeadings",
+      "Apply will treat the <strong>first row of the grid</strong> as <strong>headings</strong>. <br><small>Tip: If you loaded a CSV normally, your headings are already the column titles — so usually leave this OFF.</small>"
+    ],
+    applyData: [
+      "editor.headerApplyData",
+      "Apply will treat the <strong>first row of the grid</strong> as <strong>data</strong>. <br><small>Tip: If you loaded a CSV normally, your headings are already the column titles — so usually leave this OFF.</small>"
+    ],
+    detectHeadings: [
+      "editor.detectHeadings",
+      "Auto-detect: first row looks like <strong>headings</strong>."
+    ],
+    detectData: [
+      "editor.detectData",
+      "Auto-detect: first row looks like <strong>data</strong>."
+    ]
+  };
+
+  const entry = messages[kind];
+  if (!entry) return;
+
+  dataEditorHeaderStatus.dataset.editorMessageKind = kind;
+  dataEditorHeaderStatus.innerHTML =
+    chartPanelText(entry[0], entry[1]);
+}
+
 function renderHeaderStatus() {
   if (!dataEditorHeaderStatus || !dataEditorHasHeaders) return;
 
-  const mode = dataEditorHasHeaders.checked ? "headings" : "data";
-
-  dataEditorHeaderStatus.innerHTML =
-    `Apply will treat the <strong>first row of the grid</strong> as <strong>${mode}</strong>. ` +
-    `<br><small>Tip: If you loaded a CSV normally, your headings are already the column titles — so usually leave this OFF.</small>`;
+  showDataEditorHeaderMessage(
+    dataEditorHasHeaders.checked
+      ? "applyHeadings"
+      : "applyData"
+  );
 }
 
 
@@ -2945,7 +3005,7 @@ document.querySelectorAll("input[name='axisType']").forEach(r => {
 
 function loadRows(rows) {
   if (!rows || rows.length === 0) {
-    showError("No rows found in the data.");
+    showError(chartPanelText("data.noRows", "No rows found in the data."));
     return false;
   }
 
@@ -2956,7 +3016,7 @@ function loadRows(rows) {
   const columns = firstRow ? Object.keys(firstRow) : [];
 
   if (!columns || columns.length === 0) {
-    showError("Could not detect any columns in the data.");
+    showError(chartPanelText("data.noColumns", "Could not detect any columns in the data."));
     return false;
   }
 
@@ -3529,7 +3589,7 @@ fileInput.addEventListener("change", async () => {
     }
 
     if (!isCsv) {
-      showError("Please upload a CSV or Excel file (.csv, .xlsx, .xls).");
+      showError(chartPanelText("data.fileType", "Please upload a CSV or Excel file (.csv, .xlsx, .xls)."));
       return;
     }
 
@@ -3537,7 +3597,14 @@ fileInput.addEventListener("change", async () => {
     const parsed = parseTabularTextWithHeaderDetection(text);
 
     if (!parsed.ok) {
-      showError("Error parsing CSV: " + parsed.message);
+      
+// When parsed.message is available:
+showError(chartPanelText(
+  "data.csvError",
+  "Error parsing CSV: " + parsed.message,
+  { message: parsed.message }
+));
+
       return;
     }
 
@@ -3553,7 +3620,14 @@ fileInput.addEventListener("change", async () => {
 
         if (results.errors && results.errors.length > 0) {
           console.error(results.errors);
-          showError("Error parsing CSV: " + results.errors[0].message);
+          
+// Inside the Papa.parse error branch:
+showError(chartPanelText(
+  "data.csvError",
+  "Error parsing CSV: " + results.errors[0].message,
+  { message: results.errors[0].message }
+));
+
           return;
         }
 
@@ -3575,14 +3649,19 @@ return;
   if (!prepareForNewImportedChart(parsed.rows)) return;
   if (!loadRows(parsed.rows)) return;
 } else {
-      const ok = confirm(
-        "It looks like your CSV does not include column headings.\n\n" +
-        "Click OK to treat the first row as DATA (I will create Column1, Column2...).\n" +
-        "Click Cancel if the first row IS a header row (then add headings and upload again)."
-      );
+      
+const ok = confirm(
+  chartPanelText(
+    "data.csvNoHeaders",
+    "It looks like your CSV does not include column headings.\n\n" +
+    "Click OK to treat the first row as DATA (I will create Column1, Column2...).\n" +
+    "Click Cancel if the first row IS a header row (then add headings and upload again)."
+  )
+);
+
 
       if (!ok) {
-        showError("Please add a header row (e.g. Date,Value) and upload again.");
+        showError(chartPanelText("data.csvAddHeaders", "Please add a header row (e.g. Date,Value) and upload again."));
         return;
       }
 
@@ -3604,11 +3683,19 @@ return;
 showNewDataChartPrompt();
   } catch (err) {
     console.error(err);
-    showError(
-      isExcel
-        ? "Unexpected error reading the Excel file."
-        : "Unexpected error reading the CSV file."
-    );
+    
+showError(
+  isExcel
+    ? chartPanelText(
+        "data.excelReadError",
+        "Unexpected error reading the Excel file."
+      )
+    : chartPanelText(
+        "data.csvReadError",
+        "Unexpected error reading the CSV file."
+      )
+);
+
   }
 });
 
@@ -4585,7 +4672,10 @@ function resetChartKeepData() {
 
   // Put the existing dataset back.
   if (!loadRows(savedRows)) {
-    showError("The existing data could not be restored after resetting the chart.");
+    showError(chartPanelText(
+  "project.restoreFailed",
+  "The existing data could not be restored after resetting the chart."
+));
     return;
   }
 
@@ -10731,10 +10821,39 @@ function updateDataEditorWorkbookUi() {
   }
 
   if (statusText) {
-    statusText.innerHTML =
-      `Workbook loaded. You can switch worksheet here, trim rows/columns in the grid, and then click <strong>Apply data</strong>.`;
+    
+statusText.innerHTML = chartPanelText(
+  "editor.workbookStatus",
+  "Workbook loaded. You can switch worksheet here, trim rows/columns in the grid, and then click <strong>Apply data</strong>."
+);
+
   }
 }
+
+
+document.addEventListener("simplespc:languagechange", () => {
+  // Refresh the last displayed header message without
+  // re-running header detection or changing its checkbox.
+  const kind =
+    dataEditorHeaderStatus?.dataset.editorMessageKind;
+
+  if (kind) {
+    showDataEditorHeaderMessage(kind);
+  }
+
+  // Refresh the Excel workbook guidance without rebuilding
+  // the worksheet dropdown or changing the selected sheet.
+  const statusText =
+    document.getElementById("dataEditorWorkbookStatusText");
+
+  if (statusText && dataEditorSourceMode === "excel") {
+    statusText.innerHTML = chartPanelText(
+      "editor.workbookStatus",
+      "Workbook loaded. You can switch worksheet here, trim rows/columns in the grid, and then click <strong>Apply data</strong>."
+    );
+  }
+});
+
 
 function worksheetToEditorGrid(worksheet) {
   if (!worksheet) {
@@ -11005,7 +11124,7 @@ if (dataEditorApplyButton) {
 
     try {
       if (!dataEditorGrid) {
-        showError("Spreadsheet editor not initialised. Try reopening the editor.");
+        showError(chartPanelText("editor.notInitialised", "Spreadsheet editor not initialised. Try reopening the editor."));
         return;
       }
 
@@ -11017,7 +11136,7 @@ if (dataEditorApplyButton) {
       );
 
       if (nonBlank.length === 0) {
-        showError("Please enter at least one data row.");
+        showError(chartPanelText("editor.enterRow", "Please enter at least one data row."));
         return;
       }
 
@@ -11027,9 +11146,17 @@ if (dataEditorApplyButton) {
 // Safety: warn if checkbox disagrees with auto-detect
 const autoGuess = detectHeadersFromGrid();
 if (useHeaders !== autoGuess) {
-  const msg = useHeaders
-    ? "You have 'First row contains headers' ticked, but the first row looks like DATA.\n\nApply anyway?"
-    : "You have 'First row contains headers' unticked, but the first row looks like HEADERS.\n\nApply anyway?";
+  
+const msg = useHeaders
+  ? chartPanelText(
+      "editor.headerMismatchChecked",
+      "You have 'First row contains headers' ticked, but the first row looks like DATA.\n\nApply anyway?"
+    )
+  : chartPanelText(
+      "editor.headerMismatchUnchecked",
+      "You have 'First row contains headers' unticked, but the first row looks like HEADERS.\n\nApply anyway?"
+    );
+
 
   if (!confirm(msg)) {
     // Keep modal open; let them correct the checkbox
@@ -11066,7 +11193,7 @@ if (useHeaders !== autoGuess) {
 
       const rows = sheetToObjects(headers, body);
 if (!rows || rows.length === 0) {
-  showError("Paste at least one row of data.");
+  showError(chartPanelText("editor.pasteRow", "Paste at least one row of data."));
   return;
 }
 
@@ -11119,7 +11246,9 @@ loadedOk = true;
 
     } catch (e) {
       console.error(e);
-      if (!loadedOk) showError("Unexpected error reading spreadsheet data.");
+      if (!loadedOk) {
+  showError(chartPanelText("editor.readError", "Unexpected error reading spreadsheet data."));
+}
       else clearError();
     }
   });
@@ -24059,12 +24188,17 @@ if (resetButton) {
       !!dataModelDirty;
 
     if (hasExistingWork) {
-      const ok = window.confirm(
-        "Reset this chart?\n\n" +
-        "Your loaded data and selected X/value columns will be kept, " +
-        "but chart settings such as chart type, baseline, target, splits, " +
-        "annotations, labels, rules and axis formatting will be reset."
-      );
+      
+const ok = window.confirm(
+  chartPanelText(
+    "data.confirmReset",
+    "Reset this chart?\n\n" +
+    "Your loaded data and selected X/value columns will be kept, " +
+    "but chart settings such as chart type, baseline, target, splits, " +
+    "annotations, labels, rules and axis formatting will be reset."
+  )
+);
+
 
       if (!ok) return;
     }
@@ -24081,11 +24215,16 @@ if (clearDataButton) {
       !!dataModelDirty;
 
     if (hasExistingWork) {
-      const ok = window.confirm(
-        "Clear all loaded data?\n\n" +
-"This will also reset the current chart and its settings. " +
-"Save the chart first if you want to reopen it later."
-      );
+      
+const ok = window.confirm(
+  chartPanelText(
+    "data.confirmClear",
+    "Clear all loaded data?\n\n" +
+    "This will also reset the current chart and its settings. " +
+    "Save the chart first if you want to reopen it later."
+  )
+);
+
 
       if (!ok) return;
     }
@@ -24257,11 +24396,13 @@ if (dataEditorDetectHeadersButton) {
     if (dataEditorHasHeaders) dataEditorHasHeaders.checked = guess;
 
     // Give immediate, obvious feedback
+    
     if (dataEditorHeaderStatus) {
-      dataEditorHeaderStatus.innerHTML = guess
-        ? `Auto-detect: first row looks like <strong>headings</strong>.`
-        : `Auto-detect: first row looks like <strong>data</strong>.`;
+      showDataEditorHeaderMessage(
+        guess ? "detectHeadings" : "detectData"
+      );
     }
+
   });
 }
 
