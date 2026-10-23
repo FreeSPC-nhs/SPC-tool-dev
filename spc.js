@@ -4614,10 +4614,13 @@ document.body.classList.remove("modal-open");
   // Re-render chip suggestions (safe even if helper never opened)
   if (typeof renderHelperState === "function") renderHelperState();
 
+  
   // --- Ensure sidebar is visible (not collapsed) like first load ---
   document.body.classList.remove("sidebar-collapsed");
-  const toggleBtn = document.getElementById("toggleSidebarButton");
-  if (toggleBtn) toggleBtn.textContent = " Hide controls";
+
+  // Restore the button label in the currently selected language.
+  refreshResultsChromeLanguage();
+
 
   const firstTab = document.querySelector(".tab-btn");
 if (firstTab) firstTab.click();
@@ -4748,10 +4751,17 @@ function validateBeforeGenerate() {
   const dateCol = dateSelect?.value;
   const valueCol = valueSelect?.value;
 
-  if (!dateCol || !valueCol) {
-    showError("Please choose both an X-axis column and a value column.");
-    return false;
-  }
+  
+if (!dateCol || !valueCol) {
+  showError(
+    chartPanelText(
+      "validation.selectColumns",
+      "Please choose both an X-axis column and a value column."
+    )
+  );
+  return false;
+}
+
 
   if (chartType === "pareto") {
     const paretoCheck =
