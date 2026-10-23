@@ -503,7 +503,49 @@ window.SimpleSPCi18n.registerLanguage("en", {
 "summary.notStated": "not stated",
 "summary.xbarCentre": "X̄ chart centre line",
 "summary.sCentre": "S chart centre line",
-"summary.estimatedProcessSd": "Estimated process standard deviation"
+"summary.estimatedProcessSd": "Estimated process standard deviation",
+
+// X-BAR / S BASELINE EXPLANATIONS
+"summary.xbars.baseline": "Baseline",
+"summary.xbars.firstOne": "the first subgroup (1)",
+"summary.xbars.firstMany": "the first",
+"summary.xbars.subgroupsMany": "subgroups",
+"summary.xbars.windowOne": "defines the calculation window;",
+"summary.xbars.windowMany": "define the calculation window;",
+"summary.xbars.usedEstimate": "used to estimate the limits",
+"summary.xbars.excludedOne": "excluded",
+"summary.xbars.excludedMany": "excluded",
+
+// X-BAR / S CONTROL-LIMIT DESCRIPTIONS
+"summary.xbars.limitsVary": "control limits vary with subgroup size",
+"summary.xbars.sLimitsVary": "the expected S and its control limits vary with subgroup size.",
+"summary.xbars.centreRange": "Centre-line range",
+"summary.xbars.lclRange": "LCL range",
+"summary.xbars.uclRange": "UCL range",
+"summary.xbars.limits": "limits",
+
+// CHART STATUS
+"summary.xbars.xChart": "X̄ chart",
+"summary.xbars.sChart": "S chart",
+"summary.xbars.interpretation": "Interpretation",
+"summary.xbars.latestPeriod": "Latest period",
+"summary.xbars.stableX": "stable (no clear signal of change in subgroup averages).",
+"summary.xbars.stableS": "stable (no clear signal of change in within-subgroup variation).",
+"summary.xbars.signals": "signal(s):",
+"summary.xbars.signalDetected": "one or more special-cause signals were detected.",
+
+// COMBINED PERIOD INTERPRETATIONS
+"summary.xbars.bothStable": "Both the subgroup averages (X̄) and within-subgroup variation (S) look stable in this period.",
+"summary.xbars.xUnstable": "The subgroup averages (X̄) show special-cause signals, while within-subgroup variation (S) looks stable.",
+"summary.xbars.sUnstable": "The subgroup averages (X̄) look stable, while within-subgroup variation (S) shows special-cause signals.",
+"summary.xbars.bothUnstable": "Both the subgroup averages (X̄) and within-subgroup variation (S) show special-cause signals.",
+
+// LATEST-PERIOD ASSESSMENTS
+"summary.xbars.latestBothStable": "The latest period looks stable on both parts of the X̄–S chart. That means the current process level and within-subgroup variation are behaving broadly consistently under the current rule settings.",
+"summary.xbars.latestXUnstable": "The latest period shows possible change in the subgroup averages, while within-subgroup variation remains stable.",
+"summary.xbars.latestSUnstable": "The latest period shows possible change in within-subgroup variation, while the subgroup averages remain stable.",
+"summary.xbars.latestBothUnstable": "The latest period shows possible special-cause variation in both the subgroup averages and within-subgroup variation."
+
 
 
 

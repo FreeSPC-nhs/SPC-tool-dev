@@ -505,7 +505,50 @@ window.SimpleSPCi18n.registerLanguage("fr", {
 "summary.notStated": "non précisé",
 "summary.xbarCentre": "Ligne centrale de la carte X̄",
 "summary.sCentre": "Ligne centrale de la carte S",
-"summary.estimatedProcessSd": "Écart-type estimé du processus"
+
+"summary.estimatedProcessSd": "Écart-type estimé du processus",
+
+// EXPLICATIONS DE LA PÉRIODE DE RÉFÉRENCE X-BAR / S
+"summary.xbars.baseline": "Période de référence",
+"summary.xbars.firstOne": "le premier sous-groupe (1)",
+"summary.xbars.firstMany": "les",
+"summary.xbars.subgroupsMany": "premiers sous-groupes",
+"summary.xbars.windowOne": "définit la période utilisée pour le calcul des limites ;",
+"summary.xbars.windowMany": "définissent la période utilisée pour le calcul des limites ;",
+"summary.xbars.usedEstimate": "sous-groupes pris en compte pour estimer les limites",
+"summary.xbars.excludedOne": "exclu",
+"summary.xbars.excludedMany": "exclus",
+
+// EXPLICATIONS DES LIMITES DE CONTRÔLE X-BAR / S
+"summary.xbars.limitsVary": "les limites de contrôle varient selon la taille du sous-groupe",
+"summary.xbars.sLimitsVary": "La valeur attendue de S et ses limites de contrôle varient selon la taille du sous-groupe.",
+"summary.xbars.centreRange": "Intervalle des lignes centrales",
+"summary.xbars.lclRange": "Intervalle des LIC",
+"summary.xbars.uclRange": "Intervalle des LSC",
+"summary.xbars.limits": "limites",
+
+// ÉTAT DES CARTES
+"summary.xbars.xChart": "Carte X̄",
+"summary.xbars.sChart": "Carte S",
+"summary.xbars.interpretation": "Interprétation",
+"summary.xbars.latestPeriod": "Dernière période",
+"summary.xbars.stableX": "stable (aucun signal clair de changement dans les moyennes des sous-groupes).",
+"summary.xbars.stableS": "stable (aucun signal clair de changement dans la variation au sein des sous-groupes).",
+"summary.xbars.signals": "signal(s) :",
+"summary.xbars.signalDetected": "un ou plusieurs signaux de cause spéciale ont été détectés.",
+
+// INTERPRÉTATIONS COMBINÉES PAR PÉRIODE
+"summary.xbars.bothStable": "Les moyennes des sous-groupes (X̄) et la variation au sein des sous-groupes (S) semblent toutes deux stables pendant cette période.",
+"summary.xbars.xUnstable": "Les moyennes des sous-groupes (X̄) présentent des signaux de cause spéciale, tandis que la variation au sein des sous-groupes (S) semble stable.",
+"summary.xbars.sUnstable": "Les moyennes des sous-groupes (X̄) semblent stables, tandis que la variation au sein des sous-groupes (S) présente des signaux de cause spéciale.",
+"summary.xbars.bothUnstable": "Les moyennes des sous-groupes (X̄) et la variation au sein des sous-groupes (S) présentent toutes deux des signaux de cause spéciale.",
+
+// ÉVALUATION DE LA DERNIÈRE PÉRIODE
+"summary.xbars.latestBothStable": "La dernière période semble stable sur les deux parties de la carte X̄–S. Cela signifie que le niveau actuel du processus et la variation au sein des sous-groupes présentent un comportement globalement cohérent selon les règles de détection actuellement sélectionnées.",
+"summary.xbars.latestXUnstable": "La dernière période présente un changement possible dans les moyennes des sous-groupes, tandis que la variation au sein des sous-groupes reste stable.",
+"summary.xbars.latestSUnstable": "La dernière période présente un changement possible dans la variation au sein des sous-groupes, tandis que les moyennes des sous-groupes restent stables.",
+"summary.xbars.latestBothUnstable": "La dernière période présente des signes possibles de variation due à des causes spéciales, aussi bien dans les moyennes des sous-groupes que dans la variation au sein des sous-groupes."
+
 
 
 
