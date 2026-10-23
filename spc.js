@@ -12195,23 +12195,28 @@ function summaryCoverageRow(rangeMarkup, pointCount) {
 //
 // This updates only marked spans. All numerical values,
 // user labels, analyses and surrounding HTML are preserved.
+
 function refreshSummaryLanguage() {
-  if (!summaryDiv) return;
+  // Update both the detailed summary and the capability badge.
+  // Only translated text spans are changed.
+  [summaryDiv, capabilityDiv].forEach(root => {
+    if (!root) return;
 
-  summaryDiv
-    .querySelectorAll("[data-summary-i18n]")
-    .forEach(element => {
-      const key =
-        element.getAttribute("data-summary-i18n");
+    root.querySelectorAll("[data-summary-i18n]")
+      .forEach(element => {
+        const key =
+          element.getAttribute("data-summary-i18n");
 
-      if (key) {
-        element.textContent = chartPanelText(
-          key,
-          element.textContent
-        );
-      }
-    });
+        if (key) {
+          element.textContent = chartPanelText(
+            key,
+            element.textContent
+          );
+        }
+      });
+  });
 }
+
 
 document.addEventListener(
   "simplespc:languagechange",
@@ -13314,6 +13319,34 @@ function rangeFinite(arr) {
 }
 
 
+/*
+ * Convert XmR signal descriptions to translated display text.
+ *
+ * The underlying signals array remains unchanged so that
+ * lastXmRAnalysis and the SPC helper retain their existing data.
+ */
+function xmRDisplaySignal(message) {
+  const keys = {
+    "one or more points are outside the control limits":
+      "summary.xmr.signalBeyond",
+
+    "a sustained shift (many points on the same side of the mean)":
+      "summary.xmr.signalShift",
+
+    "a sustained trend (steady increase or decrease)":
+      "summary.xmr.signalTrend",
+
+    "an unusual outlier (an ‘astronomical’ point)":
+      "summary.xmr.signalOutlier"
+  };
+
+  const key = keys[message];
+
+  return key
+    ? summaryUiText(key, message)
+    : message;
+}
+
 
 // Multi-period XmR summary (handles baseline + splits) — lay-user interpretation + astronomical points
 function updateXmRMultiSummary(segments, totalPoints) {
@@ -13497,7 +13530,15 @@ if (
         }
       });
       const prop = hits / n;
-      targetCoverageText = `${(prop * 100).toFixed(1)}% of points in this period meet the target (${hits}/${n}).`;
+      
+targetCoverageText =
+  `${(prop * 100).toFixed(1)}% ` +
+  summaryUiText(
+    "summary.xmr.targetCoverage",
+    "of points in this period meet the target"
+  ) +
+  ` (${hits}/${n}).`;
+
     }
 
        
@@ -13553,26 +13594,63 @@ if (
             )
           );
 
-    if (
-      baselineWindowCount < n ||
-      (
-        manualExcludedPointCount ||
-        0
-      ) > 0
-    ) {
-      html +=
-        `<li>Baseline for this period: first <strong>${baselineWindowCount}</strong> point${baselineWindowCount !== 1 ? "s" : ""} define the baseline window; ` +
-        `<strong>${baselineUsedCount}</strong> used to calculate mean and limits` +
-        `${
-          manualExcludedPointCount
-            ? `, ${manualExcludedPointCount} excluded`
-            : ""
-        }.</li>`;
+    
+if (
+  baselineWindowCount < n ||
+  (manualExcludedPointCount || 0) > 0
+) {
+  const windowUnit = baselineWindowCount === 1
+    ? summaryUiText(
+        "summary.xmr.baselineWindowOne",
+        "point defines the baseline window;"
+      )
+    : summaryUiText(
+        "summary.xmr.baselineWindowMany",
+        "points define the baseline window;"
+      );
 
-    } else {
-      html +=
-        `<li>Baseline for this period: all points in this period used to calculate mean and limits.</li>`;
-    }
+  html +=
+    `<li>` +
+    summaryUiText(
+      "summary.xmr.baselineWindowStart",
+      "Baseline for this period: first"
+    ) +
+    ` <strong>${baselineWindowCount}</strong> ` +
+    windowUnit +
+    ` <strong>${baselineUsedCount}</strong> ` +
+    summaryUiText(
+      "summary.xmr.baselineUsed",
+      "used to calculate mean and limits"
+    );
+
+  if (manualExcludedPointCount) {
+    html +=
+      `, ${manualExcludedPointCount} ` +
+      (
+        manualExcludedPointCount === 1
+          ? summaryUiText(
+              "summary.xmr.excludedOne",
+              "excluded"
+            )
+          : summaryUiText(
+              "summary.xmr.excludedMany",
+              "excluded"
+            )
+      );
+  }
+
+  html += `.</li>`;
+
+} else {
+  html +=
+    `<li>` +
+    summaryUiText(
+      "summary.xmr.baselineAll",
+      "Baseline for this period: all points in this period used to calculate mean and limits."
+    ) +
+    `</li>`;
+}
+
 
     
 html +=
@@ -13597,123 +13675,318 @@ html +=
   summaryUiText("summary.averageMr", "average MR") +
   ` = ${avgMR.toFixed(3)}).</li>`;
 
-    if (
-  manualAdjacentMRExclusions >
-  0
-) {
+    
+if (manualAdjacentMRExclusions > 0) {
   html +=
-    `<li><strong>Excluded point adjustment:</strong> ` +
-    `${manualAdjacentMRExclusions} adjacent moving range${
+    `<li><strong>` +
+    summaryUiText(
+      "summary.xmr.exclusionHeading",
+      "Excluded point adjustment"
+    ) +
+    `:</strong> ${manualAdjacentMRExclusions} ` +
+    (
       manualAdjacentMRExclusions === 1
-        ? " was"
-        : "s were"
-    } not used in the variation estimate because ${
-      manualAdjacentMRExclusions === 1
-        ? "it involves"
-        : "they involve"
-    } an excluded point. ` +
-    `SimpleSPC does not create an artificial moving range across an excluded point.</li>`;
+        ? summaryUiText(
+            "summary.xmr.adjacentOne",
+            "adjacent moving range was not used in the variation estimate because it involves an excluded point."
+          )
+        : summaryUiText(
+            "summary.xmr.adjacentMany",
+            "adjacent moving ranges were not used in the variation estimate because they involve an excluded point."
+          )
+    ) +
+    ` ` +
+    summaryUiText(
+      "summary.xmr.noArtificialMR",
+      "SimpleSPC does not create an artificial moving range across an excluded point."
+    ) +
+    `</li>`;
 }
 
-// Explain XmR moving-range screening only when it is relevant.
-// Keep the main wording simple, with the technical method second.
-if (mrScreeningEnabled && excludedMRCount > 0) {
-  const changeWord =
-    excludedMRCount === 1
-      ? "change was"
-      : "changes were";
 
-  html += `
-    <li>
-      <strong>XmR limit calculation:</strong>
-      ${excludedMRCount} unusually large point-to-point
-      ${changeWord} not used when estimating routine variation.
-      All data points remain shown on the chart.
-    </li>
-  `;
 
-  if (
-    Number.isFinite(initialAvgMR) &&
-    Number.isFinite(mrScreeningThreshold)
-  ) {
-    html += `
-      <li class="hint">
-        Nelson moving-range screening was used:
-        initial average MR = ${initialAvgMR.toFixed(3)};
-        screening threshold = ${mrScreeningThreshold.toFixed(3)};
-        revised average MR = ${avgMR.toFixed(3)}.
-      </li>
-    `;
+  // Explain XmR moving-range screening only when relevant.
+  // Translate the explanation without changing the calculation.
+  if (mrScreeningEnabled && excludedMRCount > 0) {
+
+    html +=
+      `<li><strong>` +
+      summaryUiText(
+        "summary.xmr.limitCalculation",
+        "XmR limit calculation"
+      ) +
+      `:</strong> ${excludedMRCount} ` +
+      (
+        excludedMRCount === 1
+          ? summaryUiText(
+              "summary.xmr.screenedOne",
+              "unusually large point-to-point change was not used when estimating routine variation. All data points remain shown on the chart."
+            )
+          : summaryUiText(
+              "summary.xmr.screenedMany",
+              "unusually large point-to-point changes were not used when estimating routine variation. All data points remain shown on the chart."
+            )
+      ) +
+      `</li>`;
+
+    if (
+      Number.isFinite(initialAvgMR) &&
+      Number.isFinite(mrScreeningThreshold)
+    ) {
+      html +=
+        `<li class="hint">` +
+        summaryUiText(
+          "summary.xmr.nelsonUsed",
+          "Nelson moving-range screening was used:"
+        ) +
+        ` ` +
+        summaryUiText(
+          "summary.xmr.initialMR",
+          "initial average MR"
+        ) +
+        ` = ${initialAvgMR.toFixed(3)}; ` +
+        summaryUiText(
+          "summary.xmr.threshold",
+          "screening threshold"
+        ) +
+        ` = ${mrScreeningThreshold.toFixed(3)}; ` +
+        summaryUiText(
+          "summary.xmr.revisedMR",
+          "revised average MR"
+        ) +
+        ` = ${avgMR.toFixed(3)}.</li>`;
+    }
+
+  } else if (mrScreeningEnabled === false) {
+
+    html +=
+      `<li><strong>` +
+      summaryUiText(
+        "summary.xmr.limitCalculation",
+        "XmR limit calculation"
+      ) +
+      `:</strong> ` +
+      summaryUiText(
+        "summary.xmr.screeningOff",
+        "Moving-range screening is turned off, so all baseline point-to-point changes were used to estimate routine variation."
+      ) +
+      `</li>`;
   }
-} else if (mrScreeningEnabled === false) {
-  html += `
-    <li>
-      <strong>XmR limit calculation:</strong>
-      Moving-range screening is turned off, so all baseline
-      point-to-point changes were used to estimate routine variation.
-    </li>
-  `;
-}
 
+
+// Provisional limits — insufficient observations for interpretation.
 if (!hasEnoughPointsForInterpretation) {
-  html += `
-    <li>
-      <strong>Provisional limits:</strong>
-      only <strong>${limitEstimatePointCount}</strong>
-      point${limitEstimatePointCount !== 1 ? "s were" : " was"}
-      used to estimate the limits for this period.
-      SimpleSPC needs at least <strong>${MIN_XMR_LIMIT_POINTS}</strong>
-      points before interpreting special-cause signals or capability.
-      The displayed limits are shown for context only.
-    </li>
-  `;
+  html +=
+    `<li><strong>` +
+    summaryUiText(
+      "summary.xmr.provisionalHeading",
+      "Provisional limits"
+    ) +
+    `:</strong> ` +
+    summaryUiText("summary.xmr.provisionalOnly", "only") +
+    ` <strong>${limitEstimatePointCount}</strong> ` +
+    (
+      limitEstimatePointCount === 1
+        ? summaryUiText(
+            "summary.xmr.provisionalOne",
+            "point was used to estimate the limits for this period."
+          )
+        : summaryUiText(
+            "summary.xmr.provisionalMany",
+            "points were used to estimate the limits for this period."
+          )
+    ) +
+    ` ` +
+    summaryUiText(
+      "summary.xmr.minimumIntro",
+      "SimpleSPC needs at least"
+    ) +
+    ` <strong>${MIN_XMR_LIMIT_POINTS}</strong> ` +
+    summaryUiText(
+      "summary.xmr.minimumEnd",
+      "points before interpreting special-cause signals or capability."
+    ) +
+    ` ` +
+    summaryUiText(
+      "summary.xmr.provisionalContext",
+      "The displayed limits are shown for context only."
+    ) +
+    `</li>`;
 }
 
+// Target and observed target attainment.
 if (target !== null) {
-      html += `<li>Target: <strong>${target}</strong> (${direction === "above" ? "at or above is better" : "at or below is better"}). `;
-      html += targetCoverageText ? (targetCoverageText + `</li>`) : `Target coverage not calculated for this period.</li>`;
-    }
+  const directionText = direction === "above"
+    ? summaryUiText(
+        "summary.xmr.aboveBetter",
+        "at or above is better"
+      )
+    : summaryUiText(
+        "summary.xmr.belowBetter",
+        "at or below is better"
+      );
 
-    // Simple, clearly labelled interpretation
-    if (!hasEnoughPointsForInterpretation) {
-  html += `
-    <li>
-      <strong>Interpretation:</strong>
-      Not yet assessed — more data are needed before this period
-      can be interpreted as showing routine or special-cause variation.
-    </li>
-  `;
+  html +=
+    `<li>` +
+    summaryUiText("summary.xmr.target", "Target") +
+    `: <strong>${target}</strong> (${directionText}). `;
+
+  html += targetCoverageText
+    ? targetCoverageText + `</li>`
+    : summaryUiText(
+        "summary.xmr.coverageUnavailable",
+        "Target coverage not calculated for this period."
+      ) + `</li>`;
+}
+
+// Interpretation: preserve the existing three-way decision.
+if (!hasEnoughPointsForInterpretation) {
+
+  html +=
+    `<li><strong>` +
+    summaryUiText(
+      "summary.xbars.interpretation",
+      "Interpretation"
+    ) +
+    `:</strong> ` +
+    summaryUiText(
+      "summary.xmr.notAssessed",
+      "Not yet assessed — more data are needed before this period can be interpreted as showing routine or special-cause variation."
+    ) +
+    `</li>`;
+
 } else if (signals.length === 0) {
-  html += `<li><strong>Interpretation:</strong> No clear special-cause signals were detected in this period. The pattern is consistent with natural/common variation (still interpret in clinical context).</li>`;
+
+  html +=
+    `<li><strong>` +
+    summaryUiText(
+      "summary.xbars.interpretation",
+      "Interpretation"
+    ) +
+    `:</strong> ` +
+    summaryUiText(
+      "summary.xmr.noSignals",
+      "No clear special-cause signals were detected in this period. The pattern is consistent with natural/common variation (still interpret in clinical context)."
+    ) +
+    `</li>`;
+
 } else {
-      html += `<li><strong>Interpretation:</strong> This period shows special-cause signals: ${signals.join("; ")}.</li>`;
 
-      // Optional: very short “where” hints (kept minimal)
-      const whereBits = [];
+  // Translate for display only. Do not modify signals.
+  const displayedSignals =
+    signals.map(xmRDisplaySignal);
 
-      if (beyondIdx.length > 0) {
-        const shown = beyondIdx.slice(0, 3).map(i => (startIndex + i + 1));
-        whereBits.push(`outside limits at point${shown.length > 1 ? "s" : ""} ${shown.join(", ")}${beyondIdx.length > 3 ? ", …" : ""}`);
-      }
+  html +=
+    `<li><strong>` +
+    summaryUiText(
+      "summary.xbars.interpretation",
+      "Interpretation"
+    ) +
+    `:</strong> ` +
+    summaryUiText(
+      "summary.xmr.hasSignals",
+      "This period shows special-cause signals:"
+    ) +
+    ` ${displayedSignals.join("; ")}.</li>`;
 
-      if (astro.indices && astro.indices.length > 0) {
-        const shown = astro.indices.slice(0, 3).map(i => (startIndex + i + 1));
-        whereBits.push(`outlier at point${shown.length > 1 ? "s" : ""} ${shown.join(", ")}${astro.indices.length > 3 ? ", …" : ""}`);
-      }
+  // Preserve the original investigation-point calculations.
+  const whereBits = [];
 
-      // Only add “where” if we actually have something specific to show
-      if (whereBits.length > 0) {
-        html += `<li><strong>Where to look:</strong> ${whereBits.join("; ")}.</li>`;
-      }
-    }
+  if (beyondIdx.length > 0) {
+    const shown = beyondIdx
+      .slice(0, 3)
+      .map(i => startIndex + i + 1);
 
-    if (capability && sigma > 0) {
-      if (signals.length === 0) {
-        html += `<li><strong>Estimated capability (this period):</strong> if the process remains stable, about <strong>${(capability.prob * 100).toFixed(1)}%</strong> of future points are expected to meet the target.</li>`;
-      } else {
-        html += `<li><strong>Capability:</strong> a target has been set, but because special-cause signals are present in this period, any capability estimate would be unreliable.</li>`;
-      }
-    }
+    whereBits.push(
+      (
+        shown.length === 1
+          ? summaryUiText(
+              "summary.xmr.outsideOne",
+              "outside limits at point"
+            )
+          : summaryUiText(
+              "summary.xmr.outsideMany",
+              "outside limits at points"
+            )
+      ) +
+      ` ${shown.join(", ")}` +
+      (beyondIdx.length > 3 ? ", …" : "")
+    );
+  }
+
+  if (astro.indices && astro.indices.length > 0) {
+    const shown = astro.indices
+      .slice(0, 3)
+      .map(i => startIndex + i + 1);
+
+    whereBits.push(
+      (
+        shown.length === 1
+          ? summaryUiText(
+              "summary.xmr.outlierOne",
+              "outlier at point"
+            )
+          : summaryUiText(
+              "summary.xmr.outlierMany",
+              "outliers at points"
+            )
+      ) +
+      ` ${shown.join(", ")}` +
+      (astro.indices.length > 3 ? ", …" : "")
+    );
+  }
+
+  if (whereBits.length > 0) {
+    html +=
+      `<li><strong>` +
+      summaryUiText(
+        "summary.xmr.where",
+        "Where to look"
+      ) +
+      `:</strong> ${whereBits.join("; ")}.</li>`;
+  }
+}
+
+// Capability is conditional on adequate data, a target,
+// positive sigma, and the existing capability calculation.
+if (capability && sigma > 0) {
+
+  if (signals.length === 0) {
+
+    html +=
+      `<li><strong>` +
+      summaryUiText(
+        "summary.xmr.estimatedCapability",
+        "Estimated capability (this period)"
+      ) +
+      `:</strong> ` +
+      summaryUiText(
+        "summary.xmr.ifStable",
+        "if the process remains stable, about"
+      ) +
+      ` <strong>${(capability.prob * 100).toFixed(1)}%</strong> ` +
+      summaryUiText(
+        "summary.xmr.futureMeet",
+        "of future points are expected to meet the target."
+      ) +
+      `</li>`;
+
+  } else {
+
+    html +=
+      `<li><strong>` +
+      summaryUiText(
+        "summary.xmr.capability",
+        "Capability"
+      ) +
+      `:</strong> ` +
+      summaryUiText(
+        "summary.xmr.capabilityUnreliable",
+        "a target has been set, but because special-cause signals are present in this period, any capability estimate would be unreliable."
+      ) +
+      `</li>`;
+  }
+}
 
     html += `</ul>`;
     html += `</div>`;
@@ -13782,9 +14055,19 @@ if (target !== null) {
     }
   });
 
-  if (target !== null && segments.length > 1) {
-    html += `<p><em>Note:</em> comparing means, limits and target performance between periods can indicate whether the process changed after interventions.</p>`;
-  }
+  
+if (target !== null && segments.length > 1) {
+  html +=
+    `<p><em>` +
+    summaryUiText("summary.note", "Note:") +
+    `</em> ` +
+    summaryUiText(
+      "summary.xmr.comparePeriods",
+      "Comparing means, limits and target performance between periods can indicate whether the process changed after interventions."
+    ) +
+    `</p>`;
+}
+
 
   summaryDiv.innerHTML = html;
 
@@ -13807,12 +14090,18 @@ if (target !== null) {
         border:1px solid #ccc;
         border-radius:0.25rem;
       ">
-        <div style="font-weight:bold; text-align:center;">PROCESS CAPABILITY (last period)</div>
+        <div style="font-weight:bold; text-align:center;">${summaryUiText(
+  "summary.xmr.badgeHeading",
+  "PROCESS CAPABILITY (last period)"
+)}</div>
         <div style="font-size:1.4rem; font-weight:bold; text-align:center; margin-top:0.2rem;">
           ${(lastPeriodCapability.prob * 100).toFixed(1)}%
         </div>
         <div style="font-size:0.8rem; margin-top:0.2rem;">
-          (Estimated probability of meeting the target in the final period, assuming a stable process and approximate normality.)
+          ${summaryUiText(
+  "summary.xmr.badgeNote",
+  "(Estimated probability of meeting the target in the final period, assuming a stable process and approximate normality.)"
+)}
         </div>
       </div>
     `;
@@ -13826,8 +14115,22 @@ if (target !== null) {
         border-radius:0.25rem;
         max-width:32rem;
       ">
-        <strong>Special-cause signals detected in the last period:</strong> capability estimates may be unreliable until these signals are understood.
-        Focus on understanding and addressing these causes before relying on capability estimates.
+        
+<strong>${summaryUiText(
+  "summary.xmr.badgeWarning",
+  "Special-cause signals detected in the last period:"
+)}</strong>
+
+${summaryUiText(
+  "summary.xmr.badgeUnreliable",
+  "capability estimates may be unreliable until these signals are understood."
+)}
+
+${summaryUiText(
+  "summary.xmr.badgeAction",
+  "Focus on understanding and addressing these causes before relying on capability estimates."
+)}
+
       </div>
     `;
   } else {
