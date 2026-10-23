@@ -909,6 +909,79 @@ window.SimpleSPCi18n.registerLanguage("fr", {
 // VALIDATION AVANT GÉNÉRATION DU GRAPHIQUE
 "validation.selectColumns": "Veuillez sélectionner une colonne pour l'axe X et une colonne de valeurs."
 
+//  AIDE ET CONSEILS : SECTIONS 1 À 3
+
+// Fenêtre d'aide
+"help.subtitle": "Guide pratique pour importer des données, créer des cartes, interpréter les signaux SPC et enregistrer votre travail.",
+"help.closeAria": "Fermer l'aide",
+
+// 1. Présentation de l'outil
+"help.1.title": "1. À quoi sert cet outil",
+"help.1.intro": "est un outil gratuit, accessible dans un navigateur, permettant de créer des cartes de maîtrise statistique des procédés (SPC) et des diagrammes de Pareto.",
+"help.1.purpose": "Il vous aide à comprendre les tendances et les comportements observés dans les données, à distinguer la variation habituelle des signaux de changement et à identifier des possibilités d'amélioration. Tous les calculs sont effectués localement dans votre navigateur. Vos données ne sont pas envoyées à un serveur.",
+"help.1.scope": "SimpleSPC est conçu pour l'apprentissage, l'amélioration de la qualité, le suivi des services et les analyses pratiques. Il n'a pas vocation à remplacer un logiciel statistique réglementé.",
+"help.1.available": "Cartes et graphiques disponibles :",
+
+"help.chart.runName": "Carte de suivi (Run)",
+"help.chart.runDesc": "présente les valeurs dans l'ordre chronologique ou séquentiel, avec une médiane et des règles simples permettant d'identifier des comportements non aléatoires.",
+"help.chart.xmrName": "Carte XmR",
+"help.chart.xmrDesc": "présente les mesures individuelles avec une moyenne et des limites de contrôle, ainsi qu'une carte des étendues mobiles facultative.",
+"help.chart.xbarsName": "Carte X̄–S",
+"help.chart.xbarsDesc": "examine les moyennes et la variation à l'intérieur de sous-groupes de mesures continues.",
+"help.chart.cName": "Carte C",
+"help.chart.cDesc": "surveille les nombres d'événements ou de défauts lorsque les opportunités de survenue restent relativement constantes.",
+"help.chart.pName": "Cartes P et P′ de Laney",
+"help.chart.pDesc": "surveillent les proportions, par exemple le pourcentage de patients concernés par un événement. La carte P′ ajuste les limites de contrôle lorsque la variation observée diffère de celle attendue avec une carte P standard.",
+"help.chart.uName": "Cartes U et U′ de Laney",
+"help.chart.uDesc": "surveillent les taux d'événements lorsque le nombre d'opportunités varie. La carte U′ ajuste les limites de contrôle lorsque la variation observée diffère de celle attendue avec une carte U standard.",
+"help.chart.tName": "Carte T",
+"help.chart.tDesc": "surveille le temps écoulé entre des événements rares.",
+"help.chart.gName": "Carte G",
+"help.chart.gDesc": "surveille le nombre d'opportunités entre des événements rares.",
+"help.chart.paretoName": "Diagramme de Pareto",
+"help.chart.paretoDesc": "classe les catégories de la plus fréquente à la moins fréquente afin d'aider à prioriser les investigations et les améliorations.",
+
+"help.1.importantTitle": "Important :",
+"help.1.important": "Les diagrammes de Pareto sont différents des cartes SPC ordonnées dans le temps. Ils permettent de déterminer quelles catégories représentent le plus grand nombre d'occurrences, mais ne permettent pas d'établir si un processus est stable ou si un changement est statistiquement significatif.",
+
+// 2. Démarrage rapide
+"help.2.title": "2. Démarrage rapide",
+"help.2.step1": "Importez des données au format CSV ou Excel, ou utilisez l'éditeur de données.",
+"help.2.step2": "Sélectionnez le type de carte et choisissez les colonnes appropriées.",
+"help.2.step3Before": "Cliquez sur",
+"help.2.step3After": "si le graphique ne se met pas à jour automatiquement.",
+"help.2.step4": "Ajoutez des titres, des libellés, des objectifs, des changements de phase ou des annotations si nécessaire.",
+"help.2.step5": "Examinez le résumé et les signaux indiqués sur le graphique.",
+"help.2.step6": "Enregistrez le graphique si vous souhaitez reprendre votre travail ultérieurement.",
+
+// 3. Préparation et importation des données
+"help.3.title": "3. Préparer et importer vos données",
+"help.3.intro": "Les colonnes nécessaires dépendent du type de carte. La plupart des cartes SPC nécessitent une colonne de dates ou de séquence et une mesure ou un effectif.",
+
+"help.3.pName": "Les cartes P, P′, U et U′",
+"help.3.pDesc": "nécessitent également une colonne de dénominateurs ou d'opportunités.",
+"help.3.xbarsName": "Les cartes X̄–S",
+"help.3.xbarsDesc": "nécessitent un identifiant de sous-groupe et les valeurs des mesures individuelles.",
+"help.3.paretoName": "Les diagrammes de Pareto",
+"help.3.paretoDesc": "nécessitent une colonne de catégories et, si vos données sont déjà regroupées, éventuellement une colonne de fréquences ou d'effectifs.",
+
+"help.3.ways": "Vous pouvez importer des données de trois façons :",
+"help.3.csv": "Importer un fichier CSV",
+"help.3.excel": "Importer un classeur Excel",
+"help.3.paste": "Coller ou modifier directement des données",
+"help.3.pasteAfter": "dans l'éditeur de données",
+
+"help.3.excelBefore": "Si vous importez un classeur Excel, l'outil ouvre",
+"help.3.excelMiddle": "pour vous permettre d'examiner la feuille avant de l'importer. Vous pouvez changer de feuille, supprimer les lignes ou colonnes inutiles, puis cliquer sur",
+"help.3.axisAuto": "L'outil essaie de proposer automatiquement des colonnes X et Y adaptées, mais vous pouvez les modifier à tout moment.",
+"help.3.dateBefore": "Si votre colonne de dates utilise des dates numériques telles que",
+"help.3.dateMiddle": "utilisez le paramètre",
+"help.3.dateSetting": "Format des dates numériques",
+"help.3.dateAfter": "afin que l'outil les interprète correctement.",
+"help.3.default": "Par défaut :",
+"help.3.defaultFormat": "format britannique jour en premier (jj/mm/aaaa)"
+
+
 
 
 

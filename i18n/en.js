@@ -904,8 +904,79 @@ window.SimpleSPCi18n.registerLanguage("en", {
 "project.restoreFailed": "The existing data could not be restored after resetting the chart.",
 
 // CHART GENERATION VALIDATION
-"validation.selectColumns": "Please choose both an X-axis column and a value column."
+"validation.selectColumns": "Please choose both an X-axis column and a value column.",
 
+//HELP & GUIDANCE: SECTIONS 1–3
+
+// Help window
+"help.subtitle": "A practical guide to loading data, building charts, interpreting SPC signals, and saving your work.",
+"help.closeAria": "Close help",
+
+// 1. What this tool does
+"help.1.title": "1. What this tool does",
+"help.1.intro": "is a free, browser-based tool for creating Statistical Process Control (SPC) charts and Pareto charts.",
+"help.1.purpose": "It helps you understand patterns in data, distinguish routine variation from signals of change, and identify opportunities for improvement. All calculations take place locally in your browser. Your data are not uploaded to a server.",
+"help.1.scope": "SimpleSPC is designed for learning, quality improvement, service monitoring and practical analysis. It is not intended to replace a regulated statistical package.",
+"help.1.available": "Available charts:",
+
+"help.chart.runName": "Run chart",
+"help.chart.runDesc": "shows values in time or sequence order, using a median and simple rules to identify non-random patterns.",
+"help.chart.xmrName": "XmR chart",
+"help.chart.xmrDesc": "shows individual measurements with a mean and control limits, alongside an optional moving-range chart.",
+"help.chart.xbarsName": "X̄–S chart",
+"help.chart.xbarsDesc": "examines averages and variation within groups of continuous measurements.",
+"help.chart.cName": "C chart",
+"help.chart.cDesc": "monitors counts of events or defects when the opportunity for events is reasonably constant.",
+"help.chart.pName": "P and Laney P′ charts",
+"help.chart.pDesc": "monitor proportions, such as the percentage of patients experiencing an event. P′ adjusts control limits when observed variation differs from that expected by a standard P chart.",
+"help.chart.uName": "U and Laney U′ charts",
+"help.chart.uDesc": "monitor event rates when the number of opportunities varies. U′ adjusts control limits when observed variation differs from that expected by a standard U chart.",
+"help.chart.tName": "T chart",
+"help.chart.tDesc": "monitors the time between rare events.",
+"help.chart.gName": "G chart",
+"help.chart.gDesc": "monitors the number of opportunities between rare events.",
+"help.chart.paretoName": "Pareto chart",
+"help.chart.paretoDesc": "ranks categories from most to least frequent to help prioritise investigation and improvement.",
+
+"help.1.importantTitle": "Important:",
+"help.1.important": "Pareto charts are different from time-ordered SPC charts. They help identify which categories account for the most occurrences, but do not establish whether a process is stable or whether a change is statistically significant.",
+
+// 2. Quick start
+"help.2.title": "2. Quick start",
+"help.2.step1": "Load data using CSV, Excel, or the Data editor.",
+"help.2.step2": "Select the chart type and choose the relevant columns.",
+"help.2.step3Before": "Click",
+"help.2.step3After": "if the chart does not update automatically.",
+"help.2.step4": "Add titles, labels, targets, splits, or annotations if needed.",
+"help.2.step5": "Review the summary text and chart signals.",
+"help.2.step6": "Save the chart if you want to return to it later.",
+
+// 3. Preparing and loading data
+"help.3.title": "3. Preparing and loading your data",
+"help.3.intro": "The columns you need depend on the chart type. Most SPC charts need a time or sequence column and a measurement or count.",
+
+"help.3.pName": "P, P′, U and U′ charts",
+"help.3.pDesc": "also need a denominator or opportunities column.",
+"help.3.xbarsName": "X̄–S charts",
+"help.3.xbarsDesc": "need a subgroup identifier and individual measurement values.",
+"help.3.paretoName": "Pareto charts",
+"help.3.paretoDesc": "need a category column, with an optional frequency/count column if your data are already summarised.",
+
+"help.3.ways": "You can now load data in three ways:",
+"help.3.csv": "Upload a CSV file",
+"help.3.excel": "Upload an Excel workbook",
+"help.3.paste": "Paste or edit data directly",
+"help.3.pasteAfter": "in the Data editor",
+
+"help.3.excelBefore": "If you upload an Excel workbook, the tool opens the",
+"help.3.excelMiddle": "so you can inspect the worksheet before importing it. You can switch between worksheets, trim unwanted rows or columns, and then click",
+"help.3.axisAuto": "The tool tries to suggest sensible X and Y columns automatically, but you can change them yourself at any time.",
+"help.3.dateBefore": "If your date column uses numeric dates such as",
+"help.3.dateMiddle": "use the",
+"help.3.dateSetting": "Date format for numeric dates",
+"help.3.dateAfter": "setting so the tool interprets them correctly.",
+"help.3.default": "Default:",
+"help.3.defaultFormat": "UK day-first (dd/mm/yyyy)"
 
 
 
