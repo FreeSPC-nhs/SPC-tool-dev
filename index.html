@@ -2036,20 +2036,27 @@
 
 <div id="dataEditorOverlay">
   <div class="data-editor-dialog">
-    <h2>Data editor</h2>
+    <h2 data-i18n="editor.title">Data editor</h2>
 
-    <p class="hint data-editor-intro-hint">
-  Paste data directly into the grid, or use this editor to review Excel worksheets before importing.
-  You can switch worksheets, delete unwanted rows/columns, and then click
-  <strong>Apply data</strong>.
+    
+<p class="hint data-editor-intro-hint">
+  <span data-i18n="editor.intro">
+    Paste data directly into the grid, or use this editor to review Excel
+    worksheets before importing. You can switch worksheets, delete unwanted
+    rows/columns, and then click
+  </span>
+  <strong data-i18n="editor.apply">Apply data</strong>.
+
   <span class="data-editor-help-inline">
     <button
       id="dataEditorDeleteHelpBtn"
       type="button"
       class="data-editor-help-btn"
       aria-label="How do I delete rows or columns?"
+      data-i18n-aria-label="editor.helpAria"
       aria-expanded="false"
-      aria-controls="dataEditorDeleteHelpPopup">
+      aria-controls="dataEditorDeleteHelpPopup"
+      data-i18n="editor.helpButton">
       How do I delete rows/columns?
     </button>
 
@@ -2058,18 +2065,19 @@
       class="data-editor-help-popup"
       role="tooltip"
       aria-hidden="true">
-      <strong>Editing tip</strong><br>
-      • Right-click a <strong>row number</strong> to delete a row<br>
-      • Right-click a <strong>column heading</strong> to delete a column<br>
-      • You can also insert rows/columns the same way
+      <strong data-i18n="editor.helpHeading">Editing tip</strong>
+      <div>• <span data-i18n="editor.helpRow">Right-click a row number to delete a row</span></div>
+      <div>• <span data-i18n="editor.helpColumn">Right-click a column heading to delete a column</span></div>
+      <div>• <span data-i18n="editor.helpInsert">You can also insert rows/columns the same way</span></div>
     </span>
   </span>
 </p>
 
+
     <div id="dataEditorWorkbookBar" class="data-editor-workbook-bar" style="display:none;">
       <div class="data-editor-workbook-row">
         <label for="dataEditorSheetSelect" class="data-editor-sheet-label">
-          <strong>Worksheet:</strong>
+          <strong data-i18n="editor.worksheet">Worksheet:</strong>
         </label>
         <select id="dataEditorSheetSelect"></select>
       </div>
@@ -2081,15 +2089,18 @@
 
         <div class="data-editor-controls">
       <div class="data-editor-controls-left">
-        <label class="data-editor-checkbox">
-          <input type="checkbox" id="dataEditorHasHeaders" checked>
-          First row contains headers
-        </label>
+        
+<label class="data-editor-checkbox">
+  <input type="checkbox" id="dataEditorHasHeaders" checked>
+  <span data-i18n="editor.hasHeaders">First row contains headers</span>
+</label>
+
       </div>
 
-      <button id="dataEditorDetectHeadersButton" type="button" class="data-editor-secondary">
-        Auto-detect
-      </button>
+      <button id="dataEditorDetectHeadersButton"
+        type="button"
+        class="data-editor-secondary"
+        data-i18n="editor.detect">Auto-detect</button>
     </div>
 
     <div id="dataEditorHeaderStatus" class="data-editor-status" aria-live="polite"></div>
@@ -2097,8 +2108,12 @@
     <div id="dataEditorGrid" class="data-editor-grid"></div>
 
     <div class="data-editor-buttons">
-      <button id="dataEditorApplyButton" type="button">Apply data</button>
-      <button id="dataEditorCancelButton" type="button">Cancel</button>
+      <button id="dataEditorApplyButton"
+        type="button"
+        data-i18n="editor.apply">Apply data</button>
+      <button id="dataEditorCancelButton"
+        type="button"
+        data-i18n="editor.cancel">Cancel</button>
     </div>
   </div>
 </div>
@@ -2106,18 +2121,29 @@
 <!-- Excel sheet picker modal -->
 <div id="sheetPickerOverlay">
   <div class="data-editor-dialog" style="max-width:520px;">
-    <h2 style="margin-top:0;">Choose worksheet</h2>
-    <p class="hint" style="margin-bottom:0.75rem;">
-      This Excel file contains more than one worksheet. Choose which one to import.
-    </p>
+    <h2 style="margin-top:0;"
+    data-i18n="editor.chooseWorksheet">Choose worksheet</h2>
+    <p class="hint"
+   style="margin-bottom:0.75rem;"
+   data-i18n="editor.chooseDescription">
+  This Excel file contains more than one worksheet. Choose which one to import.
+</p>
 
-    <label for="sheetPickerSelect"><strong>Worksheet:</strong></label>
-    <select id="sheetPickerSelect"></select>
+    <label for="sheetPickerSelect">
+  <strong data-i18n="editor.worksheet">Worksheet:</strong>
+</label>
+<select id="sheetPickerSelect"></select>
 
-    <div class="data-editor-buttons">
-      <button type="button" id="sheetPickerCancelButton" class="data-editor-secondary">Cancel</button>
-      <button type="button" id="sheetPickerConfirmButton">Load sheet</button>
-    </div>
+<div class="data-editor-buttons">
+  <button type="button"
+          id="sheetPickerCancelButton"
+          class="data-editor-secondary"
+          data-i18n="editor.cancel">Cancel</button>
+
+  <button type="button"
+          id="sheetPickerConfirmButton"
+          data-i18n="editor.loadSheet">Load sheet</button>
+</div>
   </div>
 </div>
 
