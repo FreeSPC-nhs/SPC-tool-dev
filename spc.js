@@ -13073,10 +13073,46 @@ const base =
     const astro = findAstronomicalPoints(values, median, baselineValues, 3.5);
     const astroIdx = astro?.indices || [];
 
+    
     const signals = [];
-    if (runRanges.length) signals.push(`a sustained shift (≥ ${shiftLength} points on one side of the median)`);
-    if (trendRanges.length) signals.push(`a sustained trend (≥ ${trendLength} points increasing or decreasing)`);
-    if (astroIdx.length) signals.push(`an unusual outlier ("astronomical" point)`);
+
+    if (runRanges.length) {
+      signals.push(
+        summaryUiText(
+          "summary.run.shiftBefore",
+          "a sustained shift (≥"
+        ) +
+        ` ${shiftLength} ` +
+        summaryUiText(
+          "summary.run.shiftAfter",
+          "points on one side of the median)"
+        )
+      );
+    }
+
+    if (trendRanges.length) {
+      signals.push(
+        summaryUiText(
+          "summary.run.trendBefore",
+          "a sustained trend (≥"
+        ) +
+        ` ${trendLength} ` +
+        summaryUiText(
+          "summary.run.trendAfter",
+          "points increasing or decreasing)"
+        )
+      );
+    }
+
+    if (astroIdx.length) {
+      signals.push(
+        summaryUiText(
+          "summary.run.outlier",
+          'an unusual outlier ("astronomical" point)'
+        )
+      );
+    }
+
 
     
     html += summaryPeriodHeading(
@@ -13092,9 +13128,30 @@ const base =
     );
 
 
-    html += (baselineCountUsed < segLen)
-      ? `<li>Baseline for this period: first <strong>${baselineCountUsed}</strong> point${baselineCountUsed !== 1 ? "s" : ""} used to calculate the median.</li>`
-      : `<li>Baseline for this period: all points in this period used to calculate the median.</li>`;
+    
+    if (baselineCountUsed < segLen) {
+      html +=
+        `<li>` +
+        summaryUiText(
+          "summary.run.baselineFirst",
+          "Baseline for this period: first"
+        ) +
+        ` <strong>${baselineCountUsed}</strong> ` +
+        summaryUiText(
+          "summary.run.baselinePoints",
+          "points used to calculate the median."
+        ) +
+        `</li>`;
+    } else {
+      html +=
+        `<li>` +
+        summaryUiText(
+          "summary.run.baselineAll",
+          "Baseline for this period: all points in this period used to calculate the median."
+        ) +
+        `</li>`;
+    }
+
 
     
 html +=
@@ -13106,40 +13163,126 @@ html +=
   `: <strong>${Number.isFinite(median) ? median.toFixed(3) : "—"}</strong>.</li>`;
 
 
+    
     if (!signals.length) {
-      html += `<li><strong>Interpretation:</strong> No clear special-cause signals detected in this period (no sustained shift, trend, or unusual outlier). This pattern is consistent with common variation, but always interpret in context.</li>`;
-    } else {
-      html += `<li><strong>Interpretation:</strong> This period shows special-cause signals: ${signals.join("; ")}.</li>`;
 
-      // “Where to look” (simple + practical)
+      html +=
+        `<li><strong>` +
+        summaryUiText(
+          "summary.xbars.interpretation",
+          "Interpretation"
+        ) +
+        `:</strong> ` +
+        summaryUiText(
+          "summary.run.noSignals",
+          "No clear special-cause signals detected in this period (no sustained shift, trend, or unusual outlier). This pattern is consistent with common variation, but always interpret in context."
+        ) +
+        `</li>`;
+
+    } else {
+
+      html +=
+        `<li><strong>` +
+        summaryUiText(
+          "summary.xbars.interpretation",
+          "Interpretation"
+        ) +
+        `:</strong> ` +
+        summaryUiText(
+          "summary.run.hasSignals",
+          "This period shows special-cause signals:"
+        ) +
+        ` ${signals.join("; ")}.</li>`;
+
+      // Identify where the first detected signals occur.
+      // Preserve the existing point-index calculations.
       const where = [];
 
       if (runRanges.length) {
         const r = runRanges[0];
-        where.push(`shift around points ${seg.start + r.start + 1}–${seg.start + r.end + 1}`);
+
+        where.push(
+          summaryUiText(
+            "summary.run.whereShift",
+            "shift around points"
+          ) +
+          ` ${seg.start + r.start + 1}–` +
+          `${seg.start + r.end + 1}`
+        );
       }
 
       if (trendRanges.length) {
         const t = trendRanges[0];
-        where.push(`trend around points ${seg.start + t.start + 1}–${seg.start + t.end + 1} (${t.dir})`);
+
+        const directionKey =
+          t.dir === "increasing"
+            ? "summary.run.increasing"
+            : "summary.run.decreasing";
+
+        const translatedDirection =
+          summaryUiText(directionKey, t.dir);
+
+        where.push(
+          summaryUiText(
+            "summary.run.whereTrend",
+            "trend around points"
+          ) +
+          ` ${seg.start + t.start + 1}–` +
+          `${seg.start + t.end + 1} ` +
+          `(${translatedDirection})`
+        );
       }
 
       if (astroIdx.length) {
-        const pts = astroIdx.slice(0, 5).map(i => seg.start + i + 1);
-        where.push(`outlier at point${pts.length !== 1 ? "s" : ""} ${pts.join(", ")}`);
+        const pts = astroIdx
+          .slice(0, 5)
+          .map(i => seg.start + i + 1);
+
+        const key = pts.length === 1
+          ? "summary.run.whereOutlierOne"
+          : "summary.run.whereOutlierMany";
+
+        const fallback = pts.length === 1
+          ? "outlier at point"
+          : "outlier at points";
+
+        where.push(
+          summaryUiText(key, fallback) +
+          ` ${pts.join(", ")}`
+        );
       }
 
       if (where.length) {
-        html += `<li><strong>Where to look:</strong> ${where.join("; ")}.</li>`;
+        html +=
+          `<li><strong>` +
+          summaryUiText(
+            "summary.run.where",
+            "Where to look:"
+          ) +
+          `</strong> ${where.join("; ")}.</li>`;
       }
     }
+
 
     html += `</ul>`;
   });
 
+  
   if (segments.length > 1) {
-    html += `<p><em>Note:</em> Each period is summarised separately because splits suggest the process may have changed over time.</p>`;
+    html +=
+      `<p><em>` +
+      summaryUiText(
+        "summary.note",
+        "Note:"
+      ) +
+      `</em> ` +
+      summaryUiText(
+        "summary.run.splitNote",
+        "Each period is summarised separately because splits suggest the process may have changed over time."
+      ) +
+      `</p>`;
   }
+
 
   summaryDiv.innerHTML = html;
 }
