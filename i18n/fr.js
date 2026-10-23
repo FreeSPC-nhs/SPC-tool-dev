@@ -741,7 +741,78 @@ window.SimpleSPCi18n.registerLanguage("fr", {
 
 "summary.rare.dataHeading": "Rappel sur les données",
 "summary.rare.dataT": "Cette carte utilise le temps écoulé entre les événements (par exemple, le nombre de jours entre deux incidents).",
-"summary.rare.dataG": "Cette carte utilise le nombre d'opportunités entre les événements (les valeurs doivent être supérieures ou égales à 1)."
+"summary.rare.dataG": "Cette carte utilise le nombre d'opportunités entre les événements (les valeurs doivent être supérieures ou égales à 1).",
+
+// MENU CONTEXTUEL — BOUTONS
+"context.annotations": "Annotations ▸",
+"context.annotationAdd": "Ajouter une annotation…",
+"context.annotationEdit": "Modifier une annotation…",
+"context.annotationDelete": "Supprimer une annotation…",
+"context.annotationClear": "Supprimer toutes les annotations",
+
+"context.excludePoint": "Exclure du calcul des limites…",
+"context.excludeSubgroup": "Exclure ce sous-groupe du calcul des limites…",
+"context.includePoint": "Réintégrer dans le calcul des limites",
+"context.includeSubgroup": "Réintégrer ce sous-groupe dans le calcul des limites",
+
+"context.splits": "Changements de phase ▸",
+"context.addSplit": "Ajouter un changement de phase après ce point…",
+"context.removeSplit": "Supprimer le changement de phase après {label} (point {point})",
+"context.clearSplits": "Supprimer tous les changements de phase",
+"context.noSplits": "Aucun changement de phase à supprimer",
+"context.splitsUnavailable": "Changements de phase indisponibles pour ce type de carte",
+
+"context.centreShow": "Afficher les libellés des lignes centrales",
+"context.centreHide": "Masquer les libellés des lignes centrales",
+"context.centreHideOne": "Masquer ce libellé de ligne centrale",
+"context.centreRestore": "Rétablir les libellés de ligne centrale masqués",
+
+"context.copy": "Copier les graphiques",
+"context.copyAnalysis": "Copier les graphiques et l'analyse",
+"context.savePng": "Enregistrer les graphiques en PNG",
+"context.pdf": "Télécharger le rapport PDF",
+
+// MENU CONTEXTUEL — INFOBULLES
+"context.tip.annotations": "Ajouter, modifier ou supprimer des annotations pour le point sélectionné.",
+"context.tip.annotationAdd": "Ajouter une annotation à ce point.",
+"context.tip.annotationEdit": "Modifier une annotation existante à ce point.",
+"context.tip.annotationDelete": "Supprimer une annotation existante à ce point.",
+"context.tip.annotationClear": "Supprimer toutes les annotations du graphique.",
+
+"context.tip.excludeDefault": "Conserver ce point visible, mais l'exclure de l'estimation de la ligne centrale et des limites de contrôle.",
+"context.tip.includeDefault": "Réintégrer ce point dans le calcul de la ligne centrale et des limites de contrôle.",
+"context.tip.excludeEligible": "Conserver ce point visible sans l'utiliser pour estimer la ligne centrale ou les limites de contrôle.",
+"context.tip.nearPoint": "Faites un clic droit près d'un point du graphique.",
+"context.tip.outsideBaseline": "Ce point se trouve en dehors de la période de référence utilisée pour estimer les limites actuelles. Son exclusion ne modifierait donc pas leur calcul.",
+"context.tip.tooFewPoint": "L'exclusion de ce point laisserait trop peu d'observations incluses pour estimer les limites de contrôle.",
+"context.tip.tooFewSubgroup": "L'exclusion de ce sous-groupe laisserait trop peu d'observations incluses pour estimer les limites de contrôle.",
+"context.tip.noConsecutive": "L'exclusion de ce point ne laisserait aucune paire d'observations consécutives incluses pour estimer la variation à partir des étendues mobiles.",
+
+"context.tip.splits": "Ajouter ou supprimer des changements de phase sur cette carte.",
+"context.tip.addSplit": "Les changements de phase entraînent un nouveau calcul de la ligne centrale et des limites de contrôle à partir du point choisi. Ils ne doivent être utilisés que lorsqu'un changement durable de performance a été identifié, étudié, compris et reconnu comme représentatif du nouveau niveau habituel du processus.",
+"context.tip.splitsUnavailable": "Les changements de phase ne sont pas disponibles pour ce type de carte.",
+"context.tip.splitPoint": "Faites un clic droit près d'un point pour ajouter un changement de phase.",
+"context.tip.removeSplit": "Supprimer le changement de phase après {label}.",
+"context.tip.clearSplits": "Supprimer tous les changements de phase et revenir à un ensemble unique de limites.",
+"context.tip.noSplits": "Aucun changement de phase à supprimer.",
+
+"context.tip.centreLabels": "Afficher ou masquer les valeurs moyennes calculées pour cette carte XmR.",
+"context.tip.centreHideOne": "Masquer uniquement le libellé de moyenne sur lequel vous avez fait un clic droit.",
+"context.tip.centreRestore": "Rétablir les libellés de moyenne précédemment masqués.",
+
+"context.tip.copy": "Copier uniquement le graphique dans le presse-papiers.",
+"context.tip.copyAnalysis": "Copier le graphique et la zone d'analyse dans le presse-papiers.",
+"context.tip.savePng": "Enregistrer une copie du graphique au format PNG.",
+"context.tip.pdf": "Exporter le graphique et l'analyse au format PDF.",
+
+// OPTIONS D'ANNOTATION DÉSACTIVÉES
+"context.tip.annotationPointAdd": "Faites un clic droit près d'un point pour ajouter une annotation.",
+"context.tip.annotationPointEdit": "Faites un clic droit près d'un point pour modifier une annotation.",
+"context.tip.annotationMissingEdit": "Aucune annotation ne peut être modifiée à ce point.",
+"context.tip.annotationPointDelete": "Faites un clic droit près d'un point pour supprimer une annotation.",
+"context.tip.annotationMissingDelete": "Aucune annotation ne peut être supprimée à ce point.",
+"context.tip.annotationNone": "Aucune annotation à supprimer."
+
 
 
 

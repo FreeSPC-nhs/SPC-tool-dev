@@ -739,7 +739,78 @@ window.SimpleSPCi18n.registerLanguage("en", {
 
 "summary.rare.dataHeading": "Data reminder",
 "summary.rare.dataT": "This chart uses the time between events (e.g., days between incidents).",
-"summary.rare.dataG": "This chart uses opportunities between events (values should be 1 or more)."
+"summary.rare.dataG": "This chart uses opportunities between events (values should be 1 or more).",
+
+// CHART CONTEXT MENU — BUTTONS
+"context.annotations": "Annotations ▸",
+"context.annotationAdd": "Add annotation…",
+"context.annotationEdit": "Edit annotation…",
+"context.annotationDelete": "Delete annotation…",
+"context.annotationClear": "Clear all annotations",
+
+"context.excludePoint": "Exclude from limit calculations…",
+"context.excludeSubgroup": "Exclude this subgroup from limit calculations…",
+"context.includePoint": "Include in limit calculations again",
+"context.includeSubgroup": "Include this subgroup in limit calculations again",
+
+"context.splits": "Splits ▸",
+"context.addSplit": "Add split after this point…",
+"context.removeSplit": "Clear split after {label} (point {point})",
+"context.clearSplits": "Clear all splits",
+"context.noSplits": "No splits to clear",
+"context.splitsUnavailable": "Splits not available for this chart type",
+
+"context.centreShow": "Show centre-line labels",
+"context.centreHide": "Hide centre-line labels",
+"context.centreHideOne": "Hide this centre-line label",
+"context.centreRestore": "Restore hidden centre-line labels",
+
+"context.copy": "Copy chart(s)",
+"context.copyAnalysis": "Copy chart(s) + analysis",
+"context.savePng": "Save chart(s) as PNG image",
+"context.pdf": "Download PDF report",
+
+// CHART CONTEXT MENU — TOOLTIPS
+"context.tip.annotations": "Add, edit or delete annotations for the selected point.",
+"context.tip.annotationAdd": "Add a new annotation at this point.",
+"context.tip.annotationEdit": "Edit an existing annotation at this point.",
+"context.tip.annotationDelete": "Delete an existing annotation at this point.",
+"context.tip.annotationClear": "Remove all annotations from the chart.",
+
+"context.tip.excludeDefault": "Keep this point visible but exclude it from centre-line and control-limit estimation.",
+"context.tip.includeDefault": "Put this point back into the centre-line and control-limit calculation.",
+"context.tip.excludeEligible": "Keep this point visible but do not use it to estimate the centre line or control limits.",
+"context.tip.nearPoint": "Right-click near a plotted point.",
+"context.tip.outsideBaseline": "This point is outside the baseline used to estimate the current limits, so excluding it would not change the limit calculation.",
+"context.tip.tooFewPoint": "Excluding this point would leave too few included observations to estimate the control limits.",
+"context.tip.tooFewSubgroup": "Excluding this subgroup would leave too few included observations to estimate the control limits.",
+"context.tip.noConsecutive": "Excluding this point would leave no pair of consecutive included observations for the moving-range variation estimate.",
+
+"context.tip.splits": "Add or remove split points for this chart.",
+"context.tip.addSplit": "Splits recalculate the central line and control limits from the chosen point onward. Splitting the control limits should only be done where a sustained shift in performance has been identified, investigated, understood and agreed to be representative of the new normal level of performance for the process.",
+"context.tip.splitsUnavailable": "Splits are not available for this chart type.",
+"context.tip.splitPoint": "Right-click near a data point to add a split.",
+"context.tip.removeSplit": "Remove the split after {label}.",
+"context.tip.clearSplits": "Remove all splits and return to a single set of limits.",
+"context.tip.noSplits": "There are no splits to clear.",
+
+"context.tip.centreLabels": "Show or hide the calculated mean values for this XmR chart.",
+"context.tip.centreHideOne": "Hide only the mean label that you right-clicked.",
+"context.tip.centreRestore": "Restore any individual mean labels that have been hidden.",
+
+"context.tip.copy": "Copy the chart (only) to the clipboard.",
+"context.tip.copyAnalysis": "Copy the chart and the analysis area to the clipboard",
+"context.tip.savePng": "Save a copy of the chart as a PNG image file",
+"context.tip.pdf": "Export the chart and analysis to PDF",
+
+// DISABLED ANNOTATION OPTIONS
+"context.tip.annotationPointAdd": "Right-click near a data point to add an annotation.",
+"context.tip.annotationPointEdit": "Right-click near a data point to edit an annotation.",
+"context.tip.annotationMissingEdit": "There is no annotation at this point to edit.",
+"context.tip.annotationPointDelete": "Right-click near a data point to delete an annotation.",
+"context.tip.annotationMissingDelete": "There is no annotation at this point to delete.",
+"context.tip.annotationNone": "There are no annotations to clear."
+
 
 
 
