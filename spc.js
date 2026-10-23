@@ -12358,6 +12358,167 @@ function attributeSignalDisplayHtml(signal) {
 }
 
 
+
+function renderLaneySummaryText(chartType, st, fmt) {
+  const isP = chartType === "p" || chartType === "pprime";
+  const isU = chartType === "u" || chartType === "uprime";
+  if (!isP && !isU) return "";
+
+  const family = isP ? "p" : "u";
+  const t = summaryUiText;
+
+  // English fallback wording from the existing summary.
+  const english = {
+    p: {
+      suggest: "P′ may be a better fit for these data.",
+      over: "The proportions vary more from point to point than a standard P chart expects for these sample sizes. This can make a standard P chart produce limits that are too narrow and create extra alerts. A P′ chart adjusts the limits for this extra variation while keeping the same proportions and centre line.",
+      under: "The proportions vary less from point to point than a standard P chart expects. This can make standard P-chart limits too wide and make genuine changes harder to detect. A P′ chart adjusts the limits to better match the variation actually seen in the data.",
+      normalTitle: "A standard P chart looks appropriate for these data.",
+      normal: "The amount of variation is within the range expected for proportion data of these sample sizes, so there is no clear reason to use a P′ chart instead.",
+      primeOver: "These data vary more than a standard P chart expects, so the P′ chart uses wider control limits.",
+      primeUnder: "These data vary less than a standard P chart expects, so the P′ chart uses narrower control limits.",
+      primeNormal: "The amount of variation is very close to what a standard P chart expects, so the adjustment is small."
+    },
+    u: {
+      suggest: "U′ may be a better fit for these data.",
+      over: "The rates vary more from point to point than a standard U chart expects for the amount of opportunity. This can make a standard U chart produce limits that are too narrow and create extra alerts. A U′ chart adjusts the limits for this extra variation while keeping the same rates and centre line.",
+      under: "The rates vary less from point to point than a standard U chart expects. This can make standard U-chart limits too wide and make genuine changes harder to detect. A U′ chart adjusts the limits to better match the variation actually seen in the data.",
+      normalTitle: "A standard U chart looks appropriate for these data.",
+      normal: "The amount of variation is within the range expected for defect-rate data, so there is no clear reason to use a U′ chart instead.",
+      primeOver: "These data vary more than a standard U chart expects, so the U′ chart uses wider control limits.",
+      primeUnder: "These data vary less than a standard U chart expects, so the U′ chart uses narrower control limits.",
+      primeNormal: "The amount of variation is very close to what a standard U chart expects, so the adjustment is small."
+    }
+  }[family];
+
+  // Standard P and U: retain the existing diagnostic status.
+  if (chartType === "p" || chartType === "u") {
+    const d = st?.dispersionDiagnostic;
+    if (!d?.ok) return "";
+
+    const status = d.status === "overdispersed"
+      ? "over"
+      : d.status === "underdispersed"
+        ? "under"
+        : "normal";
+
+    const headingPart =
+      status === "normal" ? "normalTitle" : "suggest";
+
+    let html =
+      `<li><strong>` +
+      t(
+        `summary.laney.${family}.${headingPart}`,
+        english[headingPart]
+      ) +
+      `</strong> ` +
+      t(
+        `summary.laney.${family}.${status}`,
+        english[status]
+      );
+
+    // Preserve the existing diagnostic formatting.
+    const ratioText = Number(d.ratio).toFixed(1);
+    const lowerText = Number(d.lowerLimit).toFixed(1);
+    const upperText = Number(d.upperLimit).toFixed(1);
+
+    html +=
+      `<div style="margin-top:0.45rem; font-size:0.92em;">` +
+      `<strong>` +
+      t("summary.laney.technicalCheck", "Technical check") +
+      `:</strong> ` +
+      t("summary.laney.observedVariation", "observed variation") +
+      ` = ${ratioText}% ` +
+      t("summary.laney.ofExpected", "of expected") +
+      `; `;
+
+    if (status === "over") {
+      html +=
+        t(
+          "summary.laney.diagnosticUpper",
+          "diagnostic upper limit"
+        ) +
+        ` = ${upperText}%.`;
+
+    } else if (status === "under") {
+      html +=
+        t(
+          "summary.laney.diagnosticLower",
+          "diagnostic lower limit"
+        ) +
+        ` = ${lowerText}%.`;
+
+    } else {
+      html +=
+        t("summary.laney.expectedRange", "expected range") +
+        ` = ${lowerText}%–${upperText}%.`;
+    }
+
+    html += `</div>`;
+
+    // Preserve the existing P -> P′ and U -> U′ actions.
+    if (status !== "normal") {
+      const action = isP
+        ? "switchPToPPrime()"
+        : "switchUToUPrime()";
+
+      const buttonKey = isP
+        ? "summary.laney.switchP"
+        : "summary.laney.switchU";
+
+      const fallback = isP
+        ? "Use P′ chart instead"
+        : "Use U′ chart instead";
+
+      html +=
+        `<div style="margin-top:0.55rem;">` +
+        `<button type="button" onclick="${action}">` +
+        t(buttonKey, fallback) +
+        `</button></div>`;
+    }
+
+    return html + `</li>`;
+  }
+
+  // Laney P′ and U′: explain the existing Sigma Z adjustment.
+  if (!Number.isFinite(st?.sigmaZ)) return "";
+
+  const status = st.sigmaZ > 1
+    ? "over"
+    : st.sigmaZ < 1
+      ? "under"
+      : "normal";
+
+  const fallbackKey =
+    "prime" +
+    status[0].toUpperCase() +
+    status.slice(1);
+
+  return (
+    `<li><strong>` +
+    t(
+      "summary.laney.whyDifferent",
+      "Why are these limits different?"
+    ) +
+    `</strong> ` +
+    t(
+      `summary.laney.${family}.prime.${status}`,
+      english[fallbackKey]
+    ) +
+    ` ` +
+    t(
+      "summary.laney.adjustmentBenefit",
+      "This helps the control limits better reflect the amount of variation actually seen in the data."
+    ) +
+    `<div style="margin-top:0.45rem; font-size:0.92em;">` +
+    `<strong>` +
+    t("summary.laney.technicalDetail", "Technical detail") +
+    `:</strong> Sigma Z = ${fmt(st.sigmaZ)}.` +
+    `</div></li>`
+  );
+}
+
+
 function renderAttributeMultiSummary(segmentAnalyses, totalPoints) {
   if (!summaryDiv) return;
 
@@ -12660,199 +12821,16 @@ function renderAttributeMultiSummary(segmentAnalyses, totalPoints) {
       }
     }
 
-  if (
-  a.chartType === "u" &&
-  st?.dispersionDiagnostic?.ok
-) {
-  const d =
-    st.dispersionDiagnostic;
+  
+    // Laney diagnostic and adjustment explanations.
+    // Calculations and status decisions remain unchanged.
+    html += renderLaneySummaryText(
+      a.chartType,
+      st,
+      fmt
+    );
 
-  const ratioText =
-    Number(d.ratio).toFixed(1);
 
-  const lowerText =
-    Number(d.lowerLimit).toFixed(1);
-
-  const upperText =
-    Number(d.upperLimit).toFixed(1);
-
-  if (d.status === "overdispersed") {
-    html +=
-      `<li>` +
-      `<strong>U′ may be a better fit for these data.</strong> ` +
-      `The rates vary more from point to point than a standard U chart expects for the amount of opportunity. ` +
-      `This can make a standard U chart produce limits that are too narrow and create extra alerts. ` +
-      `A U′ chart adjusts the limits for this extra variation while keeping the same rates and centre line.` +
-      `<div style="margin-top:0.45rem; font-size:0.92em;">` +
-      `<strong>Technical check:</strong> observed variation = ${ratioText}% of expected; ` +
-      `diagnostic upper limit = ${upperText}%.` +
-      `</div>` +
-      `<div style="margin-top:0.55rem;">` +
-      `<button type="button" onclick="switchUToUPrime()">` +
-      `Use U′ chart instead` +
-      `</button>` +
-      `</div>` +
-      `</li>`;
-
-  } else if (
-    d.status === "underdispersed"
-  ) {
-    html +=
-      `<li>` +
-      `<strong>U′ may be a better fit for these data.</strong> ` +
-      `The rates vary less from point to point than a standard U chart expects. ` +
-      `This can make standard U-chart limits too wide and make genuine changes harder to detect. ` +
-      `A U′ chart adjusts the limits to better match the variation actually seen in the data.` +
-      `<div style="margin-top:0.45rem; font-size:0.92em;">` +
-      `<strong>Technical check:</strong> observed variation = ${ratioText}% of expected; ` +
-      `diagnostic lower limit = ${lowerText}%.` +
-      `</div>` +
-      `<div style="margin-top:0.55rem;">` +
-      `<button type="button" onclick="switchUToUPrime()">` +
-      `Use U′ chart instead` +
-      `</button>` +
-      `</div>` +
-      `</li>`;
-
-  } else {
-    html +=
-      `<li>` +
-      `<strong>A standard U chart looks appropriate for these data.</strong> ` +
-      `The amount of variation is within the range expected for defect-rate data, ` +
-      `so there is no clear reason to use a U′ chart instead.` +
-      `<div style="margin-top:0.45rem; font-size:0.92em;">` +
-      `<strong>Technical check:</strong> observed variation = ${ratioText}% of expected; ` +
-      `expected range = ${lowerText}%–${upperText}%.` +
-      `</div>` +
-      `</li>`;
-  }
-}
-
-if (
-  a.chartType === "uprime" &&
-  Number.isFinite(st?.sigmaZ)
-) {
-  let adjustmentText = "";
-
-  if (st.sigmaZ > 1) {
-    adjustmentText =
-      "These data vary more than a standard U chart expects, so the U′ chart uses wider control limits.";
-  } else if (st.sigmaZ < 1) {
-    adjustmentText =
-      "These data vary less than a standard U chart expects, so the U′ chart uses narrower control limits.";
-  } else {
-    adjustmentText =
-      "The amount of variation is very close to what a standard U chart expects, so the adjustment is small.";
-  }
-
-  html +=
-    `<li>` +
-    `<strong>Why are these limits different?</strong> ` +
-    `${adjustmentText} ` +
-    `This helps the control limits better reflect the amount of variation actually seen in the data.` +
-    `<div style="margin-top:0.45rem; font-size:0.92em;">` +
-    `<strong>Technical detail:</strong> Sigma Z = ${fmt(st.sigmaZ)}.` +
-    `</div>` +
-    `</li>`;
-}
-
-    // P vs P′ dispersion diagnostic
-    if (
-      a.chartType === "p" &&
-      st?.dispersionDiagnostic?.ok
-    ) {
-      const d =
-        st.dispersionDiagnostic;
-
-      const ratioText =
-        Number(d.ratio).toFixed(1);
-
-      const lowerText =
-        Number(d.lowerLimit).toFixed(1);
-
-      const upperText =
-        Number(d.upperLimit).toFixed(1);
-
-      if (d.status === "overdispersed") {
-        html +=
-  `<li>` +
-  `<strong>P′ may be a better fit for these data.</strong> ` +
-  `The proportions vary more from point to point than a standard P chart expects for these sample sizes. ` +
-  `This can make a standard P chart produce limits that are too narrow and create extra alerts. ` +
-  `A P′ chart adjusts the limits for this extra variation while keeping the same proportions and centre line.` +
-  `<div style="margin-top:0.45rem; font-size:0.92em;">` +
-  `<strong>Technical check:</strong> observed variation = ${ratioText}% of expected; ` +
-  `diagnostic upper limit = ${upperText}%.` +
-  `</div>` +
-  `<div style="margin-top:0.55rem;">` +
-  `<button type="button" onclick="switchPToPPrime()">` +
-  `Use P′ chart instead` +
-  `</button>` +
-  `</div>` +
-  `</li>`;
-
-      } else if (
-        d.status === "underdispersed"
-      ) {
-        html +=
-  `<li>` +
-  `<strong>P′ may be a better fit for these data.</strong> ` +
-  `The proportions vary less from point to point than a standard P chart expects. ` +
-  `This can make standard P-chart limits too wide and make genuine changes harder to detect. ` +
-  `A P′ chart adjusts the limits to better match the variation actually seen in the data.` +
-  `<div style="margin-top:0.45rem; font-size:0.92em;">` +
-  `<strong>Technical check:</strong> observed variation = ${ratioText}% of expected; ` +
-  `diagnostic lower limit = ${lowerText}%.` +
-  `</div>` +
-  `<div style="margin-top:0.55rem;">` +
-  `<button type="button" onclick="switchPToPPrime()">` +
-  `Use P′ chart instead` +
-  `</button>` +
-  `</div>` +
-  `</li>`;
-
-      } else {
-        html +=
-  `<li>` +
-  `<strong>A standard P chart looks appropriate for these data.</strong> ` +
-  `The amount of variation is within the range expected for proportion data of these sample sizes, ` +
-  `so there is no clear reason to use a P′ chart instead.` +
-  `<div style="margin-top:0.45rem; font-size:0.92em;">` +
-  `<strong>Technical check:</strong> observed variation = ${ratioText}% of expected; ` +
-  `expected range = ${lowerText}%–${upperText}%.` +
-  `</div>` +
-  `</li>`;
-      }
-    }
-
-    // Laney P′ adjustment
-    if (
-      a.chartType === "pprime" &&
-      Number.isFinite(st?.sigmaZ)
-    ) {
-      let adjustmentText = "";
-
-      if (st.sigmaZ > 1) {
-  adjustmentText =
-    "These data vary more than a standard P chart expects, so the P′ chart uses wider control limits.";
-} else if (st.sigmaZ < 1) {
-  adjustmentText =
-    "These data vary less than a standard P chart expects, so the P′ chart uses narrower control limits.";
-} else {
-  adjustmentText =
-    "The amount of variation is very close to what a standard P chart expects, so the adjustment is small.";
-}
-
-      html +=
-        `<li>` +
-`<strong>Why are these limits different?</strong> ` +
-`${adjustmentText} ` +
-`This helps the control limits better reflect the amount of variation actually seen in the data.` +
-`<div style="margin-top:0.45rem; font-size:0.92em;">` +
-`<strong>Technical detail:</strong> Sigma Z = ${fmt(st.sigmaZ)}.` +
-`</div>` +
-`</li>`;
-    }
 
     // Signals
     if (
