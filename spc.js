@@ -21144,6 +21144,210 @@ function hideChartContextMenu() {
   contextMenuMeanLabelSegmentIndex = null;
 }
 
+
+/*
+ * Translate the chart context menu after its existing
+ * visibility, eligibility and tooltip logic has run.
+ *
+ * Never change data-action, disabled, dataset IDs,
+ * click handlers or statistical settings.
+ */
+function localiseChartContextMenu() {
+  if (!chartContextMenu) return;
+
+  const textKeys = {
+    "Annotations ▸": "context.annotations",
+    "Add annotation…": "context.annotationAdd",
+    "Edit annotation…": "context.annotationEdit",
+    "Delete annotation…": "context.annotationDelete",
+    "Clear all annotations": "context.annotationClear",
+
+    "Exclude from limit calculations…": "context.excludePoint",
+    "Exclude this subgroup from limit calculations…": "context.excludeSubgroup",
+    "Include in limit calculations again": "context.includePoint",
+    "Include this subgroup in limit calculations again": "context.includeSubgroup",
+
+    "Splits ▸": "context.splits",
+    "Add split after this point…": "context.addSplit",
+    "Clear all splits": "context.clearSplits",
+    "No splits to clear": "context.noSplits",
+    "Splits not available for this chart type": "context.splitsUnavailable",
+
+    "Show centre-line labels": "context.centreShow",
+    "Hide centre-line labels": "context.centreHide",
+    "Hide this centre-line label": "context.centreHideOne",
+    "Restore hidden centre-line labels": "context.centreRestore",
+
+    "Copy chart(s)": "context.copy",
+    "Copy chart(s) + analysis": "context.copyAnalysis",
+    "Save chart(s) as PNG image": "context.savePng",
+    "Download PDF report": "context.pdf"
+  };
+
+  const titleKeys = {
+    "Add, edit or delete annotations for the selected point.":
+      "context.tip.annotations",
+    "Add a new annotation at this point.":
+      "context.tip.annotationAdd",
+    "Edit an existing annotation at this point.":
+      "context.tip.annotationEdit",
+    "Delete an existing annotation at this point.":
+      "context.tip.annotationDelete",
+    "Remove all annotations from the chart.":
+      "context.tip.annotationClear",
+
+    "Keep this point visible but exclude it from centre-line and control-limit estimation.":
+      "context.tip.excludeDefault",
+    "Put this point back into the centre-line and control-limit calculation.":
+      "context.tip.includeDefault",
+    "Keep this point visible but do not use it to estimate the centre line or control limits.":
+      "context.tip.excludeEligible",
+    "Right-click near a plotted point.":
+      "context.tip.nearPoint",
+    "This point is outside the baseline used to estimate the current limits, so excluding it would not change the limit calculation.":
+      "context.tip.outsideBaseline",
+    "Excluding this point would leave too few included observations to estimate the control limits.":
+      "context.tip.tooFewPoint",
+    "Excluding this subgroup would leave too few included observations to estimate the control limits.":
+      "context.tip.tooFewSubgroup",
+    "Excluding this point would leave no pair of consecutive included observations for the moving-range variation estimate.":
+      "context.tip.noConsecutive",
+
+    "Add or remove split points for this chart.":
+      "context.tip.splits",
+    "Splits recalculate the central line and control limits from the chosen point onward. Splitting the control limits should only be done where a sustained shift in performance has been identified, investigated, understood and agreed to be representative of the new normal level of performance for the process.":
+      "context.tip.addSplit",
+    "Splits are not available for this chart type.":
+      "context.tip.splitsUnavailable",
+    "Right-click near a data point to add a split.":
+      "context.tip.splitPoint",
+    "Remove all splits and return to a single set of limits.":
+      "context.tip.clearSplits",
+    "There are no splits to clear.":
+      "context.tip.noSplits",
+
+    "Show or hide the calculated mean values for this XmR chart.":
+      "context.tip.centreLabels",
+    "Hide only the mean label that you right-clicked.":
+      "context.tip.centreHideOne",
+    "Restore any individual mean labels that have been hidden.":
+      "context.tip.centreRestore",
+
+    "Copy the chart (only) to the clipboard.":
+      "context.tip.copy",
+    "Copy the chart and the analysis area to the clipboard":
+      "context.tip.copyAnalysis",
+    "Save a copy of the chart as a PNG image file":
+      "context.tip.savePng",
+    "Export the chart and analysis to PDF":
+      "context.tip.pdf",
+
+    "Right-click near a data point to add an annotation.":
+      "context.tip.annotationPointAdd",
+    "Right-click near a data point to edit an annotation.":
+      "context.tip.annotationPointEdit",
+    "There is no annotation at this point to edit.":
+      "context.tip.annotationMissingEdit",
+    "Right-click near a data point to delete an annotation.":
+      "context.tip.annotationPointDelete",
+    "There is no annotation at this point to delete.":
+      "context.tip.annotationMissingDelete",
+    "There are no annotations to clear.":
+      "context.tip.annotationNone"
+  };
+
+  function updateField(button, kind) {
+    const isText = kind === "text";
+
+    const rawKey = isText
+      ? "menuEnglishText"
+      : "menuEnglishTitle";
+
+    const lastKey = isText
+      ? "menuLastText"
+      : "menuLastTitle";
+
+    const current = isText
+      ? button.textContent.trim()
+      : (button.getAttribute("title") || "");
+
+    // The existing menu logic may have supplied a new
+    // English message since the previous translation.
+    // Otherwise retain its original text for switching back.
+    if (current !== button.dataset[lastKey]) {
+      button.dataset[rawKey] = current;
+    }
+
+    const english = button.dataset[rawKey] || current;
+
+    let translated = english;
+
+    // Dynamic split-removal items include a date/category
+    // and point number. Preserve both unchanged.
+    if (button.dataset.action === "removeSplit") {
+      if (isText) {
+        const match =
+          /^Clear split after (.+) \(point (\d+)\)$/.exec(english);
+
+        if (match) {
+          translated = chartPanelText(
+            "context.removeSplit",
+            english,
+            {
+              label: match[1],
+              point: match[2]
+            }
+          );
+        }
+      } else {
+        const match =
+          /^Remove the split after (.*)\.$/.exec(english);
+
+        if (match) {
+          translated = chartPanelText(
+            "context.tip.removeSplit",
+            english,
+            { label: match[1] }
+          );
+        }
+      }
+    } else {
+      const key = isText
+        ? textKeys[english]
+        : titleKeys[english];
+
+      if (key) {
+        translated = chartPanelText(key, english);
+      }
+    }
+
+    if (isText) {
+      button.textContent = translated;
+    } else {
+      button.title = translated;
+    }
+
+    button.dataset[lastKey] = translated;
+  }
+
+  chartContextMenu.querySelectorAll("button").forEach(button => {
+    updateField(button, "text");
+    updateField(button, "title");
+  });
+}
+
+// Support changing language while the menu is visible,
+// including programmatic language changes during testing.
+document.addEventListener("simplespc:languagechange", () => {
+  if (
+    chartContextMenu &&
+    chartContextMenu.style.display === "block"
+  ) {
+    localiseChartContextMenu();
+  }
+});
+
+
 // Helper: show menu at cursor, clamped to viewport
 function showChartContextMenu(clientX, clientY, pointIndex) {
   if (!chartContextMenu) return;
@@ -21492,9 +21696,15 @@ xmrHiddenMeanLabels.size > 0
     }
   }
 
+  
+  // Translate the completed menu before measuring its width
+  // and positioning it within the viewport.
+  localiseChartContextMenu();
+
   chartContextMenu.style.display = "block";
   chartContextMenu.style.left = "0px";
   chartContextMenu.style.top = "0px";
+
 
   // Clamp so it stays on-screen
   const menuRect = chartContextMenu.getBoundingClientRect();
