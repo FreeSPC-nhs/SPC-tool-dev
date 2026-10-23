@@ -12245,6 +12245,119 @@ document.addEventListener(
 );
 
 
+
+/*
+ * Translate attribute-chart signal descriptions for display.
+ *
+ * Preserve a.signals and the detection engine's original
+ * English messages. Point numbers, dates and thresholds
+ * are kept as supplied by the analysis.
+ */
+function attributeSignalDisplayHtml(signal) {
+  const text = String(signal ?? "");
+
+  const fixedMessages = {
+    "One or more points above the upper limit":
+      "summary.attr.signalAbove",
+    "One or more points below the lower limit":
+      "summary.attr.signalBelow"
+  };
+
+  if (fixedMessages[text]) {
+    return summaryUiText(fixedMessages[text], text);
+  }
+
+  // Shift: threshold, side and original date/point range.
+  const shift =
+    /^Shift: (\d+)\+ points in a row (above|below) the centre line \(from (.+?) to (.+)\)$/
+      .exec(text);
+
+  if (shift) {
+    const above = shift[2] === "above";
+
+    return (
+      summaryUiText("summary.attr.shiftName", "Shift") +
+      `: ${shift[1]}+ ` +
+      (
+        above
+          ? summaryUiText(
+              "summary.attr.shiftAbove",
+              "points in a row above the centre line (from"
+            )
+          : summaryUiText(
+              "summary.attr.shiftBelow",
+              "points in a row below the centre line (from"
+            )
+      ) +
+      ` ${escapeHtml(shift[3])} ` +
+      summaryUiText("summary.to", "to") +
+      ` ${escapeHtml(shift[4])})`
+    );
+  }
+
+  // Trend: threshold, direction and original range.
+  const trend =
+    /^Trend: (\d+)\+ points steadily (increasing|decreasing) \(from (.+?) to (.+)\)$/
+      .exec(text);
+
+  if (trend) {
+    const increasing = trend[2] === "increasing";
+
+    return (
+      summaryUiText("summary.attr.trendName", "Trend") +
+      `: ${trend[1]}+ ` +
+      (
+        increasing
+          ? summaryUiText(
+              "summary.attr.trendIncreasing",
+              "points steadily increasing (from"
+            )
+          : summaryUiText(
+              "summary.attr.trendDecreasing",
+              "points steadily decreasing (from"
+            )
+      ) +
+      ` ${escapeHtml(trend[3])} ` +
+      summaryUiText("summary.to", "to") +
+      ` ${escapeHtml(trend[4])})`
+    );
+  }
+
+  // Optional zone rules.
+  const zones = [
+    {
+      pattern:
+        /^Zone: 2 of 3 points in the outer third \(from (.+?) to (.+)\)$/,
+      key: "summary.attr.zone23",
+      fallback: "Zone: 2 of 3 points in the outer third (from"
+    },
+    {
+      pattern:
+        /^Zone: 4 of 5 points beyond 1-sigma \(from (.+?) to (.+)\)$/,
+      key: "summary.attr.zone45",
+      fallback: "Zone: 4 of 5 points beyond 1-sigma (from"
+    }
+  ];
+
+  for (const zone of zones) {
+    const match = zone.pattern.exec(text);
+
+    if (match) {
+      return (
+        summaryUiText(zone.key, zone.fallback) +
+        ` ${escapeHtml(match[1])} ` +
+        summaryUiText("summary.to", "to") +
+        ` ${escapeHtml(match[2])})`
+      );
+    }
+  }
+
+  // Unknown messages remain unchanged rather than being
+  // incorrectly translated.
+  return escapeHtml(text);
+}
+
+
 function renderAttributeMultiSummary(segmentAnalyses, totalPoints) {
   if (!summaryDiv) return;
 
@@ -12754,7 +12867,9 @@ html +=
     "summary.attr.signals",
     "Signals"
   ) +
-  `:</strong> ${a.signals.join("; ")}.</li>`;
+  
+`:</strong> ${a.signals.map(attributeSignalDisplayHtml).join("; ")}.</li>`;
+
 
     }
 
@@ -12825,7 +12940,7 @@ function renderAttributeSummary(a) {
   html += `<li><strong>What this suggests:</strong> ${stableLine}</li>`;
 
   if (!a.isStable && Array.isArray(a.signals) && a.signals.length) {
-    html += `<li><strong>What I can see:</strong> ${a.signals.join("; ")}.</li>`;
+    html += `<li><strong>What I can see:</strong> ${a.signals.map(attributeSignalDisplayHtml).join("; ")}.</li>`;
   }
 
   if (a.firstOutOfControl) {
