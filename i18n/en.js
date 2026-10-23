@@ -848,7 +848,61 @@ window.SimpleSPCi18n.registerLanguage("en", {
 "dialog.copyAnalysisDone": "Chart + analysis image copied to clipboard.",
 "dialog.actionFailed": "Sorry — that action failed in this browser. Try 'Save chart(s) as…' instead.",
 "dialog.pdfImageFailed": "Could not build the PDF export image.",
-"dialog.pdfLibraryMissing": "PDF export library not available."
+"dialog.pdfLibraryMissing": "PDF export library not available.",
+
+// DATA EDITOR
+"editor.title": "Data editor",
+"editor.intro": "Paste data directly into the grid, or use this editor to review Excel worksheets before importing. You can switch worksheets, delete unwanted rows/columns, and then click",
+"editor.helpButton": "How do I delete rows/columns?",
+"editor.helpAria": "How do I delete rows or columns?",
+"editor.helpHeading": "Editing tip",
+"editor.helpRow": "Right-click a row number to delete a row",
+"editor.helpColumn": "Right-click a column heading to delete a column",
+"editor.helpInsert": "You can also insert rows/columns the same way",
+"editor.worksheet": "Worksheet:",
+"editor.hasHeaders": "First row contains headers",
+"editor.detect": "Auto-detect",
+"editor.apply": "Apply data",
+"editor.cancel": "Cancel",
+"editor.chooseWorksheet": "Choose worksheet",
+"editor.chooseDescription": "This Excel file contains more than one worksheet. Choose which one to import.",
+"editor.loadSheet": "Load sheet",
+
+// DYNAMIC DATA EDITOR MESSAGES
+"editor.workbookStatus": "Workbook loaded. You can switch worksheet here, trim rows/columns in the grid, and then click <strong>Apply data</strong>.",
+"editor.headerApplyHeadings": "Apply will treat the <strong>first row of the grid</strong> as <strong>headings</strong>.<br><small>Tip: If you loaded a CSV normally, your headings are already the column titles — so usually leave this OFF.</small>",
+"editor.headerApplyData": "Apply will treat the <strong>first row of the grid</strong> as <strong>data</strong>.<br><small>Tip: If you loaded a CSV normally, your headings are already the column titles — so usually leave this OFF.</small>",
+"editor.detectHeadings": "Auto-detect: first row looks like <strong>headings</strong>.",
+"editor.detectData": "Auto-detect: first row looks like <strong>data</strong>.",
+"editor.headerMismatchChecked": "You have 'First row contains headers' ticked, but the first row looks like DATA.\n\nApply anyway?",
+"editor.headerMismatchUnchecked": "You have 'First row contains headers' unticked, but the first row looks like HEADERS.\n\nApply anyway?",
+"editor.notInitialised": "Spreadsheet editor not initialised. Try reopening the editor.",
+"editor.enterRow": "Please enter at least one data row.",
+"editor.pasteRow": "Paste at least one row of data.",
+"editor.readError": "Unexpected error reading spreadsheet data.",
+
+// RESET AND REPLACEMENT
+"data.confirmReset": "Reset this chart?\n\nYour loaded data and selected X/value columns will be kept, but chart settings such as chart type, baseline, target, splits, annotations, labels, rules and axis formatting will be reset.",
+"data.confirmClear": "Clear all loaded data?\n\nThis will also reset the current chart and its settings. Save the chart first if you want to reopen it later.",
+"data.confirmReplace": "Load these data as a new chart?\n\nThis will clear the current data and chart settings. Save the current chart first if you want to reopen it later.",
+"data.noRows": "No rows found in the data.",
+"data.noColumns": "Could not detect any columns in the data.",
+"data.fileType": "Please upload a CSV or Excel file (.csv, .xlsx, .xls).",
+"data.csvError": "Error parsing CSV: {message}",
+"data.csvNoHeaders": "It looks like your CSV does not include column headings.\n\nClick OK to treat the first row as DATA (I will create Column1, Column2...).\nClick Cancel if the first row IS a header row (then add headings and upload again).",
+"data.csvAddHeaders": "Please add a header row (e.g. Date,Value) and upload again.",
+"data.excelReadError": "Unexpected error reading the Excel file.",
+"data.csvReadError": "Unexpected error reading the CSV file.",
+
+// JSON PROJECTS AND LEGACY SETTINGS
+"project.invalidObject": "That file could not be read as an SPC project.",
+"project.noSavedData": "This project file does not contain any saved data.",
+"project.loadFailed": "The project data could not be loaded.",
+"project.settingsQueued": "Settings loaded. Now upload your CSV or Excel data and the tool will apply these settings automatically.",
+"project.unsupported": "That file doesn’t look like a supported SPC project or settings file.",
+"project.invalidJson": "Could not read that JSON file. Please check it is a valid export from this tool.",
+"project.restoreFailed": "The existing data could not be restored after resetting the chart."
+
 
 
 

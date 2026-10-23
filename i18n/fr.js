@@ -851,7 +851,61 @@ window.SimpleSPCi18n.registerLanguage("fr", {
 "dialog.copyAnalysisDone": "L'image du graphique et de l'analyse a été copiée dans le presse-papiers.",
 "dialog.actionFailed": "Cette action a échoué dans ce navigateur. Essayez plutôt d'enregistrer les graphiques au format PNG.",
 "dialog.pdfImageFailed": "Impossible de créer l'image destinée au rapport PDF.",
-"dialog.pdfLibraryMissing": "La bibliothèque d'exportation PDF n'est pas disponible."
+"dialog.pdfLibraryMissing": "La bibliothèque d'exportation PDF n'est pas disponible.",
+
+// ÉDITEUR DE DONNÉES
+"editor.title": "Éditeur de données",
+"editor.intro": "Collez directement les données dans la grille, ou utilisez cet éditeur pour examiner les feuilles Excel avant l'importation. Vous pouvez changer de feuille, supprimer les lignes ou colonnes inutiles, puis cliquer sur",
+"editor.helpButton": "Comment supprimer des lignes ou des colonnes ?",
+"editor.helpAria": "Comment supprimer des lignes ou des colonnes ?",
+"editor.helpHeading": "Conseil de modification",
+"editor.helpRow": "Faites un clic droit sur un numéro de ligne pour supprimer une ligne",
+"editor.helpColumn": "Faites un clic droit sur un en-tête de colonne pour supprimer une colonne",
+"editor.helpInsert": "Vous pouvez aussi insérer des lignes ou des colonnes de la même manière",
+"editor.worksheet": "Feuille :",
+"editor.hasHeaders": "La première ligne contient les en-têtes",
+"editor.detect": "Détection automatique",
+"editor.apply": "Appliquer les données",
+"editor.cancel": "Annuler",
+"editor.chooseWorksheet": "Choisir une feuille",
+"editor.chooseDescription": "Ce fichier Excel contient plusieurs feuilles. Choisissez celle que vous souhaitez importer.",
+"editor.loadSheet": "Charger la feuille",
+
+// MESSAGES DYNAMIQUES DE L'ÉDITEUR
+"editor.workbookStatus": "Classeur chargé. Vous pouvez changer de feuille ici, supprimer les lignes ou colonnes inutiles dans la grille, puis cliquer sur <strong>Appliquer les données</strong>.",
+"editor.headerApplyHeadings": "Lors de l'application, la <strong>première ligne de la grille</strong> sera traitée comme des <strong>en-têtes</strong>.<br><small>Conseil : si vous avez importé un fichier CSV normalement, les en-têtes sont déjà les titres des colonnes. Laissez donc généralement cette option désactivée.</small>",
+"editor.headerApplyData": "Lors de l'application, la <strong>première ligne de la grille</strong> sera traitée comme des <strong>données</strong>.<br><small>Conseil : si vous avez importé un fichier CSV normalement, les en-têtes sont déjà les titres des colonnes. Laissez donc généralement cette option désactivée.</small>",
+"editor.detectHeadings": "Détection automatique : la première ligne semble contenir des <strong>en-têtes</strong>.",
+"editor.detectData": "Détection automatique : la première ligne semble contenir des <strong>données</strong>.",
+"editor.headerMismatchChecked": "Vous avez coché « La première ligne contient les en-têtes », mais la première ligne semble contenir des DONNÉES.\n\nAppliquer malgré tout ?",
+"editor.headerMismatchUnchecked": "Vous n'avez pas coché « La première ligne contient les en-têtes », mais la première ligne semble contenir des EN-TÊTES.\n\nAppliquer malgré tout ?",
+"editor.notInitialised": "L'éditeur de tableau n'a pas été initialisé. Essayez de le rouvrir.",
+"editor.enterRow": "Veuillez saisir au moins une ligne de données.",
+"editor.pasteRow": "Collez au moins une ligne de données.",
+"editor.readError": "Une erreur inattendue s'est produite lors de la lecture des données du tableau.",
+
+// RÉINITIALISATION ET REMPLACEMENT
+"data.confirmReset": "Réinitialiser ce graphique ?\n\nLes données chargées et les colonnes X/valeur sélectionnées seront conservées, mais les paramètres du graphique (type de carte, période de référence, objectif, changements de phase, annotations, libellés, règles et mise en forme des axes) seront réinitialisés.",
+"data.confirmClear": "Effacer toutes les données chargées ?\n\nCette action réinitialisera également le graphique actuel et ses paramètres. Enregistrez le graphique au préalable si vous souhaitez le rouvrir plus tard.",
+"data.confirmReplace": "Charger ces données comme un nouveau graphique ?\n\nLes données et les paramètres du graphique actuel seront effacés. Enregistrez d'abord le graphique actuel si vous souhaitez le rouvrir plus tard.",
+"data.noRows": "Aucune ligne de données n'a été trouvée.",
+"data.noColumns": "Aucune colonne n'a pu être détectée dans les données.",
+"data.fileType": "Veuillez importer un fichier CSV ou Excel (.csv, .xlsx, .xls).",
+"data.csvError": "Erreur lors de l'analyse du fichier CSV : {message}",
+"data.csvNoHeaders": "Il semble que votre fichier CSV ne contienne pas d'en-têtes de colonnes.\n\nCliquez sur OK pour traiter la première ligne comme des DONNÉES (les colonnes seront nommées Column1, Column2, etc.).\nCliquez sur Annuler si la première ligne contient des en-têtes (ajoutez les en-têtes, puis importez à nouveau le fichier).",
+"data.csvAddHeaders": "Ajoutez une ligne d'en-têtes (par exemple Date,Value), puis importez à nouveau le fichier.",
+"data.excelReadError": "Une erreur inattendue s'est produite lors de la lecture du fichier Excel.",
+"data.csvReadError": "Une erreur inattendue s'est produite lors de la lecture du fichier CSV.",
+
+// PROJETS JSON ET ANCIENS PARAMÈTRES
+"project.invalidObject": "Ce fichier n'a pas pu être interprété comme un projet SPC.",
+"project.noSavedData": "Ce fichier de projet ne contient aucune donnée enregistrée.",
+"project.loadFailed": "Les données du projet n'ont pas pu être chargées.",
+"project.settingsQueued": "Paramètres chargés. Importez maintenant vos données CSV ou Excel ; l'outil appliquera automatiquement ces paramètres.",
+"project.unsupported": "Ce fichier ne semble pas être un projet SPC ou un fichier de paramètres pris en charge.",
+"project.invalidJson": "Impossible de lire ce fichier JSON. Vérifiez qu'il s'agit d'un export valide de cet outil.",
+"project.restoreFailed": "Les données existantes n'ont pas pu être restaurées après la réinitialisation du graphique."
+
 
 
 
