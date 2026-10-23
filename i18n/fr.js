@@ -575,7 +575,80 @@ window.SimpleSPCi18n.registerLanguage("fr", {
 "summary.run.decreasing": "décroissante",
 
 // GRAPHIQUE CHRONOLOGIQUE — CHANGEMENTS DE PHASE
-"summary.run.splitNote": "Chaque période est résumée séparément, car les changements de phase suggèrent que le processus a pu évoluer au fil du temps."
+"summary.run.splitNote": "Chaque période est résumée séparément, car les changements de phase suggèrent que le processus a pu évoluer au fil du temps.",
+
+// XMR — DESCRIPTIONS DES SIGNAUX
+"summary.xmr.signalBeyond": "un ou plusieurs points se situent au-delà des limites de contrôle",
+"summary.xmr.signalShift": "un décalage prolongé (plusieurs points du même côté de la moyenne)",
+"summary.xmr.signalTrend": "une tendance prolongée (augmentation ou diminution continue)",
+"summary.xmr.signalOutlier": "une valeur exceptionnellement éloignée (point « astronomique »)",
+
+// XMR — PÉRIODE DE RÉFÉRENCE
+"summary.xmr.baselineWindowStart": "Période de référence : fenêtre initiale de",
+"summary.xmr.baselineWindowOne": "point servant de référence ;",
+"summary.xmr.baselineWindowMany": "points servant de référence ;",
+"summary.xmr.baselineUsed": "pris en compte pour calculer la moyenne et les limites",
+"summary.xmr.excludedOne": "point exclu du calcul",
+"summary.xmr.excludedMany": "points exclus du calcul",
+"summary.xmr.baselineAll": "Période de référence : tous les points de cette période ont été utilisés pour calculer la moyenne et les limites.",
+
+// XMR — EXCLUSIONS MANUELLES
+"summary.xmr.exclusionHeading": "Ajustement lié aux points exclus",
+"summary.xmr.adjacentOne": "étendue mobile adjacente n'a pas été utilisée pour estimer la variation, car elle comprend un point exclu.",
+"summary.xmr.adjacentMany": "étendues mobiles adjacentes n'ont pas été utilisées pour estimer la variation, car elles comprennent un point exclu.",
+"summary.xmr.noArtificialMR": "SimpleSPC ne crée pas d'étendue mobile artificielle de part et d'autre d'un point exclu.",
+
+// XMR — FILTRAGE DE NELSON
+"summary.xmr.limitCalculation": "Calcul des limites XmR",
+"summary.xmr.screenedOne": "variation exceptionnellement grande entre deux points consécutifs n'a pas été utilisée pour estimer la variation habituelle. Tous les points restent visibles sur la carte.",
+"summary.xmr.screenedMany": "variations exceptionnellement grandes entre deux points consécutifs n'ont pas été utilisées pour estimer la variation habituelle. Tous les points restent visibles sur la carte.",
+"summary.xmr.nelsonUsed": "Le filtrage des étendues mobiles selon la méthode de Nelson a été appliqué :",
+"summary.xmr.initialMR": "moyenne initiale des étendues mobiles",
+"summary.xmr.threshold": "seuil de filtrage",
+"summary.xmr.revisedMR": "moyenne révisée des étendues mobiles",
+"summary.xmr.screeningOff": "Le filtrage des étendues mobiles est désactivé ; toutes les variations entre points consécutifs de la période de référence ont donc été utilisées pour estimer la variation habituelle.",
+
+// XMR — LIMITES PROVISOIRES
+"summary.xmr.provisionalHeading": "Limites provisoires",
+"summary.xmr.provisionalOnly": "seulement",
+"summary.xmr.provisionalOne": "point a été utilisé pour estimer les limites de cette période.",
+"summary.xmr.provisionalMany": "points ont été utilisés pour estimer les limites de cette période.",
+"summary.xmr.minimumIntro": "SimpleSPC nécessite au moins",
+"summary.xmr.minimumEnd": "points avant de pouvoir interpréter les signaux de cause spéciale ou estimer la capabilité du processus.",
+"summary.xmr.provisionalContext": "Les limites affichées sont fournies uniquement à titre indicatif.",
+
+// XMR — OBJECTIFS
+"summary.xmr.target": "Objectif",
+"summary.xmr.aboveBetter": "une valeur supérieure ou égale est préférable",
+"summary.xmr.belowBetter": "une valeur inférieure ou égale est préférable",
+"summary.xmr.targetCoverage": "des points de cette période atteignent l'objectif",
+"summary.xmr.coverageUnavailable": "La proportion de points atteignant l'objectif n'a pas été calculée pour cette période.",
+
+// XMR — INTERPRÉTATION
+"summary.xmr.notAssessed": "Évaluation non encore possible : davantage de données sont nécessaires avant de pouvoir déterminer si cette période présente une variation habituelle ou des signaux de cause spéciale.",
+"summary.xmr.noSignals": "Aucun signal clair de cause spéciale n'a été détecté pendant cette période. Le comportement observé est compatible avec une variation habituelle, mais doit toujours être interprété dans son contexte clinique.",
+"summary.xmr.hasSignals": "Cette période présente des signaux de cause spéciale :",
+"summary.xmr.where": "Points à examiner",
+"summary.xmr.outsideOne": "point au-delà des limites au rang",
+"summary.xmr.outsideMany": "points au-delà des limites aux rangs",
+"summary.xmr.outlierOne": "valeur exceptionnellement éloignée au rang",
+"summary.xmr.outlierMany": "valeurs exceptionnellement éloignées aux rangs",
+
+// XMR — CAPABILITÉ
+"summary.xmr.estimatedCapability": "Capabilité estimée (cette période)",
+"summary.xmr.ifStable": "si le processus reste stable, environ",
+"summary.xmr.futureMeet": "des points futurs devraient atteindre l'objectif.",
+"summary.xmr.capability": "Capabilité",
+"summary.xmr.capabilityUnreliable": "un objectif a été défini, mais des signaux de cause spéciale sont présents pendant cette période ; toute estimation de capabilité serait donc peu fiable.",
+"summary.xmr.comparePeriods": "La comparaison des moyennes, des limites et des performances par rapport à l'objectif entre les périodes peut aider à déterminer si le processus a changé après des interventions.",
+
+// XMR — INDICATEUR DE CAPABILITÉ
+"summary.xmr.badgeHeading": "CAPABILITÉ DU PROCESSUS (dernière période)",
+"summary.xmr.badgeNote": "(Probabilité estimée d'atteindre l'objectif pendant la dernière période, sous l'hypothèse d'un processus stable et d'une distribution approximativement normale.)",
+"summary.xmr.badgeWarning": "Signaux de cause spéciale détectés pendant la dernière période :",
+"summary.xmr.badgeUnreliable": "les estimations de capabilité peuvent être peu fiables tant que ces signaux ne sont pas compris.",
+"summary.xmr.badgeAction": "Cherchez à comprendre et à traiter ces causes avant de vous appuyer sur des estimations de capabilité."
+
 
 
 

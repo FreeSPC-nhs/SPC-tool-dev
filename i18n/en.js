@@ -572,7 +572,80 @@ window.SimpleSPCi18n.registerLanguage("en", {
 "summary.run.decreasing": "decreasing",
 
 // RUN CHART — SPLIT EXPLANATION
-"summary.run.splitNote": "Each period is summarised separately because splits suggest the process may have changed over time."
+"summary.run.splitNote": "Each period is summarised separately because splits suggest the process may have changed over time.",
+
+// XMR — SIGNAL DESCRIPTIONS
+"summary.xmr.signalBeyond": "one or more points are outside the control limits",
+"summary.xmr.signalShift": "a sustained shift (many points on the same side of the mean)",
+"summary.xmr.signalTrend": "a sustained trend (steady increase or decrease)",
+"summary.xmr.signalOutlier": "an unusual outlier (an ‘astronomical’ point)",
+
+// XMR — BASELINE
+"summary.xmr.baselineWindowStart": "Baseline for this period: first",
+"summary.xmr.baselineWindowOne": "point defines the baseline window;",
+"summary.xmr.baselineWindowMany": "points define the baseline window;",
+"summary.xmr.baselineUsed": "used to calculate mean and limits",
+"summary.xmr.excludedOne": "excluded",
+"summary.xmr.excludedMany": "excluded",
+"summary.xmr.baselineAll": "Baseline for this period: all points in this period used to calculate mean and limits.",
+
+// XMR — MANUAL EXCLUSIONS
+"summary.xmr.exclusionHeading": "Excluded point adjustment",
+"summary.xmr.adjacentOne": "adjacent moving range was not used in the variation estimate because it involves an excluded point.",
+"summary.xmr.adjacentMany": "adjacent moving ranges were not used in the variation estimate because they involve an excluded point.",
+"summary.xmr.noArtificialMR": "SimpleSPC does not create an artificial moving range across an excluded point.",
+
+// XMR — NELSON SCREENING
+"summary.xmr.limitCalculation": "XmR limit calculation",
+"summary.xmr.screenedOne": "unusually large point-to-point change was not used when estimating routine variation. All data points remain shown on the chart.",
+"summary.xmr.screenedMany": "unusually large point-to-point changes were not used when estimating routine variation. All data points remain shown on the chart.",
+"summary.xmr.nelsonUsed": "Nelson moving-range screening was used:",
+"summary.xmr.initialMR": "initial average MR",
+"summary.xmr.threshold": "screening threshold",
+"summary.xmr.revisedMR": "revised average MR",
+"summary.xmr.screeningOff": "Moving-range screening is turned off, so all baseline point-to-point changes were used to estimate routine variation.",
+
+// XMR — PROVISIONAL LIMITS
+"summary.xmr.provisionalHeading": "Provisional limits",
+"summary.xmr.provisionalOnly": "only",
+"summary.xmr.provisionalOne": "point was used to estimate the limits for this period.",
+"summary.xmr.provisionalMany": "points were used to estimate the limits for this period.",
+"summary.xmr.minimumIntro": "SimpleSPC needs at least",
+"summary.xmr.minimumEnd": "points before interpreting special-cause signals or capability.",
+"summary.xmr.provisionalContext": "The displayed limits are shown for context only.",
+
+// XMR — TARGETS
+"summary.xmr.target": "Target",
+"summary.xmr.aboveBetter": "at or above is better",
+"summary.xmr.belowBetter": "at or below is better",
+"summary.xmr.targetCoverage": "of points in this period meet the target",
+"summary.xmr.coverageUnavailable": "Target coverage not calculated for this period.",
+
+// XMR — INTERPRETATION
+"summary.xmr.notAssessed": "Not yet assessed — more data are needed before this period can be interpreted as showing routine or special-cause variation.",
+"summary.xmr.noSignals": "No clear special-cause signals were detected in this period. The pattern is consistent with natural/common variation (still interpret in clinical context).",
+"summary.xmr.hasSignals": "This period shows special-cause signals:",
+"summary.xmr.where": "Where to look",
+"summary.xmr.outsideOne": "outside limits at point",
+"summary.xmr.outsideMany": "outside limits at points",
+"summary.xmr.outlierOne": "outlier at point",
+"summary.xmr.outlierMany": "outliers at points",
+
+// XMR — CAPABILITY
+"summary.xmr.estimatedCapability": "Estimated capability (this period)",
+"summary.xmr.ifStable": "if the process remains stable, about",
+"summary.xmr.futureMeet": "of future points are expected to meet the target.",
+"summary.xmr.capability": "Capability",
+"summary.xmr.capabilityUnreliable": "a target has been set, but because special-cause signals are present in this period, any capability estimate would be unreliable.",
+"summary.xmr.comparePeriods": "Comparing means, limits and target performance between periods can indicate whether the process changed after interventions.",
+
+// XMR — CAPABILITY BADGE
+"summary.xmr.badgeHeading": "PROCESS CAPABILITY (last period)",
+"summary.xmr.badgeNote": "(Estimated probability of meeting the target in the final period, assuming a stable process and approximate normality.)",
+"summary.xmr.badgeWarning": "Special-cause signals detected in the last period:",
+"summary.xmr.badgeUnreliable": "capability estimates may be unreliable until these signals are understood.",
+"summary.xmr.badgeAction": "Focus on understanding and addressing these causes before relying on capability estimates."
+
 
 
 
