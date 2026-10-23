@@ -12128,6 +12128,69 @@ function summaryOpening(
 }
 
 
+/*
+ * Bilingual period headings.
+ * The period number and optional coverage stay unchanged.
+ */
+function summaryPeriodHeading(index, total, options = {}) {
+  let heading = "";
+
+  if (total === 1 && !options.alwaysNumbered) {
+    heading = summaryUiText(
+      "summary.singlePeriod",
+      "Single period"
+    );
+  } else {
+    heading =
+      summaryUiText("summary.periodLabel", "Period") +
+      " " + (index + 1);
+
+    if (options.initial && index === 0 && total > 1) {
+      heading += " " + summaryUiText(
+        "summary.initialSegment",
+        "(initial segment / baseline)"
+      );
+    }
+
+    if (options.alwaysNumbered) {
+      heading += " " +
+        summaryUiText("summary.of", "of") +
+        " " + total;
+    }
+  }
+
+  if (options.coverage) {
+    heading += ": " + options.coverage;
+  }
+
+  return `<h4>${heading}</h4>`;
+}
+
+
+/*
+ * Coverage row.
+ * rangeMarkup holds the existing point/date description,
+ * preserving its bold formatting and original values.
+ */
+function summaryCoverageRow(rangeMarkup, pointCount) {
+  const unit = pointCount === 1
+    ? summaryUiText("summary.point", "point")
+    : summaryUiText("summary.points", "points");
+
+  const rangePart = rangeMarkup
+    ? " " + rangeMarkup + " –"
+    : "";
+
+  return (
+    "<li>" +
+    summaryUiText("summary.coverage", "Coverage:") +
+    rangePart +
+    " " + pointCount + " " + unit +
+    ".</li>"
+  );
+}
+
+
 // Refresh existing summary text when language changes.
 //
 // This updates only marked spans. All numerical values,
@@ -12241,10 +12304,12 @@ function renderAttributeMultiSummary(segmentAnalyses, totalPoints) {
     html +=
       `<div class="pdf-avoid-break">`;
 
-    html +=
-      segmentAnalyses.length > 1
-        ? `<h4>Period ${idx + 1}</h4>`
-        : `<h4>Single period</h4>`;
+    
+    html += summaryPeriodHeading(
+      idx,
+      segmentAnalyses.length
+    );
+
 
     html += `<ul>`;
 
@@ -12260,15 +12325,22 @@ function renderAttributeMultiSummary(segmentAnalyses, totalPoints) {
         a.startIndex +
         1;
 
-      html +=
-        `<li><strong>Coverage:</strong> ` +
-        `<strong>points ${a.startIndex + 1}–${a.endIndex + 1}</strong> ` +
-        `(${a.labelStart} to ${a.labelEnd}) – ${n} points.</li>`;
+      
+      const rangeMarkup =
+        `<strong>` +
+        summaryUiText("summary.points", "points") +
+        ` ${a.startIndex + 1}–${a.endIndex + 1}` +
+        `</strong> ` +
+        `(${a.labelStart} ` +
+        summaryUiText("summary.to", "to") +
+        ` ${a.labelEnd})`;
+
+      html += summaryCoverageRow(rangeMarkup, n);
 
     } else if (a.nPoints != null) {
-      html +=
-        `<li><strong>Coverage:</strong> ${a.nPoints} points.</li>`;
+      html += summaryCoverageRow("", a.nPoints);
     }
+
 
         // Baseline
     if (
@@ -12336,12 +12408,19 @@ function renderAttributeMultiSummary(segmentAnalyses, totalPoints) {
       Number.isFinite(st.cl)
     ) {
       if (a.chartType === "c") {
+        
         html +=
-          `<li><strong>Centre line (${sym(a.chartType)}):</strong> ` +
-          `${fmt(st.cl)}; ` +
-          `<strong>control limits:</strong> ` +
-          `LCL = ${fmt(st.lcl)}, ` +
-          `UCL = ${fmt(st.ucl)}.</li>`;
+          `<li><strong>` +
+          summaryUiText("summary.centreLine", "Centre line") +
+          ` (${sym(a.chartType)}):</strong> ` +
+          `${fmt(st.cl)}; <strong>` +
+          summaryUiText("summary.controlLimits", "control limits") +
+          `:</strong> ` +
+          summaryUiText("summary.lowerLimit", "LCL") +
+          ` = ${fmt(st.lcl)}, ` +
+          summaryUiText("summary.upperLimit", "UCL") +
+          ` = ${fmt(st.ucl)}.</li>`;
+
 
       } else if (
   a.chartType === "p" ||
@@ -12349,17 +12428,31 @@ function renderAttributeMultiSummary(segmentAnalyses, totalPoints) {
   a.chartType === "u" ||
   a.chartType === "uprime"
 ) {
+        
         html +=
-          `<li><strong>Centre line (${sym(a.chartType)}):</strong> ${fmt(st.cl)}; ` +
-          `<strong>control limits:</strong> ` +
-          `LCL = ${fmt(st.lclAvg)} ` +
-          `(range ${fmt(st.lclMin)}–${fmt(st.lclMax)}), ` +
-          `UCL = ${fmt(st.uclAvg)} ` +
-          `(range ${fmt(st.uclMin)}–${fmt(st.uclMax)}).</li>`;
+          `<li><strong>` +
+          summaryUiText("summary.centreLine", "Centre line") +
+          ` (${sym(a.chartType)}):</strong> ${fmt(st.cl)}; ` +
+          `<strong>` +
+          summaryUiText("summary.controlLimits", "control limits") +
+          `:</strong> ` +
+          summaryUiText("summary.lowerLimit", "LCL") +
+          ` = ${fmt(st.lclAvg)} (` +
+          summaryUiText("summary.range", "range") +
+          ` ${fmt(st.lclMin)}–${fmt(st.lclMax)}), ` +
+          summaryUiText("summary.upperLimit", "UCL") +
+          ` = ${fmt(st.uclAvg)} (` +
+          summaryUiText("summary.range", "range") +
+          ` ${fmt(st.uclMin)}–${fmt(st.uclMax)}).</li>`;
+
 
       } else {
+        
         html +=
-          `<li><strong>Centre line:</strong> ${fmt(st.cl)}</li>`;
+          `<li><strong>` +
+          summaryUiText("summary.centreLine", "Centre line") +
+          `:</strong> ${fmt(st.cl)}</li>`;
+
       }
 
     } else {
@@ -12377,8 +12470,12 @@ function renderAttributeMultiSummary(segmentAnalyses, totalPoints) {
             : null;
 
       if (fallbackCL != null) {
+        
         html +=
-          `<li><strong>Centre line:</strong> ${fmt(fallbackCL)}</li>`;
+          `<li><strong>` +
+          summaryUiText("summary.centreLine", "Centre line") +
+          `:</strong> ${fmt(fallbackCL)}</li>`;
+
       }
     }
 
@@ -12720,33 +12817,87 @@ function renderRareChartSummary(aOrSegments, totalPointsMaybe) {
 
   segments.forEach((a, idx) => {
     html += `<div class="pdf-avoid-break">`;
-    html += segments.length > 1 ? `<h4>Period ${idx + 1}</h4>` : `<h4>Single period</h4>`;
+   
+    html += summaryPeriodHeading(idx, segments.length);
+
     html += `<ul>`;
 
     // Coverage
     if (a.startIndex != null && a.endIndex != null && a.labelStart && a.labelEnd) {
       const n = (a.endIndex - a.startIndex + 1);
-      html += `<li><strong>Coverage:</strong> <strong>points ${a.startIndex + 1}–${a.endIndex + 1}</strong> (${escapeHtml(a.labelStart)} to ${escapeHtml(a.labelEnd)}) – ${n} points.</li>`;
+     
+      const rangeMarkup =
+        `<strong>` +
+        summaryUiText("summary.points", "points") +
+        ` ${a.startIndex + 1}–${a.endIndex + 1}` +
+        `</strong> (` +
+        escapeHtml(a.labelStart) + " " +
+        summaryUiText("summary.to", "to") + " " +
+        escapeHtml(a.labelEnd) + ")";
+
+      html += summaryCoverageRow(rangeMarkup, n);
+
     } else if (a.nPoints != null) {
-      html += `<li><strong>Coverage:</strong> ${a.nPoints} points.</li>`;
+      html += summaryCoverageRow("", a.nPoints);
     }
+
 
     // Baseline
     if (a.baselineCountUsed != null) {
       html += `<li><strong>Baseline for this period:</strong> first ${a.baselineCountUsed} points used to calculate centre line and limits.</li>`;
     }
 
+    
     // Stats: centre line + limits
     if (a.stats && Number.isFinite(a.stats.cl)) {
       if (chartType === "t") {
-        html += `<li><strong>Centre line (average gap):</strong> ${fmt(a.stats.cl)}; <strong>upper limit:</strong> UCL = ${fmt(a.stats.ucl)}.</li>`;
+        html +=
+          `<li><strong>` +
+          summaryUiText(
+            "summary.centreGap",
+            "Centre line (average gap)"
+          ) +
+          `:</strong> ${fmt(a.stats.cl)}; <strong>` +
+          summaryUiText(
+            "summary.upperLimitLabel",
+            "upper limit"
+          ) +
+          `:</strong> ` +
+          summaryUiText("summary.upperLimit", "UCL") +
+          ` = ${fmt(a.stats.ucl)}.</li>`;
       } else {
-        html += `<li><strong>Centre line (average opportunities):</strong> ${fmt(a.stats.cl)}; <strong>control limits:</strong> LCL = ${fmt(a.stats.lcl)}, UCL = ${fmt(a.stats.ucl)}.</li>`;
+        html +=
+          `<li><strong>` +
+          summaryUiText(
+            "summary.centreOpportunities",
+            "Centre line (average opportunities)"
+          ) +
+          `:</strong> ${fmt(a.stats.cl)}; <strong>` +
+          summaryUiText(
+            "summary.controlLimits",
+            "control limits"
+          ) +
+          `:</strong> ` +
+          summaryUiText("summary.lowerLimit", "LCL") +
+          ` = ${fmt(a.stats.lcl)}, ` +
+          summaryUiText("summary.upperLimit", "UCL") +
+          ` = ${fmt(a.stats.ucl)}.</li>`;
       }
     } else {
-      // Fallback if stats missing
-      html += `<li><strong>Centre line and limits:</strong> (not available).</li>`;
+      html +=
+        `<li><strong>` +
+        summaryUiText(
+          "summary.centreAndLimits",
+          "Centre line and limits"
+        ) +
+        `:</strong> ` +
+        summaryUiText(
+          "summary.notAvailable",
+          "(not available)"
+        ) +
+        `.</li>`;
     }
+
 
     // Signals
     if (!a.isStable && Array.isArray(a.signals) && a.signals.length) {
@@ -12812,7 +12963,11 @@ function updateRunSummary(points, medianIgnored, ruleHitsIgnored, baselineCountU
   const axisType = getAxisType(); // "date" or "sequence"
 
   // Always show point indices
-  const base = `points ${start + 1}–${end + 1}`;
+  
+const base =
+  summaryUiText("summary.points", "points") +
+  ` ${start + 1}–${end + 1}`;
+
 
   // Only add date range if DATE axis is selected
   if (axisType !== "date") return base;
@@ -12822,7 +12977,9 @@ function updateRunSummary(points, medianIgnored, ruleHitsIgnored, baselineCountU
   const hasDates = a !== undefined && b !== undefined && a !== null && b !== null;
 
   return hasDates
-    ? `${base} (${formatDateOnlyLabel(a)} to ${formatDateOnlyLabel(b)})`
+    
+? `${base} (${formatDateOnlyLabel(a)} ${summaryUiText("summary.to", "to")} ${formatDateOnlyLabel(b)})`
+
     : base;
 }
 
@@ -12921,22 +13078,33 @@ function updateRunSummary(points, medianIgnored, ruleHitsIgnored, baselineCountU
     if (trendRanges.length) signals.push(`a sustained trend (≥ ${trendLength} points increasing or decreasing)`);
     if (astroIdx.length) signals.push(`an unusual outlier ("astronomical" point)`);
 
-    const periodLabel =
-      segments.length === 1
-        ? "Single period"
-        : idx === 0
-          ? "Period 1"
-          : `Period ${idx + 1}`;
+    
+    html += summaryPeriodHeading(
+      idx,
+      segments.length
+    );
 
-    html += `<h4>${periodLabel}</h4>`;
-    html += `<ul>`;
-    html += `<li>Coverage: <strong>${rangeText(seg.start, seg.end)}</strong> – ${segLen} point${segLen !== 1 ? "s" : ""}.</li>`;
+    html += "<ul>";
+
+    html += summaryCoverageRow(
+      `<strong>${rangeText(seg.start, seg.end)}</strong>`,
+      segLen
+    );
+
 
     html += (baselineCountUsed < segLen)
       ? `<li>Baseline for this period: first <strong>${baselineCountUsed}</strong> point${baselineCountUsed !== 1 ? "s" : ""} used to calculate the median.</li>`
       : `<li>Baseline for this period: all points in this period used to calculate the median.</li>`;
 
-    html += `<li>Median (this period): <strong>${Number.isFinite(median) ? median.toFixed(3) : "—"}</strong>.</li>`;
+    
+html +=
+  `<li>` +
+  summaryUiText(
+    "summary.medianPeriod",
+    "Median (this period)"
+  ) +
+  `: <strong>${Number.isFinite(median) ? median.toFixed(3) : "—"}</strong>.</li>`;
+
 
     if (!signals.length) {
       html += `<li><strong>Interpretation:</strong> No clear special-cause signals detected in this period (no sustained shift, trend, or unusual outlier). This pattern is consistent with common variation, but always interpret in context.</li>`;
@@ -13189,24 +13357,37 @@ if (
       targetCoverageText = `${(prop * 100).toFixed(1)}% of points in this period meet the target (${hits}/${n}).`;
     }
 
-    const periodLabel =
-      segments.length === 1
-        ? "Single period"
-        : idx === 0
-          ? "Period 1 (initial segment / baseline)"
-          : `Period ${idx + 1}`;
+       
+    const base =
+      summaryUiText("summary.points", "points") +
+      ` ${startIndex + 1}–${endIndex + 1}`;
 
-    const base = `points ${startIndex + 1}–${endIndex + 1}`;
-const rangeText =
-  (getAxisType() === "date" && labelStart !== undefined && labelEnd !== undefined)
-    ? `${base} (${formatDateOnlyLabel(labelStart)} to ${formatDateOnlyLabel(labelEnd)})`
-    : base;
+    const rangeText =
+      (getAxisType() === "date" &&
+       labelStart !== undefined &&
+       labelEnd !== undefined)
+        ? (
+            `${base} (${formatDateOnlyLabel(labelStart)} ` +
+            summaryUiText("summary.to", "to") +
+            ` ${formatDateOnlyLabel(labelEnd)})`
+          )
+        : base;
 
+    html += `<div class="pdf-avoid-break">`;
 
-    html += `<div class="pdf-avoid-break">`;    
-    html += `<h4>${periodLabel}</h4>`;
-    html += `<ul>`;
-    html += `<li>Coverage: <strong>${rangeText}</strong> – ${n} point${n !== 1 ? "s" : ""}.</li>`;
+    html += summaryPeriodHeading(
+      idx,
+      segments.length,
+      { initial: true }
+    );
+
+    html += "<ul>";
+
+    html += summaryCoverageRow(
+      `<strong>${rangeText}</strong>`,
+      n
+    );
+
 
         const baselineWindowCount =
       Number.isFinite(
@@ -13250,8 +13431,29 @@ const rangeText =
         `<li>Baseline for this period: all points in this period used to calculate mean and limits.</li>`;
     }
 
-    html += `<li>Mean: <strong>${mean.toFixed(3)}</strong>; control limits: <strong>LCL = ${lcl.toFixed(3)}</strong>, <strong>UCL = ${ucl.toFixed(3)}</strong>.</li>`;
-    html += `<li>Estimated σ (from MR): <strong>${sigma.toFixed(3)}</strong> (average MR = ${avgMR.toFixed(3)}).</li>`;
+    
+html +=
+  `<li>` +
+  summaryUiText("summary.mean", "Mean") +
+  `: <strong>${mean.toFixed(3)}</strong>; ` +
+  summaryUiText("summary.controlLimits", "control limits") +
+  `: <strong>` +
+  summaryUiText("summary.lowerLimit", "LCL") +
+  ` = ${lcl.toFixed(3)}</strong>, <strong>` +
+  summaryUiText("summary.upperLimit", "UCL") +
+  ` = ${ucl.toFixed(3)}</strong>.</li>`;
+
+    
+html +=
+  `<li>` +
+  summaryUiText(
+    "summary.estimatedSigma",
+    "Estimated σ (from MR)"
+  ) +
+  `: <strong>${sigma.toFixed(3)}</strong> (` +
+  summaryUiText("summary.averageMr", "average MR") +
+  ` = ${avgMR.toFixed(3)}).</li>`;
+
     if (
   manualAdjacentMRExclusions >
   0
@@ -13600,31 +13802,34 @@ function renderXbarSSummary(
           ? (
               `${stats.subgroupSizeMin}–` +
               `${stats.subgroupSizeMax} ` +
-              `(varies by subgroup)`
+              summaryUiText("summary.variesSubgroup", "(varies by subgroup)")
             )
           : Number.isFinite(
               stats.subgroupSize
             )
             ? `${stats.subgroupSize}`
-            : "not stated";
+            : summaryUiText("summary.notStated", "not stated");
 
+      
       const coverage =
         (
-          period.labelStart !==
-            undefined &&
-          period.labelEnd !==
-            undefined
+          period.labelStart !== undefined &&
+          period.labelEnd !== undefined
         )
           ? (
               `${period.labelStart} ` +
-              `to ` +
-              `${period.labelEnd}`
+              summaryUiText("summary.to", "to") +
+              ` ${period.labelEnd}`
             )
           : (
-              `subgroups ` +
-              `${period.startIndex + 1}–` +
+              summaryUiText(
+                "summary.subgroups",
+                "subgroups"
+              ) +
+              ` ${period.startIndex + 1}–` +
               `${period.endIndex + 1}`
             );
+
 
       let interpretation =
         "";
@@ -13658,20 +13863,45 @@ function renderXbarSSummary(
       html +=
         `<div class="pdf-avoid-break">`;
 
-      html +=
-        `<h4>Period ${index + 1} of ` +
-        `${periods.length}: ` +
-        `${coverage}</h4>`;
+      
+       html += summaryPeriodHeading(
+         index,
+         periods.length,
+         {
+           alwaysNumbered: true,
+           coverage
+         }
+       );
+
 
       html += `<ul>`;
 
-      html +=
-        `<li>` +
-        `<strong>Subgroup size:</strong> ` +
-        `${subgroupSizeText} ` +
-        `measurement${stats.subgroupSize === 1 ? "" : "s"} ` +
-        `per subgroup.` +
-        `</li>`;
+      
+       html +=
+         `<li><strong>` +
+         summaryUiText(
+           "summary.subgroupSize",
+           "Subgroup size"
+         ) +
+         `:</strong> ${subgroupSizeText} ` +
+         (
+           stats.subgroupSize === 1
+             ? summaryUiText(
+                 "summary.measurement",
+                 "measurement"
+               )
+             : summaryUiText(
+                 "summary.measurements",
+                 "measurements"
+               )
+         ) +
+         ` ` +
+         summaryUiText(
+           "summary.perSubgroup",
+           "per subgroup"
+         ) +
+         `.</li>`;
+
 
             if (
         Number.isFinite(
@@ -13716,7 +13946,7 @@ function renderXbarSSummary(
       ) {
         html +=
           `<li>` +
-          `<strong>X̄ chart centre line:</strong> ` +
+          `<strong>${summaryUiText("summary.xbarCentre", "X̄ chart centre line")}:</strong> ` +
           `${fmt(stats.xbarbar)}; ` +
           `<strong>control limits vary with subgroup size:</strong> ` +
           `LCL range = ` +
@@ -13739,14 +13969,14 @@ function renderXbarSSummary(
 
         html +=
           `<li>` +
-          `<strong>Estimated process standard deviation:</strong> ` +
+          `<strong>${summaryUiText("summary.estimatedProcessSd", "Estimated process standard deviation")}:</strong> ` +
           `${fmt(stats.processSigma)}.` +
           `</li>`;
 
       } else {
         html +=
           `<li>` +
-          `<strong>X̄ chart centre line:</strong> ` +
+          `<strong>${summaryUiText("summary.xbarCentre", "X̄ chart centre line")}:</strong> ` +
           `${fmt(stats.xbarbar)}; limits: ` +
           `LCL = ${fmt(stats.lclX)}, ` +
           `UCL = ${fmt(stats.uclX)}.` +
@@ -13754,7 +13984,7 @@ function renderXbarSSummary(
 
         html +=
           `<li>` +
-          `<strong>S chart centre line:</strong> ` +
+          `<strong>${summaryUiText("summary.sCentre", "S chart centre line")}:</strong> ` +
           `${fmt(stats.sbar)}; limits: ` +
           `LCL = ${fmt(stats.lclS)}, ` +
           `UCL = ${fmt(stats.uclS)}.` +
