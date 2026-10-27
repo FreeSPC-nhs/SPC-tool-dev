@@ -1080,7 +1080,7 @@ window.SimpleSPCi18n.registerLanguage("fr", {
 // 8. Enregistrement et réouverture du travail
 "help.8.title": "8. Enregistrer et rouvrir votre travail",
 "help.8.intro": "Vous pouvez enregistrer votre travail de différentes manières, selon l'utilisation que vous souhaitez en faire par la suite.",
-"help.8.saveDesc": "enregistre les données actuelles et les paramètres du graphique dans un fichier de projet",
+"help.8.saveDesc": "enregistre les données actuelles et les paramètres du graphique dans un fichier de projet .json.",
 "help.8.openDesc": "restaure un fichier de projet précédemment enregistré afin que vous puissiez reprendre votre travail ultérieurement.",
 "help.8.portableBefore": "crée un fichier autonome",
 "help.8.portableAfter": "contenant l'outil SPC, vos données et les paramètres de votre graphique. Ce fichier peut être ouvert directement dans un navigateur et réutilisé sans connexion Internet.",

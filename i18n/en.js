@@ -1077,7 +1077,7 @@ window.SimpleSPCi18n.registerLanguage("en", {
 // 8. Saving and reopening your work
 "help.8.title": "8. Saving and reopening your work",
 "help.8.intro": "You can save your work in different ways, depending on how you want to use it later.",
-"help.8.saveDesc": "stores the current data and chart settings together in a",
+"help.8.saveDesc": "stores the current data and chart settings together in a .json project file.",
 "help.8.openDesc": "restores a previously saved project file so you can continue working on it later.",
 "help.8.portableBefore": "creates a self-contained",
 "help.8.portableAfter": "file containing the SPC tool, your data and your chart settings. The saved file can be opened directly in a web browser and used again without an internet connection.",
