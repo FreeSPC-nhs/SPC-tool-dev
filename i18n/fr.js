@@ -1061,7 +1061,68 @@ window.SimpleSPCi18n.registerLanguage("fr", {
 "help.6.splitAdvice": "De même, n'utilisez un changement de phase que lorsque vous avez de bonnes raisons de penser que le processus a changé. Les changements de phase doivent refléter des changements étudiés et compris, et non servir simplement à faire disparaître des signaux gênants.",
 "help.6.extraBefore": "Repérez les petits symboles",
 "help.6.extraMiddle": "à côté des paramètres dans SimpleSPC. Survolez-les avec la souris ou sélectionnez-les au clavier pour obtenir des conseils supplémentaires. Vous pouvez également interroger",
-"help.6.extraAfter": "sur votre carte et son interprétation."
+"help.6.extraAfter": "sur votre carte et son interprétation.",
+
+// AIDE ET CONSEILS : SECTIONS 7 À 11
+
+// 7. Interprétation du résumé
+"help.7.title": "7. Interpréter le résumé",
+"help.7.intro": "Le résumé situé sous le graphique aide à comprendre les résultats de l'analyse.",
+"help.7.commonName": "Variation de cause commune",
+"help.7.commonDesc": "signifie que le processus semble stable à son niveau de performance actuel.",
+"help.7.specialName": "Variation de cause spéciale",
+"help.7.specialDesc": "signifie que le comportement observé suggère qu'un changement a pu se produire.",
+"help.7.stableBefore": "Un processus peut être",
+"help.7.stableHighlight": "stable mais présenter des performances insuffisantes",
+"help.7.stableAfter": "si son niveau de performance reste constamment inférieur au niveau souhaité.",
+"help.7.advice": "Recherchez les changements durables plutôt que de vous concentrer sur un seul point favorable ou défavorable. Utilisez votre connaissance du contexte local pour comprendre ce qui se passait à ce moment-là.",
+
+// 8. Enregistrement et réouverture du travail
+"help.8.title": "8. Enregistrer et rouvrir votre travail",
+"help.8.intro": "Vous pouvez enregistrer votre travail de différentes manières, selon l'utilisation que vous souhaitez en faire par la suite.",
+"help.8.saveDesc": "enregistre les données actuelles et les paramètres du graphique dans un fichier de projet",
+"help.8.openDesc": "restaure un fichier de projet précédemment enregistré afin que vous puissiez reprendre votre travail ultérieurement.",
+"help.8.portableBefore": "crée un fichier autonome",
+"help.8.portableAfter": "contenant l'outil SPC, vos données et les paramètres de votre graphique. Ce fichier peut être ouvert directement dans un navigateur et réutilisé sans connexion Internet.",
+
+"help.8.preservedHeading": "Les graphiques enregistrés peuvent notamment conserver :",
+"help.8.data": "les données utilisées pour créer le graphique",
+"help.8.columns": "les colonnes sélectionnées et le type d'axe X",
+"help.8.type": "le type de carte",
+"help.8.labels": "les titres, les libellés et les paramètres des axes",
+"help.8.rules": "les règles et les objectifs",
+"help.8.baseline": "les paramètres de la période de référence",
+"help.8.splits": "les changements de phase et les annotations",
+
+"help.8.editableBefore": "Un fichier HTML portable reste modifiable. Après l'avoir ouvert, vous pouvez changer les données ou les paramètres du graphique, puis utiliser à nouveau",
+"help.8.editableAfter": "pour créer une copie actualisée.",
+"help.8.privacy": "Les fichiers de projet JSON et les fichiers HTML portables contiennent les données utilisées pour créer le graphique. Conservez et partagez ces fichiers conformément aux exigences de gouvernance de l'information, de confidentialité et de cybersécurité de votre organisation.",
+
+// 9. Copie et téléchargement des graphiques
+"help.9.title": "9. Copier et télécharger les graphiques",
+"help.9.context": "Faites un clic droit sur le graphique pour ouvrir le menu permettant de l'exporter sous forme d'image.",
+"help.9.appearance": "Utilisez les options du graphique pour ajuster son apparence avant l'exportation.",
+"help.9.clipboard": "Vous pouvez copier les graphiques et/ou leur analyse dans le presse-papiers afin de les coller facilement dans un rapport, une présentation ou un document.",
+"help.9.secondaryBefore": "Utilisez l'option",
+"help.9.secondaryName": "Afficher/masquer la carte MR/S",
+"help.9.secondaryMiddle": "dans l'onglet",
+"help.9.secondaryAfter": "pour choisir si la carte secondaire est incluse dans les éléments copiés ou téléchargés.",
+
+// 10. Confidentialité des données
+"help.10.title": "10. Confidentialité des données",
+"help.10.intro": "L'outil fonctionne entièrement dans votre navigateur :",
+"help.10.noServer": "les données ne sont pas envoyées à un serveur",
+"help.10.localFiles": "les fichiers importés sont traités localement pendant votre session de navigation",
+"help.10.unsavedBefore": "Le travail non enregistré peut être perdu lorsque vous fermez ou actualisez la page. Utilisez",
+"help.10.unsavedMiddle": "(JSON) ou",
+"help.10.unsavedAfter": "(HTML) pour conserver une copie de votre travail.",
+"help.10.caution": "SimpleSPC n'est pas conçu pour traiter des données permettant d'identifier des patients ni d'autres données personnelles sensibles. Utilisez des données anonymisées ou convenablement agrégées et respectez les exigences de gouvernance de l'information, de confidentialité et de cybersécurité de votre organisation. N'oubliez pas que les fichiers JSON et HTML portables contiennent les données utilisées pour créer le graphique.",
+
+// 11. À propos de l'outil
+"help.11.title": "11. À propos de l'outil",
+"help.11.authorBefore": "Cet outil a été développé par Jem Ramazanoglu –",
+"help.11.authorAfter": "comme ressource gratuite pour soutenir l'amélioration de la qualité au sein du NHS.",
+"help.11.feedback": "Vos commentaires et suggestions sont les bienvenus."
 
 
 

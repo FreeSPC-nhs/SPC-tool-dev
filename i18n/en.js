@@ -1058,7 +1058,68 @@ window.SimpleSPCi18n.registerLanguage("en", {
 "help.6.splitAdvice": "Similarly, only use a split when there is good reason to believe the process has changed. Splits should reflect investigated changes, not simply remove inconvenient signals.",
 "help.6.extraBefore": "Look for the small",
 "help.6.extraMiddle": "symbols beside controls throughout SimpleSPC. Hover over them, or focus them with the keyboard, for additional guidance. You can also ask the",
-"help.6.extraAfter": "about your chart and its interpretation."
+"help.6.extraAfter": "about your chart and its interpretation.",
+
+// HELP SECTIONS 7–11
+
+// 7. Interpreting the summary
+"help.7.title": "7. Interpreting the summary",
+"help.7.intro": "The summary underneath the chart helps explain what the tool has found.",
+"help.7.commonName": "Common-cause variation",
+"help.7.commonDesc": "means the process looks stable within its current level of performance.",
+"help.7.specialName": "Special-cause variation",
+"help.7.specialDesc": "means the pattern suggests something may have changed.",
+"help.7.stableBefore": "A process can be",
+"help.7.stableHighlight": "stable but still poor",
+"help.7.stableAfter": "if the level of performance is consistently below what you need.",
+"help.7.advice": "Look for sustained changes, not just one good or bad point. Use local knowledge to interpret what was happening at that time.",
+
+// 8. Saving and reopening your work
+"help.8.title": "8. Saving and reopening your work",
+"help.8.intro": "You can save your work in different ways, depending on how you want to use it later.",
+"help.8.saveDesc": "stores the current data and chart settings together in a",
+"help.8.openDesc": "restores a previously saved project file so you can continue working on it later.",
+"help.8.portableBefore": "creates a self-contained",
+"help.8.portableAfter": "file containing the SPC tool, your data and your chart settings. The saved file can be opened directly in a web browser and used again without an internet connection.",
+
+"help.8.preservedHeading": "Saved charts can preserve things such as:",
+"help.8.data": "the underlying chart data",
+"help.8.columns": "selected columns and X-axis type",
+"help.8.type": "chart type",
+"help.8.labels": "titles, labels and axis settings",
+"help.8.rules": "rules and targets",
+"help.8.baseline": "baseline settings",
+"help.8.splits": "splits and annotations",
+
+"help.8.editableBefore": "A portable HTML file remains editable. After opening it, you can change the data or chart settings and use",
+"help.8.editableAfter": "again to create an updated copy.",
+"help.8.privacy": "Both JSON project files and portable HTML files contain the data used to create the chart. Store and share saved files in line with your organisation's information-governance, confidentiality and cybersecurity requirements.",
+
+// 9. Copying and downloading charts
+"help.9.title": "9. Copying and downloading charts",
+"help.9.context": "Right-click the chart to open the menu for exporting the chart as an image.",
+"help.9.appearance": "Use the chart options to adjust the chart's appearance before exporting.",
+"help.9.clipboard": "You can copy the chart(s) and/or analysis to your clipboard for easy pasting into a report, presentation or document.",
+"help.9.secondaryBefore": "Use the",
+"help.9.secondaryName": "Show/hide MR/S chart",
+"help.9.secondaryMiddle": "option in the",
+"help.9.secondaryAfter": "tab to control whether the secondary chart is included in copied or downloaded output.",
+
+// 10. Data privacy
+"help.10.title": "10. Data privacy",
+"help.10.intro": "The tool runs entirely in your browser:",
+"help.10.noServer": "data are not sent to a server",
+"help.10.localFiles": "uploaded files are processed locally in your browser session",
+"help.10.unsavedBefore": "Unsaved work may be lost when you close or refresh the page. Use",
+"help.10.unsavedMiddle": "(JSON) or",
+"help.10.unsavedAfter": "(HTML) to keep a copy of your work.",
+"help.10.caution": "SimpleSPC is not designed for patient-identifiable or other sensitive personal data. Use anonymised or appropriately aggregated data, and follow your organisation's information-governance, confidentiality and cybersecurity requirements. Remember that saved JSON and portable HTML files contain the data used to create the chart.",
+
+// 11. About the tool
+"help.11.title": "11. About the tool",
+"help.11.authorBefore": "This tool was developed by Jem Ramazanoglu –",
+"help.11.authorAfter": "as a free resource to support Quality Improvement in the NHS.",
+"help.11.feedback": "Feedback and suggestions are very welcome."
 
 
 
