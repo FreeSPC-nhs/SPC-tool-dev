@@ -2196,130 +2196,306 @@
 
 
 
-        <details>
-          <summary><strong>7. Interpreting the summary</strong></summary>
-          <p>
-            The summary underneath the chart helps explain what the tool has found.
-          </p>
-          <ul>
-            <li><strong>Common-cause variation</strong> means the process looks stable within its current level of performance.</li>
-            <li><strong>Special-cause variation</strong> means the pattern suggests something may have changed.</li>
-            <li>A process can be <strong>stable but still poor</strong> if the level of performance is consistently below what you need.</li>
-          </ul>
-          <p>
-            Look for sustained changes, not just one good or bad point. Use local knowledge to interpret what was happening at that time.
-          </p>
-        </details>
+        
+<!-- HELP SECTION 7: INTERPRETING THE SUMMARY -->
+<details>
+  <summary>
+    <strong data-i18n="help.7.title">
+      7. Interpreting the summary
+    </strong>
+  </summary>
 
-        <details>
-  <summary><strong>8. Saving and reopening your work</strong></summary>
-
-  <p>
-    You can save your work in two different ways, depending on how you want to use it later.
+  <p data-i18n="help.7.intro">
+    The summary underneath the chart helps explain
+    what the tool has found.
   </p>
 
   <ul>
     <li>
-      <strong>Save chart</strong> stores the current data and chart settings together
-      in a <code>.json</code> project file.
+      <strong data-i18n="help.7.commonName">
+        Common-cause variation
+      </strong>
+      <span data-i18n="help.7.commonDesc">
+        means the process looks stable within its
+        current level of performance.
+      </span>
     </li>
+
     <li>
-      <strong>Open saved chart</strong> restores a previously saved
-      <code>.json</code> project file so you can continue working on it later.
+      <strong data-i18n="help.7.specialName">
+        Special-cause variation
+      </strong>
+      <span data-i18n="help.7.specialDesc">
+        means the pattern suggests something may
+        have changed.
+      </span>
     </li>
+
     <li>
-      <strong>Save portable chart</strong> creates a self-contained
-      <code>.html</code> file containing the SPC tool, your data and your chart
-      settings. The saved file can be opened directly in a web browser and used
-      again without an internet connection.
+      <span data-i18n="help.7.stableBefore">
+        A process can be
+      </span>
+      <strong data-i18n="help.7.stableHighlight">
+        stable but still poor
+      </strong>
+      <span data-i18n="help.7.stableAfter">
+        if the level of performance is consistently
+        below what you need.
+      </span>
     </li>
   </ul>
 
-  <p>
+  <p data-i18n="help.7.advice">
+    Look for sustained changes, not just one good
+    or bad point. Use local knowledge to interpret
+    what was happening at that time.
+  </p>
+</details>
+
+
+<!-- HELP SECTION 8: SAVING AND REOPENING -->
+<details>
+  <summary>
+    <strong data-i18n="help.8.title">
+      8. Saving and reopening your work
+    </strong>
+  </summary>
+
+  <p data-i18n="help.8.intro">
+    You can save your work in different ways,
+    depending on how you want to use it later.
+  </p>
+
+  <ul>
+    <li>
+      <strong data-i18n="data.saveButton">
+        Save chart
+      </strong>
+      <span data-i18n="help.8.saveDesc">
+        stores the current data and chart settings
+        together in a .json project file.
+      </span>
+    </li>
+
+    <li>
+      <strong data-i18n="data.openButton">
+        Open saved chart
+      </strong>
+      <span data-i18n="help.8.openDesc">
+        restores a previously saved project file
+        so you can continue working on it later.
+      </span>
+    </li>
+
+    <li>
+      <strong data-i18n="data.portableButton">
+        Save portable chart
+      </strong>
+      <span data-i18n="help.8.portableBefore">
+        creates a self-contained
+      </span>
+      <code>.html</code>
+      <span data-i18n="help.8.portableAfter">
+        file containing the SPC tool, your data
+        and your chart settings. The saved file
+        can be opened directly in a web browser
+        and used again without an internet connection.
+      </span>
+    </li>
+  </ul>
+
+  <p data-i18n="help.8.preservedHeading">
     Saved charts can preserve things such as:
   </p>
 
   <ul>
-    <li>the underlying chart data</li>
-    <li>selected columns and X-axis type</li>
-    <li>chart type</li>
-    <li>titles, labels and axis settings</li>
-    <li>rules and targets</li>
-    <li>baseline settings</li>
-    <li>splits and annotations</li>
+    <li data-i18n="help.8.data">
+      the underlying chart data
+    </li>
+    <li data-i18n="help.8.columns">
+      selected columns and X-axis type
+    </li>
+    <li data-i18n="help.8.type">
+      chart type
+    </li>
+    <li data-i18n="help.8.labels">
+      titles, labels and axis settings
+    </li>
+    <li data-i18n="help.8.rules">
+      rules and targets
+    </li>
+    <li data-i18n="help.8.baseline">
+      baseline settings
+    </li>
+    <li data-i18n="help.8.splits">
+      splits and annotations
+    </li>
   </ul>
 
   <p>
-    A portable HTML file remains editable. After opening it, you can change the
-    data or chart settings and use <strong>Save portable chart</strong> again to
-    create an updated copy.
+    <span data-i18n="help.8.editableBefore">
+      A portable HTML file remains editable.
+      After opening it, you can change the data
+      or chart settings and use
+    </span>
+    <strong data-i18n="data.portableButton">
+      Save portable chart
+    </strong>
+    <span data-i18n="help.8.editableAfter">
+      again to create an updated copy.
+    </span>
   </p>
 
   <p>
-    <strong>Important:</strong> both JSON project files and portable HTML files
-    contain the data used to create the chart. Store and share saved files in
-    line with your organisation's information-governance, confidentiality and
-    cybersecurity requirements.
+    <strong data-i18n="help.1.importantTitle">
+      Important:
+    </strong>
+    <span data-i18n="help.8.privacy">
+      Both JSON project files and portable HTML files
+      contain the data used to create the chart.
+      Store and share saved files in line with your
+      organisation's information-governance,
+      confidentiality and cybersecurity requirements.
+    </span>
   </p>
 </details>
 
+
+<!-- HELP SECTION 9: COPYING AND DOWNLOADING -->
 <details>
-  <summary><strong>9. Copying and downloading charts</strong></summary>
+  <summary>
+    <strong data-i18n="help.9.title">
+      9. Copying and downloading charts
+    </strong>
+  </summary>
 
   <ul>
-    <li>
-      Right-click the chart to open the menu for exporting the chart as an image.
+    <li data-i18n="help.9.context">
+      Right-click the chart to open the menu for
+      exporting the chart as an image.
     </li>
-    <li>
-      Use the chart options to adjust the chart's appearance before exporting.
+
+    <li data-i18n="help.9.appearance">
+      Use the chart options to adjust the chart's
+      appearance before exporting.
     </li>
-    <li>
-      You can copy the chart(s) and/or analysis to your clipboard for easy
-      pasting into a report, presentation or document.
+
+    <li data-i18n="help.9.clipboard">
+      You can copy the chart(s) and/or analysis
+      to your clipboard for easy pasting into
+      a report, presentation or document.
     </li>
+
     <li>
-      Use the <strong>Show/hide MR/S chart</strong> option in the
-      <strong>Chart</strong> tab to control whether the secondary chart is
-      included in copied or downloaded output.
+      <span data-i18n="help.9.secondaryBefore">
+        Use the
+      </span>
+      <strong data-i18n="help.9.secondaryName">
+        Show/hide MR/S chart
+      </strong>
+      <span data-i18n="help.9.secondaryMiddle">
+        option in the
+      </span>
+      <strong data-i18n="tabs.chart">
+        Chart
+      </strong>
+      <span data-i18n="help.9.secondaryAfter">
+        tab to control whether the secondary
+        chart is included in copied or
+        downloaded output.
+      </span>
     </li>
   </ul>
 </details>
 
-        <details>
-          <summary><strong>10. Data privacy</strong></summary>
-          <p>The tool runs entirely in your browser:</p>
-          <ul>
-            <li>data are not sent to a server</li>
-            <li>uploaded files are processed locally in your browser session</li>
-            <li>
-  Unsaved work may be lost when you close or refresh
-  the page. Use <strong>Save chart</strong> (JSON)
-  or <strong>Save portable chart</strong> (HTML)
-  to keep a copy of your work.
-</li>
-          </ul>
-          <p class="hint">
-  <strong>Important:</strong> SimpleSPC is not designed
-  for patient-identifiable or other sensitive personal data.
-  Use anonymised or appropriately aggregated data, and
-  follow your organisation's information-governance,
-  confidentiality and cybersecurity requirements.
-  Remember that saved JSON and portable HTML files
-  contain the data used to create the chart.
-</p>
-        </details>
 
-        <details>
-          <summary><strong>11. About the tool</strong></summary>
-          <p>
-            This tool was developed by Jem Ramazanoglu –
-            <a href="mailto:j.ramazanoglu@nhs.net">j.ramazanoglu@nhs.net</a>
-            as a free resource to support Quality Improvement in the NHS.
-          </p>
-          <p class="hint">
-            Feedback and suggestions are very welcome.
-          </p>
-        </details>
+<!-- HELP SECTION 10: DATA PRIVACY -->
+<details>
+  <summary>
+    <strong data-i18n="help.10.title">
+      10. Data privacy
+    </strong>
+  </summary>
+
+  <p data-i18n="help.10.intro">
+    The tool runs entirely in your browser:
+  </p>
+
+  <ul>
+    <li data-i18n="help.10.noServer">
+      data are not sent to a server
+    </li>
+
+    <li data-i18n="help.10.localFiles">
+      uploaded files are processed locally
+      in your browser session
+    </li>
+
+    <li>
+      <span data-i18n="help.10.unsavedBefore">
+        Unsaved work may be lost when you close
+        or refresh the page. Use
+      </span>
+      <strong data-i18n="data.saveButton">
+        Save chart
+      </strong>
+      <span data-i18n="help.10.unsavedMiddle">
+        (JSON) or
+      </span>
+      <strong data-i18n="data.portableButton">
+        Save portable chart
+      </strong>
+      <span data-i18n="help.10.unsavedAfter">
+        (HTML) to keep a copy of your work.
+      </span>
+    </li>
+  </ul>
+
+  <p class="hint">
+    <strong data-i18n="help.1.importantTitle">
+      Important:
+    </strong>
+    <span data-i18n="help.10.caution">
+      SimpleSPC is not designed for patient-identifiable
+      or other sensitive personal data.
+      Use anonymised or appropriately aggregated data,
+      and follow your organisation's information-governance,
+      confidentiality and cybersecurity requirements.
+      Remember that saved JSON and portable HTML files
+      contain the data used to create the chart.
+    </span>
+  </p>
+</details>
+
+
+<!-- HELP SECTION 11: ABOUT THE TOOL -->
+<details>
+  <summary>
+    <strong data-i18n="help.11.title">
+      11. About the tool
+    </strong>
+  </summary>
+
+  <p>
+    <span data-i18n="help.11.authorBefore">
+      This tool was developed by Jem Ramazanoglu –
+    </span>
+    <a href="mailto:j.ramazanoglu@nhs.net">
+      j.ramazanoglu@nhs.net
+    </a>
+    <span data-i18n="help.11.authorAfter">
+      as a free resource to support Quality
+      Improvement in the NHS.
+    </span>
+  </p>
+
+  <p class="hint" data-i18n="help.11.feedback">
+    Feedback and suggestions are very welcome.
+  </p>
+</details>
+
+<!-- END OF HELP TRANSLATION -->
+
       </div>
     </div>
   </div>
