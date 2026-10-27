@@ -1824,168 +1824,376 @@
 </details>
 
 
-        <details>
-          <summary><strong>4. Using the Data editor</strong></summary>
-          <p>The Data editor is useful when:</p>
-          <ul>
-            <li>you want to paste data from Excel</li>
-            <li>your Excel workbook contains multiple sheets</li>
-            <li>your worksheet contains extra rows or columns that need trimming</li>
-          </ul>
-
-          <ul>
-            <li>Use the <strong>Worksheet</strong> selector to switch between sheets in an uploaded Excel file.</li>
-            <li>Tick or untick <strong>First row contains headers</strong> depending on whether the top row is headings or data.</li>
-            <li>Use <strong>Auto-detect</strong> as a quick suggestion, but always sense-check it.</li>
-            <li><strong>Right-click a row number</strong> to delete or insert rows.</li>
-            <li><strong>Right-click a column heading</strong> to delete or insert columns.</li>
-            <li>You can select multiple rows or columns before deleting them.</li>
-          </ul>
-
-          <p class="hint">
-            Tip: the Data editor lets you clean a worksheet inside the tool before applying it to the chart.
-          </p>
-        </details>
-
         
+<!-- HELP SECTION 4: USING THE DATA EDITOR -->
 <details>
-  <summary><strong>5. X-axis type and chart type</strong></summary>
+  <summary>
+    <strong data-i18n="help.4.title">
+      4. Using the Data editor
+    </strong>
+  </summary>
 
-  <p>
+  <p data-i18n="help.4.intro">
+    The Data editor is useful when:
+  </p>
+
+  <ul>
+    <li data-i18n="help.4.paste">
+      you want to paste data from Excel
+    </li>
+    <li data-i18n="help.4.sheets">
+      your Excel workbook contains multiple sheets
+    </li>
+    <li data-i18n="help.4.trim">
+      your worksheet contains extra rows or columns that need trimming
+    </li>
+  </ul>
+
+  <ul>
+    <li>
+      <span data-i18n="help.4.sheetBefore">Use the</span>
+      <strong data-i18n="help.4.sheetName">Worksheet</strong>
+      <span data-i18n="help.4.sheetAfter">
+        selector to switch between sheets in an uploaded Excel file.
+      </span>
+    </li>
+
+    <li>
+      <span data-i18n="help.4.headersBefore">Tick or untick</span>
+      <strong data-i18n="editor.hasHeaders">
+        First row contains headers
+      </strong>
+      <span data-i18n="help.4.headersAfter">
+        depending on whether the top row is headings or data.
+      </span>
+    </li>
+
+    <li>
+      <span data-i18n="help.4.detectBefore">Use</span>
+      <strong data-i18n="editor.detect">Auto-detect</strong>
+      <span data-i18n="help.4.detectAfter">
+        as a quick suggestion, but always sense-check it.
+      </span>
+    </li>
+
+    <li>
+      <strong data-i18n="help.4.rowAction">
+        Right-click a row number
+      </strong>
+      <span data-i18n="help.4.rowAfter">
+        to delete or insert rows.
+      </span>
+    </li>
+
+    <li>
+      <strong data-i18n="help.4.columnAction">
+        Right-click a column heading
+      </strong>
+      <span data-i18n="help.4.columnAfter">
+        to delete or insert columns.
+      </span>
+    </li>
+
+    <li data-i18n="help.4.multiple">
+      You can select multiple rows or columns before deleting them.
+    </li>
+  </ul>
+
+  <p class="hint" data-i18n="help.4.tip">
+    Tip: the Data editor lets you clean a worksheet inside
+    the tool before applying it to the chart.
+  </p>
+</details>
+
+
+<!-- HELP SECTION 5: X-AXIS AND CHART TYPE -->
+<details>
+  <summary>
+    <strong data-i18n="help.5.title">
+      5. X-axis type and chart type
+    </strong>
+  </summary>
+
+  <p data-i18n="help.5.intro">
     Choose the chart type that matches the kind of data you have.
     The main options are:
   </p>
 
   <ul>
-    <li><strong>Run chart</strong> – a simple starting point for values over time.</li>
-    <li><strong>XmR chart</strong> – individual continuous measurements, with control limits.</li>
-    <li><strong>X̄–S chart</strong> – continuous measurements collected in subgroups.</li>
-    <li><strong>C chart</strong> – counts where the opportunity for events is reasonably constant.</li>
-    <li><strong>P and Laney P′ charts</strong> – proportions, using a numerator and denominator. P′ adjusts for greater or smaller variation than expected.</li>
-    <li><strong>U and Laney U′ charts</strong> – event rates with changing opportunities. U′ adjusts for greater or smaller variation than expected.</li>
-    <li><strong>T and G charts</strong> – time or opportunities between rare events.</li>
-    <li><strong>Pareto chart</strong> – ranks categories from most to least frequent to help prioritise investigation.</li>
+    <li>
+      <strong data-i18n="help.chart.runName">Run chart</strong>
+      –
+      <span data-i18n="help.5.run">
+        a simple starting point for values over time.
+      </span>
+    </li>
+
+    <li>
+      <strong data-i18n="help.chart.xmrName">XmR chart</strong>
+      –
+      <span data-i18n="help.5.xmr">
+        individual continuous measurements, with control limits.
+      </span>
+    </li>
+
+    <li>
+      <strong data-i18n="help.chart.xbarsName">X̄–S chart</strong>
+      –
+      <span data-i18n="help.5.xbars">
+        continuous measurements collected in subgroups.
+      </span>
+    </li>
+
+    <li>
+      <strong data-i18n="help.chart.cName">C chart</strong>
+      –
+      <span data-i18n="help.5.c">
+        counts where the opportunity for events is reasonably constant.
+      </span>
+    </li>
+
+    <li>
+      <strong data-i18n="help.chart.pName">
+        P and Laney P′ charts
+      </strong>
+      –
+      <span data-i18n="help.5.p">
+        proportions, using a numerator and denominator.
+        P′ adjusts for greater or smaller variation than expected.
+      </span>
+    </li>
+
+    <li>
+      <strong data-i18n="help.chart.uName">
+        U and Laney U′ charts
+      </strong>
+      –
+      <span data-i18n="help.5.u">
+        event rates with changing opportunities.
+        U′ adjusts for greater or smaller variation than expected.
+      </span>
+    </li>
+
+    <li>
+      <strong data-i18n="help.5.tgName">T and G charts</strong>
+      –
+      <span data-i18n="help.5.tg">
+        time or opportunities between rare events.
+      </span>
+    </li>
+
+    <li>
+      <strong data-i18n="help.chart.paretoName">Pareto chart</strong>
+      –
+      <span data-i18n="help.5.pareto">
+        ranks categories from most to least frequent
+        to help prioritise investigation.
+      </span>
+    </li>
   </ul>
 
   <p>
-    <strong>X-axis type:</strong>
+    <strong data-i18n="help.5.xaxis">X-axis type:</strong>
   </p>
 
   <ul>
     <li>
-      <strong>Date / time</strong> – use when observations have
-      dates or times and you want to display them chronologically.
+      <strong data-i18n="help.5.dateName">Date / time</strong>
+      –
+      <span data-i18n="help.5.date">
+        use when observations have dates or times and you
+        want to display them chronologically.
+      </span>
     </li>
+
     <li>
-      <strong>Sequence / category</strong> – use when observations
-      should be shown in order without treating their labels as dates.
+      <strong data-i18n="help.5.sequenceName">
+        Sequence / category
+      </strong>
+      –
+      <span data-i18n="help.5.sequence">
+        use when observations should be shown in order
+        without treating their labels as dates.
+      </span>
     </li>
   </ul>
 
-  <p>
-    Pareto charts use categories rather than dates. Categories are
-    ranked by frequency, with a cumulative percentage line.
-    They are not time-ordered SPC charts and do not have
+  <p data-i18n="help.5.paretoNote">
+    Pareto charts use categories rather than dates.
+    Categories are ranked by frequency, with a
+    cumulative percentage line. They are not
+    time-ordered SPC charts and do not have
     statistical control limits.
   </p>
 
   <p>
-    If you are unsure which chart to use, click
-    <strong>Help me choose</strong>. You can also use
-    <strong>Chart setup</strong> for guidance on the data
-    columns required by the selected chart.
+    <span data-i18n="help.5.chooseBefore">
+      If you are unsure which chart to use, click
+    </span>
+    <strong data-i18n="chart.helpChoose">Help me choose</strong>.
+    <span data-i18n="help.5.chooseMiddle">
+      You can also use
+    </span>
+    <strong data-i18n="chart.setup">Chart setup</strong>
+    <span data-i18n="help.5.chooseAfter">
+      for guidance on the data columns required by the selected chart.
+    </span>
   </p>
 </details>
 
-<details>
-  <summary><strong>6. Baselines, splits, targets and the right-click menu</strong></summary>
 
-  <p>
-    SimpleSPC offers additional features to help you investigate
-    and explain your data.
+<!-- HELP SECTION 6: BASELINES, SPLITS AND CONTEXT MENU -->
+<details>
+  <summary>
+    <strong data-i18n="help.6.title">
+      6. Baselines, splits, targets and the right-click menu
+    </strong>
+  </summary>
+
+  <p data-i18n="help.6.intro">
+    SimpleSPC offers additional features to help you
+    investigate and explain your data.
   </p>
 
   <ul>
     <li>
-      <strong>Set a baseline:</strong>
-      Open the <strong>Baseline</strong> tab and enter the number
-      of initial points you want to use as a reference period.
-      Leave this blank if you do not need a separate initial baseline.
+      <strong data-i18n="help.6.baselineHeading">
+        Set a baseline:
+      </strong>
+      <span data-i18n="help.6.baselineBefore">Open the</span>
+      <strong data-i18n="tabs.baseline">Baseline</strong>
+      <span data-i18n="help.6.baselineAfter">
+        tab and enter the number of initial points you want
+        to use as a reference period. Leave this blank if
+        you do not need a separate initial baseline.
+      </span>
     </li>
 
     <li>
-      <strong>Set a target:</strong>
-      Open the <strong>Baseline</strong> tab and find
-      <strong>Target</strong>. Enter the level of performance
-      you want to achieve, then select whether values at or
-      above, or at or below, that target are good.
-      You can also show or hide the target line.
-      A target is a performance goal, not a statistical control limit.
+      <strong data-i18n="help.6.targetHeading">
+        Set a target:
+      </strong>
+      <span data-i18n="help.6.targetBefore">Open the</span>
+      <strong data-i18n="tabs.baseline">Baseline</strong>
+      <span data-i18n="help.6.targetMiddle">tab and find</span>
+      <strong data-i18n="help.6.targetName">Target</strong>.
+      <span data-i18n="help.6.targetAfter">
+        Enter the level of performance you want to achieve,
+        then select whether values at or above, or at or
+        below, that target are good. You can also show or
+        hide the target line. A target is a performance goal,
+        not a statistical control limit.
+      </span>
     </li>
 
     <li>
-      <strong>Add a split:</strong>
-      Right-click a plotted point and choose
-      <strong>Splits</strong>, then
-      <strong>Add split after this point</strong>.
-      This divides the chart into separate analysis periods
-      where supported.
+      <strong data-i18n="help.6.splitHeading">
+        Add a split:
+      </strong>
+      <span data-i18n="help.6.splitBefore">
+        Right-click a plotted point and choose
+      </span>
+      <strong data-i18n="help.6.splitsMenu">Splits</strong>,
+      <span data-i18n="help.6.splitMiddle">then</span>
+      <strong data-i18n="help.6.addSplitAction">
+        Add split after this point
+      </strong>.
+      <span data-i18n="help.6.splitAfter">
+        This divides the chart into separate analysis
+        periods where supported.
+      </span>
     </li>
 
     <li>
-      <strong>Add an annotation:</strong>
-      Right-click a plotted point and use the
-      <strong>Annotations</strong> menu to record
-      an event, intervention or explanation.
+      <strong data-i18n="help.6.annotationHeading">
+        Add an annotation:
+      </strong>
+      <span data-i18n="help.6.annotationBefore">
+        Right-click a plotted point and use the
+      </span>
+      <strong data-i18n="help.6.annotationsMenu">
+        Annotations
+      </strong>
+      <span data-i18n="help.6.annotationAfter">
+        menu to record an event, intervention or explanation.
+      </span>
     </li>
   </ul>
 
   <p>
-    <strong>Discover the right-click menu</strong>
+    <strong data-i18n="help.6.menuHeading">
+      Discover the right-click menu
+    </strong>
   </p>
 
-  <p>
+  <p data-i18n="help.6.menuIntro">
     Right-click directly on a chart to discover additional
     options. Available actions depend on the chart type
     and where you click.
   </p>
 
   <ul>
-    <li>Add, edit or delete annotations.</li>
-    <li>Add or remove split periods.</li>
-    <li>Exclude or reinclude investigated observations from control-limit calculations.</li>
-    <li>Show, hide or restore centre-line labels.</li>
-    <li>Copy the chart, copy its analysis, or export an image.</li>
+    <li data-i18n="help.6.menuAnnotations">
+      Add, edit or delete annotations.
+    </li>
+    <li data-i18n="help.6.menuSplits">
+      Add or remove split periods.
+    </li>
+    <li data-i18n="help.6.menuExclusions">
+      Exclude or reinclude investigated observations
+      from control-limit calculations.
+    </li>
+    <li data-i18n="help.6.menuCentre">
+      Show, hide or restore centre-line labels.
+    </li>
+    <li data-i18n="help.6.menuExport">
+      Copy the chart, copy its analysis, or export an image.
+    </li>
   </ul>
 
   <p>
-    <strong>Important – excluding data points:</strong>
-    Only exclude an observation from limit calculations after
-    investigating and understanding the reason it differs,
-    and deciding it does not represent routine process variation.
-    Excluded observations remain visible and can be reincluded.
-    Consider annotating the reason for exclusion.
+    <strong data-i18n="help.6.excludeHeading">
+      Important – excluding data points:
+    </strong>
+    <span data-i18n="help.6.excludeAdvice">
+      Only exclude an observation from limit calculations
+      after investigating and understanding the reason it
+      differs, and deciding it does not represent routine
+      process variation. Excluded observations remain
+      visible and can be reincluded. Consider annotating
+      the reason for exclusion.
+    </span>
   </p>
 
-  <p>
+  <p data-i18n="help.6.subgroups">
     On X̄–S charts, exclusion applies to an entire subgroup.
     Pareto charts do not use control-limit splits or point exclusions.
   </p>
 
-  <p>
+  <p data-i18n="help.6.splitAdvice">
     Similarly, only use a split when there is good reason
-    to believe the process has changed. Splits should reflect
-    investigated changes, not simply remove inconvenient signals.
+    to believe the process has changed. Splits should
+    reflect investigated changes, not simply remove
+    inconvenient signals.
   </p>
 
   <p>
-    Look for the small <strong>?</strong> symbols beside
-    controls throughout SimpleSPC. Hover over them, or
-    focus them with the keyboard, for additional guidance.
-    You can also ask the <strong>SPC helper</strong> about
-    your chart and its interpretation.
+    <span data-i18n="help.6.extraBefore">
+      Look for the small
+    </span>
+    <strong>?</strong>
+    <span data-i18n="help.6.extraMiddle">
+      symbols beside controls throughout SimpleSPC.
+      Hover over them, or focus them with the keyboard,
+      for additional guidance. You can also ask the
+    </span>
+    <strong data-i18n="buttons.spcHelper">SPC helper</strong>
+    <span data-i18n="help.6.extraAfter">
+      about your chart and its interpretation.
+    </span>
   </p>
 </details>
+
 
 
         <details>
