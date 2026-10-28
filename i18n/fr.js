@@ -1813,7 +1813,65 @@ window.SimpleSPCi18n.registerLanguage("fr", {
     "les catégories situées à gauche sont les plus fréquentes et peuvent constituer des priorités pour les investigations ou les actions d'amélioration. Une catégorie ne représente pas automatiquement une cause du problème.",
 
   "summary.pareto.spcNote":
-    "un diagramme de Pareto ne présente pas les données dans l'ordre chronologique et ne permet pas de déterminer si la variation relève de causes communes ou spéciales. Lorsque cela est pertinent, interprétez-le parallèlement à une carte de suivi (Run) ou à une carte de Shewhart adaptée."
+    "un diagramme de Pareto ne présente pas les données dans l'ordre chronologique et ne permet pas de déterminer si la variation relève de causes communes ou spéciales. Lorsque cela est pertinent, interprétez-le parallèlement à une carte de suivi (Run) ou à une carte de Shewhart adaptée.",
+
+  //  CHANGEMENTS DU PROCESSUS ET RÈGLES SPC
+
+  // X-bar et S : quatre situations possibles
+  "helper.change.xbars.bothStable":
+    "Aucun élément clair ne suggère que le processus a changé au cours de la période X̄–S la plus récente. Ni les moyennes des sous-groupes ni la variation à l'intérieur des sous-groupes ne présentent de signal de cause spéciale.",
+
+  "helper.change.xbars.xOnly":
+    "Certains signes suggèrent que le niveau du processus a pu changer : la carte X̄ présente un signal, tandis que la carte S reste stable.",
+
+  "helper.change.xbars.sOnly":
+    "Certains signes suggèrent que la variation du processus a pu changer : la carte S présente un signal, tandis que la carte X̄ reste stable.",
+
+  "helper.change.xbars.bothSignals":
+    "Certains signes suggèrent que le processus a pu changer : les cartes X̄ et S présentent toutes deux des signaux de cause spéciale.",
+
+  // Évaluation des changements : cartes aux attributs
+  "helper.change.attribute.stable":
+    "Pour la période la plus récente du graphique ({chart}), aucun élément clair ne suggère un changement du processus. Aucun signal de cause spéciale n'est détecté selon les règles actuellement sélectionnées.",
+
+  "helper.change.attribute.signals":
+    "Des signes suggèrent que le processus a pu changer au cours de la période la plus récente du graphique ({chart}), notamment {signals}.",
+
+  // Évaluation des changements : événements rares
+  "helper.change.rare.stable":
+    "Pour la période la plus récente du graphique ({chart}), aucun élément clair ne suggère un changement du processus. Aucun signal de cause spéciale n'est détecté selon les règles actuellement sélectionnées.",
+
+  "helper.change.rare.signals":
+    "Des signes suggèrent que le processus a pu changer au cours de la période la plus récente du graphique ({chart}), notamment {signals}.",
+
+  "helper.change.investigate":
+    "Ce signal invite à rechercher ce qui a changé dans le processus à cette période.",
+
+  "helper.change.noChart":
+    "Générez d'abord la carte actuellement sélectionnée pour que je puisse rechercher d'éventuels signes de changement.",
+
+  // Règles applicables selon le type de carte
+  "helper.rules.attribute":
+    "Pour ce type de carte, SimpleSPC utilise les signaux de dépassement des limites de contrôle et la règle de séquence (décalage). Les règles de zone sont désactivées, car elles pourraient générer des alertes trompeuses sur les cartes aux attributs.",
+
+  "helper.rules.rare":
+    "Pour ce type de carte, les signaux de dépassement des limites de contrôle sont utilisés par défaut. Les règles de séquence et de tendance sont réservées aux options avancées, car les cartes d'événements rares peuvent naturellement présenter un comportement irrégulier.",
+
+  "helper.rules.xmr":
+    "Pour cette carte XmR, les signaux de dépassement des limites de contrôle et la règle de séquence sont utilisés par défaut. Les règles de tendance et les règles de zone sont proposées dans les options avancées, car l'ajout de règles supplémentaires peut augmenter le nombre de fausses alertes.",
+
+  "helper.rules.xbars":
+    "Pour cette carte X̄–S, les signaux de dépassement des limites de contrôle et la règle de séquence sont utilisés par défaut. Les règles de tendance et de zone sont disponibles dans les options avancées.",
+
+  "helper.rules.run":
+    "Pour cette carte de suivi (Run), SimpleSPC utilise les règles propres aux cartes de suivi, notamment la détection des décalages et, lorsqu'elle est activée, celle des tendances. Les règles de dépassement des limites de contrôle ne s'appliquent pas aux cartes de suivi.",
+
+  "helper.rules.pareto":
+    "Les règles de détection des signaux SPC ne s'appliquent pas aux diagrammes de Pareto. Un diagramme de Pareto classe les catégories selon leur fréquence plutôt que de représenter le comportement d'un processus au fil du temps.",
+
+  "helper.rules.default":
+    "SimpleSPC applique un ensemble prudent de règles adaptées à chaque type de carte. Toutes les règles ne sont pas disponibles pour tous les types de cartes."
+
 
 
 

@@ -1809,7 +1809,65 @@ window.SimpleSPCi18n.registerLanguage("en", {
     "the categories on the left are the most frequent and may be useful places to focus further investigation or improvement effort. A category is not automatically a cause of the problem.",
 
   "summary.pareto.spcNote":
-    "a Pareto chart is not time ordered and cannot tell you whether variation is common cause or special cause. Where relevant, interpret it alongside an appropriate run or Shewhart chart."
+    "a Pareto chart is not time ordered and cannot tell you whether variation is common cause or special cause. Where relevant, interpret it alongside an appropriate run or Shewhart chart.",
+
+  // CHANGE ASSESSMENTS AND SPC RULE POLICY
+
+  // X-bar and S: four existing change outcomes
+  "helper.change.xbars.bothStable":
+    "I cannot see clear evidence that the process has changed in the latest X̄–S period. Neither the subgroup averages nor the within-subgroup variation shows a special-cause signal.",
+
+  "helper.change.xbars.xOnly":
+    "There are signs that the process level may have changed: the X̄ chart shows a signal, while the S chart remains stable.",
+
+  "helper.change.xbars.sOnly":
+    "There are signs that the process variation may have changed: the S chart shows a signal, while the X̄ chart remains stable.",
+
+  "helper.change.xbars.bothSignals":
+    "There are signs that the process may have changed: both the X̄ and S charts show special-cause signals.",
+
+  // Attribute-chart change assessments
+  "helper.change.attribute.stable":
+    "I cannot see clear evidence that the process has changed in the latest {chart} period. No special-cause signal is detected using the current rule settings.",
+
+  "helper.change.attribute.signals":
+    "There are signs that the process may have changed in the latest {chart} period — specifically {signals}.",
+
+  // Rare-event change assessments
+  "helper.change.rare.stable":
+    "I cannot see clear evidence that the process has changed in the latest {chart} period. No special-cause signal is detected using the current rule settings.",
+
+  "helper.change.rare.signals":
+    "There are signs that the process may have changed in the latest {chart} period — specifically {signals}.",
+
+  "helper.change.investigate":
+    "That is a prompt to investigate what changed around that time.",
+
+  "helper.change.noChart":
+    "Generate the currently selected chart first and I can look for evidence of change.",
+
+  // Rules applied to each chart family
+  "helper.rules.attribute":
+    "For this chart, SimpleSPC uses beyond-limit signals and the run rule. Zone rules are blocked because they may create misleading alerts on attribute charts.",
+
+  "helper.rules.rare":
+    "For this chart, beyond-limit signals are used by default. Run and trend rules are advanced options only, because rare-event charts can naturally look irregular.",
+
+  "helper.rules.xmr":
+    "For this XmR chart, beyond-limit signals and the run rule are used by default. Trend and zone-style rules are advanced options because adding more rules can increase false alerts.",
+
+  "helper.rules.xbars":
+    "For this X̄–S chart, beyond-limit signals and the run rule are used by default. Trend and zone rules are available as advanced options.",
+
+  "helper.rules.run":
+    "For this run chart, SimpleSPC uses run-chart rules such as shifts and, where enabled, trends. Control-limit rules do not apply to run charts.",
+
+  "helper.rules.pareto":
+    "SPC signal rules are not used on a Pareto chart. A Pareto chart ranks categories rather than showing process behaviour over time.",
+
+  "helper.rules.default":
+    "SimpleSPC uses a conservative, chart-aware rule set. Not every rule is available for every chart type."
+
 	
 
 
