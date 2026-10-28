@@ -1171,7 +1171,82 @@ window.SimpleSPCi18n.registerLanguage("en", {
 
 // PARETO SUGGESTED QUESTIONS
 "helper.q.pareto80": "What does the 80% line mean?",
-"helper.q.paretoCauses": "Are the biggest categories the causes?"
+"helper.q.paretoCauses": "Are the biggest categories the causes?",
+
+  // GENERAL SPC HELPER ANSWERS
+
+  "helper.faq.what-is-spc":
+    "Statistical Process Control (SPC) helps you use data over time to understand whether a process is behaving as usual, or whether something may have changed.\n\n" +
+    "In healthcare improvement, that helps teams distinguish routine ups and downs from signals that may reflect a real change in the service, pathway, staffing, demand, coding, or measurement system.",
+
+  "helper.faq.common-vs-special":
+    "Common-cause variation is the routine fluctuation built into the current system. Special-cause variation means the pattern suggests something unusual may have happened.\n\n" +
+    "In practice:\n" +
+    "• common cause = the system behaving as it usually does\n" +
+    "• special cause = a prompt to investigate what may have changed",
+
+  "helper.faq.choose-chart":
+    "Choose the chart based on the type of data you have:\n\n" +
+    "• Run chart: simple data over time, often a good starting point\n" +
+    "• XmR chart: continuous data with one value per time point\n" +
+    "• C chart: counts with roughly constant opportunity\n" +
+    "• P chart: proportions with a numerator and denominator\n" +
+    "• P′ chart: proportions where the variation is more or less than a standard P chart expects\n" +
+    "• U chart: rates with changing opportunity\n" +
+    "• U′ chart: rates where the variation is more or less than a standard U chart expects\n" +
+    "• X̄–S chart: subgrouped continuous data\n" +
+    "• T / G charts: rare events\n\n" +
+    "• Pareto chart: ranks categories by frequency to help focus investigation; it supplements rather than replaces a time-ordered SPC chart\n\n" +
+    "For proportion data, SimpleSPC normally starts with a P chart and checks whether P′ better matches the observed variation. For rate data with changing opportunity, it normally starts with a U chart and checks whether U′ better matches the observed variation.",
+
+  "helper.faq.run-chart":
+    "A run chart shows data over time with a centre line, usually the median. It is a simple way to see whether the pattern looks broadly stable or whether there may be a shift or trend.\n\n" +
+    "It is often a very good starting point for healthcare improvement teams.",
+
+  "helper.faq.xmr-chart":
+    "An XmR chart is used for continuous data when you have one observation per time point.\n\n" +
+    "It usually has:\n" +
+    "• an Individuals (X) chart showing the values over time\n" +
+    "• a Moving Range (MR) chart showing how much consecutive points differ\n\n" +
+    "It helps separate routine variation from possible special-cause signals.",
+
+  "helper.faq.stable-meaning":
+    "A stable process shows only routine common-cause variation. In simple terms, it is behaving predictably within its current level of performance.\n\n" +
+    "Stable does not necessarily mean good. A stable process can still be consistently underperforming.",
+
+  "helper.faq.baseline-vs-split":
+    "A baseline fixes the calculation using an earlier reference period. A split recalculates the centre line and limits from a chosen point onward.\n\n" +
+    "In simple terms:\n" +
+    "• baseline = compare later performance against the old system\n" +
+    "• split = treat the later period as a new system or new normal",
+
+  "helper.faq.control-limits":
+    "Control limits show the range you would expect from routine common-cause variation. They are not the same as targets, standards, or pass/fail thresholds.\n\n" +
+    "A point outside the limits suggests something may have changed and is worth investigating. Some chart types also support selected pattern rules, but the tool only offers those where they are reasonably defensible.",
+
+  "helper.faq.what-to-do-signal":
+    "A special-cause signal is usually a prompt to investigate what changed around that time.\n\n" +
+    "In a healthcare service, that might include a pathway change, staffing change, demand pressure, case-mix change, coding change, data-definition change, equipment issue, or an intentional improvement intervention.\n\n" +
+    "The aim is not to blame a person or overreact to one point. The aim is to understand whether something in the system changed, whether that change is real, and whether it is likely to continue.",
+
+  "helper.faq.stable-but-poor":
+    "If the process is stable but the level of performance is not good enough, that usually means the system is delivering a predictable but unsatisfactory result.\n\n" +
+    "In improvement terms, that often points toward redesigning or improving the system rather than reacting to individual good or bad days.",
+
+  "helper.faq.rule-availability":
+    "Some SPC rules are only suitable for certain chart types.\n\n" +
+    "This tool uses a conservative, chart-aware rule policy. That means it shows safer default rules first and blocks or hides rules that could create misleading alerts.\n\n" +
+    "This is especially important for healthcare and public-service use, where false signals can lead to wasted effort, unnecessary concern, or alert fatigue.",
+
+  "helper.faq.tg-run-trend-off":
+    "T and G charts are rare-event charts. They can naturally look irregular even when the process has not really changed.\n\n" +
+    "For that reason, this tool keeps run and trend rules off by default for T/G charts. You can enable them in advanced settings, but they should be interpreted cautiously because they may create false signals.",
+
+  "helper.faq.puc-zone-rules-blocked":
+    "Zone rules are not available for P, P′, U, U′, or C charts because they can create misleading alerts on these chart types.\n\n" +
+    "These charts are based on count, proportion, or rate data. Their limits may vary, and their data may not behave like the continuous data that classic zone rules were designed for.\n\n" +
+    "The safer default is to use beyond-limit signals and run rules, rather than adding extra zone-rule alerts."
+
 
 
 

@@ -1174,7 +1174,83 @@ window.SimpleSPCi18n.registerLanguage("fr", {
 
 // QUESTIONS SUR LE PARETO
 "helper.q.pareto80": "Que signifie la ligne des 80 % ?",
-"helper.q.paretoCauses": "Les catégories les plus fréquentes sont-elles les causes du problème ?"
+"helper.q.paretoCauses": "Les catégories les plus fréquentes sont-elles les causes du problème ?",
+
+
+  // RÉPONSES GÉNÉRALES DE L'ASSISTANT SPC
+
+  "helper.faq.what-is-spc":
+    "La maîtrise statistique des procédés (SPC) permet d'utiliser des données recueillies au fil du temps pour comprendre si un processus se comporte comme d'habitude ou si quelque chose a pu changer.\n\n" +
+    "Dans le cadre de l'amélioration de la qualité des soins, elle aide les équipes à distinguer les fluctuations habituelles des signaux pouvant refléter un changement réel dans le service, le parcours de soins, les effectifs, la demande, le codage ou le système de mesure.",
+
+  "helper.faq.common-vs-special":
+    "La variation de cause commune correspond aux fluctuations habituelles inhérentes au système actuel. La variation de cause spéciale signifie que le comportement observé suggère qu'un événement inhabituel a pu se produire.\n\n" +
+    "En pratique :\n" +
+    "• cause commune = le système se comporte comme à son habitude\n" +
+    "• cause spéciale = un signal invitant à rechercher ce qui a pu changer",
+
+  "helper.faq.choose-chart":
+    "Choisissez la carte selon le type de données dont vous disposez :\n\n" +
+    "• Carte de suivi (Run) : données simples suivies au fil du temps, souvent un bon point de départ\n" +
+    "• Carte XmR : données continues, avec une mesure par point temporel\n" +
+    "• Carte C : nombres d'événements avec des opportunités de survenue relativement constantes\n" +
+    "• Carte P : proportions calculées à partir d'un numérateur et d'un dénominateur\n" +
+    "• Carte P′ : proportions présentant une variation plus forte ou plus faible que celle attendue pour une carte P standard\n" +
+    "• Carte U : taux avec un nombre variable d'opportunités\n" +
+    "• Carte U′ : taux présentant une variation plus forte ou plus faible que celle attendue pour une carte U standard\n" +
+    "• Carte X̄–S : données continues regroupées en sous-groupes\n" +
+    "• Cartes T / G : événements rares\n\n" +
+    "• Diagramme de Pareto : classe les catégories selon leur fréquence pour orienter les investigations ; il complète une carte SPC chronologique sans la remplacer\n\n" +
+    "Pour les données de proportions, SimpleSPC commence normalement par une carte P et vérifie si une carte P′ correspond mieux à la variation observée. Pour les données de taux avec un nombre variable d'opportunités, l'outil commence normalement par une carte U et vérifie si une carte U′ correspond mieux à la variation observée.",
+
+  "helper.faq.run-chart":
+    "Une carte de suivi (Run) présente des données au fil du temps avec une ligne centrale, généralement la médiane. Elle permet de voir simplement si le comportement semble globalement stable ou si un décalage ou une tendance pourrait être présent.\n\n" +
+    "C'est souvent un très bon point de départ pour les équipes d'amélioration de la qualité des soins.",
+
+  "helper.faq.xmr-chart":
+    "Une carte XmR est utilisée pour des données continues lorsque l'on dispose d'une observation par point temporel.\n\n" +
+    "Elle comporte généralement :\n" +
+    "• une carte des valeurs individuelles (X), montrant les mesures au fil du temps\n" +
+    "• une carte des étendues mobiles (MR), montrant l'écart entre deux points consécutifs\n\n" +
+    "Elle aide à distinguer la variation habituelle des éventuels signaux de cause spéciale.",
+
+  "helper.faq.stable-meaning":
+    "Un processus stable ne présente que des variations habituelles de cause commune. En termes simples, son comportement est prévisible à son niveau de performance actuel.\n\n" +
+    "Stable ne signifie pas nécessairement satisfaisant. Un processus stable peut présenter des performances constamment insuffisantes.",
+
+  "helper.faq.baseline-vs-split":
+    "Une période de référence permet de fixer le calcul à partir d'une période initiale. Un changement de phase entraîne un nouveau calcul de la ligne centrale et des limites à partir du point choisi.\n\n" +
+    "En termes simples :\n" +
+    "• période de référence = comparer les performances ultérieures avec celles de l'ancien système\n" +
+    "• changement de phase = considérer la période ultérieure comme un nouveau système ou un nouveau niveau habituel",
+
+  "helper.faq.control-limits":
+    "Les limites de contrôle indiquent la plage de valeurs attendue en présence de la variation habituelle de cause commune. Elles ne correspondent pas aux objectifs, aux normes ni aux seuils de réussite ou d'échec.\n\n" +
+    "Un point situé au-delà des limites suggère qu'un changement a pu se produire et mérite une investigation. Certaines cartes permettent également d'utiliser des règles sélectionnées pour détecter des comportements particuliers, mais l'outil ne propose ces règles que lorsqu'elles sont raisonnablement justifiables.",
+
+  "helper.faq.what-to-do-signal":
+    "Un signal de cause spéciale invite généralement à rechercher ce qui a changé à cette période.\n\n" +
+    "Dans un service de santé, cela peut notamment être lié à une modification du parcours de soins, des effectifs, de la demande, du profil des patients, du codage, de la définition des données, à un problème d'équipement ou à une intervention d'amélioration volontaire.\n\n" +
+    "L'objectif n'est pas de blâmer une personne ni de réagir excessivement à un point isolé. Il s'agit de comprendre si un élément du système a changé, si ce changement est réel et s'il est susceptible de se maintenir.",
+
+  "helper.faq.stable-but-poor":
+    "Si le processus est stable, mais que son niveau de performance est insuffisant, cela signifie généralement que le système produit un résultat prévisible, mais insatisfaisant.\n\n" +
+    "Dans une démarche d'amélioration, cela oriente souvent vers une modification ou une refonte du système, plutôt que vers des réactions à chaque bonne ou mauvaise journée.",
+
+  "helper.faq.rule-availability":
+    "Certaines règles SPC ne conviennent qu'à des types de cartes précis.\n\n" +
+    "Cet outil applique une politique prudente, adaptée au type de carte. Il propose d'abord les règles par défaut les plus sûres et bloque ou masque celles qui pourraient générer des alertes trompeuses.\n\n" +
+    "Cette précaution est particulièrement importante dans les services de santé et les services publics, où les faux signaux peuvent entraîner des efforts inutiles, des inquiétudes injustifiées ou une saturation liée aux alertes.",
+
+  "helper.faq.tg-run-trend-off":
+    "Les cartes T et G sont des cartes pour événements rares. Elles peuvent naturellement présenter un comportement irrégulier même lorsque le processus n'a pas réellement changé.\n\n" +
+    "C'est pourquoi cet outil désactive par défaut les règles de séquence et de tendance pour les cartes T et G. Vous pouvez les activer dans les paramètres avancés, mais leurs résultats doivent être interprétés avec prudence, car ces règles peuvent produire de faux signaux.",
+
+  "helper.faq.puc-zone-rules-blocked":
+    "Les règles de zone ne sont pas disponibles pour les cartes P, P′, U, U′ et C, car elles peuvent générer des alertes trompeuses sur ces types de cartes.\n\n" +
+    "Ces cartes reposent sur des données d'effectifs, de proportions ou de taux. Leurs limites peuvent varier, et leurs données ne se comportent pas nécessairement comme les données continues pour lesquelles les règles de zone classiques ont été conçues.\n\n" +
+    "L'approche par défaut la plus prudente consiste à utiliser les signaux de dépassement des limites et les règles de séquence, plutôt qu'à ajouter des alertes fondées sur les zones."
+
 
 
 
