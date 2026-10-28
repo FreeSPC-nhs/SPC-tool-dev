@@ -17325,79 +17325,176 @@ title: {
   html += "</p>";
 
 
+  
+  // Batch 34 correction:
+  // Bilingual Pareto statistical summary.
+  // All numbers and categories still come directly
+  // from the original Pareto analysis.
+
+  html += "<ul>";
+
+  // Singular/plural wording, also updated on
+  // live language switching.
+  const paretoOccurrenceWord = count =>
+    count === 1
+      ? summaryUiText(
+          "summary.pareto.occurrenceOne",
+          "occurrence"
+        )
+      : summaryUiText(
+          "summary.pareto.occurrenceMany",
+          "occurrences"
+        );
+
+  // Largest category.
   html +=
-    `<ul>`;
+    `<li><strong>` +
+    summaryUiText(
+      "summary.pareto.largestLabel",
+      "Largest category:"
+    ) +
+    `</strong> ${escapeHtml(top.category)} — ` +
+    `${top.count} ${paretoOccurrenceWord(top.count)} ` +
+    `(${(top.share * 100).toFixed(1)}% ` +
+    summaryUiText(
+      "summary.pareto.ofTotal",
+      "of the total"
+    ) +
+    `).</li>`;
+
+  // Top three categories.
+  html +=
+    `<li><strong>` +
+    summaryUiText(
+      "summary.pareto.topThreeLabel",
+      "Top three categories:"
+    ) +
+    `</strong> ${result.top3Count} ` +
+    paretoOccurrenceWord(result.top3Count) +
+    ` (${(result.top3Share * 100).toFixed(1)}% ` +
+    summaryUiText(
+      "summary.pareto.ofTotal",
+      "of the total"
+    ) +
+    `).</li>`;
+
+  // 80% cumulative guide.
+  // Preserve the original cutoff and its percentage.
+  const cutoffPhrase =
+    result.cutoff80Count === 1
+      ? (
+          summaryUiText(
+            "summary.pareto.cutoffOneStart",
+            "the first category"
+          ) +
+          ` (<strong>${result.cutoff80Count}</strong>) ` +
+          summaryUiText(
+            "summary.pareto.cutoffOneEnd",
+            "accounts for"
+          )
+        )
+      : (
+          summaryUiText(
+            "summary.pareto.cutoffManyStart",
+            "the first"
+          ) +
+          ` <strong>${result.cutoff80Count}</strong> ` +
+          summaryUiText(
+            "summary.pareto.cutoffManyEnd",
+            "categories account for"
+          )
+        );
 
   html +=
-    `<li>` +
-    `<strong>Largest category:</strong> ` +
-    `${escapeHtml(top.category)} — ` +
-    `${top.count} occurrence${top.count === 1 ? "" : "s"} ` +
-    `(${(top.share * 100).toFixed(1)}% of the total).` +
-    `</li>`;
-
-  html +=
-    `<li>` +
-    `<strong>Top three categories:</strong> ` +
-    `${result.top3Count} occurrences ` +
-    `(${(result.top3Share * 100).toFixed(1)}% of the total).` +
-    `</li>`;
-
-  html +=
-    `<li>` +
-    `<strong>80% guide:</strong> ` +
-    `the first ${result.cutoff80Count} categor${
-      result.cutoff80Count === 1
-        ? "y"
-        : "ies"
-    } account for ` +
+    `<li><strong>` +
+    summaryUiText(
+      "summary.pareto.eightyHeading",
+      "80% guide:"
+    ) +
+    `</strong> ${cutoffPhrase} ` +
     `<strong>${result.cutoff80Pct.toFixed(1)}%</strong> ` +
-    `of the occurrences. ` +
-    `The dashed 80% line is a prioritisation guide, not a statistical control limit.` +
+    summaryUiText(
+      "summary.pareto.ofOccurrences",
+      "of the occurrences."
+    ) +
+    ` ` +
+    summaryUiText(
+      "summary.pareto.eightyCaution",
+      "The dashed 80% line is a prioritisation guide, not a statistical control limit."
+    ) +
     `</li>`;
 
-  if (
-    result.total < 30
-  ) {
+  // Preserve the existing small-sample threshold.
+  if (result.total < 30) {
     html +=
-      `<li>` +
-      `<strong>Caution:</strong> ` +
-      `this Pareto chart contains fewer than 30 occurrences. ` +
-      `With small numbers, the apparent ranking can be unstable, so interpret it cautiously.` +
+      `<li><strong>` +
+      summaryUiText(
+        "summary.pareto.cautionLabel",
+        "Caution:"
+      ) +
+      `</strong> ` +
+      summaryUiText(
+        "summary.pareto.smallSample",
+        "this Pareto chart contains fewer than 30 occurrences. With small numbers, the apparent ranking can be unstable, so interpret it cautiously."
+      ) +
       `</li>`;
   }
 
-  if (
-    result.blankCategoryRows >
-    0
-  ) {
+  // Preserve the existing blank-category count.
+  if (result.blankCategoryRows > 0) {
+    const blankText =
+      result.blankCategoryRows === 1
+        ? summaryUiText(
+            "summary.pareto.blankOne",
+            "row was ignored because the category was blank."
+          )
+        : summaryUiText(
+            "summary.pareto.blankMany",
+            "rows were ignored because the category was blank."
+          );
+
     html +=
-      `<li>` +
-      `<strong>Data check:</strong> ` +
-      `${result.blankCategoryRows} row${
-        result.blankCategoryRows === 1
-          ? " was"
-          : "s were"
-      } ignored because the category was blank.` +
+      `<li><strong>` +
+      summaryUiText(
+        "summary.pareto.dataCheckLabel",
+        "Data check:"
+      ) +
+      `</strong> ${result.blankCategoryRows} ` +
+      blankText +
       `</li>`;
   }
 
+  // Interpretation: a category is not necessarily
+  // an underlying cause.
   html +=
-    `<li>` +
-    `<strong>Interpretation:</strong> ` +
-    `the categories on the left are the most frequent and may be useful places to focus further investigation or improvement effort. ` +
-    `A category is not automatically a cause of the problem.` +
+    `<li><strong>` +
+    summaryUiText(
+      "summary.pareto.interpretationLabel",
+      "Interpretation:"
+    ) +
+    `</strong> ` +
+    summaryUiText(
+      "summary.pareto.interpretation",
+      "the categories on the left are the most frequent and may be useful places to focus further investigation or improvement effort. A category is not automatically a cause of the problem."
+    ) +
     `</li>`;
 
+  // Statistical limitation: Pareto is not time ordered.
   html +=
-    `<li>` +
-    `<strong>SPC note:</strong> ` +
-    `a Pareto chart is not time ordered and cannot tell you whether variation is common cause or special cause. ` +
-    `Where relevant, interpret it alongside an appropriate run or Shewhart chart.` +
+    `<li><strong>` +
+    summaryUiText(
+      "summary.pareto.spcNoteLabel",
+      "SPC note:"
+    ) +
+    `</strong> ` +
+    summaryUiText(
+      "summary.pareto.spcNote",
+      "a Pareto chart is not time ordered and cannot tell you whether variation is common cause or special cause. Where relevant, interpret it alongside an appropriate run or Shewhart chart."
+    ) +
     `</li>`;
 
-  html +=
-    `</ul>`;
+  html += "</ul>";
+
 
   summaryDiv.innerHTML =
     html;
