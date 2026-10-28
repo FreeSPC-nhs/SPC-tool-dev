@@ -1905,23 +1905,30 @@ function buildTargetAnswer(ctx) {
 }
 
 
+
 function buildXmRLimitsAnswer(ctx) {
   const a = ctx.xmr;
+  const t = helperDynamicText;
 
+  // No current XmR analysis.
   if (!a) {
-    return (
-      "XmR limits are estimated from the moving ranges between consecutive points. " +
-      "Generate an XmR chart and I can explain the calculation used for your current data."
+    return t(
+      "helper.xmrLimits.noChart",
+      "XmR limits are estimated from the moving ranges between consecutive points. Generate an XmR chart and I can explain the calculation used for your current data."
     );
   }
 
-  let out =
-    "XmR control limits depend on the estimated routine variation. " +
-    "SimpleSPC estimates this from the moving ranges between consecutive observations.";
+  let out = t(
+    "helper.xmrLimits.intro",
+    "XmR control limits depend on the estimated routine variation. SimpleSPC estimates this from the moving ranges between consecutive observations."
+  );
 
+  // Screening enabled: preserve the existing setting.
   if (a.mrScreeningEnabled === true) {
-    out +=
-      "\n\nFor your current chart, moving-range screening is ON.";
+    out += t(
+      "helper.xmrLimits.screeningOn",
+      "\n\nFor your current chart, moving-range screening is ON."
+    );
 
     if (
       finiteNumber(a.excludedMRCount) &&
@@ -1929,67 +1936,121 @@ function buildXmRLimitsAnswer(ctx) {
     ) {
       const count = a.excludedMRCount;
 
-      out +=
-        ` SimpleSPC found ${count} unusually large point-to-point ` +
-        `${count === 1 ? "change" : "changes"} and did not use ` +
-        `${count === 1 ? "it" : "them"} when estimating routine variation. ` +
-        "The original data points and moving ranges remain on the chart.";
+      // Retain the original one-versus-many decision.
+      out += count === 1
+        ? t(
+            "helper.xmrLimits.screenedOne",
+            " SimpleSPC found {count} unusually large point-to-point change and did not use it when estimating routine variation. The original data points and moving ranges remain on the chart.",
+            { count }
+          )
+        : t(
+            "helper.xmrLimits.screenedMany",
+            " SimpleSPC found {count} unusually large point-to-point changes and did not use them when estimating routine variation. The original data points and moving ranges remain on the chart.",
+            { count }
+          );
 
-      out +=
-        "\n\nThis prevents an unusually large jump from making the estimated variation — and therefore the XmR control limits — artificially wide.";
+      out += t(
+        "helper.xmrLimits.whyScreen",
+        "\n\nThis prevents an unusually large jump from making the estimated variation — and therefore the XmR control limits — artificially wide."
+      );
+
     } else {
-      out +=
-        " No moving ranges in the current period exceeded the screening threshold, so screening has not changed the variation estimate for this period.";
+      out += t(
+        "helper.xmrLimits.noneScreened",
+        " No moving ranges in the current period exceeded the screening threshold, so screening has not changed the variation estimate for this period."
+      );
     }
 
+    // Preserve the exact existing three-number condition
+    // and formatting to three decimal places.
     if (
       finiteNumber(a.initialAvgMR) &&
       finiteNumber(a.mrScreeningThreshold) &&
       finiteNumber(a.avgMR)
     ) {
-      out +=
+      out += t(
+        "helper.xmrLimits.statistics",
         "\n\nFor the current period:\n" +
-        `• initial average MR = ${a.initialAvgMR.toFixed(3)}\n` +
-        `• Nelson screening threshold = ${a.mrScreeningThreshold.toFixed(3)}\n` +
-        `• average MR used for the limits = ${a.avgMR.toFixed(3)}`;
+        "• initial average MR = {initial}\n" +
+        "• Nelson screening threshold = {threshold}\n" +
+        "• average MR used for the limits = {average}",
+        {
+          initial: a.initialAvgMR.toFixed(3),
+          threshold: a.mrScreeningThreshold.toFixed(3),
+          average: a.avgMR.toFixed(3)
+        }
+      );
     }
+
   } else if (a.mrScreeningEnabled === false) {
-    out +=
-      "\n\nFor your current chart, moving-range screening is OFF. " +
-      "All baseline moving ranges are therefore used to estimate routine variation. " +
-      "If one point-to-point jump is unusually large, this can increase the average moving range and produce wider control limits.";
+
+    // Screening disabled: use the existing unscreened result.
+    out += t(
+      "helper.xmrLimits.screeningOff",
+      "\n\nFor your current chart, moving-range screening is OFF. All baseline moving ranges are therefore used to estimate routine variation. If one point-to-point jump is unusually large, this can increase the average moving range and produce wider control limits."
+    );
 
     if (finiteNumber(a.avgMR)) {
-      out +=
-        `\n\nThe average MR currently being used for the limits is ${a.avgMR.toFixed(3)}.`;
+      out += t(
+        "helper.xmrLimits.offAverage",
+        "\n\nThe average MR currently being used for the limits is {average}.",
+        { average: a.avgMR.toFixed(3) }
+      );
     }
+
   } else {
-    out +=
-      "\n\nI cannot determine the moving-range screening setting from the current chart snapshot.";
+
+    // Older/incomplete chart snapshots may not specify
+    // the screening setting.
+    out += t(
+      "helper.xmrLimits.unknown",
+      "\n\nI cannot determine the moving-range screening setting from the current chart snapshot."
+    );
   }
 
+  // Phase splits: preserve the existing period-count check.
   if (a.periodCount && a.periodCount > 1) {
-    out +=
-      "\n\nThis chart also contains a split. Each period is treated as a separate process period with its own mean and limits, and the moving range across the split is not used. This can also make the limits different from an unsplit version of the same chart.";
+    out += t(
+      "helper.xmrLimits.splits",
+      "\n\nThis chart also contains a split. Each period is treated as a separate process period with its own mean and limits, and the moving range across the split is not used. This can also make the limits different from an unsplit version of the same chart."
+    );
   }
 
+  // Provisional limits: preserve the existing safeguard.
   if (!isXmRPeriodAssessable(a)) {
-    const count = finiteNumber(a.limitEstimatePointCount)
-      ? a.limitEstimatePointCount
-      : null;
+    const count =
+      finiteNumber(a.limitEstimatePointCount)
+        ? a.limitEstimatePointCount
+        : null;
 
-    const minimum = finiteNumber(a.minimumPointsForInterpretation)
-      ? a.minimumPointsForInterpretation
-      : 12;
+    const minimum =
+      finiteNumber(a.minimumPointsForInterpretation)
+        ? a.minimumPointsForInterpretation
+        : 12;
 
-    out +=
-      "\n\nThe latest period is still provisional. " +
-      `${count !== null ? `Only ${count} points are currently being used to estimate its limits. ` : ""}` +
-      `SimpleSPC waits until at least ${minimum} points are available before making a formal stability interpretation.`;
+    out += t(
+      "helper.xmrLimits.provisionalIntro",
+      "\n\nThe latest period is still provisional. "
+    );
+
+    if (count !== null) {
+      out += t(
+        "helper.xmrLimits.provisionalCount",
+        "Only {count} points are currently being used to estimate its limits. ",
+        { count }
+      );
+    }
+
+    out += t(
+      "helper.xmrLimits.provisionalMinimum",
+      "SimpleSPC waits until at least {minimum} points are available before making a formal stability interpretation.",
+      { minimum }
+    );
   }
 
   return out;
 }
+
 
 function buildParetoAnswer(ctx) {
   const p =
