@@ -724,6 +724,41 @@ function describeRulesForCurrentChart(chartType) {
     return bestScore >= 15 ? best : null;
   }
 
+
+/*
+ * Translate a matched FAQ answer.
+ *
+ * Matching still uses the original English aliases,
+ * keywords and priority scores. Only the returned
+ * answer text changes with the selected language.
+ */
+function localisedFaqAnswer(faq) {
+  if (!faq) return "";
+
+  const key = `helper.faq.${faq.id}`;
+  const i18n = window.SimpleSPCi18n;
+
+  // Preserve the original answer when translation
+  // support is unavailable (including older portable files).
+  if (
+    !i18n ||
+    typeof i18n.translate !== "function"
+  ) {
+    return faq.answer;
+  }
+
+  const translated = i18n.translate(key);
+
+  // A missing dictionary key must not appear as
+  // user-facing text.
+  if (!translated || translated === key) {
+    return faq.answer;
+  }
+
+  return translated;
+}
+
+
 function isXmRPeriodAssessable(period) {
   if (!period) return false;
 
@@ -2132,12 +2167,14 @@ function buildDecisionAnswer(ctx) {
     return buildDecisionAnswer(ctx);
   }
 
+  
   const faq =
     findBestFaq(q);
 
   if (faq) {
-    return faq.answer;
+    return localisedFaqAnswer(faq);
   }
+
 
   if (hasChart) {
     return (
