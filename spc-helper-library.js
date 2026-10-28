@@ -1618,32 +1618,35 @@ function buildLatestPeriodSummary(ctx) {
 }
 
 
-  function buildTargetAnswer(ctx) {
+  
+function buildTargetAnswer(ctx) {
   const chartType = ctx.chartType;
+  const t = helperDynamicText;
 
+  const chartName = t(
+    `helper.stability.chart.${chartType}`,
+    titleCaseChartType(chartType).toLowerCase()
+  );
+
+  // XmR: preserve all existing target, provisional-limit
+  // and capability decisions.
   if (chartType === "xmr" && ctx.xmr) {
     const a = ctx.xmr;
 
-    const hasTarget =
-      finiteNumber(a.target);
-
-    const hasMean =
-      finiteNumber(a.mean);
+    const hasTarget = finiteNumber(a.target);
+    const hasMean = finiteNumber(a.mean);
 
     if (!hasTarget) {
-      return (
-        "There is no target currently set on this XmR chart. " +
-        "If you add one, SimpleSPC can help interpret performance against the target alongside process stability."
+      return t(
+        "helper.target.xmr.none",
+        "There is no target currently set on this XmR chart. If you add one, SimpleSPC can help interpret performance against the target alongside process stability."
       );
     }
 
-    const target =
-      a.target;
+    const target = a.target;
 
     const direction =
-      a.direction === "above"
-        ? "above"
-        : "below";
+      a.direction === "above" ? "above" : "below";
 
     let currentPositionText = "";
 
@@ -1653,12 +1656,21 @@ function buildLatestPeriodSummary(ctx) {
           ? a.mean >= target
           : a.mean <= target;
 
-      currentPositionText =
-        meanMeetsTarget
-          ? `The current period mean (${a.mean.toFixed(2)}) is on the favourable side of the target (${target}).`
-          : `The current period mean (${a.mean.toFixed(2)}) is not yet on the favourable side of the target (${target}).`;
+      currentPositionText = meanMeetsTarget
+        ? t(
+            "helper.target.xmr.meanFavourable",
+            "The current period mean ({mean}) is on the favourable side of the target ({target}).",
+            { mean: a.mean.toFixed(2), target }
+          )
+        : t(
+            "helper.target.xmr.meanUnfavourable",
+            "The current period mean ({mean}) is not yet on the favourable side of the target ({target}).",
+            { mean: a.mean.toFixed(2), target }
+          );
     }
 
+    // XmR: provisional limits. Never estimate capability
+    // or report a firm stability conclusion here.
     if (!isXmRPeriodAssessable(a)) {
       const count =
         finiteNumber(a.limitEstimatePointCount)
@@ -1670,17 +1682,28 @@ function buildLatestPeriodSummary(ctx) {
           ? a.minimumPointsForInterpretation
           : 12;
 
-      let out =
-        "The latest XmR period is still provisional, so it is too early to make a firm judgement about whether the process can reliably meet the target.";
+      let out = t(
+        "helper.target.xmr.provisional",
+        "The latest XmR period is still provisional, so it is too early to make a firm judgement about whether the process can reliably meet the target."
+      );
 
       if (currentPositionText) {
-        out +=
-          `\n\n${currentPositionText}`;
+        out += "\n\n" + currentPositionText;
       }
 
-      out +=
-        `\n\n${count !== null ? `There are currently ${count} points in this period, and ` : ""}` +
-        `SimpleSPC uses at least ${minimum} points before making a formal stability or capability interpretation.`;
+      const countText = count !== null
+        ? t(
+            "helper.target.xmr.count",
+            "There are currently {count} points in this period, and ",
+            { count }
+          )
+        : "";
+
+      out += "\n\n" + t(
+        "helper.target.xmr.minimum",
+        "{count}SimpleSPC uses at least {minimum} points before making a formal stability or capability interpretation.",
+        { count: countText, minimum }
+      );
 
       if (hasMean) {
         const meanMeetsTarget =
@@ -1688,56 +1711,76 @@ function buildLatestPeriodSummary(ctx) {
             ? a.mean >= target
             : a.mean <= target;
 
-        if (meanMeetsTarget) {
-          out +=
-            "\n\nThe early results are encouraging, but they do not yet show that this level of performance is predictable or sustainable.";
-        } else {
-          out +=
-            "\n\nThe early pattern may still be settling. More data will show whether the process level is genuinely different and whether further improvement is needed to reach the target reliably.";
-        }
+        out += "\n\n" + (
+          meanMeetsTarget
+            ? t(
+                "helper.target.xmr.earlyFavourable",
+                "The early results are encouraging, but they do not yet show that this level of performance is predictable or sustainable."
+              )
+            : t(
+                "helper.target.xmr.earlyUnfavourable",
+                "The early pattern may still be settling. More data will show whether the process level is genuinely different and whether further improvement is needed to reach the target reliably."
+              )
+        );
       }
 
       return out;
     }
 
+    // XmR: assessable and stable.
     if (a.isStable === true) {
-      let out =
-        "The latest XmR period has enough data for interpretation and currently looks stable.";
+      let out = t(
+        "helper.target.xmr.stable",
+        "The latest XmR period has enough data for interpretation and currently looks stable."
+      );
 
       if (currentPositionText) {
-        out +=
-          `\n\n${currentPositionText}`;
+        out += "\n\n" + currentPositionText;
       }
 
       if (
         a.capability &&
         finiteNumber(a.capability.prob)
       ) {
-        out +=
-          `\n\nBased on the current stable process, SimpleSPC estimates that about ${(a.capability.prob * 100).toFixed(1)}% of future results would meet the target, assuming the process continues to behave in the same way.`;
+        // Keep the existing percentage calculation.
+        const percentage =
+          (a.capability.prob * 100).toFixed(1);
+
+        out += "\n\n" + t(
+          "helper.target.xmr.capability",
+          "Based on the current stable process, SimpleSPC estimates that about {percentage}% of future results would meet the target, assuming the process continues to behave in the same way.",
+          { percentage }
+        );
       } else {
-        out +=
-          "\n\nBecause the process appears stable, the target comparison is more meaningful: the main question is whether the current system is predictably good enough.";
+        out += "\n\n" + t(
+          "helper.target.xmr.stableNoCapability",
+          "Because the process appears stable, the target comparison is more meaningful: the main question is whether the current system is predictably good enough."
+        );
       }
 
       return out;
     }
 
-    let out =
-      "The latest XmR period has enough data for interpretation, but it shows special-cause variation. " +
-      "That means target performance should be interpreted cautiously because the process is not yet behaving predictably.";
+    // XmR: assessable, but special-cause signals exist.
+    let out = t(
+      "helper.target.xmr.unstable",
+      "The latest XmR period has enough data for interpretation, but it shows special-cause variation. That means target performance should be interpreted cautiously because the process is not yet behaving predictably."
+    );
 
     if (currentPositionText) {
-      out +=
-        `\n\n${currentPositionText}`;
+      out += "\n\n" + currentPositionText;
     }
 
-    out +=
-      "\n\nThe priority is to understand what is changing in the system, demand, staffing, pathway, coding, or measurement before relying on a capability estimate.";
+    out += "\n\n" + t(
+      "helper.target.xmr.unstableAction",
+      "The priority is to understand what is changing in the system, demand, staffing, pathway, coding, or measurement before relying on a capability estimate."
+    );
 
     return out;
   }
 
+  // Other charts: preserve the existing source of
+  // the target setting.
   let target = null;
 
   try {
@@ -1747,9 +1790,10 @@ function buildLatestPeriodSummary(ctx) {
   } catch (e) {}
 
   if (!finiteNumber(target)) {
-    return (
-      `There is no target currently set on this ${titleCaseChartType(chartType).toLowerCase()}. ` +
-      "If you add one, SimpleSPC can help you interpret the target alongside the pattern of variation."
+    return t(
+      "helper.target.general.none",
+      "There is no target currently set on this {chart}. If you add one, SimpleSPC can help you interpret the target alongside the pattern of variation.",
+      { chart: chartName }
     );
   }
 
@@ -1765,6 +1809,8 @@ function buildLatestPeriodSummary(ctx) {
     }
   } catch (e) {}
 
+  // Keep the original chart-specific centre line
+  // and stability sources unchanged.
   let centre = null;
   let stable = null;
 
@@ -1773,37 +1819,27 @@ function buildLatestPeriodSummary(ctx) {
     ctx.attribute.stats &&
     finiteNumber(ctx.attribute.stats.cl)
   ) {
-    centre =
-      ctx.attribute.stats.cl;
-
-    stable =
-      ctx.attribute.isStable;
+    centre = ctx.attribute.stats.cl;
+    stable = ctx.attribute.isStable;
   } else if (
     ctx.rare &&
     ctx.rare.stats &&
     finiteNumber(ctx.rare.stats.cl)
   ) {
-    centre =
-      ctx.rare.stats.cl;
-
-    stable =
-      ctx.rare.isStable;
+    centre = ctx.rare.stats.cl;
+    stable = ctx.rare.isStable;
   } else if (
     ctx.run &&
     finiteNumber(ctx.run.median)
   ) {
-    centre =
-      ctx.run.median;
-
-    stable =
-      ctx.run.isStable;
+    centre = ctx.run.median;
+    stable = ctx.run.isStable;
   } else if (
     ctx.xbars &&
     ctx.xbars.stats &&
     finiteNumber(ctx.xbars.stats.xbarbar)
   ) {
-    centre =
-      ctx.xbars.stats.xbarbar;
+    centre = ctx.xbars.stats.xbarbar;
 
     stable =
       !!ctx.xbars.xbar?.isStable &&
@@ -1812,11 +1848,20 @@ function buildLatestPeriodSummary(ctx) {
 
   const betterText =
     direction === "above"
-      ? "higher values are treated as better"
-      : "lower values are treated as better";
+      ? t(
+          "helper.target.general.higher",
+          "higher values are treated as better"
+        )
+      : t(
+          "helper.target.general.lower",
+          "lower values are treated as better"
+        );
 
-  let out =
-    `The target is ${target}, and ${betterText}.`;
+  let out = t(
+    "helper.target.general.intro",
+    "The target is {target}, and {direction}.",
+    { target, direction: betterText }
+  );
 
   if (finiteNumber(centre)) {
     const centreMeetsTarget =
@@ -1824,27 +1869,41 @@ function buildLatestPeriodSummary(ctx) {
         ? centre >= target
         : centre <= target;
 
-    out +=
+    out += "\n\n" + (
       centreMeetsTarget
-        ? `\n\nThe current centre line (${centre.toFixed(3)}) is on the favourable side of the target.`
-        : `\n\nThe current centre line (${centre.toFixed(3)}) is not yet on the favourable side of the target.`;
+        ? t(
+            "helper.target.general.centreFavourable",
+            "The current centre line ({centre}) is on the favourable side of the target.",
+            { centre: centre.toFixed(3) }
+          )
+        : t(
+            "helper.target.general.centreUnfavourable",
+            "The current centre line ({centre}) is not yet on the favourable side of the target.",
+            { centre: centre.toFixed(3) }
+          )
+    );
   }
 
   if (stable === true) {
-    out +=
-      "\n\nThe latest period does not show a clear special-cause signal, so the comparison with the target is more meaningful. " +
-      "Remember that being stable does not automatically mean performance is good enough.";
+    out += "\n\n" + t(
+      "helper.target.general.stable",
+      "The latest period does not show a clear special-cause signal, so the comparison with the target is more meaningful. Remember that being stable does not automatically mean performance is good enough."
+    );
   } else if (stable === false) {
-    out +=
-      "\n\nThe latest period shows possible special-cause variation, so target performance should be interpreted cautiously. " +
-      "The priority is to understand what may have changed before assuming the current level will continue.";
+    out += "\n\n" + t(
+      "helper.target.general.unstable",
+      "The latest period shows possible special-cause variation, so target performance should be interpreted cautiously. The priority is to understand what may have changed before assuming the current level will continue."
+    );
   } else {
-    out +=
-      "\n\nInterpret the target alongside the pattern of variation rather than judging individual points on their own.";
+    out += "\n\n" + t(
+      "helper.target.general.unknown",
+      "Interpret the target alongside the pattern of variation rather than judging individual points on their own."
+    );
   }
 
   return out;
 }
+
 
 function buildXmRLimitsAnswer(ctx) {
   const a = ctx.xmr;
@@ -2126,42 +2185,48 @@ function buildChangeAnswer(ctx) {
   );
 }
 
+
 function buildImprovementAnswer(ctx) {
   const chartType = ctx.chartType;
+  const t = helperDynamicText;
 
+  const chartName = t(
+    `helper.stability.chart.${chartType}`,
+    titleCaseChartType(chartType).toLowerCase()
+  );
+
+  // XmR: preserve the minimum-point safeguard.
   if (chartType === "xmr" && ctx.xmr) {
     if (!isXmRPeriodAssessable(ctx.xmr)) {
-      return (
-        "There are not yet enough data in the latest XmR period to make a firm judgement about stability or improvement. " +
-        "The early pattern may be encouraging, but more points are needed before calling it a sustained change."
+      return t(
+        "helper.improvement.xmr.provisional",
+        "There are not yet enough data in the latest XmR period to make a firm judgement about stability or improvement. The early pattern may be encouraging, but more points are needed before calling it a sustained change."
       );
     }
 
     if (ctx.xmr.isStable === true) {
-      return (
-        "The current XmR period does not show a clear special-cause signal, so the chart alone does not provide strong evidence of a new improvement. " +
-        "Real improvement is more convincing when there is a sustained change in the desired direction and the new pattern is maintained."
+      return t(
+        "helper.improvement.xmr.stable",
+        "The current XmR period does not show a clear special-cause signal, so the chart alone does not provide strong evidence of a new improvement. Real improvement is more convincing when there is a sustained change in the desired direction and the new pattern is maintained."
       );
     }
 
-    return (
-      "The XmR chart shows evidence that the process may have changed. " +
-      "That is not automatically the same as improvement. Check whether the change is in the desired direction, whether it is sustained, and whether local knowledge supports a plausible improvement explanation. " +
-      "The chart can show evidence of change, but it cannot prove that an intervention caused it."
+    return t(
+      "helper.improvement.xmr.unstable",
+      "The XmR chart shows evidence that the process may have changed. That is not automatically the same as improvement. Check whether the change is in the desired direction, whether it is sustained, and whether local knowledge supports a plausible improvement explanation. The chart can show evidence of change, but it cannot prove that an intervention caused it."
     );
   }
 
+  // Other chart families: retain the original stability
+  // decision and its source.
   let stable = null;
 
   if (ctx.attribute) {
-    stable =
-      ctx.attribute.isStable;
+    stable = ctx.attribute.isStable;
   } else if (ctx.rare) {
-    stable =
-      ctx.rare.isStable;
+    stable = ctx.rare.isStable;
   } else if (ctx.run) {
-    stable =
-      ctx.run.isStable;
+    stable = ctx.run.isStable;
   } else if (ctx.xbars) {
     stable =
       !!ctx.xbars.xbar?.isStable &&
@@ -2169,22 +2234,23 @@ function buildImprovementAnswer(ctx) {
   }
 
   if (stable === true) {
-    return (
-      `The current ${titleCaseChartType(chartType).toLowerCase()} does not show a clear special-cause signal, so the chart alone does not provide strong evidence of a new improvement. ` +
-      "Improvement is more convincing when there is a sustained change in the desired direction, not just one favourable point."
+    return t(
+      "helper.improvement.general.stable",
+      "The current {chart} does not show a clear special-cause signal, so the chart alone does not provide strong evidence of a new improvement. Improvement is more convincing when there is a sustained change in the desired direction, not just one favourable point.",
+      { chart: chartName }
     );
   }
 
   if (stable === false) {
-    return (
-      `The current ${titleCaseChartType(chartType).toLowerCase()} shows evidence that the process may have changed. ` +
-      "That could be improvement, deterioration, or another change in the system. " +
-      "To call it improvement, check that the change is in the desired direction, is sustained, and makes sense in the local context. " +
-      "The chart alone does not prove causation."
+    return t(
+      "helper.improvement.general.unstable",
+      "The current {chart} shows evidence that the process may have changed. That could be improvement, deterioration, or another change in the system. To call it improvement, check that the change is in the desired direction, is sustained, and makes sense in the local context. The chart alone does not prove causation.",
+      { chart: chartName }
     );
   }
 
-  return (
+  return t(
+    "helper.improvement.general.noChart",
     "Generate the currently selected chart first and I can help assess whether the pattern is consistent with real improvement."
   );
 }
