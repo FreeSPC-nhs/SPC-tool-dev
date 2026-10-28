@@ -1870,7 +1870,19 @@ window.SimpleSPCi18n.registerLanguage("fr", {
     "Les règles de détection des signaux SPC ne s'appliquent pas aux diagrammes de Pareto. Un diagramme de Pareto classe les catégories selon leur fréquence plutôt que de représenter le comportement d'un processus au fil du temps.",
 
   "helper.rules.default":
-    "SimpleSPC applique un ensemble prudent de règles adaptées à chaque type de carte. Toutes les règles ne sont pas disponibles pour tous les types de cartes."
+    "SimpleSPC applique un ensemble prudent de règles adaptées à chaque type de carte. Toutes les règles ne sont pas disponibles pour tous les types de cartes.",
+
+  //  MESSAGES DE REPLI DE L'ASSISTANT SPC
+
+  "helper.response.empty":
+    "Veuillez saisir une question sur le SPC ou sur votre graphique.",
+
+  "helper.response.unsure":
+    "Je ne suis pas certain de la réponse la plus adaptée. Voici quelques questions que vous pouvez essayer :",
+
+  "helper.response.libraryMissing":
+    "La bibliothèque de l'assistant SPC n'est pas disponible. Vérifiez que spc-helper-library.js est chargé avant spc.js."
+
 
 
 

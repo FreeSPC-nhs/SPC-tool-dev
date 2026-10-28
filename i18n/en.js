@@ -1866,12 +1866,18 @@ window.SimpleSPCi18n.registerLanguage("en", {
     "SPC signal rules are not used on a Pareto chart. A Pareto chart ranks categories rather than showing process behaviour over time.",
 
   "helper.rules.default":
-    "SimpleSPC uses a conservative, chart-aware rule set. Not every rule is available for every chart type."
+    "SimpleSPC uses a conservative, chart-aware rule set. Not every rule is available for every chart type.",
 
-	
+  // SPC HELPER FALLBACK MESSAGES
 
+  "helper.response.empty":
+    "Please type a question about SPC or your chart.",
 
+  "helper.response.unsure":
+    "I’m not fully sure which answer fits best. Try one of these:",
 
+  "helper.response.libraryMissing":
+    "The SPC helper library is not available. Please check that spc-helper-library.js is loaded before spc.js."
 
 
 
