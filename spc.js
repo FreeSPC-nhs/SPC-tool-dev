@@ -21213,6 +21213,106 @@ function answerSpcQuestion(question) {
 }
 
 
+
+/*
+ * SPC helper suggested-question translations.
+ *
+ * These English strings are the existing identifiers used
+ * by spc-helper-library.js. Do not translate or change
+ * them inside the analysis library.
+ */
+const SPC_HELPER_QUESTION_KEYS = {
+  "What is SPC?": "helper.q.whatSpc",
+  "What is the difference between common and special cause variation?":
+    "helper.q.commonSpecial",
+  "How do I choose the right chart?": "helper.q.chooseChart",
+  "What is a run chart?": "helper.q.run",
+  "What is an XmR chart?": "helper.q.xmr",
+  "What does stable mean?": "helper.q.stable",
+  "What is the difference between a baseline and a split?":
+    "helper.q.baselineSplit",
+  "How do control limits work?": "helper.q.limits",
+  "What should I do if I see a signal?": "helper.q.signalAction",
+  "What if my process is stable but performance is poor?":
+    "helper.q.stablePoor",
+  "Why are some SPC rules unavailable?":
+    "helper.q.rulesUnavailable",
+  "Why are T/G run and trend rules off by default?":
+    "helper.q.rareRules",
+  "Why can’t I use zone rules on P, P′, U, U′, or C charts?":
+    "helper.q.zoneRules",
+
+  "What is my chart telling me?": "helper.q.myChart",
+  "Has anything changed?": "helper.q.changed",
+  "Is my process stable?": "helper.q.processStable",
+  "Is this likely to be real improvement?":
+    "helper.q.improvement",
+  "What does this mean for our target?": "helper.q.target",
+  "What should I do next?": "helper.q.next",
+  "Should I add a split here?": "helper.q.addSplit",
+  "Why are my XmR limits different?": "helper.q.xmrLimits",
+  "Why am I using a P′ chart?": "helper.q.pPrime",
+  "Why am I using a U′ chart?": "helper.q.uPrime",
+  "What does Sigma Z mean?": "helper.q.sigmaZ",
+  "When should I exclude a point from limit calculations?":
+    "helper.q.exclude",
+
+  "What does the 80% line mean?": "helper.q.pareto80",
+  "Are the biggest categories the causes?":
+    "helper.q.paretoCauses"
+};
+
+function helperQuestionDisplay(englishQuestion) {
+  const key = SPC_HELPER_QUESTION_KEYS[englishQuestion];
+  return key
+    ? chartPanelText(key, englishQuestion)
+    : englishQuestion;
+}
+
+function helperQuestionForMatching(question) {
+  const input = String(question || "").trim();
+
+  // The existing English question is always valid.
+  if (SPC_HELPER_QUESTION_KEYS[input]) return input;
+
+  // Recognise the translated suggested question too.
+  for (const english of Object.keys(SPC_HELPER_QUESTION_KEYS)) {
+    if (helperQuestionDisplay(english) === input) {
+      return english;
+    }
+  }
+
+  // Other free-text questions stay untouched.
+  return input;
+}
+
+function renderHelperIntroText(hasChart) {
+  if (!spcHelperIntro) return;
+
+  spcHelperIntro.dataset.helperHasChart =
+    hasChart ? "1" : "0";
+
+  const title = hasChart
+    ? chartPanelText("helper.introChartTitle", "Chart helper")
+    : chartPanelText("helper.introGeneralTitle", "SPC helper");
+
+  const description = hasChart
+    ? chartPanelText(
+        "helper.introChart",
+        "Use the My chart questions for a tailored interpretation."
+      )
+    : chartPanelText(
+        "helper.introGeneral",
+        "Ask a general question before you load any data, or use a suggested prompt below."
+      );
+
+  spcHelperIntro.innerHTML =
+    `<div><strong>${escapeHtml(title)}</strong></div>` +
+    `<div>${escapeHtml(description)}</div>`;
+}
+
+
+
 function renderHelperState() {
   if (!spcHelperIntro) return;
 
@@ -21247,18 +21347,8 @@ const hasChart =
               ? !!lastParetoAnalysis
               : false;
 
-  // 1) Intro text
-  if (!hasChart) {
-    spcHelperIntro.innerHTML = `
-      <div><strong>SPC helper</strong></div>
-      <div>Ask a general question before you load any data, or use a suggested prompt below.</div>
-    `;
-  } else {
-    spcHelperIntro.innerHTML = `
-      <div><strong>Chart helper</strong></div>
-      <div>Use the <strong>My chart</strong> questions for a tailored interpretation.</div>
-    `;
-  }
+    // 1) Translate the introduction for the current chart state.
+  renderHelperIntroText(hasChart);
 
   // 2) Suggested questions from external helper library
   const helperQuestions =
@@ -21272,14 +21362,18 @@ const hasChart =
 
   if (spcHelperChipsGeneral) {
     spcHelperChipsGeneral.innerHTML = generalQs
-      .map(q => `<button type="button" class="spc-chip" data-q="${escapeHtml(q)}">${escapeHtml(q)}</button>`)
+      
+.map(q => `<button type="button" class="spc-chip" data-q="${escapeHtml(q)}">${escapeHtml(helperQuestionDisplay(q))}</button>`)
+
       .join("");
     spcHelperChipsGeneral.classList.remove("is-disabled");
   }
 
   if (spcHelperChipsChart) {
     spcHelperChipsChart.innerHTML = chartQs
-      .map(q => `<button type="button" class="spc-chip" data-q="${escapeHtml(q)}">${escapeHtml(q)}</button>`)
+      
+.map(q => `<button type="button" class="spc-chip" data-q="${escapeHtml(q)}">${escapeHtml(helperQuestionDisplay(q))}</button>`)
+
       .join("");
 
     if (!hasChart) spcHelperChipsChart.classList.add("is-disabled");
@@ -24028,11 +24122,21 @@ function showHelperAnswer(questionText) {
 
   const q = (questionText ?? aiQuestionInput?.value ?? "").trim();
   if (!q) {
-    spcHelperOutput.innerHTML = `<p>${escapeHtml("Type a question (or click a suggestion) to get started.")}</p>`;
+    
+spcHelperOutput.innerHTML =
+  `<p>${escapeHtml(chartPanelText(
+    "helper.emptyQuestion",
+    "Type a question (or click a suggestion) to get started."
+  ))}</p>`;
+
     return;
   }
 
-  const ans = answerSpcQuestion(q);
+  const ans = answerSpcQuestion(
+  helperQuestionForMatching(
+    aiQuestionInput?.dataset.helperQuestionEnglish || q
+  )
+);
 
   // Use your formatter if present; otherwise fall back safely
   if (typeof formatSpcHelperAnswerToHtml === "function") {
@@ -24053,8 +24157,15 @@ function showHelperAnswer(questionText) {
   }
 }
 
-
 if (aiAskButton && aiQuestionInput) {
+
+  // Manually editing a suggested question clears its
+  // remembered identifier, so the user's new text
+  // is passed to the helper instead.
+  aiQuestionInput.addEventListener("input", () => {
+    delete aiQuestionInput.dataset.helperQuestionEnglish;
+  });
+
   aiAskButton.addEventListener("click", () => {
     showHelperAnswer();
   });
@@ -24065,16 +24176,30 @@ if (aiAskButton && aiQuestionInput) {
       showHelperAnswer();
     }
   });
+
 }
+
+
 
 function handleChipClick(e) {
   const btn = e.target.closest("button[data-q]");
   if (!btn) return;
 
-  const q = btn.getAttribute("data-q") || "";
-  if (aiQuestionInput) aiQuestionInput.value = q;
+  // Original English question used by the matching engine.
+  const englishQuestion = btn.getAttribute("data-q") || "";
 
-  showHelperAnswer(q);
+  // Translated text remains visible to the user.
+  if (aiQuestionInput) {
+    aiQuestionInput.value =
+      helperQuestionDisplay(englishQuestion);
+
+    // Remember where this question came from so it can
+    // also update if the interface language changes.
+    aiQuestionInput.dataset.helperQuestionEnglish =
+      englishQuestion;
+  }
+
+  showHelperAnswer(englishQuestion);
 }
 
 if (spcHelperChipsGeneral) {
@@ -24117,9 +24242,97 @@ function setSpcHelperSuggestionsCollapsed(collapsed) {
   if (!suggestions || !toggleBtn) return;
 
   suggestions.style.display = collapsed ? "none" : "";
-  toggleBtn.textContent = collapsed ? "Show suggested questions" : "Hide suggested questions";
+  
+  toggleBtn.textContent = collapsed
+    ? chartPanelText(
+        "helper.showQuestions",
+        "Show suggested questions"
+      )
+    : chartPanelText(
+        "helper.hideQuestions",
+        "Hide suggested questions"
+      );
+
   toggleBtn.setAttribute("aria-expanded", collapsed ? "false" : "true");
 }
+
+
+/*
+ * Refresh the SPC helper's dynamic text when the
+ * language changes. Preserve the current answer,
+ * the selected chart and the expanded/collapsed state.
+ */
+function refreshSpcHelperDynamicLanguage() {
+
+  // Refresh the introduction without changing chart state.
+  if (
+    spcHelperIntro &&
+    spcHelperIntro.dataset.helperHasChart !== undefined
+  ) {
+    renderHelperIntroText(
+      spcHelperIntro.dataset.helperHasChart === "1"
+    );
+  }
+
+  // Refresh existing question-chip labels in place.
+  // Preserve the original English data-q values.
+  [
+    spcHelperChipsGeneral,
+    spcHelperChipsChart
+  ].forEach(container => {
+    if (!container) return;
+
+    container
+      .querySelectorAll("button[data-q]")
+      .forEach(button => {
+        const englishQuestion =
+          button.getAttribute("data-q") || "";
+
+        button.textContent =
+          helperQuestionDisplay(englishQuestion);
+      });
+  });
+
+  // If the user selected a suggested question,
+  // update its visible text in the input as well.
+  if (
+    aiQuestionInput &&
+    aiQuestionInput.dataset.helperQuestionEnglish
+  ) {
+    aiQuestionInput.value = helperQuestionDisplay(
+      aiQuestionInput.dataset.helperQuestionEnglish
+    );
+  }
+
+  // Refresh the main suggested-questions toggle label
+  // without expanding or collapsing the suggestions.
+  const suggestions =
+    document.getElementById("spcHelperSuggestions");
+
+  const toggleBtn =
+    document.getElementById("spcHelperToggleSuggestions");
+
+  if (suggestions && toggleBtn) {
+    const collapsed =
+      suggestions.style.display === "none";
+
+    toggleBtn.textContent = collapsed
+      ? chartPanelText(
+          "helper.showQuestions",
+          "Show suggested questions"
+        )
+      : chartPanelText(
+          "helper.hideQuestions",
+          "Hide suggested questions"
+        );
+  }
+}
+
+document.addEventListener(
+  "simplespc:languagechange",
+  refreshSpcHelperDynamicLanguage
+);
+
 
 // Hook up the toggle button (safe even if elements aren’t present yet)
 function attachSpcHelperSuggestionToggle() {

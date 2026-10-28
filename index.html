@@ -2694,77 +2694,115 @@
   </div>
 </div>
 
-<!-- SPC Helper (rule-based "AI") -->
+
+<!-- SPC Helper (offline, rule-based) -->
 <div id="spcHelperPanel">
+
   <div id="spcHelperHeader">
-  <span>SPC helper</span>
-  <button
-    type="button"
-    id="spcHelperCloseBtn"
-    aria-label="Close SPC helper"
-    title="Close"
-  >
-    ×
-  </button>
-</div>
+    <span data-i18n="helper.title">SPC helper</span>
+
+    <button
+      type="button"
+      id="spcHelperCloseBtn"
+      aria-label="Close SPC helper"
+      data-i18n-aria-label="helper.close"
+      title="Close"
+      data-i18n-title="helper.closeTitle">
+      ×
+    </button>
+  </div>
+
   <div id="spcHelperBody">
-  <div id="spcHelperIntro"></div>
+    <div id="spcHelperIntro"></div>
 
-  <!-- Toggle: collapses/expands the suggested question chips -->
-  <button
-    id="spcHelperToggleSuggestions"
-    type="button"
-    class="spc-helper-toggle-suggestions"
-    aria-expanded="true"
-    aria-controls="spcHelperSuggestions"
-  >
-    Hide suggested questions
-  </button>
-
-  <!-- Suggested questions area (chips live in here) -->
-<div id="spcHelperSuggestions">
-  <div class="spc-chip-section">
+    <!-- Toggle suggested questions -->
     <button
-      id="spcHelperToggleGeneral"
+      id="spcHelperToggleSuggestions"
       type="button"
-      class="spc-chip-section-toggle"
+      class="spc-helper-toggle-suggestions"
       aria-expanded="true"
-      aria-controls="spcHelperGeneralSection">
-      <span>General SPC questions</span>
-      <span class="spc-chip-section-toggle-icon">▾</span>
+      aria-controls="spcHelperSuggestions">
+      Hide suggested questions
     </button>
 
-    <div id="spcHelperGeneralSection" class="spc-chip-section-body">
-      <div id="spcHelperChipsGeneral" class="spc-helper-chips" aria-label="General SPC suggested questions"></div>
+    <div id="spcHelperSuggestions">
+
+      <!-- General questions -->
+      <div class="spc-chip-section">
+        <button
+          id="spcHelperToggleGeneral"
+          type="button"
+          class="spc-chip-section-toggle"
+          aria-expanded="true"
+          aria-controls="spcHelperGeneralSection">
+
+          <span data-i18n="helper.generalHeading">
+            General SPC questions
+          </span>
+
+          <span class="spc-chip-section-toggle-icon">▾</span>
+        </button>
+
+        <div id="spcHelperGeneralSection"
+             class="spc-chip-section-body">
+          <div
+            id="spcHelperChipsGeneral"
+            class="spc-helper-chips"
+            aria-label="General SPC suggested questions"
+            data-i18n-aria-label="helper.generalAria">
+          </div>
+        </div>
+      </div>
+
+      <!-- Current-chart questions -->
+      <div class="spc-chip-section">
+        <button
+          id="spcHelperToggleChart"
+          type="button"
+          class="spc-chip-section-toggle"
+          aria-expanded="true"
+          aria-controls="spcHelperChartSection">
+
+          <span data-i18n="helper.chartHeading">
+            My chart questions
+          </span>
+
+          <span class="spc-chip-section-toggle-icon">▾</span>
+        </button>
+
+        <div id="spcHelperChartSection"
+             class="spc-chip-section-body">
+          <div
+            id="spcHelperChipsChart"
+            class="spc-helper-chips"
+            aria-label="My chart suggested questions"
+            data-i18n-aria-label="helper.chartAria">
+          </div>
+        </div>
+      </div>
+
     </div>
-  </div>
 
-  <div class="spc-chip-section">
-    <button
-      id="spcHelperToggleChart"
-      type="button"
-      class="spc-chip-section-toggle"
-      aria-expanded="true"
-      aria-controls="spcHelperChartSection">
-      <span>My chart questions</span>
-      <span class="spc-chip-section-toggle-icon">▾</span>
-    </button>
+    <div id="spcHelperOutput" aria-live="polite"></div>
 
-    <div id="spcHelperChartSection" class="spc-chip-section-body">
-      <div id="spcHelperChipsChart" class="spc-helper-chips" aria-label="My chart suggested questions"></div>
+    <div id="spcHelperControls">
+      <input
+        id="aiQuestionInput"
+        type="text"
+        placeholder="Ask a question…"
+        data-i18n-placeholder="helper.askPlaceholder" />
+
+      <button
+        id="aiAskButton"
+        type="button"
+        data-i18n="helper.askButton">
+        Ask
+      </button>
     </div>
+
   </div>
 </div>
 
-  <div id="spcHelperOutput" aria-live="polite"></div>
-
-  <div id="spcHelperControls">
-    <input id="aiQuestionInput" type="text" placeholder="Ask a question…" />
-    <button id="aiAskButton" type="button">Ask</button>
-  </div>
-</div>
-
-</div>
 <!-- Chart right-click menu -->
 <div id="chartContextMenu" class="chart-context-menu" style="display:none;">
   <div class="context-submenu-wrap">
