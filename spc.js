@@ -17407,6 +17407,63 @@ title: {
 }
 
 
+/*
+ * Colour attribute-chart observations using the
+ * existing per-period SPC analysis flags.
+ *
+ * Blue   = ordinary observation
+ * Orange = detected shift / other special-cause pattern
+ * Red    = beyond a control limit
+ *
+ * Presentation only: no statistical recalculation.
+ */
+function applyAttributeSignalColours(chart, analyses) {
+  const dataset = chart?.data?.datasets?.[0];
+  const count = chart?.data?.labels?.length;
+
+  if (!dataset || !Number.isInteger(count)) return;
+
+  const colours =
+    new Array(count).fill(SPC_STYLE.seriesBlue);
+
+  const flagOnChart =
+    shouldFlagSpecialCauseOnChart();
+
+  if (flagOnChart && Array.isArray(analyses)) {
+    analyses.forEach(a => {
+      if (
+        !Number.isInteger(a.startIndex) ||
+        !Number.isInteger(a.endIndex)
+      ) {
+        return;
+      }
+
+      for (
+        let i = Math.max(0, a.startIndex);
+        i <= Math.min(count - 1, a.endIndex);
+        i++
+      ) {
+        const local = i - a.startIndex;
+
+        // Red takes priority over orange.
+        if (a.flags?.beyond?.[local]) {
+          colours[i] = SPC_STYLE.pointBeyond;
+        } else if (a.flags?.special?.[local]) {
+          colours[i] = SPC_STYLE.pointSpecial;
+        }
+      }
+    });
+  }
+
+  // Only update appearance of the observation dataset.
+  dataset.pointBackgroundColor = colours;
+  dataset.pointBorderColor = colours;
+
+  chart.update("none");
+}
+
+
+
 // -----------------------------
 // Draw C / P / U charts
 // -----------------------------
@@ -17760,6 +17817,9 @@ a.stats = {
   // Keep "latest" available for anything else that expects it
   lastAttributeAnalysis = analyses[analyses.length - 1];
 
+  // Highlight already-detected SPC signals.
+  applyAttributeSignalColours(currentChart, analyses);
+
 }
 
 function drawPPrimeChart(pointsWithN, baselineCount, labels) {
@@ -17997,6 +18057,10 @@ function drawPPrimeChart(pointsWithN, baselineCount, labels) {
     analyses[
       analyses.length - 1
     ];
+
+  // Highlight already-detected SPC signals.
+  applyAttributeSignalColours(currentChart, analyses);
+
 }
 
 function drawUChart(pointsWithN, baselineCount, labels) {
@@ -18159,6 +18223,9 @@ a.stats = {
 
   // Keep "latest" available for anything else that expects it
   lastAttributeAnalysis = analyses[analyses.length - 1];
+
+  // Highlight already-detected SPC signals.
+  applyAttributeSignalColours(currentChart, analyses);
 
 }
 
@@ -18479,6 +18546,10 @@ function drawUPrimeChart(pointsWithN, baselineCount, labels) {
     analyses[
       analyses.length - 1
     ];
+
+  // Highlight already-detected SPC signals.
+  applyAttributeSignalColours(currentChart, analyses);
+
 }
 
 
