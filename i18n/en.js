@@ -1322,7 +1322,47 @@ window.SimpleSPCi18n.registerLanguage("en", {
 
   "helper.faq.rare-event-improvement":
     "For rare-event charts, improvement often means longer times between unwanted events or more opportunities between events.\n\n" +
-    "Because rare-event data can look dramatic, it helps to focus on sustained pattern changes rather than one unusually long gap."
+    "Because rare-event data can look dramatic, it helps to focus on sustained pattern changes rather than one unusually long gap.",
+
+// XmR HELPER: SIGNAL DESCRIPTIONS
+"helper.xmr.signal.above": "one or more points above the upper limit",
+"helper.xmr.signal.below": "one or more points below the lower limit",
+"helper.xmr.signal.run": "a sustained run on one side of the centre line",
+"helper.xmr.signal.trend": "a sustained trend",
+"helper.xmr.signal.outlier": "an unusual outlier",
+"helper.xmr.signal.cluster": "an unusual cluster of points far from the centre line",
+"helper.xmr.signal.bias": "a sustained pattern away from the centre line",
+"helper.xmr.signal.other": "special-cause signals",
+"helper.xmr.signal.joinTwo": "{first} and {last}",
+"helper.xmr.signal.joinMany": "{first}, and {last}",
+
+// PERIOD-BY-PERIOD EXPLANATIONS
+"helper.xmr.period.label": "Period {number}",
+"helper.xmr.period.mean": " around a mean of {mean}",
+"helper.xmr.period.count": "Only {count} points contributed to the limit estimate, so ",
+"helper.xmr.period.provisional": "{label} (points {start}–{end}) has provisional XmR limits{mean}. {count}At least {minimum} usable points are required before SimpleSPC interprets stability and special-cause signals for this period",
+"helper.xmr.period.stable": "{label} (points {start}–{end}) appears stable{mean}",
+"helper.xmr.period.signals": "{label} (points {start}–{end}) shows {signals}{mean}",
+
+// MULTIPLE PERIODS
+"helper.xmr.multi.earlier": "Across the XmR chart, at least one assessable period shows special-cause signals. This suggests the process may have changed.\n\n",
+"helper.xmr.multi.splits": "This XmR chart has multiple periods separated by splits. Each split starts a new calculation of the mean and limits, but the presence of a split does not itself prove a process change.\n\n",
+"helper.xmr.multi.count": "There are currently {count} usable points in this period, and ",
+"helper.xmr.multi.provisional": "The latest period (points {start}–{end}) does not yet have enough data for a firm stability conclusion. {count}SimpleSPC requires at least {minimum} usable points before interpreting XmR stability.",
+"helper.xmr.multi.warning": "\n\nSome early warning features are present, but this period is still provisional. More observations are needed to see whether the pattern persists.",
+"helper.xmr.multi.calm": "\n\nNo obvious early warning features appear in this short period. That is encouraging, but does not yet establish stability.",
+"helper.xmr.multi.stable": "In the latest period (points {start}–{end}), no clear special-cause signal is detected. With sufficient data, this is consistent with routine variation around the current level.",
+"helper.xmr.multi.signals": "In the latest period (points {start}–{end}), possible special-cause variation remains: {signals}.",
+
+// SINGLE PERIOD
+"helper.xmr.single.noChart": "Generate an XmR chart first, then ask again.",
+"helper.xmr.single.count": "There are currently {count} usable points for limit estimation, and ",
+"helper.xmr.single.provisional": "There are not yet enough data to make a firm judgement about stability. {count}SimpleSPC requires at least {minimum} usable points for a formal XmR interpretation.",
+"helper.xmr.single.warning": "\n\nThere are features worth watching, but more observations are needed to determine whether they form a sustained signal.",
+"helper.xmr.single.calm": "\n\nThe pattern currently looks reasonably consistent, with no obvious early warnings. This remains provisional until enough observations are available.",
+"helper.xmr.single.stable": "The current XmR chart has enough data for interpretation and shows no clear special-cause signals. This is consistent with routine variation, although stable performance is not necessarily satisfactory performance.",
+"helper.xmr.single.signals": "The current XmR chart suggests that the process may have changed. The pattern is not fully explained by routine variation, so investigate what happened in the process or its measurement."
+
 
 
 

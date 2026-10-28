@@ -1325,7 +1325,47 @@ window.SimpleSPCi18n.registerLanguage("fr", {
 
   "helper.faq.rare-event-improvement":
     "Pour les cartes d'événements rares, une amélioration correspond souvent à un allongement du temps entre les événements indésirables ou à une augmentation du nombre d'opportunités entre ces événements.\n\n" +
-    "Comme les données d'événements rares peuvent présenter des variations impressionnantes, il vaut mieux rechercher des changements durables du comportement observé plutôt que de se concentrer sur un seul intervalle exceptionnellement long."
+    "Comme les données d'événements rares peuvent présenter des variations impressionnantes, il vaut mieux rechercher des changements durables du comportement observé plutôt que de se concentrer sur un seul intervalle exceptionnellement long.",
+
+// ASSISTANT XmR : DESCRIPTIONS DES SIGNAUX
+"helper.xmr.signal.above": "un ou plusieurs points au-dessus de la limite supérieure de contrôle",
+"helper.xmr.signal.below": "un ou plusieurs points sous la limite inférieure de contrôle",
+"helper.xmr.signal.run": "une séquence prolongée d'un même côté de la ligne centrale",
+"helper.xmr.signal.trend": "une tendance prolongée",
+"helper.xmr.signal.outlier": "une valeur exceptionnellement éloignée",
+"helper.xmr.signal.cluster": "un regroupement inhabituel de points éloignés de la ligne centrale",
+"helper.xmr.signal.bias": "un comportement durablement éloigné de la ligne centrale",
+"helper.xmr.signal.other": "des signaux de cause spéciale",
+"helper.xmr.signal.joinTwo": "{first} et {last}",
+"helper.xmr.signal.joinMany": "{first} et {last}",
+
+// INTERPRÉTATIONS PAR PÉRIODE
+"helper.xmr.period.label": "Période {number}",
+"helper.xmr.period.mean": " autour d'une moyenne de {mean}",
+"helper.xmr.period.count": "Seulement {count} points ont contribué à l'estimation des limites ; ",
+"helper.xmr.period.provisional": "{label} (points {start} à {end}) : les limites XmR sont provisoires{mean}. {count}SimpleSPC exige au moins {minimum} points utilisables avant d'interpréter la stabilité et les signaux de cause spéciale pour cette période",
+"helper.xmr.period.stable": "{label} (points {start} à {end}) : le comportement semble stable{mean}",
+"helper.xmr.period.signals": "{label} (points {start} à {end}) : signaux possibles de cause spéciale — {signals}{mean}",
+
+// PLUSIEURS PÉRIODES
+"helper.xmr.multi.earlier": "Sur l'ensemble de la carte XmR, au moins une période disposant de suffisamment de données présente des signaux de cause spéciale. Cela suggère que le processus a pu changer.\n\n",
+"helper.xmr.multi.splits": "Cette carte XmR comporte plusieurs périodes séparées par des changements de phase. Chaque changement de phase entraîne un nouveau calcul de la moyenne et des limites, mais ne prouve pas à lui seul qu'un changement du processus s'est produit.\n\n",
+"helper.xmr.multi.count": "Cette période compte actuellement {count} points utilisables et ",
+"helper.xmr.multi.provisional": "La période la plus récente (points {start} à {end}) ne contient pas encore assez de données pour conclure à sa stabilité. {count}SimpleSPC exige au moins {minimum} points utilisables avant d'interpréter la stabilité d'une carte XmR.",
+"helper.xmr.multi.warning": "\n\nCertains signes précoces méritent une attention particulière, mais cette période reste provisoire. Des observations supplémentaires sont nécessaires pour déterminer si ce comportement persiste.",
+"helper.xmr.multi.calm": "\n\nAucun signe précoce évident n'apparaît sur cette courte période. C'est encourageant, mais cela ne suffit pas encore pour conclure à la stabilité.",
+"helper.xmr.multi.stable": "Au cours de la période la plus récente (points {start} à {end}), aucun signal clair de cause spéciale n'est détecté. Le nombre de données étant suffisant, ce comportement est compatible avec la variation habituelle au niveau de performance actuel.",
+"helper.xmr.multi.signals": "Au cours de la période la plus récente (points {start} à {end}), des signes possibles de cause spéciale persistent : {signals}.",
+
+// PÉRIODE UNIQUE
+"helper.xmr.single.noChart": "Générez d'abord une carte XmR, puis reposez votre question.",
+"helper.xmr.single.count": "Actuellement, {count} points utilisables contribuent au calcul des limites et ",
+"helper.xmr.single.provisional": "Les données sont encore insuffisantes pour conclure à la stabilité du processus. {count}SimpleSPC exige au moins {minimum} points utilisables pour une interprétation formelle de la carte XmR.",
+"helper.xmr.single.warning": "\n\nCertains éléments méritent d'être surveillés, mais davantage d'observations sont nécessaires pour déterminer s'ils constituent un signal durable.",
+"helper.xmr.single.calm": "\n\nLe comportement observé semble actuellement relativement régulier, sans signe précoce évident. Toutefois, les conclusions restent provisoires jusqu'à ce que suffisamment d'observations soient disponibles.",
+"helper.xmr.single.stable": "La carte XmR actuelle contient suffisamment de données pour être interprétée et ne présente aucun signal clair de cause spéciale. Ce comportement est compatible avec la variation habituelle, même si une performance stable n'est pas nécessairement une performance satisfaisante.",
+"helper.xmr.single.signals": "La carte XmR actuelle suggère que le processus a pu changer. Le comportement observé ne s'explique pas entièrement par la variation habituelle. Il convient donc d'étudier ce qui s'est passé dans le processus ou dans son système de mesure."
+
 
 
 
