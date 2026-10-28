@@ -759,6 +759,103 @@ function localisedFaqAnswer(faq) {
 }
 
 
+/*
+ * Translate dynamic helper text while preserving
+ * numbers, statistical decisions and English fallbacks.
+ */
+function helperDynamicText(key, englishFallback, values = {}) {
+  const i18n = window.SimpleSPCi18n;
+
+  if (i18n && typeof i18n.translate === "function") {
+    const translated = i18n.translate(key, values);
+
+    if (translated && translated !== key) {
+      return translated;
+    }
+  }
+
+  return String(englishFallback).replace(
+    /\{([a-zA-Z0-9_]+)\}/g,
+    (match, name) =>
+      Object.prototype.hasOwnProperty.call(values, name)
+        ? String(values[name])
+        : match
+  );
+}
+
+/*
+ * Translate only the signal descriptions already produced
+ * by the existing signalTextList() function.
+ *
+ * Unrecognised descriptions are preserved unchanged.
+ * The original signals array is never modified.
+ */
+function helperXmRSignalDescription(text) {
+  const keys = {
+    "one or more points above the upper limit":
+      "helper.xmr.signal.above",
+
+    "one or more points below the lower limit":
+      "helper.xmr.signal.below",
+
+    "a sustained run on one side of the centre line":
+      "helper.xmr.signal.run",
+
+    "a sustained trend":
+      "helper.xmr.signal.trend",
+
+    "an unusual outlier":
+      "helper.xmr.signal.outlier",
+
+    "an unusual clustering of points far from the centre line":
+      "helper.xmr.signal.cluster",
+
+    "a sustained bias away from the centre line":
+      "helper.xmr.signal.bias"
+  };
+
+  const key = keys[text];
+
+  return key
+    ? helperDynamicText(key, text)
+    : text;
+}
+
+function helperXmRSignalList(signals) {
+  const items = signalTextList(signals)
+    .map(helperXmRSignalDescription)
+    .filter(Boolean);
+
+  if (!items.length) {
+    return helperDynamicText(
+      "helper.xmr.signal.other",
+      "special-cause signals"
+    );
+  }
+
+  if (items.length === 1) {
+    return items[0];
+  }
+
+  if (items.length === 2) {
+    return helperDynamicText(
+      "helper.xmr.signal.joinTwo",
+      "{first} and {last}",
+      { first: items[0], last: items[1] }
+    );
+  }
+
+  return helperDynamicText(
+    "helper.xmr.signal.joinMany",
+    "{first}, and {last}",
+    {
+      first: items.slice(0, -1).join(", "),
+      last: items[items.length - 1]
+    }
+  );
+}
+
+
 function isXmRPeriodAssessable(period) {
   if (!period) return false;
 
@@ -775,51 +872,92 @@ function isXmRPeriodAssessable(period) {
   return typeof period.isStable === "boolean";
 }
 
-  function describeXmRPeriods(periods) {
-  if (!Array.isArray(periods) || periods.length === 0) return null;
+  
+function describeXmRPeriods(periods) {
+  if (!Array.isArray(periods) || periods.length === 0) {
+    return null;
+  }
+
+  const t = helperDynamicText;
 
   const pieces = periods.map((p, idx) => {
-    const label = `Period ${idx + 1}`;
+    const label = t(
+      "helper.xmr.period.label",
+      "Period {number}",
+      { number: idx + 1 }
+    );
+
     const start = (p.startIndex ?? 0) + 1;
     const end = (p.endIndex ?? 0) + 1;
-    const meanTxt = finiteNumber(p.mean) ? p.mean.toFixed(2) : null;
 
+    const mean = finiteNumber(p.mean)
+      ? t(
+          "helper.xmr.period.mean",
+          " around a mean of {mean}",
+          { mean: p.mean.toFixed(2) }
+        )
+      : "";
+
+    const values = { label, start, end, mean };
+
+    // Keep the original provisional-limit decision.
     if (!isXmRPeriodAssessable(p)) {
-      const count = finiteNumber(p.limitEstimatePointCount)
-        ? p.limitEstimatePointCount
-        : null;
+      const count =
+        finiteNumber(p.limitEstimatePointCount)
+          ? p.limitEstimatePointCount
+          : null;
 
-      const minimum = finiteNumber(p.minimumPointsForInterpretation)
-        ? p.minimumPointsForInterpretation
-        : 12;
+      const minimum =
+        finiteNumber(p.minimumPointsForInterpretation)
+          ? p.minimumPointsForInterpretation
+          : 12;
 
-      return (
-        `${label} (points ${start}–${end}) has provisional XmR limits` +
-        `${meanTxt ? ` around a mean of ${meanTxt}` : ""}. ` +
-        `${count !== null ? `Only ${count} points were used to estimate the limits, so ` : ""}` +
-        `SimpleSPC will wait until at least ${minimum} points are available before describing this period as stable or showing special-cause variation`
+      const countText = count !== null
+        ? t(
+            "helper.xmr.period.count",
+            "Only {count} points contributed to the limit estimate, so ",
+            { count }
+          )
+        : "";
+
+      return t(
+        "helper.xmr.period.provisional",
+        "{label} (points {start}–{end}) has provisional XmR limits{mean}. {count}At least {minimum} usable points are required before SimpleSPC interprets stability and special-cause signals for this period",
+        { ...values, count: countText, minimum }
       );
     }
 
-    const sigs = signalTextList(p.signals);
-
+    // Keep the original stable/special-cause decision.
     if (p.isStable === true) {
-      return `${label} (points ${start}–${end}) looks stable${meanTxt ? ` around a mean of ${meanTxt}` : ""}`;
+      return t(
+        "helper.xmr.period.stable",
+        "{label} (points {start}–{end}) appears stable{mean}",
+        values
+      );
     }
 
-    return `${label} (points ${start}–${end}) shows ${joinNice(sigs) || "special-cause signals"}${meanTxt ? ` around a mean of ${meanTxt}` : ""}`;
+    return t(
+      "helper.xmr.period.signals",
+      "{label} (points {start}–{end}) shows {signals}{mean}",
+      {
+        ...values,
+        signals: helperXmRSignalList(p.signals)
+      }
+    );
   });
 
   return pieces.join(". ") + ".";
 }
 
-  function buildXmRChangeAnswer(ctx) {
+
+ 
+function buildXmRChangeAnswer(ctx) {
   const latest = ctx.xmr;
   const periods = ctx.xmrPeriods;
+  const t = helperDynamicText;
 
-  // Helper used only inside this answer:
-  // look for early warning features without treating them as a
-  // formal stability conclusion when the period is still provisional.
+  // Preserve the existing early-warning checks.
+  // These do not establish a formal stability conclusion.
   function provisionalHasWarningSigns() {
     if (!latest) return false;
 
@@ -831,119 +969,158 @@ function isXmRPeriodAssessable(period) {
     );
   }
 
+  // MULTIPLE PERIODS
   if (Array.isArray(periods) && periods.length > 1) {
     const latestPeriod = periods[periods.length - 1];
-    const latestAssessable = isXmRPeriodAssessable(latestPeriod);
 
-    const earlierAssessablePeriods =
-      periods
-        .slice(0, -1)
-        .filter(isXmRPeriodAssessable);
+    const latestAssessable =
+      isXmRPeriodAssessable(latestPeriod);
 
-    const earlierUnstable =
-      earlierAssessablePeriods.some(p => p.isStable === false);
+    const earlierAssessablePeriods = periods
+      .slice(0, -1)
+      .filter(isXmRPeriodAssessable);
 
-    const latestStart = (latestPeriod.startIndex ?? 0) + 1;
-    const latestEnd = (latestPeriod.endIndex ?? 0) + 1;
+    const earlierUnstable = earlierAssessablePeriods
+      .some(p => p.isStable === false);
 
-    let out = "";
+    const start = (latestPeriod.startIndex ?? 0) + 1;
+    const end = (latestPeriod.endIndex ?? 0) + 1;
 
-    if (earlierUnstable) {
-      out +=
-        "Looking across the XmR chart, one or more periods with enough data show special-cause signals. That is evidence that the process may have changed.\n\n";
-    } else {
-      out +=
-        "This XmR chart has been divided into separate process periods using one or more splits. A split marks a point where you believe the process may have changed and tells SimpleSPC to recalculate the mean and limits. The split itself does not prove that a change occurred.\n\n";
-    }
+    let out = earlierUnstable
+      ? t(
+          "helper.xmr.multi.earlier",
+          "Across the XmR chart, at least one assessable period shows special-cause signals. This suggests the process may have changed.\n\n"
+        )
+      : t(
+          "helper.xmr.multi.splits",
+          "This XmR chart has multiple periods separated by splits. Each split starts a new calculation of the mean and limits, but the presence of a split does not itself prove a process change.\n\n"
+        );
 
     out += describeXmRPeriods(periods) + "\n\n";
 
-    // Latest period is still provisional
+    // Latest period: provisional limits.
     if (!latestAssessable) {
-      const count = finiteNumber(latestPeriod.limitEstimatePointCount)
-        ? latestPeriod.limitEstimatePointCount
-        : null;
+      const count =
+        finiteNumber(latestPeriod.limitEstimatePointCount)
+          ? latestPeriod.limitEstimatePointCount
+          : null;
 
-      const minimum = finiteNumber(latestPeriod.minimumPointsForInterpretation)
-        ? latestPeriod.minimumPointsForInterpretation
-        : 12;
+      const minimum =
+        finiteNumber(latestPeriod.minimumPointsForInterpretation)
+          ? latestPeriod.minimumPointsForInterpretation
+          : 12;
 
-      out +=
-        `For the most recent period (points ${latestStart}–${latestEnd}), there are not yet enough data to make a firm judgement about stability. ` +
-        `${count !== null ? `There are currently ${count} points in this period, and ` : ""}` +
-        `SimpleSPC uses at least ${minimum} points before making a formal XmR stability interpretation.`;
+      const countText = count !== null
+        ? t(
+            "helper.xmr.multi.count",
+            "There are currently {count} usable points in this period, and ",
+            { count }
+          )
+        : "";
 
-      if (provisionalHasWarningSigns()) {
-        out +=
-          "\n\nThere are already some features in the latest points that are worth watching. That means the early picture is not yet clearly consistent with a settled process. More data will help show whether those features disappear as temporary fluctuation or develop into a sustained signal.";
-      } else {
-        out +=
-          "\n\nSo far, the latest points look fairly consistent around their current level and there are no obvious warning signs in this short period. That is encouraging, but it is still provisional rather than proof of stability. If the next points continue in a similar pattern, that would strengthen the evidence that the process has settled into a new stable level.";
-      }
+      out += t(
+        "helper.xmr.multi.provisional",
+        "The latest period (points {start}–{end}) does not yet have enough data for a firm stability conclusion. {count}SimpleSPC requires at least {minimum} usable points before interpreting XmR stability.",
+        { start, end, count: countText, minimum }
+      );
+
+      out += provisionalHasWarningSigns()
+        ? t(
+            "helper.xmr.multi.warning",
+            "\n\nSome early warning features are present, but this period is still provisional. More observations are needed to see whether the pattern persists."
+          )
+        : t(
+            "helper.xmr.multi.calm",
+            "\n\nNo obvious early warning features appear in this short period. That is encouraging, but does not yet establish stability."
+          );
 
       return out;
     }
 
-    // Latest period has enough data for a formal interpretation
+    // Latest period: enough points for interpretation.
     if (latestPeriod.isStable === true) {
-      out +=
-        `In the most recent period (points ${latestStart}–${latestEnd}), I cannot see a clear special-cause signal. With enough data now available for interpretation, the latest section is consistent with routine variation around its current level.`;
+      out += t(
+        "helper.xmr.multi.stable",
+        "In the latest period (points {start}–{end}), no clear special-cause signal is detected. With sufficient data, this is consistent with routine variation around the current level.",
+        { start, end }
+      );
     } else {
-      const latestSignals =
-        joinNice(signalTextList(latestPeriod.signals));
-
-      out +=
-        `In the most recent period (points ${latestStart}–${latestEnd}), there are still signs of possible change — specifically ${latestSignals || "special-cause signals"}.`;
+      out += t(
+        "helper.xmr.multi.signals",
+        "In the latest period (points {start}–{end}), possible special-cause variation remains: {signals}.",
+        {
+          start,
+          end,
+          signals: helperXmRSignalList(latestPeriod.signals)
+        }
+      );
     }
 
     return out;
   }
 
-  // No current XmR analysis
+  // NO CURRENT XmR ANALYSIS
   if (!latest) {
-    return "Please generate an XmR chart first, then ask again.";
-  }
-
-  // Single provisional period
-  if (!isXmRPeriodAssessable(latest)) {
-    const count = finiteNumber(latest.limitEstimatePointCount)
-      ? latest.limitEstimatePointCount
-      : null;
-
-    const minimum = finiteNumber(latest.minimumPointsForInterpretation)
-      ? latest.minimumPointsForInterpretation
-      : 12;
-
-    let out =
-      "There are not yet enough data to make a firm judgement about stability. " +
-      `${count !== null ? `There are currently ${count} points being used to estimate the limits, and ` : ""}` +
-      `SimpleSPC uses at least ${minimum} points before making a formal XmR stability interpretation.`;
-
-    if (provisionalHasWarningSigns()) {
-      out +=
-        "\n\nThere are already some features in the pattern that are worth watching, so I would not yet describe the process as settled. More observations will help show whether these develop into a sustained signal.";
-    } else {
-      out +=
-        "\n\nSo far, the pattern looks fairly consistent and there are no obvious warning signs. That is encouraging, but still provisional. If future points continue in a similar pattern, confidence that the process is stable will become stronger.";
-    }
-
-    return out;
-  }
-
-  // Single period with enough data
-  if (latest.isStable === true) {
-    return (
-      "Looking at the current XmR chart, I cannot see a clear special-cause signal. " +
-      "There are enough data for interpretation, so the pattern is consistent with routine variation around its current level. " +
-      "That does not necessarily mean performance is good enough; stability and performance against a target are separate questions."
+    return t(
+      "helper.xmr.single.noChart",
+      "Generate an XmR chart first, then ask again."
     );
   }
 
-  return (
-    "This XmR chart shows evidence that something may have changed. " +
-    "The pattern is not fully explained by routine variation alone, so it would be worth investigating what changed in the system or the data around that time."
+  // SINGLE PERIOD: PROVISIONAL LIMITS
+  if (!isXmRPeriodAssessable(latest)) {
+    const count =
+      finiteNumber(latest.limitEstimatePointCount)
+        ? latest.limitEstimatePointCount
+        : null;
+
+    const minimum =
+      finiteNumber(latest.minimumPointsForInterpretation)
+        ? latest.minimumPointsForInterpretation
+        : 12;
+
+    const countText = count !== null
+      ? t(
+          "helper.xmr.single.count",
+          "There are currently {count} usable points for limit estimation, and ",
+          { count }
+        )
+      : "";
+
+    let out = t(
+      "helper.xmr.single.provisional",
+      "There are not yet enough data to make a firm judgement about stability. {count}SimpleSPC requires at least {minimum} usable points for a formal XmR interpretation.",
+      { count: countText, minimum }
+    );
+
+    out += provisionalHasWarningSigns()
+      ? t(
+          "helper.xmr.single.warning",
+          "\n\nThere are features worth watching, but more observations are needed to determine whether they form a sustained signal."
+        )
+      : t(
+          "helper.xmr.single.calm",
+          "\n\nThe pattern currently looks reasonably consistent, with no obvious early warnings. This remains provisional until enough observations are available."
+        );
+
+    return out;
+  }
+
+  // SINGLE PERIOD: STABLE
+  if (latest.isStable === true) {
+    return t(
+      "helper.xmr.single.stable",
+      "The current XmR chart has enough data for interpretation and shows no clear special-cause signals. This is consistent with routine variation, although stable performance is not necessarily satisfactory performance."
+    );
+  }
+
+  // SINGLE PERIOD: SPECIAL-CAUSE SIGNALS
+  return t(
+    "helper.xmr.single.signals",
+    "The current XmR chart suggests that the process may have changed. The pattern is not fully explained by routine variation, so investigate what happened in the process or its measurement."
   );
 }
+
 
 function buildPPrimeExplanation(ctx) {
   const a = ctx.attribute;
