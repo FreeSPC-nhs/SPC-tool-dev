@@ -2130,90 +2130,117 @@ function buildXmRLimitsAnswer(ctx) {
 }
 
 
-function buildParetoAnswer(ctx) {
-  const p =
-    ctx.pareto;
 
+function buildParetoAnswer(ctx) {
+  const p = ctx.pareto;
+  const t = helperDynamicText;
+
+  // No Pareto analysis currently available.
   if (!p) {
-    return (
-      "A Pareto chart ranks categories from most to least frequent. " +
-      "It can help you decide where further investigation or improvement effort may be most useful."
+    return t(
+      "helper.pareto.noChart",
+      "A Pareto chart ranks categories from most to least frequent. It can help you decide where further investigation or improvement effort may be most useful."
     );
   }
 
+  // Keep the original category and count sources.
+  // Do not translate user-supplied category names.
   const topName =
     p.topCategory ||
-    p.items?.[0]
-      ?.category ||
-    "the first category";
+    p.items?.[0]?.category ||
+    t(
+      "helper.pareto.firstCategory",
+      "the first category"
+    );
 
   const topCount =
-    finiteNumber(
-      p.topCount
-    )
+    finiteNumber(p.topCount)
       ? p.topCount
-      : p.items?.[0]
-          ?.count;
+      : p.items?.[0]?.count;
 
   const topPct =
-    finiteNumber(
-      p.topShare
-    )
+    finiteNumber(p.topShare)
       ? p.topShare * 100
       : null;
 
-  let out =
-    `This Pareto chart contains ${p.total} occurrences across ${p.categoryCount} categories. ` +
-    `The categories are ordered from most frequent to least frequent.`;
+  let out = t(
+    "helper.pareto.summary",
+    "This Pareto chart contains {total} occurrences across {categories} categories. The categories are ordered from most frequent to least frequent.",
+    {
+      total: p.total,
+      categories: p.categoryCount
+    }
+  );
 
+  // Leading category: preserve count and percentage.
   if (
     topName &&
     finiteNumber(topCount)
   ) {
-    out +=
-      `\n\nThe largest category is ${topName}, with ${topCount} occurrence${
-        topCount === 1
-          ? ""
-          : "s"
-      }${
-        finiteNumber(topPct)
-          ? ` (${topPct.toFixed(1)}% of the total)`
-          : ""
-      }.`;
+    const shareText = finiteNumber(topPct)
+      ? t(
+          "helper.pareto.topShare",
+          " ({percentage}% of the total)",
+          {
+            percentage: topPct.toFixed(1)
+          }
+        )
+      : "";
+
+    out += "\n\n" + t(
+      topCount === 1
+        ? "helper.pareto.topOne"
+        : "helper.pareto.topMany",
+      topCount === 1
+        ? "The largest category is {category}, with {count} occurrence{share}."
+        : "The largest category is {category}, with {count} occurrences{share}.",
+      {
+        category: topName,
+        count: topCount,
+        share: shareText
+      }
+    );
   }
 
+  // Preserve the existing 80% cutoff and percentage.
   if (
-    finiteNumber(
-      p.cutoff80Count
-    ) &&
-    finiteNumber(
-      p.cutoff80Pct
-    )
+    finiteNumber(p.cutoff80Count) &&
+    finiteNumber(p.cutoff80Pct)
   ) {
-    out +=
-      `\n\nThe first ${p.cutoff80Count} categor${
-        p.cutoff80Count === 1
-          ? "y"
-          : "ies"
-      } account for about ${p.cutoff80Pct.toFixed(1)}% of the occurrences. ` +
-      "That can help you decide where to investigate first, but the 80% line is a prioritisation guide rather than a statistical limit.";
+    out += "\n\n" + t(
+      p.cutoff80Count === 1
+        ? "helper.pareto.cutoffOne"
+        : "helper.pareto.cutoffMany",
+      p.cutoff80Count === 1
+        ? "The first {count} category accounts for about {percentage}% of the occurrences. That can help you decide where to investigate first, but the 80% line is a prioritisation guide rather than a statistical limit."
+        : "The first {count} categories account for about {percentage}% of the occurrences. That can help you decide where to investigate first, but the 80% line is a prioritisation guide rather than a statistical limit.",
+      {
+        count: p.cutoff80Count,
+        percentage: p.cutoff80Pct.toFixed(1)
+      }
+    );
   }
 
+  // Keep the original small-sample condition.
   if (
     finiteNumber(p.total) &&
     p.total < 30
   ) {
-    out +=
-      "\n\nThere are fewer than 30 occurrences in this chart, so the ranking may change quite easily as more data are collected.";
+    out += "\n\n" + t(
+      "helper.pareto.smallSample",
+      "There are fewer than 30 occurrences in this chart, so the ranking may change quite easily as more data are collected."
+    );
   }
 
-  out +=
-    "\n\nDo not assume that the largest categories are necessarily the causes of the problem. " +
-    "They are ways of grouping the data and should normally prompt further investigation.";
+  out += "\n\n" + t(
+    "helper.pareto.causeCaution",
+    "Do not assume that the largest categories are necessarily the causes of the problem. They are ways of grouping the data and should normally prompt further investigation."
+  );
 
-  out +=
-    "\n\nA Pareto chart is not time ordered, so it cannot tell you whether a process is stable or whether a change is statistically significant. " +
-    "Use a run or Shewhart chart alongside it when that question matters.";
+  out += "\n\n" + t(
+    "helper.pareto.notTimeOrdered",
+    "A Pareto chart is not time ordered, so it cannot tell you whether a process is stable or whether a change is statistically significant. Use a run or Shewhart chart alongside it when that question matters."
+  );
 
   return out;
 }
@@ -2247,14 +2274,17 @@ return buildLatestPeriodSummary(
 function buildChangeAnswer(ctx) {
   const chartType = ctx.chartType;
 
-  if (
-    chartType === "pareto"
-  ) {
+  
+  if (chartType === "pareto") {
     return (
-      "A Pareto chart cannot tell whether something has changed over time because it deliberately removes the time order and ranks categories by frequency.\n\n" +
+      helperDynamicText(
+        "helper.pareto.changeIntro",
+        "A Pareto chart cannot tell whether something has changed over time because it deliberately removes the time order and ranks categories by frequency.\n\n"
+      ) +
       buildParetoAnswer(ctx)
     );
   }
+
 
   if (chartType === "xmr" && ctx.xmr) {
     return buildXmRChangeAnswer(ctx);
@@ -2552,50 +2582,57 @@ function buildDecisionAnswer(ctx) {
     !!ctx.rare ||
     !!ctx.pareto;
 
-  // Pareto-specific questions
+  
+  // Pareto-specific questions.
+  // Preserve the original English question identifiers.
   if (hasChart && ctx.chartType === "pareto") {
 
     if (q === "what does the 80% line mean") {
       const p = ctx.pareto;
+      const t = helperDynamicText;
 
-      let answer =
-        "The dashed 80% line is a guide to help prioritise " +
-        "further investigation. It is not a statistical control limit. " +
-        "The red cumulative line shows how the percentage of " +
-        "occurrences builds up as categories are added from left to right.";
+      let answer = t(
+        "helper.pareto.eighty.explain",
+        "The dashed 80% line is a guide to help prioritise further investigation. It is not a statistical control limit. The red cumulative line shows how the percentage of occurrences builds up as categories are added from left to right."
+      );
 
+      // Use the existing calculated cutoff.
       if (
         Number.isFinite(p.cutoff80Count) &&
         Number.isFinite(p.cutoff80Pct)
       ) {
-        answer +=
-          `\n\nIn your chart, the first ${p.cutoff80Count} ` +
-          `categories account for ${p.cutoff80Pct.toFixed(1)}% ` +
-          "of all occurrences.";
+        answer += "\n\n" + t(
+          p.cutoff80Count === 1
+            ? "helper.pareto.eighty.countOne"
+            : "helper.pareto.eighty.countMany",
+          p.cutoff80Count === 1
+            ? "In your chart, the first {count} category accounts for {percentage}% of all occurrences."
+            : "In your chart, the first {count} categories account for {percentage}% of all occurrences.",
+          {
+            count: p.cutoff80Count,
+            percentage: p.cutoff80Pct.toFixed(1)
+          }
+        );
       }
 
-      answer +=
-        "\n\nThe 80% line is a useful reference, not a rule " +
-        "that 80% of problems must come from 20% of categories.";
+      answer += "\n\n" + t(
+        "helper.pareto.eighty.notRule",
+        "The 80% line is a useful reference, not a rule that 80% of problems must come from 20% of categories."
+      );
 
       return answer;
     }
 
     if (q === "are the biggest categories the causes") {
-      return (
-        "Not necessarily. A Pareto chart shows which categories " +
-        "contain the most recorded occurrences, but it does not " +
-        "establish what caused them.\n\n" +
-        "The largest categories are often useful starting points " +
-        "for investigation. Look more closely at what happens " +
-        "within those categories, consider how the data were " +
-        "collected, and use local knowledge to identify possible causes.\n\n" +
-        "A frequent category is not automatically a root cause, " +
-        "and a less frequent category may still deserve priority " +
-        "if its consequences are particularly serious."
+      return helperDynamicText(
+        "helper.pareto.causes",
+        "Not necessarily. A Pareto chart shows which categories contain the most recorded occurrences, but it does not establish what caused them.\n\n" +
+        "The largest categories are often useful starting points for investigation. Look more closely at what happens within those categories, consider how the data were collected, and use local knowledge to identify possible causes.\n\n" +
+        "A frequent category is not automatically a root cause, and a less frequent category may still deserve priority if its consequences are particularly serious."
       );
     }
   }
+
 
   if (
     hasChart &&
