@@ -1710,7 +1710,69 @@ window.SimpleSPCi18n.registerLanguage("en", {
     "• avoid reacting to individual points as if each one proves success or failure",
 
   "helper.decision.paretoNext":
-    "\n\nA sensible next step is to investigate the leading categories in more detail, using local knowledge and, where useful, further stratification. Do not assume the category itself is the underlying cause."
+    "\n\nA sensible next step is to investigate the leading categories in more detail, using local knowledge and, where useful, further stratification. Do not assume the category itself is the underlying cause.",
+
+  //PARETO HELPER INTERPRETATIONS
+
+  "helper.pareto.noChart":
+    "A Pareto chart ranks categories from most to least frequent. It can help you decide where further investigation or improvement effort may be most useful.",
+
+  "helper.pareto.firstCategory":
+    "the first category",
+
+  "helper.pareto.summary":
+    "This Pareto chart contains {total} occurrences across {categories} categories. The categories are ordered from most frequent to least frequent.",
+
+  "helper.pareto.topOne":
+    "The largest category is {category}, with {count} occurrence{share}.",
+
+  "helper.pareto.topMany":
+    "The largest category is {category}, with {count} occurrences{share}.",
+
+  "helper.pareto.topShare":
+    " ({percentage}% of the total)",
+
+  "helper.pareto.cutoffOne":
+    "The first {count} category accounts for about {percentage}% of the occurrences. That can help you decide where to investigate first, but the 80% line is a prioritisation guide rather than a statistical limit.",
+
+  "helper.pareto.cutoffMany":
+    "The first {count} categories account for about {percentage}% of the occurrences. That can help you decide where to investigate first, but the 80% line is a prioritisation guide rather than a statistical limit.",
+
+  "helper.pareto.smallSample":
+    "There are fewer than 30 occurrences in this chart, so the ranking may change quite easily as more data are collected.",
+
+  "helper.pareto.causeCaution":
+    "Do not assume that the largest categories are necessarily the causes of the problem. They are ways of grouping the data and should normally prompt further investigation.",
+
+  "helper.pareto.notTimeOrdered":
+    "A Pareto chart is not time ordered, so it cannot tell you whether a process is stable or whether a change is statistically significant. Use a run or Shewhart chart alongside it when that question matters.",
+
+  // THE 80% REFERENCE LINE
+
+  "helper.pareto.eighty.explain":
+    "The dashed 80% line is a guide to help prioritise further investigation. It is not a statistical control limit. The red cumulative line shows how the percentage of occurrences builds up as categories are added from left to right.",
+
+  "helper.pareto.eighty.countOne":
+    "In your chart, the first {count} category accounts for {percentage}% of all occurrences.",
+
+  "helper.pareto.eighty.countMany":
+    "In your chart, the first {count} categories account for {percentage}% of all occurrences.",
+
+  "helper.pareto.eighty.notRule":
+    "The 80% line is a useful reference, not a rule that 80% of problems must come from 20% of categories.",
+
+  // ARE THE BIGGEST CATEGORIES THE CAUSES?
+
+  "helper.pareto.causes":
+    "Not necessarily. A Pareto chart shows which categories contain the most recorded occurrences, but it does not establish what caused them.\n\n" +
+    "The largest categories are often useful starting points for investigation. Look more closely at what happens within those categories, consider how the data were collected, and use local knowledge to identify possible causes.\n\n" +
+    "A frequent category is not automatically a root cause, and a less frequent category may still deserve priority if its consequences are particularly serious.",
+
+  // HAS ANYTHING CHANGED?
+
+  "helper.pareto.changeIntro":
+    "A Pareto chart cannot tell whether something has changed over time because it deliberately removes the time order and ranks categories by frequency.\n\n"
+
 
 
 

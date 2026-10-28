@@ -1714,8 +1714,68 @@ window.SimpleSPCi18n.registerLanguage("fr", {
     "• évitez de réagir à chaque point individuel comme s'il prouvait à lui seul une réussite ou un échec",
 
   "helper.decision.paretoNext":
-    "\n\nUne prochaine étape pertinente consiste à étudier plus en détail les catégories les plus fréquentes, en s'appuyant sur les connaissances locales et, si nécessaire, sur une analyse plus détaillée des sous-catégories. Ne supposez pas que la catégorie elle-même représente la cause sous-jacente."
+    "\n\nUne prochaine étape pertinente consiste à étudier plus en détail les catégories les plus fréquentes, en s'appuyant sur les connaissances locales et, si nécessaire, sur une analyse plus détaillée des sous-catégories. Ne supposez pas que la catégorie elle-même représente la cause sous-jacente.",
 
+  // INTERPRÉTATIONS DU DIAGRAMME DE PARETO
+
+  "helper.pareto.noChart":
+    "Un diagramme de Pareto classe les catégories de la plus fréquente à la moins fréquente. Il permet de déterminer où des investigations ou des efforts d'amélioration pourraient être les plus utiles.",
+
+  "helper.pareto.firstCategory":
+    "la première catégorie",
+
+  "helper.pareto.summary":
+    "Ce diagramme de Pareto contient {total} occurrences réparties dans {categories} catégories. Les catégories sont classées de la plus fréquente à la moins fréquente.",
+
+  "helper.pareto.topOne":
+    "La catégorie la plus fréquente est « {category} », avec {count} occurrence{share}.",
+
+  "helper.pareto.topMany":
+    "La catégorie la plus fréquente est « {category} », avec {count} occurrences{share}.",
+
+  "helper.pareto.topShare":
+    " ({percentage} % du total)",
+
+  "helper.pareto.cutoffOne":
+    "La première catégorie représente environ {percentage} % des occurrences. Cela peut aider à déterminer les investigations prioritaires, mais la ligne des 80 % est un outil de priorisation et non une limite statistique.",
+
+  "helper.pareto.cutoffMany":
+    "Les {count} premières catégories représentent environ {percentage} % des occurrences. Cela peut aider à déterminer les investigations prioritaires, mais la ligne des 80 % est un outil de priorisation et non une limite statistique.",
+
+  "helper.pareto.smallSample":
+    "Ce diagramme contient moins de 30 occurrences. Le classement des catégories pourrait donc changer assez facilement à mesure que de nouvelles données seront recueillies.",
+
+  "helper.pareto.causeCaution":
+    "Ne supposez pas que les catégories les plus fréquentes correspondent nécessairement aux causes du problème. Elles représentent des façons de regrouper les données et doivent généralement conduire à des investigations supplémentaires.",
+
+  "helper.pareto.notTimeOrdered":
+    "Un diagramme de Pareto ne présente pas les données dans l'ordre chronologique. Il ne permet donc pas de déterminer si un processus est stable ni si un changement est statistiquement significatif. Utilisez également une carte de suivi (Run) ou une carte de Shewhart lorsque cette question est importante.",
+
+  // LIGNE DE RÉFÉRENCE À 80 %
+
+  "helper.pareto.eighty.explain":
+    "La ligne pointillée des 80 % sert à orienter les investigations prioritaires. Ce n'est pas une limite de contrôle statistique. La courbe cumulative rouge montre comment le pourcentage des occurrences augmente lorsque les catégories sont ajoutées de gauche à droite.",
+
+  "helper.pareto.eighty.countOne":
+    "Sur votre diagramme, la première catégorie représente {percentage} % de toutes les occurrences.",
+
+  "helper.pareto.eighty.countMany":
+    "Sur votre diagramme, les {count} premières catégories représentent {percentage} % de toutes les occurrences.",
+
+  "helper.pareto.eighty.notRule":
+    "La ligne des 80 % constitue un repère utile. Elle ne signifie pas que 80 % des problèmes doivent nécessairement provenir de 20 % des catégories.",
+
+  // LES CATÉGORIES LES PLUS FRÉQUENTES SONT-ELLES LES CAUSES ?
+
+  "helper.pareto.causes":
+    "Pas nécessairement. Un diagramme de Pareto montre les catégories qui regroupent le plus grand nombre d'occurrences enregistrées, mais il ne permet pas d'établir ce qui les a causées.\n\n" +
+    "Les catégories les plus fréquentes constituent souvent de bons points de départ pour les investigations. Examinez plus précisément ce qui se passe dans ces catégories, tenez compte de la manière dont les données ont été recueillies et utilisez les connaissances locales pour identifier les causes possibles.\n\n" +
+    "Une catégorie fréquente n'est pas automatiquement une cause profonde. Une catégorie moins fréquente peut également mériter une attention prioritaire si ses conséquences sont particulièrement graves.",
+
+  // UN CHANGEMENT S'EST-IL PRODUIT ?
+
+  "helper.pareto.changeIntro":
+    "Un diagramme de Pareto ne permet pas de déterminer si quelque chose a changé au fil du temps, car il supprime volontairement l'ordre chronologique pour classer les catégories selon leur fréquence.\n\n"
 
 
 
