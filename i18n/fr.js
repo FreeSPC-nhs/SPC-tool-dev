@@ -1364,7 +1364,105 @@ window.SimpleSPCi18n.registerLanguage("fr", {
 "helper.xmr.single.warning": "\n\nCertains éléments méritent d'être surveillés, mais davantage d'observations sont nécessaires pour déterminer s'ils constituent un signal durable.",
 "helper.xmr.single.calm": "\n\nLe comportement observé semble actuellement relativement régulier, sans signe précoce évident. Toutefois, les conclusions restent provisoires jusqu'à ce que suffisamment d'observations soient disponibles.",
 "helper.xmr.single.stable": "La carte XmR actuelle contient suffisamment de données pour être interprétée et ne présente aucun signal clair de cause spéciale. Ce comportement est compatible avec la variation habituelle, même si une performance stable n'est pas nécessairement une performance satisfaisante.",
-"helper.xmr.single.signals": "La carte XmR actuelle suggère que le processus a pu changer. Le comportement observé ne s'explique pas entièrement par la variation habituelle. Il convient donc d'étudier ce qui s'est passé dans le processus ou dans son système de mesure."
+"helper.xmr.single.signals": "La carte XmR actuelle suggère que le processus a pu changer. Le comportement observé ne s'explique pas entièrement par la variation habituelle. Il convient donc d'étudier ce qui s'est passé dans le processus ou dans son système de mesure.",
+
+  // ÉVALUATION DE LA STABILITÉ
+
+  // Noms des cartes dans les réponses dynamiques
+  "helper.stability.chart.c": "carte C",
+  "helper.stability.chart.p": "carte P",
+  "helper.stability.chart.pprime": "carte P′",
+  "helper.stability.chart.u": "carte U",
+  "helper.stability.chart.uprime": "carte U′",
+  "helper.stability.chart.t": "carte T",
+  "helper.stability.chart.g": "carte G",
+
+  "helper.stability.signalFallback":
+    "un ou plusieurs signaux SPC",
+
+  // Pareto
+  "helper.stability.pareto":
+    "Un diagramme de Pareto ne permet pas d'évaluer la stabilité d'un processus, car les catégories ne sont pas représentées dans l'ordre chronologique.",
+
+  // XmR : identification de la période
+  "helper.stability.xmr.latest":
+    "Pour la période la plus récente (période {period} sur {total}, points {start} à {end})",
+
+  "helper.stability.xmr.single":
+    "Pour le graphique actuel (points {start} à {end})",
+
+  // XmR : limites provisoires
+  "helper.stability.xmr.count":
+    "Cette période compte actuellement {count} points et ",
+
+  "helper.stability.xmr.provisional":
+    "{scope} : les données sont encore insuffisantes pour conclure à la stabilité du processus. {count}SimpleSPC exige au moins {minimum} points avant de procéder à une interprétation formelle de la stabilité XmR.",
+
+  "helper.stability.xmr.warning":
+    "\n\nCertains éléments de cette courte période méritent déjà une attention particulière. Il est donc trop tôt pour qualifier le processus de stable. Des données supplémentaires permettront de déterminer s'il s'agit de fluctuations temporaires ou d'un comportement durable.",
+
+  "helper.stability.xmr.calm":
+    "\n\nJusqu'à présent, le comportement semble relativement régulier, sans signe d'alerte évident sur cette courte période. C'est encourageant, mais les conclusions restent provisoires et ne prouvent pas encore la stabilité du processus.",
+
+  // XmR : périodes pouvant être interprétées
+  "helper.stability.xmr.stable":
+    "{scope} : aucun signal clair de cause spéciale n'est détecté selon les règles actuellement sélectionnées. Cela suggère que le processus présente un comportement relativement régulier autour de son niveau de performance actuel.",
+
+  "helper.stability.xmr.signals":
+    "{scope} : cette carte XmR présente des signes possibles de variation de cause spéciale, notamment {signals}.",
+
+  // Cartes X-bar et S
+  "helper.stability.xbars.bothStable":
+    "Au cours de la période X̄–S la plus récente, les moyennes des sous-groupes et la variation à l'intérieur des sous-groupes semblent toutes deux stables. Aucun signal clair de cause spéciale n'est détecté dans l'une ou l'autre des cartes.",
+
+  "helper.stability.xbars.xChanged":
+    "Au cours de la période X̄–S la plus récente, les moyennes des sous-groupes présentent des signes possibles de changement, tandis que la variation à l'intérieur des sous-groupes semble stable.",
+
+  "helper.stability.xbars.sChanged":
+    "Au cours de la période X̄–S la plus récente, les moyennes des sous-groupes semblent stables, tandis que la variation à l'intérieur des sous-groupes présente des signes possibles de changement.",
+
+  "helper.stability.xbars.bothChanged":
+    "Au cours de la période X̄–S la plus récente, les moyennes des sous-groupes et la variation à l'intérieur des sous-groupes présentent toutes deux des signes possibles de changement.",
+
+  // Cartes aux attributs
+  "helper.stability.attribute.stable":
+    "Pour la période la plus récente de la {chart}, aucun signal clair de cause spéciale n'est détecté selon les règles actuellement sélectionnées.",
+
+  "helper.stability.attribute.signals":
+    "Pour la période la plus récente de la {chart}, des signes possibles de variation de cause spéciale sont détectés, notamment {signals}.",
+
+  // Cartes d'événements rares
+  "helper.stability.rare.stable":
+    "Pour la période la plus récente de la {chart}, aucun signal clair de cause spéciale n'est détecté selon les règles actuellement sélectionnées pour les événements rares.",
+
+  "helper.stability.rare.signals":
+    "Pour la période la plus récente de la {chart}, des signes possibles de variation de cause spéciale sont détectés, notamment {signals}.",
+
+  "helper.stability.noChart":
+    "Générez d'abord la carte actuellement sélectionnée pour obtenir une interprétation adaptée à vos données.",
+
+  // Cartes de suivi (Run)
+  "helper.stability.run.noChart":
+    "Générez d'abord une carte de suivi (Run) pour obtenir une interprétation.",
+
+  "helper.stability.run.splitIntro":
+    "Cette carte de suivi (Run) a été divisée en {count} périodes par des changements de phase. Chaque période possède sa propre médiane et SimpleSPC recherche séparément les décalages et les tendances dans chaque période.\n\n",
+
+  "helper.stability.run.splitStable":
+    "Aucun décalage ni aucune tendance n'ont été détectés à l'intérieur des différentes périodes selon les règles actuellement sélectionnées. Cela ne signifie toutefois pas que le processus est resté inchangé dans son ensemble.\n\n",
+
+  "helper.stability.run.splitSignals":
+    "Une ou plusieurs périodes présentent un signal de décalage ou de tendance qui pourrait nécessiter une investigation.\n\n",
+
+  "helper.stability.run.splitAdvice":
+    "Comparez les médianes indiquées pour les différentes périodes. Une différence de niveau peut révéler un changement important de performance, même si aucun autre signal n'apparaît à l'intérieur des périodes.\n\nUn changement de phase correspond à une séparation choisie pour l'analyse. Il ne prouve pas à lui seul qu'un changement statistiquement significatif s'est produit. Examinez pourquoi ce changement de phase a été introduit, ce qui s'est passé dans le processus à ce moment-là et si le nouveau niveau de performance se maintient.",
+
+  "helper.stability.run.stable":
+    "Sur la carte de suivi (Run) actuelle, aucun décalage ni aucune tendance n'ont été détectés selon les règles sélectionnées.",
+
+  "helper.stability.run.signals":
+    "La carte de suivi (Run) actuelle présente un ou plusieurs signaux de décalage ou de tendance, suggérant que le comportement du processus a pu changer. Recherchez ce qui s'est passé dans le processus à cette période."
+
 
 
 

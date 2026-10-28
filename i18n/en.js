@@ -1361,7 +1361,104 @@ window.SimpleSPCi18n.registerLanguage("en", {
 "helper.xmr.single.warning": "\n\nThere are features worth watching, but more observations are needed to determine whether they form a sustained signal.",
 "helper.xmr.single.calm": "\n\nThe pattern currently looks reasonably consistent, with no obvious early warnings. This remains provisional until enough observations are available.",
 "helper.xmr.single.stable": "The current XmR chart has enough data for interpretation and shows no clear special-cause signals. This is consistent with routine variation, although stable performance is not necessarily satisfactory performance.",
-"helper.xmr.single.signals": "The current XmR chart suggests that the process may have changed. The pattern is not fully explained by routine variation, so investigate what happened in the process or its measurement."
+"helper.xmr.single.signals": "The current XmR chart suggests that the process may have changed. The pattern is not fully explained by routine variation, so investigate what happened in the process or its measurement.",
+
+  //  HELPER STABILITY ASSESSMENTS
+
+  // Chart names for dynamic helper sentences
+  "helper.stability.chart.c": "c chart",
+  "helper.stability.chart.p": "p chart",
+  "helper.stability.chart.pprime": "p′ chart",
+  "helper.stability.chart.u": "u chart",
+  "helper.stability.chart.uprime": "u′ chart",
+  "helper.stability.chart.t": "t chart",
+  "helper.stability.chart.g": "g chart",
+
+  "helper.stability.signalFallback": "one or more SPC signals",
+
+  // Pareto: stability is not assessed
+  "helper.stability.pareto":
+    "A Pareto chart does not assess process stability because the categories are not plotted in time order.",
+
+  // XmR: period identification
+  "helper.stability.xmr.latest":
+    "Looking at the latest period (Period {period} of {total}, points {start}–{end})",
+
+  "helper.stability.xmr.single":
+    "Looking at the chart (points {start}–{end})",
+
+  // XmR: provisional limits
+  "helper.stability.xmr.count":
+    "There are currently {count} points in this period, and ",
+
+  "helper.stability.xmr.provisional":
+    "{scope}, there are not yet enough data to make a firm judgement about stability. {count}SimpleSPC uses at least {minimum} points before making a formal XmR stability interpretation.",
+
+  "helper.stability.xmr.warning":
+    "\n\nThere are already some features in this short period that are worth watching, so I would not yet describe the process as stable. More data will help show whether these are temporary fluctuations or part of a real pattern.",
+
+  "helper.stability.xmr.calm":
+    "\n\nSo far, the pattern looks fairly consistent and there are no obvious warning signs in this short period. That is encouraging, but it is still provisional rather than proof of stability.",
+
+  // XmR: assessable periods
+  "helper.stability.xmr.stable":
+    "{scope}, I cannot see a clear special-cause signal using the current rule settings. This suggests the process is behaving broadly consistently around its current level.",
+
+  "helper.stability.xmr.signals":
+    "{scope}, this XmR chart shows possible special-cause variation — specifically {signals}.",
+
+  // X-bar and S stability combinations
+  "helper.stability.xbars.bothStable":
+    "Looking at the latest X̄–S period, both the subgroup averages and the within-subgroup variation look stable. I cannot see a clear special-cause signal in either part of the chart.",
+
+  "helper.stability.xbars.xChanged":
+    "Looking at the latest X̄–S period, the subgroup averages show possible change, but the within-subgroup variation looks stable.",
+
+  "helper.stability.xbars.sChanged":
+    "Looking at the latest X̄–S period, the subgroup averages look stable, but the within-subgroup variation shows possible change.",
+
+  "helper.stability.xbars.bothChanged":
+    "Looking at the latest X̄–S period, both the subgroup averages and the within-subgroup variation show possible change.",
+
+  // Attribute charts
+  "helper.stability.attribute.stable":
+    "Looking at the latest {chart} period, I cannot see a clear special-cause signal using the current rule settings.",
+
+  "helper.stability.attribute.signals":
+    "Looking at the latest {chart} period, there are signs of possible special-cause variation — specifically {signals}.",
+
+  // Rare-event charts
+  "helper.stability.rare.stable":
+    "Looking at the latest {chart} period, I cannot see a clear special-cause signal using the current rare-event rule settings.",
+
+  "helper.stability.rare.signals":
+    "Looking at the latest {chart} period, there are signs of possible special-cause variation — specifically {signals}.",
+
+  "helper.stability.noChart":
+    "Generate the currently selected chart first and I can give you a chart-specific interpretation.",
+
+  // Run charts, including phase splits
+  "helper.stability.run.noChart":
+    "Generate a Run chart first so I can interpret it.",
+
+  "helper.stability.run.splitIntro":
+    "This Run chart has been divided into {count} periods using splits. Each period has its own median, and SimpleSPC checks for shifts and trends separately within each period.\n\n",
+
+  "helper.stability.run.splitStable":
+    "No shift or trend has been detected within the individual periods using the current rule settings. However, this does not mean that the overall process has remained unchanged.\n\n",
+
+  "helper.stability.run.splitSignals":
+    "One or more periods contain a shift or trend signal that may warrant investigation.\n\n",
+
+  "helper.stability.run.splitAdvice":
+    "Compare the medians reported for the different periods. A difference in their levels may indicate an important change in performance, even if there are no further signals within each period.\n\nA split is a boundary chosen for analysis; it does not by itself prove a statistically significant change. Consider why the split was introduced, what happened in the process around that time, and whether the new level is sustained.",
+
+  "helper.stability.run.stable":
+    "Looking at the current Run chart, no shift or trend has been detected using the selected run-chart rules.",
+
+  "helper.stability.run.signals":
+    "The current Run chart shows one or more shift or trend signals, suggesting that the pattern may have changed. Investigate what happened in the process around that time."
+
 
 
 
