@@ -14630,18 +14630,20 @@ function renderXbarSSummary(
           : [];
 
       
-       return signals.length
-         ? (
-             summaryUiText(
-               "summary.xbars.signals",
-               "signal(s):"
-             ) +
-             ` ${signals.join("; ")}.`
-           )
-         : summaryUiText(
-             "summary.xbars.signalDetected",
-             "one or more special-cause signals were detected."
-           );
+       
+return signals.length
+  ? (
+      summaryUiText(
+        "summary.xbars.signals",
+        "signal(s):"
+      ) +
+      ` ${signals.map(attributeSignalDisplayHtml).join("; ")}.`
+    )
+  : summaryUiText(
+      "summary.xbars.signalDetected",
+      "one or more special-cause signals were detected."
+    );
+
 
     };
 
@@ -21442,7 +21444,12 @@ function answerSpcQuestion(question) {
     return window.SPC_HELPER_LIBRARY.answerQuestion(question);
   }
 
-  return "The SPC helper library is not available. Please check that spc-helper-library.js is loaded before spc.js.";
+
+  return chartPanelText(
+    "helper.response.libraryMissing",
+    "The SPC helper library is not available. Please check that spc-helper-library.js is loaded before spc.js."
+  );
+
 }
 
 

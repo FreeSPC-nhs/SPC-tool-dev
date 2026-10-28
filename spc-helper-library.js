@@ -2525,9 +2525,14 @@ function buildDecisionAnswer(ctx) {
   const q =
     norm(qRaw);
 
+  
   if (!q) {
-    return "Please type a question about SPC or your chart.";
+    return helperDynamicText(
+      "helper.response.empty",
+      "Please type a question about SPC or your chart."
+    );
   }
+
 
   const ctx =
     getCurrentChartContext();
@@ -2792,26 +2797,80 @@ function buildDecisionAnswer(ctx) {
   }
 
 
-  if (hasChart) {
-    return (
-      "I’m not fully sure which answer fits best. Try one of these:\n" +
-      "• What is my chart telling me?\n" +
-      "• Has anything changed?\n" +
-      "• Is my process stable?\n" +
-      "• Is this likely to be real improvement?\n" +
-      "• What should I do next?\n" +
-      "• What does this mean for our target?"
-    );
-  }
+  
+  // Batch 36 — Unmatched-question guidance.
+  //
+  // Reuse the existing suggested-question keys from
+  // Batch 26. This keeps the French question wording
+  // consistent with the clickable helper suggestions.
+  //
+  // Do not change the FAQ scoring or matching logic.
 
-  return (
-    "I’m not fully sure which answer fits best. Try one of these:\n" +
-    "• What is SPC?\n" +
-    "• How do I choose the right chart?\n" +
-    "• What is the difference between a baseline and a split?\n" +
-    "• What should I do if I see a signal?\n" +
-    "• What if my process is stable but performance is poor?"
+  const fallbackQuestions = hasChart
+    ? [
+        [
+          "helper.q.myChart",
+          "What is my chart telling me?"
+        ],
+        [
+          "helper.q.changed",
+          "Has anything changed?"
+        ],
+        [
+          "helper.q.processStable",
+          "Is my process stable?"
+        ],
+        [
+          "helper.q.improvement",
+          "Is this likely to be real improvement?"
+        ],
+        [
+          "helper.q.next",
+          "What should I do next?"
+        ],
+        [
+          "helper.q.target",
+          "What does this mean for our target?"
+        ]
+      ]
+    : [
+        [
+          "helper.q.whatSpc",
+          "What is SPC?"
+        ],
+        [
+          "helper.q.chooseChart",
+          "How do I choose the right chart?"
+        ],
+        [
+          "helper.q.baselineSplit",
+          "What is the difference between a baseline and a split?"
+        ],
+        [
+          "helper.q.signalAction",
+          "What should I do if I see a signal?"
+        ],
+        [
+          "helper.q.stablePoor",
+          "What if my process is stable but performance is poor?"
+        ]
+      ];
+
+  const fallbackHeading = helperDynamicText(
+    "helper.response.unsure",
+    "I’m not fully sure which answer fits best. Try one of these:"
   );
+
+  const fallbackSuggestions =
+    fallbackQuestions.map(([key, english]) =>
+      "• " + helperDynamicText(key, english)
+    );
+
+  return [
+    fallbackHeading,
+    ...fallbackSuggestions
+  ].join("\n");
+
 }
 
   window.SPC_HELPER_LIBRARY = {
