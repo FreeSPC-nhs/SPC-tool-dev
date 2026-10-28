@@ -1249,7 +1249,84 @@ window.SimpleSPCi18n.registerLanguage("fr", {
   "helper.faq.puc-zone-rules-blocked":
     "Les règles de zone ne sont pas disponibles pour les cartes P, P′, U, U′ et C, car elles peuvent générer des alertes trompeuses sur ces types de cartes.\n\n" +
     "Ces cartes reposent sur des données d'effectifs, de proportions ou de taux. Leurs limites peuvent varier, et leurs données ne se comportent pas nécessairement comme les données continues pour lesquelles les règles de zone classiques ont été conçues.\n\n" +
-    "L'approche par défaut la plus prudente consiste à utiliser les signaux de dépassement des limites et les règles de séquence, plutôt qu'à ajouter des alertes fondées sur les zones."
+    "L'approche par défaut la plus prudente consiste à utiliser les signaux de dépassement des limites et les règles de séquence, plutôt qu'à ajouter des alertes fondées sur les zones.",
+
+  // AUTRES RÉPONSES FIXES DE L'ASSISTANT SPC
+
+  // Calcul des cartes XmR et exclusions manuelles
+  "helper.faq.xmr-moving-range-screening":
+    "Les limites de contrôle d'une carte XmR estiment la variation habituelle à partir des différences entre les points consécutifs, appelées étendues mobiles.\n\n" +
+    "Un changement très important entre deux points peut augmenter l'étendue mobile moyenne et rendre les limites de contrôle anormalement larges. Par défaut, SimpleSPC effectue un filtrage des étendues mobiles exceptionnellement grandes lors de l'estimation de la variation habituelle. Les observations et les étendues mobiles d'origine restent visibles sur le graphique.\n\n" +
+    "SimpleSPC utilise la méthode de Nelson : les étendues mobiles supérieures à 3,5 fois l'étendue mobile moyenne initiale ne sont pas utilisées pour estimer la variation. Vous pouvez désactiver ce filtrage dans les options avancées de détection si vous souhaitez utiliser le calcul sans filtrage.",
+
+  "helper.faq.exclude-point-from-limits":
+    "N'excluez un point du calcul des limites qu'après l'avoir étudié et si vous avez de bonnes raisons de penser qu'il correspond à une cause spéciale identifiée plutôt qu'à la variation habituelle du processus.\n\n" +
+    "Le point n'est pas supprimé. Il reste visible sur le graphique, mais SimpleSPC ne l'utilise pas pour estimer la ligne centrale ou les limites de contrôle. N'excluez pas un point simplement parce que sa valeur est élevée, faible ou située au-delà d'une limite de contrôle. Commencez par rechercher ce qui s'est passé.\n\n" +
+    "Si le changement correspond à une nouvelle façon de travailler durable ou à un nouveau niveau de performance du processus, un changement de phase est généralement plus approprié que l'exclusion du point.\n\n" +
+    "Pour les cartes XmR, l'exclusion d'une observation entraîne également l'exclusion des étendues mobiles immédiatement avant et après cette observation lors de l'estimation de la variation habituelle. SimpleSPC ne crée pas d'étendue mobile artificielle de part et d'autre du point exclu. Pour les cartes X̄–S, l'exclusion concerne l'ensemble du sous-groupe représenté.\n\n" +
+    "Remarque technique : certains ouvrages SPC appellent cette méthode « ghosting » ou « causing out ». Elle permet d'estimer la variation habituelle de cause commune du processus — parfois appelée la voix du processus — sans laisser une cause spéciale étudiée fausser les limites.",
+
+  // Objectifs et périodes de référence
+  "helper.faq.target":
+    "Un objectif correspond au niveau de performance que vous souhaitez atteindre. En SPC, il doit être interprété en tenant compte de la stabilité du processus.\n\n" +
+    "Un processus stable dont les performances sont inférieures à l'objectif nécessite souvent une amélioration ou une refonte du système. Un processus instable qui atteint l'objectif de façon intermittente peut néanmoins manquer de fiabilité.",
+
+  "helper.faq.baseline":
+    "Une période de référence est l'ensemble initial de points utilisé pour calculer la ligne centrale et, lorsque cela s'applique, les limites de contrôle.\n\n" +
+    "Elle est utile lorsque vous souhaitez comparer les performances ultérieures à une période antérieure représentative du système initial.",
+
+  // Qualité des données et interprétation
+  "helper.faq.data-definition-change":
+    "Un changement de codage, de critères d'inclusion, de règles de calcul du dénominateur ou de définition des cas peut produire un signal sur le graphique même si le fonctionnement réel du service n'a pas changé.\n\n" +
+    "C'est pourquoi les cartes SPC doivent toujours être interprétées en tenant compte des connaissances locales sur la collecte des données et le contexte opérationnel.",
+
+  "helper.faq.annotations":
+    "Utilisez les annotations pour signaler des événements pouvant expliquer un changement dans le comportement observé, par exemple un nouveau parcours de soins, une modification des effectifs, un changement de politique ou une nouvelle définition des données.\n\n" +
+    "Rédigez des annotations courtes et factuelles. Elles facilitent l'interprétation, mais ne prouvent pas à elles seules un lien de causalité.",
+
+  "helper.faq.improvement-vs-one-good-point":
+    "En SPC, une amélioration est plus convaincante lorsque le graphique montre un changement durable dans la direction souhaitée, plutôt qu'un seul bon résultat.\n\n" +
+    "Un résultat favorable isolé peut se produire par hasard. Un décalage durable ou un autre signal clair est davantage compatible avec un changement réel.",
+
+  // Explication des lignes centrales
+  "helper.faq.runchart-median":
+    "Les cartes de suivi (Run) utilisent souvent la médiane, car elle est simple et robuste, notamment lorsque vous commencez une démarche d'amélioration ou disposez de peu de données.\n\n" +
+    "Elle fournit une ligne centrale pratique pour examiner les séquences et les tendances.",
+
+  "helper.faq.xmr-mean":
+    "Une carte XmR utilise la moyenne et les étendues mobiles pour estimer la variation habituelle et calculer les limites de contrôle.\n\n" +
+    "Lorsque les données conviennent à ce type de carte, cela permet de détecter des signaux statistiques plus solides qu'avec une simple carte de suivi.",
+
+  // Changements de phase, objectifs et causalité
+  "helper.faq.should-add-split":
+    "N'ajoutez généralement un changement de phase que lorsqu'il existe des preuves solides d'un changement réel et durable du processus, et que vous vous attendez à ce que le nouveau comportement se poursuive.\n\n" +
+    "Un changement de phase doit faciliter l'interprétation, et non masquer une instabilité ou donner artificiellement une meilleure apparence au graphique.",
+
+  "helper.faq.above-target-solved":
+    "Pas nécessairement. Atteindre ou dépasser l'objectif une seule fois ne signifie pas que le processus présente un niveau de performance stable et durable.\n\n" +
+    "Il vaut mieux se demander si le processus semble désormais atteindre ou dépasser l'objectif de manière prévisible, et si ce changement est susceptible de durer.",
+
+  "helper.faq.below-target-stable":
+    "Cela signifie généralement que le système produit un résultat constant, mais insuffisant.\n\n" +
+    "Cette situation oriente souvent vers un travail d'amélioration ou de refonte du système, plutôt que vers des réactions aux points individuels.",
+
+  "helper.faq.caused-improvement":
+    "Il faut rester prudent. Un graphique peut montrer que les performances ont changé, et les annotations peuvent aider à établir un lien chronologique avec une intervention, mais le graphique seul ne prouve pas la causalité.\n\n" +
+    "Il est généralement préférable de dire que le changement observé est compatible avec l'effet de l'intervention, en s'appuyant sur les connaissances locales.",
+
+  // Profil des patients, dénominateurs et événements rares
+  "helper.faq.case-mix":
+    "Un changement réel dans le profil ou la complexité des patients peut influencer le graphique, même si le fonctionnement du service est resté identique.\n\n" +
+    "Cela ne signifie pas que le graphique est incorrect, mais ce changement doit être pris en compte dans son interprétation.",
+
+  "helper.faq.denominator-changed":
+    "Si le nombre d'opportunités varie fortement au fil du temps, cela influence la manière de construire et d'interpréter le graphique.\n\n" +
+    "C'est notamment pour cette raison que les cartes P et U sont utiles : elles permettent de tenir compte de totaux ou de nombres d'opportunités variables.",
+
+  "helper.faq.rare-event-improvement":
+    "Pour les cartes d'événements rares, une amélioration correspond souvent à un allongement du temps entre les événements indésirables ou à une augmentation du nombre d'opportunités entre ces événements.\n\n" +
+    "Comme les données d'événements rares peuvent présenter des variations impressionnantes, il vaut mieux rechercher des changements durables du comportement observé plutôt que de se concentrer sur un seul intervalle exceptionnellement long."
+
 
 
 

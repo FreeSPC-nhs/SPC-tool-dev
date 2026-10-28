@@ -1245,7 +1245,84 @@ window.SimpleSPCi18n.registerLanguage("en", {
   "helper.faq.puc-zone-rules-blocked":
     "Zone rules are not available for P, P′, U, U′, or C charts because they can create misleading alerts on these chart types.\n\n" +
     "These charts are based on count, proportion, or rate data. Their limits may vary, and their data may not behave like the continuous data that classic zone rules were designed for.\n\n" +
-    "The safer default is to use beyond-limit signals and run rules, rather than adding extra zone-rule alerts."
+    "The safer default is to use beyond-limit signals and run rules, rather than adding extra zone-rule alerts.",
+
+
+  // REMAINING FIXED SPC HELPER FAQ ANSWERS
+
+  // XmR calculations and manual exclusions
+  "helper.faq.xmr-moving-range-screening":
+    "XmR control limits estimate routine variation from the differences between consecutive points, called moving ranges.\n\n" +
+    "A very large point-to-point jump can inflate the average moving range and make the control limits unusually wide. By default, SimpleSPC screens unusually large moving ranges when estimating routine variation. The original observations and moving ranges are still shown on the chart.\n\n" +
+    "SimpleSPC uses the Nelson method: moving ranges greater than 3.5 times the initial average moving range are not used in the variation estimate. You can turn this screening off in Advanced detection options if you want the unscreened calculation.",
+
+  "helper.faq.exclude-point-from-limits":
+    "Exclude a point from the limit calculations only after you have investigated it and have good reason to believe it reflects a known special cause rather than the routine variation of the process.\n\n" +
+    "The point is not deleted. It stays visible on the chart, but SimpleSPC does not use it to estimate the centre line or control limits. Do not exclude a point simply because it is high, low, or outside a control limit. First investigate what happened.\n\n" +
+    "If the change represents a lasting new way of working or a new process level, a split is usually more appropriate than excluding the point.\n\n" +
+    "For XmR charts, excluding an observation also leaves out the moving ranges immediately before and after that observation when routine variation is estimated. SimpleSPC does not create an artificial moving range across the excluded point. For X̄–S charts, exclusion applies to the whole plotted subgroup.\n\n" +
+    "Technical note: some SPC texts call this ghosting or causing out a point. It is a way of estimating the process's routine common-cause variation — sometimes called the voice of the process — without allowing an investigated special cause to distort the limits.",
+
+  // Targets and baselines
+  "helper.faq.target":
+    "A target is the level of performance you are aiming for. In SPC, it should be interpreted alongside stability.\n\n" +
+    "A stable process below target often means the system needs redesign or improvement. An unstable process meeting target intermittently may still not be reliable.",
+
+  "helper.faq.baseline":
+    "A baseline is the initial set of points used to calculate the centre line and, where relevant, the limits.\n\n" +
+    "It is useful when you want to compare later performance against an earlier period that represents the original system.",
+
+  // Data quality and interpretation
+  "helper.faq.data-definition-change":
+    "A change in coding, inclusion criteria, denominator rules, or case definition can create a chart signal even if the real service has not changed.\n\n" +
+    "That is why SPC charts should always be interpreted alongside local knowledge about data collection and operational context.",
+
+  "helper.faq.annotations":
+    "Use annotations to mark events that could plausibly explain a change in the pattern, such as a new pathway, staffing change, policy change, or data-definition change.\n\n" +
+    "Keep them short and factual. They support interpretation, but they do not prove causation on their own.",
+
+  "helper.faq.improvement-vs-one-good-point":
+    "In SPC, improvement is more convincing when the chart shows a sustained change in the desired direction, not just one good point.\n\n" +
+    "A single good result can happen by chance. A sustained shift or other clear signal is more consistent with real change.",
+
+  // Chart centre-line explanations
+  "helper.faq.runchart-median":
+    "Run charts often use the median because it is simple and robust, especially when you are starting improvement work or have limited data.\n\n" +
+    "It gives a practical centre line for judging runs and trends.",
+
+  "helper.faq.xmr-mean":
+    "An XmR chart uses the mean together with the moving range to estimate routine variation and calculate control limits.\n\n" +
+    "That gives stronger statistical signals than a simple run chart when the data suit that chart type.",
+
+  // Splits, targets and causation
+  "helper.faq.should-add-split":
+    "Usually only add a split when there is good evidence of a real and sustained process change, and you expect the new pattern to continue.\n\n" +
+    "A split should help interpretation, not hide instability or make the chart look better.",
+
+  "helper.faq.above-target-solved":
+    "Not necessarily. Crossing the target once is not the same as showing a stable, sustained level of performance.\n\n" +
+    "A better question is whether the process now looks predictably at or beyond the target, and whether that change is likely to last.",
+
+  "helper.faq.below-target-stable":
+    "This usually means the system is delivering a consistent result, but not a good enough one.\n\n" +
+    "That often points toward improvement or redesign work rather than reacting to individual points.",
+
+  "helper.faq.caused-improvement":
+    "Be cautious. A chart can show that performance changed, and annotations can help link timing to an intervention, but the chart alone does not prove causation.\n\n" +
+    "It is usually better to say the change is consistent with the intervention, supported by local knowledge.",
+
+  // Case mix, denominators and rare events
+  "helper.faq.case-mix":
+    "A real change in the type or complexity of patients can affect the chart, even if the service process stayed the same.\n\n" +
+    "That does not make the chart wrong, but it does affect interpretation.",
+
+  "helper.faq.denominator-changed":
+    "If the amount of opportunity changes a lot over time, that affects how the chart should be set up and interpreted.\n\n" +
+    "That is one reason P and U charts are useful: they allow for changing totals or opportunities.",
+
+  "helper.faq.rare-event-improvement":
+    "For rare-event charts, improvement often means longer times between unwanted events or more opportunities between events.\n\n" +
+    "Because rare-event data can look dramatic, it helps to focus on sustained pattern changes rather than one unusually long gap."
 
 
 
