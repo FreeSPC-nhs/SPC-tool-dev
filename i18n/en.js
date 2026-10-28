@@ -1457,11 +1457,16 @@ window.SimpleSPCi18n.registerLanguage("en", {
     "Looking at the current Run chart, no shift or trend has been detected using the selected run-chart rules.",
 
   "helper.stability.run.signals":
-    "The current Run chart shows one or more shift or trend signals, suggesting that the pattern may have changed. Investigate what happened in the process around that time."
+    "The current Run chart shows one or more shift or trend signals, suggesting that the pattern may have changed. Investigate what happened in the process around that time.",
 
-
-
-
+  // DYNAMIC HELPER SIGNALS
+  "helper.signal.shiftMean": "a sustained shift (many points on the same side of the mean)",
+  "helper.signal.shiftDetailed": "Shift: {count}+ points in a row {direction} the centre line (from {start} to {end})",
+  "helper.signal.trendDetailed": "Trend: {count}+ points steadily {direction} (from {start} to {end})",
+  "helper.signal.sideAbove": "above",
+  "helper.signal.sideBelow": "below",
+  "helper.signal.directionIncreasing": "increasing",
+  "helper.signal.directionDecreasing": "decreasing"
 
 
 

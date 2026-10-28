@@ -1461,7 +1461,17 @@ window.SimpleSPCi18n.registerLanguage("fr", {
     "Sur la carte de suivi (Run) actuelle, aucun décalage ni aucune tendance n'ont été détectés selon les règles sélectionnées.",
 
   "helper.stability.run.signals":
-    "La carte de suivi (Run) actuelle présente un ou plusieurs signaux de décalage ou de tendance, suggérant que le comportement du processus a pu changer. Recherchez ce qui s'est passé dans le processus à cette période."
+    "La carte de suivi (Run) actuelle présente un ou plusieurs signaux de décalage ou de tendance, suggérant que le comportement du processus a pu changer. Recherchez ce qui s'est passé dans le processus à cette période.",
+
+  // SIGNAUX DYNAMIQUES DE L'ASSISTANT
+  "helper.signal.shiftMean": "un décalage prolongé (de nombreux points du même côté de la moyenne)",
+  "helper.signal.shiftDetailed": "Décalage : {count}+ points consécutifs {direction} la ligne centrale (de {start} à {end})",
+  "helper.signal.trendDetailed": "Tendance : {count}+ points {direction} de façon continue (de {start} à {end})",
+  "helper.signal.sideAbove": "au-dessus de",
+  "helper.signal.sideBelow": "au-dessous de",
+  "helper.signal.directionIncreasing": "en augmentation",
+  "helper.signal.directionDecreasing": "en diminution"
+
 
 
 
