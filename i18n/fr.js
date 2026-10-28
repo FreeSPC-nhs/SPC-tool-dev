@@ -1549,7 +1549,58 @@ window.SimpleSPCi18n.registerLanguage("fr", {
   "helper.improvement.general.unstable":
     "Le graphique actuel ({chart}) présente des signes suggérant que le processus a pu changer. Il peut s'agir d'une amélioration, d'une détérioration ou d'un autre changement du système. Pour parler d'amélioration, vérifiez que le changement va dans la direction souhaitée, qu'il est durable et qu'il est cohérent avec le contexte local. Le graphique seul ne prouve pas la causalité.",
   "helper.improvement.general.noChart":
-    "Générez d'abord la carte actuellement sélectionnée pour que je puisse vous aider à déterminer si le comportement observé correspond à une amélioration réelle."
+    "Générez d'abord la carte actuellement sélectionnée pour que je puisse vous aider à déterminer si le comportement observé correspond à une amélioration réelle.",
+
+  // LIMITES XmR ET FILTRAGE DE NELSON
+
+  "helper.xmrLimits.noChart":
+    "Les limites d'une carte XmR sont estimées à partir des étendues mobiles entre points consécutifs. Générez une carte XmR pour obtenir une explication du calcul appliqué à vos données actuelles.",
+
+  "helper.xmrLimits.intro":
+    "Les limites de contrôle XmR dépendent de l'estimation de la variation habituelle. SimpleSPC estime cette variation à partir des étendues mobiles entre observations consécutives.",
+
+  "helper.xmrLimits.screeningOn":
+    "\n\nPour votre graphique actuel, le filtrage des étendues mobiles est ACTIVÉ.",
+
+  "helper.xmrLimits.screenedOne":
+    " SimpleSPC a repéré {count} variation exceptionnellement importante entre deux points consécutifs et ne l'a pas utilisée pour estimer la variation habituelle. Les points et les étendues mobiles d'origine restent visibles sur le graphique.",
+
+  "helper.xmrLimits.screenedMany":
+    " SimpleSPC a repéré {count} variations exceptionnellement importantes entre des points consécutifs et ne les a pas utilisées pour estimer la variation habituelle. Les points et les étendues mobiles d'origine restent visibles sur le graphique.",
+
+  "helper.xmrLimits.whyScreen":
+    "\n\nCe filtrage évite qu'un saut exceptionnellement important n'augmente artificiellement l'estimation de la variation et, par conséquent, n'élargisse excessivement les limites de contrôle XmR.",
+
+  "helper.xmrLimits.noneScreened":
+    " Aucune étendue mobile de la période actuelle ne dépasse le seuil de filtrage. Le filtrage n'a donc pas modifié l'estimation de la variation pour cette période.",
+
+  "helper.xmrLimits.statistics":
+    "\n\nPour la période actuelle :\n" +
+    "• moyenne initiale des étendues mobiles = {initial}\n" +
+    "• seuil de filtrage de Nelson = {threshold}\n" +
+    "• moyenne des étendues mobiles utilisée pour calculer les limites = {average}",
+
+  "helper.xmrLimits.screeningOff":
+    "\n\nPour votre graphique actuel, le filtrage des étendues mobiles est DÉSACTIVÉ. Toutes les étendues mobiles de la période de référence sont donc utilisées pour estimer la variation habituelle. Si un écart entre deux points consécutifs est exceptionnellement important, il peut augmenter l'étendue mobile moyenne et produire des limites de contrôle plus larges.",
+
+  "helper.xmrLimits.offAverage":
+    "\n\nL'étendue mobile moyenne actuellement utilisée pour calculer les limites est de {average}.",
+
+  "helper.xmrLimits.unknown":
+    "\n\nIl n'est pas possible de déterminer si le filtrage des étendues mobiles est activé à partir des informations disponibles pour le graphique actuel.",
+
+  "helper.xmrLimits.splits":
+    "\n\nCe graphique comporte également un ou plusieurs changements de phase. Chaque période est analysée séparément, avec sa propre moyenne et ses propres limites. L'étendue mobile située de part et d'autre d'un changement de phase n'est pas utilisée. Cela peut également expliquer pourquoi les limites diffèrent de celles obtenues sans changement de phase.",
+
+  "helper.xmrLimits.provisionalIntro":
+    "\n\nLes limites de la période la plus récente sont encore provisoires. ",
+
+  "helper.xmrLimits.provisionalCount":
+    "Seulement {count} points sont actuellement utilisés pour estimer ses limites. ",
+
+  "helper.xmrLimits.provisionalMinimum":
+    "SimpleSPC attend qu'au moins {minimum} points soient disponibles avant de procéder à une interprétation formelle de la stabilité."
+
 
 
 

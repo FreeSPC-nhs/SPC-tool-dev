@@ -1545,7 +1545,58 @@ window.SimpleSPCi18n.registerLanguage("en", {
   "helper.improvement.general.unstable":
     "The current {chart} shows evidence that the process may have changed. That could be improvement, deterioration, or another change in the system. To call it improvement, check that the change is in the desired direction, is sustained, and makes sense in the local context. The chart alone does not prove causation.",
   "helper.improvement.general.noChart":
-    "Generate the currently selected chart first and I can help assess whether the pattern is consistent with real improvement."
+    "Generate the currently selected chart first and I can help assess whether the pattern is consistent with real improvement.",
+
+  // XmR CONTROL LIMITS AND NELSON SCREENING
+
+  "helper.xmrLimits.noChart":
+    "XmR limits are estimated from the moving ranges between consecutive points. Generate an XmR chart and I can explain the calculation used for your current data.",
+
+  "helper.xmrLimits.intro":
+    "XmR control limits depend on the estimated routine variation. SimpleSPC estimates this from the moving ranges between consecutive observations.",
+
+  "helper.xmrLimits.screeningOn":
+    "\n\nFor your current chart, moving-range screening is ON.",
+
+  "helper.xmrLimits.screenedOne":
+    " SimpleSPC found {count} unusually large point-to-point change and did not use it when estimating routine variation. The original data points and moving ranges remain on the chart.",
+
+  "helper.xmrLimits.screenedMany":
+    " SimpleSPC found {count} unusually large point-to-point changes and did not use them when estimating routine variation. The original data points and moving ranges remain on the chart.",
+
+  "helper.xmrLimits.whyScreen":
+    "\n\nThis prevents an unusually large jump from making the estimated variation — and therefore the XmR control limits — artificially wide.",
+
+  "helper.xmrLimits.noneScreened":
+    " No moving ranges in the current period exceeded the screening threshold, so screening has not changed the variation estimate for this period.",
+
+  "helper.xmrLimits.statistics":
+    "\n\nFor the current period:\n" +
+    "• initial average MR = {initial}\n" +
+    "• Nelson screening threshold = {threshold}\n" +
+    "• average MR used for the limits = {average}",
+
+  "helper.xmrLimits.screeningOff":
+    "\n\nFor your current chart, moving-range screening is OFF. All baseline moving ranges are therefore used to estimate routine variation. If one point-to-point jump is unusually large, this can increase the average moving range and produce wider control limits.",
+
+  "helper.xmrLimits.offAverage":
+    "\n\nThe average MR currently being used for the limits is {average}.",
+
+  "helper.xmrLimits.unknown":
+    "\n\nI cannot determine the moving-range screening setting from the current chart snapshot.",
+
+  "helper.xmrLimits.splits":
+    "\n\nThis chart also contains a split. Each period is treated as a separate process period with its own mean and limits, and the moving range across the split is not used. This can also make the limits different from an unsplit version of the same chart.",
+
+  "helper.xmrLimits.provisionalIntro":
+    "\n\nThe latest period is still provisional. ",
+
+  "helper.xmrLimits.provisionalCount":
+    "Only {count} points are currently being used to estimate its limits. ",
+
+  "helper.xmrLimits.provisionalMinimum":
+    "SimpleSPC waits until at least {minimum} points are available before making a formal stability interpretation."
+
 
 
 
