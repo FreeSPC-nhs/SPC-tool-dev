@@ -1673,7 +1673,49 @@ window.SimpleSPCi18n.registerLanguage("fr", {
   " Cette valeur est exactement égale à 1. L'ajustement de Laney ne modifie donc pas la largeur des limites de la {standard} standard.",
 
 "helper.laney.sigma.technical":
-  "\n\nDétail technique : SimpleSPC tient d'abord compte de la variation attendue pour chaque point selon la carte standard. Il examine ensuite les changements entre valeurs standardisées consécutives. Sigma Z résume cette variation supplémentaire ou réduite en un seul facteur d'ajustement."
+  "\n\nDétail technique : SimpleSPC tient d'abord compte de la variation attendue pour chaque point selon la carte standard. Il examine ensuite les changements entre valeurs standardisées consécutives. Sigma Z résume cette variation supplémentaire ou réduite en un seul facteur d'ajustement.",
+
+  //  CONSEILS SUR LES COLONNES ET SUITE À DONNER
+
+  "chart.columnWarning.c":
+    "<strong>Vérifiez les colonnes sélectionnées.</strong> Pour une carte C, la colonne des valeurs doit contenir un nombre d'événements ou de défauts par période. N'utilisez pas de colonne de dénominateur.",
+
+  "chart.columnWarning.p":
+    "<strong>Vérifiez les colonnes sélectionnées.</strong> Pour une carte P, la colonne des valeurs doit contenir le numérateur, par exemple le nombre de cas ou d'événements, et la troisième colonne doit contenir le dénominateur, par exemple le nombre total de patients ou de séjours.",
+
+  "chart.columnWarning.pprime":
+    "<strong>Vérifiez les colonnes sélectionnées.</strong> Pour une carte P′, la colonne des valeurs doit contenir le numérateur, par exemple le nombre de cas ou d'événements, et la troisième colonne doit contenir le dénominateur, par exemple le nombre total de patients ou de séjours. La carte P′ utilise les mêmes données qu'une carte P, mais ajuste les limites de contrôle selon la méthode de Laney.",
+
+  "chart.columnWarning.u":
+    "<strong>Vérifiez les colonnes sélectionnées.</strong> Pour une carte U, la colonne des valeurs doit contenir le nombre de défauts ou d'événements, et la troisième colonne doit contenir le nombre d'opportunités ou le dénominateur, par exemple les journées d'hospitalisation, les consultations ou les interventions.",
+
+  "chart.columnWarning.uprime":
+    "<strong>Vérifiez les colonnes sélectionnées.</strong> Pour une carte U′, la colonne des valeurs doit contenir le nombre de défauts ou d'événements, et la troisième colonne doit contenir le nombre d'opportunités ou le dénominateur, par exemple les journées d'hospitalisation, les consultations, les interventions ou les inspections. La carte U′ utilise les mêmes données qu'une carte U, mais ajuste les limites de contrôle selon la méthode de Laney.",
+
+  "chart.columnWarning.xbars":
+    "<strong>Vérifiez les colonnes sélectionnées.</strong> Pour une carte X̄–S, la colonne des valeurs doit contenir les mesures individuelles, et la troisième colonne doit identifier le sous-groupe, par exemple le jour, la semaine, le lot ou l'échantillon.",
+
+  "chart.columnWarning.tGaps":
+    "<strong>Carte T : utilisation d'intervalles numériques.</strong><br>Sélectionnez la colonne contenant le temps entre deux événements consécutifs (par exemple, en jours) comme <strong>colonne des valeurs / axe Y</strong>. La colonne de l'axe X fournit les libellés des observations.<br><br><strong>Vous préférez utiliser les dates des événements ?</strong> Cliquez sur <strong>Paramètres du graphique</strong>, puis choisissez le mode utilisant les dates des événements.",
+
+  "chart.columnWarning.tDates":
+    "<strong>Carte T : utilisation des dates des événements.</strong><br>Sélectionnez les dates ou heures des événements dans la <strong>colonne des dates / axe X</strong>. SimpleSPC calcule automatiquement les intervalles ; la colonne des valeurs / axe Y est donc désactivée.<br><br><strong>Vous disposez déjà des intervalles calculés ?</strong> Cliquez sur <strong>Paramètres du graphique</strong>, puis choisissez le mode utilisant les intervalles numériques.",
+
+  "chart.columnWarning.g":
+    "<strong>Vérifiez les colonnes sélectionnées.</strong> Pour une carte G, la colonne des valeurs doit généralement représenter le nombre d'opportunités, de cas ou d'observations entre des événements rares. Vérifiez qu'il ne s'agit pas d'un taux ou d'un pourcentage.",
+
+  "chart.columnWarning.pareto":
+    "<strong>Choisissez comment regrouper les occurrences.</strong> Sélectionnez la catégorie à comparer. Si chaque ligne correspond à une occurrence, choisissez <strong>(compter chaque ligne comme 1)</strong> pour la colonne des fréquences. Si les données sont déjà regroupées, sélectionnez plutôt la colonne contenant les effectifs numériques. Les catégories de Pareto aident à orienter les investigations, mais ne doivent pas être considérées automatiquement comme les causes du problème.",
+
+  "helper.decision.general":
+    "Dans une démarche d'amélioration de la qualité des soins, les prochaines étapes sont généralement les suivantes :\n" +
+    "• si le processus semble stable, mais que ses performances sont insuffisantes, envisagez d'améliorer ou de repenser le système\n" +
+    "• si le graphique présente un signal, recherchez ce qui a changé dans le service, le parcours de soins, la demande, les effectifs, le codage ou le système de mesure\n" +
+    "• évitez de réagir à chaque point individuel comme s'il prouvait à lui seul une réussite ou un échec",
+
+  "helper.decision.paretoNext":
+    "\n\nUne prochaine étape pertinente consiste à étudier plus en détail les catégories les plus fréquentes, en s'appuyant sur les connaissances locales et, si nécessaire, sur une analyse plus détaillée des sous-catégories. Ne supposez pas que la catégorie elle-même représente la cause sous-jacente."
+
 
 
 

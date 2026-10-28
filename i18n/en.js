@@ -1669,7 +1669,49 @@ window.SimpleSPCi18n.registerLanguage("en", {
   " This is exactly 1, so the Laney adjustment does not change the width of the standard {standard} limits.",
 
 "helper.laney.sigma.technical":
-  "\n\nTechnical detail: SimpleSPC first allows for the amount of variation the standard chart expects at each point. It then looks at the point-to-point changes in those standardised values. Sigma Z summarises that extra or reduced variation into a single adjustment factor."
+  "\n\nTechnical detail: SimpleSPC first allows for the amount of variation the standard chart expects at each point. It then looks at the point-to-point changes in those standardised values. Sigma Z summarises that extra or reduced variation into a single adjustment factor.",
+
+  // COLUMN GUIDANCE AND NEXT STEPS
+
+  "chart.columnWarning.c":
+    "<strong>Check your selected columns.</strong> For a C chart, the value column should be a count of events/defects per time period. Do not use a denominator column here.",
+
+  "chart.columnWarning.p":
+    "<strong>Check your selected columns.</strong> For a P chart, the value column should be the numerator, e.g. number of cases/events, and the third column should be the denominator, e.g. total patients/episodes.",
+
+  "chart.columnWarning.pprime":
+    "<strong>Check your selected columns.</strong> For a P′ chart, the value column should be the numerator, e.g. number of cases/events, and the third column should be the denominator, e.g. total patients/episodes. P′ uses the same data structure as a P chart but adjusts the control limits using the Laney method.",
+
+  "chart.columnWarning.u":
+    "<strong>Check your selected columns.</strong> For a U chart, the value column should be the numerator, e.g. number of defects/events, and the third column should be the opportunities/denominator, e.g. bed days, attendances, or procedures.",
+
+  "chart.columnWarning.uprime":
+    "<strong>Check your selected columns.</strong> For a U′ chart, the value column should be the numerator, e.g. number of defects/events, and the third column should be the opportunities/denominator, e.g. bed days, attendances, procedures or inspections. U′ uses the same data as a U chart but adjusts the control limits using the Laney method.",
+
+  "chart.columnWarning.xbars":
+    "<strong>Check your selected columns.</strong> For an X̄–S chart, the value column should contain the individual measurements, and the third column should identify the subgroup, e.g. day, week, batch, or sample.",
+
+  "chart.columnWarning.tGaps":
+    "<strong>T chart: using numeric time gaps.</strong><br>Select the column containing the time between consecutive events (e.g. days) as the <strong>Value / Y-axis column</strong>. The X-axis column provides the observation labels.<br><br><strong>Want to use event dates instead?</strong> Click <strong>Chart setup</strong> above and select <strong>I have event dates</strong>.",
+
+  "chart.columnWarning.tDates":
+    "<strong>T chart: using event dates.</strong><br>Select the dates or times when events occurred in the <strong>Date / X-axis column</strong>. SimpleSPC calculates the intervals automatically, so the Value / Y-axis column is disabled.<br><br><strong>Already have the time gaps calculated?</strong> Click <strong>Chart setup</strong> above and select <strong>I already have the gaps</strong>.",
+
+  "chart.columnWarning.g":
+    "<strong>Check your selected columns.</strong> For a G chart, the value column should usually represent the number of opportunities, cases, or observations between rare events. Check this is not a rate or percentage.",
+
+  "chart.columnWarning.pareto":
+    "<strong>Choose how you want to group the occurrences.</strong> Select the category you want to compare. If every row is one occurrence, choose <strong>(count each row as 1)</strong> for the frequency column. If your data are already summarised, choose the numeric count column instead. Pareto categories help focus investigation but should not automatically be assumed to be causes.",
+
+  "helper.decision.general":
+    "From a healthcare improvement point of view, the next step is usually:\n" +
+    "• if the process looks stable but performance is not good enough, think about redesigning the system\n" +
+    "• if the chart shows a signal, investigate what changed in the service, pathway, demand, staffing, coding, or measurement\n" +
+    "• avoid reacting to individual points as if each one proves success or failure",
+
+  "helper.decision.paretoNext":
+    "\n\nA sensible next step is to investigate the leading categories in more detail, using local knowledge and, where useful, further stratification. Do not assume the category itself is the underlying cause."
+
 
 
 
