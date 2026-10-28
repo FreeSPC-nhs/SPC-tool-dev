@@ -1466,7 +1466,87 @@ window.SimpleSPCi18n.registerLanguage("en", {
   "helper.signal.sideAbove": "above",
   "helper.signal.sideBelow": "below",
   "helper.signal.directionIncreasing": "increasing",
-  "helper.signal.directionDecreasing": "decreasing"
+  "helper.signal.directionDecreasing": "decreasing",
+
+
+  //  DYNAMIC TARGET AND IMPROVEMENT ANSWERS
+
+  // Additional chart names
+  "helper.stability.chart.run": "run chart",
+  "helper.stability.chart.xmr": "XmR chart",
+  "helper.stability.chart.xbars": "X̄–S chart",
+  "helper.stability.chart.pareto": "Pareto chart",
+
+  // XmR: target not configured
+  "helper.target.xmr.none":
+    "There is no target currently set on this XmR chart. If you add one, SimpleSPC can help interpret performance against the target alongside process stability.",
+
+  // XmR: comparison of mean and target
+  "helper.target.xmr.meanFavourable":
+    "The current period mean ({mean}) is on the favourable side of the target ({target}).",
+  "helper.target.xmr.meanUnfavourable":
+    "The current period mean ({mean}) is not yet on the favourable side of the target ({target}).",
+
+  // XmR: provisional limits
+  "helper.target.xmr.provisional":
+    "The latest XmR period is still provisional, so it is too early to make a firm judgement about whether the process can reliably meet the target.",
+  "helper.target.xmr.count":
+    "There are currently {count} points in this period, and ",
+  "helper.target.xmr.minimum":
+    "{count}SimpleSPC uses at least {minimum} points before making a formal stability or capability interpretation.",
+  "helper.target.xmr.earlyFavourable":
+    "The early results are encouraging, but they do not yet show that this level of performance is predictable or sustainable.",
+  "helper.target.xmr.earlyUnfavourable":
+    "The early pattern may still be settling. More data will show whether the process level is genuinely different and whether further improvement is needed to reach the target reliably.",
+
+  // XmR: stable and special-cause periods
+  "helper.target.xmr.stable":
+    "The latest XmR period has enough data for interpretation and currently looks stable.",
+  "helper.target.xmr.capability":
+    "Based on the current stable process, SimpleSPC estimates that about {percentage}% of future results would meet the target, assuming the process continues to behave in the same way.",
+  "helper.target.xmr.stableNoCapability":
+    "Because the process appears stable, the target comparison is more meaningful: the main question is whether the current system is predictably good enough.",
+  "helper.target.xmr.unstable":
+    "The latest XmR period has enough data for interpretation, but it shows special-cause variation. That means target performance should be interpreted cautiously because the process is not yet behaving predictably.",
+  "helper.target.xmr.unstableAction":
+    "The priority is to understand what is changing in the system, demand, staffing, pathway, coding, or measurement before relying on a capability estimate.",
+
+  // Other charts: target assessment
+  "helper.target.general.none":
+    "There is no target currently set on this {chart}. If you add one, SimpleSPC can help you interpret the target alongside the pattern of variation.",
+  "helper.target.general.higher":
+    "higher values are treated as better",
+  "helper.target.general.lower":
+    "lower values are treated as better",
+  "helper.target.general.intro":
+    "The target is {target}, and {direction}.",
+  "helper.target.general.centreFavourable":
+    "The current centre line ({centre}) is on the favourable side of the target.",
+  "helper.target.general.centreUnfavourable":
+    "The current centre line ({centre}) is not yet on the favourable side of the target.",
+  "helper.target.general.stable":
+    "The latest period does not show a clear special-cause signal, so the comparison with the target is more meaningful. Remember that being stable does not automatically mean performance is good enough.",
+  "helper.target.general.unstable":
+    "The latest period shows possible special-cause variation, so target performance should be interpreted cautiously. The priority is to understand what may have changed before assuming the current level will continue.",
+  "helper.target.general.unknown":
+    "Interpret the target alongside the pattern of variation rather than judging individual points on their own.",
+
+  // Improvement: XmR
+  "helper.improvement.xmr.provisional":
+    "There are not yet enough data in the latest XmR period to make a firm judgement about stability or improvement. The early pattern may be encouraging, but more points are needed before calling it a sustained change.",
+  "helper.improvement.xmr.stable":
+    "The current XmR period does not show a clear special-cause signal, so the chart alone does not provide strong evidence of a new improvement. Real improvement is more convincing when there is a sustained change in the desired direction and the new pattern is maintained.",
+  "helper.improvement.xmr.unstable":
+    "The XmR chart shows evidence that the process may have changed. That is not automatically the same as improvement. Check whether the change is in the desired direction, whether it is sustained, and whether local knowledge supports a plausible improvement explanation. The chart can show evidence of change, but it cannot prove that an intervention caused it.",
+
+  // Improvement: other charts
+  "helper.improvement.general.stable":
+    "The current {chart} does not show a clear special-cause signal, so the chart alone does not provide strong evidence of a new improvement. Improvement is more convincing when there is a sustained change in the desired direction, not just one favourable point.",
+  "helper.improvement.general.unstable":
+    "The current {chart} shows evidence that the process may have changed. That could be improvement, deterioration, or another change in the system. To call it improvement, check that the change is in the desired direction, is sustained, and makes sense in the local context. The chart alone does not prove causation.",
+  "helper.improvement.general.noChart":
+    "Generate the currently selected chart first and I can help assess whether the pattern is consistent with real improvement."
+
 
 
 

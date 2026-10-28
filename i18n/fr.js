@@ -1470,7 +1470,88 @@ window.SimpleSPCi18n.registerLanguage("fr", {
   "helper.signal.sideAbove": "au-dessus de",
   "helper.signal.sideBelow": "au-dessous de",
   "helper.signal.directionIncreasing": "en augmentation",
-  "helper.signal.directionDecreasing": "en diminution"
+  "helper.signal.directionDecreasing": "en diminution",
+
+  // OBJECTIFS ET AMÉLIORATION : RÉPONSES DYNAMIQUES
+
+  // Noms complémentaires des cartes
+  "helper.stability.chart.run": "carte de suivi (Run)",
+  "helper.stability.chart.xmr": "carte XmR",
+  "helper.stability.chart.xbars": "carte X̄–S",
+  "helper.stability.chart.pareto": "diagramme de Pareto",
+
+  // XmR : absence d'objectif
+  "helper.target.xmr.none":
+    "Aucun objectif n'est actuellement défini pour cette carte XmR. Si vous en ajoutez un, SimpleSPC pourra vous aider à interpréter les performances par rapport à cet objectif, tout en tenant compte de la stabilité du processus.",
+
+  // XmR : moyenne et objectif
+  "helper.target.xmr.meanFavourable":
+    "La moyenne de la période actuelle ({mean}) se situe du côté favorable de l'objectif ({target}).",
+  "helper.target.xmr.meanUnfavourable":
+    "La moyenne de la période actuelle ({mean}) ne se situe pas encore du côté favorable de l'objectif ({target}).",
+
+  // XmR : limites provisoires
+  "helper.target.xmr.provisional":
+    "Les limites de la période XmR la plus récente sont encore provisoires. Il est donc trop tôt pour déterminer avec confiance si le processus peut atteindre régulièrement l'objectif.",
+  "helper.target.xmr.count":
+    "Cette période compte actuellement {count} points et ",
+  "helper.target.xmr.minimum":
+    "{count}SimpleSPC exige au moins {minimum} points avant de procéder à une interprétation formelle de la stabilité ou de la capabilité.",
+  "helper.target.xmr.earlyFavourable":
+    "Les premiers résultats sont encourageants, mais ils ne démontrent pas encore que ce niveau de performance est prévisible ou durable.",
+  "helper.target.xmr.earlyUnfavourable":
+    "Le comportement initial peut encore évoluer. Des données supplémentaires permettront de déterminer si le niveau du processus a réellement changé et si d'autres améliorations sont nécessaires pour atteindre durablement l'objectif.",
+
+  // XmR : stabilité et causes spéciales
+  "helper.target.xmr.stable":
+    "La période XmR la plus récente dispose de suffisamment de données pour être interprétée et semble actuellement stable.",
+  "helper.target.xmr.capability":
+    "Sur la base du processus stable actuel, SimpleSPC estime qu'environ {percentage} % des résultats futurs atteindraient l'objectif, à condition que le processus continue à se comporter de la même manière.",
+  "helper.target.xmr.stableNoCapability":
+    "Comme le processus semble stable, la comparaison avec l'objectif est plus pertinente. La question essentielle est de savoir si le système actuel peut atteindre de manière prévisible un niveau de performance satisfaisant.",
+  "helper.target.xmr.unstable":
+    "La période XmR la plus récente dispose de suffisamment de données pour être interprétée, mais elle présente une variation de cause spéciale. Les résultats par rapport à l'objectif doivent donc être interprétés avec prudence, car le processus ne se comporte pas encore de façon prévisible.",
+  "helper.target.xmr.unstableAction":
+    "La priorité est de comprendre ce qui change dans le système, la demande, les effectifs, le parcours de soins, le codage ou les mesures avant de s'appuyer sur une estimation de capabilité.",
+
+  // Autres cartes : interprétation de l'objectif
+  "helper.target.general.none":
+    "Aucun objectif n'est actuellement défini pour le graphique sélectionné ({chart}). Si vous en ajoutez un, SimpleSPC pourra vous aider à l'interpréter en tenant compte de la variation observée.",
+  "helper.target.general.higher":
+    "les valeurs plus élevées sont considérées comme préférables",
+  "helper.target.general.lower":
+    "les valeurs plus faibles sont considérées comme préférables",
+  "helper.target.general.intro":
+    "L'objectif est fixé à {target} et {direction}.",
+  "helper.target.general.centreFavourable":
+    "La ligne centrale actuelle ({centre}) se situe du côté favorable de l'objectif.",
+  "helper.target.general.centreUnfavourable":
+    "La ligne centrale actuelle ({centre}) ne se situe pas encore du côté favorable de l'objectif.",
+  "helper.target.general.stable":
+    "La période la plus récente ne présente aucun signal clair de cause spéciale. La comparaison avec l'objectif est donc plus pertinente. Rappelez-vous qu'un processus stable n'offre pas nécessairement des performances satisfaisantes.",
+  "helper.target.general.unstable":
+    "La période la plus récente présente des signes possibles de variation de cause spéciale. Les performances par rapport à l'objectif doivent donc être interprétées avec prudence. Il faut d'abord comprendre ce qui a pu changer avant de supposer que le niveau actuel se maintiendra.",
+  "helper.target.general.unknown":
+    "Interprétez l'objectif en tenant compte du comportement global du processus, plutôt que de juger chaque point isolément.",
+
+  // Amélioration : XmR
+  "helper.improvement.xmr.provisional":
+    "Les données de la période XmR la plus récente sont encore insuffisantes pour conclure à la stabilité ou à une amélioration. Le comportement initial peut être encourageant, mais davantage de points sont nécessaires avant de parler d'un changement durable.",
+  "helper.improvement.xmr.stable":
+    "La période XmR actuelle ne présente aucun signal clair de cause spéciale. Le graphique seul ne fournit donc pas de preuve solide d'une nouvelle amélioration. Une amélioration est plus convaincante lorsqu'un changement durable se produit dans la direction souhaitée et que le nouveau comportement se maintient.",
+  "helper.improvement.xmr.unstable":
+    "La carte XmR présente des signes suggérant que le processus a pu changer. Cela ne signifie pas automatiquement qu'il s'agit d'une amélioration. Vérifiez si le changement va dans la direction souhaitée, s'il est durable et si le contexte local fournit une explication plausible. Le graphique peut montrer un changement, mais ne prouve pas qu'une intervention en est la cause.",
+
+  // Amélioration : autres cartes
+  
+  "helper.improvement.general.stable":
+    "Sur le graphique actuel ({chart}), aucun signal clair de cause spéciale n'est détecté. Le graphique seul ne fournit donc pas de preuve solide d'une nouvelle amélioration. Une amélioration est plus convaincante lorsqu'un changement durable se produit dans la direction souhaitée, plutôt qu'un seul point favorable.",
+  "helper.improvement.general.unstable":
+    "Le graphique actuel ({chart}) présente des signes suggérant que le processus a pu changer. Il peut s'agir d'une amélioration, d'une détérioration ou d'un autre changement du système. Pour parler d'amélioration, vérifiez que le changement va dans la direction souhaitée, qu'il est durable et qu'il est cohérent avec le contexte local. Le graphique seul ne prouve pas la causalité."
+  "helper.improvement.general.noChart":
+    "Générez d'abord la carte actuellement sélectionnée pour que je puisse vous aider à déterminer si le comportement observé correspond à une amélioration réelle."
+
+
 
 
 
