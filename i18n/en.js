@@ -1119,7 +1119,60 @@ window.SimpleSPCi18n.registerLanguage("en", {
 "help.11.title": "11. About the tool",
 "help.11.authorBefore": "This tool was developed by Jem Ramazanoglu –",
 "help.11.authorAfter": "as a free resource to support Quality Improvement in the NHS.",
-"help.11.feedback": "Feedback and suggestions are very welcome."
+"help.11.feedback": "Feedback and suggestions are very welcome.",
+
+// OFFLINE SPC HELPER INTERFACE
+"helper.title": "SPC helper",
+"helper.close": "Close SPC helper",
+"helper.closeTitle": "Close",
+"helper.hideQuestions": "Hide suggested questions",
+"helper.showQuestions": "Show suggested questions",
+"helper.generalHeading": "General SPC questions",
+"helper.chartHeading": "My chart questions",
+"helper.generalAria": "General SPC suggested questions",
+"helper.chartAria": "My chart suggested questions",
+"helper.askPlaceholder": "Ask a question…",
+"helper.askButton": "Ask",
+
+"helper.introGeneralTitle": "SPC helper",
+"helper.introGeneral": "Ask a general question before you load any data, or use a suggested prompt below.",
+"helper.introChartTitle": "Chart helper",
+"helper.introChart": "Use the My chart questions for a tailored interpretation.",
+"helper.emptyQuestion": "Type a question (or click a suggestion) to get started.",
+
+// GENERAL SUGGESTED QUESTIONS
+"helper.q.whatSpc": "What is SPC?",
+"helper.q.commonSpecial": "What is the difference between common and special cause variation?",
+"helper.q.chooseChart": "How do I choose the right chart?",
+"helper.q.run": "What is a run chart?",
+"helper.q.xmr": "What is an XmR chart?",
+"helper.q.stable": "What does stable mean?",
+"helper.q.baselineSplit": "What is the difference between a baseline and a split?",
+"helper.q.limits": "How do control limits work?",
+"helper.q.signalAction": "What should I do if I see a signal?",
+"helper.q.stablePoor": "What if my process is stable but performance is poor?",
+"helper.q.rulesUnavailable": "Why are some SPC rules unavailable?",
+"helper.q.rareRules": "Why are T/G run and trend rules off by default?",
+"helper.q.zoneRules": "Why can’t I use zone rules on P, P′, U, U′, or C charts?",
+
+// CHART-SPECIFIC SUGGESTED QUESTIONS
+"helper.q.myChart": "What is my chart telling me?",
+"helper.q.changed": "Has anything changed?",
+"helper.q.processStable": "Is my process stable?",
+"helper.q.improvement": "Is this likely to be real improvement?",
+"helper.q.target": "What does this mean for our target?",
+"helper.q.next": "What should I do next?",
+"helper.q.addSplit": "Should I add a split here?",
+"helper.q.xmrLimits": "Why are my XmR limits different?",
+"helper.q.pPrime": "Why am I using a P′ chart?",
+"helper.q.uPrime": "Why am I using a U′ chart?",
+"helper.q.sigmaZ": "What does Sigma Z mean?",
+"helper.q.exclude": "When should I exclude a point from limit calculations?",
+
+// PARETO SUGGESTED QUESTIONS
+"helper.q.pareto80": "What does the 80% line mean?",
+"helper.q.paretoCauses": "Are the biggest categories the causes?"
+
 
 
 

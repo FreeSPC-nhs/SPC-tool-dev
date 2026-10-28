@@ -1122,7 +1122,60 @@ window.SimpleSPCi18n.registerLanguage("fr", {
 "help.11.title": "11. À propos de l'outil",
 "help.11.authorBefore": "Cet outil a été développé par Jem Ramazanoglu –",
 "help.11.authorAfter": "comme ressource gratuite pour soutenir l'amélioration de la qualité au sein du NHS.",
-"help.11.feedback": "Vos commentaires et suggestions sont les bienvenus."
+"help.11.feedback": "Vos commentaires et suggestions sont les bienvenus.",
+
+//INTERFACE DE L'ASSISTANT SPC
+"helper.title": "Assistant SPC",
+"helper.close": "Fermer l'assistant SPC",
+"helper.closeTitle": "Fermer",
+"helper.hideQuestions": "Masquer les questions suggérées",
+"helper.showQuestions": "Afficher les questions suggérées",
+"helper.generalHeading": "Questions générales sur le SPC",
+"helper.chartHeading": "Questions sur mon graphique",
+"helper.generalAria": "Questions générales suggérées sur le SPC",
+"helper.chartAria": "Questions suggérées sur mon graphique",
+"helper.askPlaceholder": "Posez une question…",
+"helper.askButton": "Demander",
+
+"helper.introGeneralTitle": "Assistant SPC",
+"helper.introGeneral": "Posez une question générale avant de charger des données ou choisissez l'une des questions suggérées ci-dessous.",
+"helper.introChartTitle": "Assistant pour le graphique",
+"helper.introChart": "Utilisez les questions sur votre graphique pour obtenir une interprétation adaptée à vos données.",
+"helper.emptyQuestion": "Saisissez une question ou choisissez une suggestion pour commencer.",
+
+// QUESTIONS GÉNÉRALES SUGGÉRÉES
+"helper.q.whatSpc": "Qu'est-ce que le SPC ?",
+"helper.q.commonSpecial": "Quelle est la différence entre une variation de cause commune et une variation de cause spéciale ?",
+"helper.q.chooseChart": "Comment choisir le bon type de carte ?",
+"helper.q.run": "Qu'est-ce qu'une carte de suivi (Run) ?",
+"helper.q.xmr": "Qu'est-ce qu'une carte XmR ?",
+"helper.q.stable": "Que signifie « stable » ?",
+"helper.q.baselineSplit": "Quelle est la différence entre une période de référence et un changement de phase ?",
+"helper.q.limits": "Comment fonctionnent les limites de contrôle ?",
+"helper.q.signalAction": "Que dois-je faire si je détecte un signal ?",
+"helper.q.stablePoor": "Que faire si mon processus est stable, mais que ses performances sont insuffisantes ?",
+"helper.q.rulesUnavailable": "Pourquoi certaines règles SPC ne sont-elles pas disponibles ?",
+"helper.q.rareRules": "Pourquoi les règles de séquence et de tendance sont-elles désactivées par défaut pour les cartes T et G ?",
+"helper.q.zoneRules": "Pourquoi les règles de zone ne sont-elles pas disponibles pour les cartes P, P′, U, U′ et C ?",
+
+// QUESTIONS SUR LE GRAPHIQUE
+"helper.q.myChart": "Que m'indique mon graphique ?",
+"helper.q.changed": "Quelque chose a-t-il changé ?",
+"helper.q.processStable": "Mon processus est-il stable ?",
+"helper.q.improvement": "S'agit-il probablement d'une amélioration réelle ?",
+"helper.q.target": "Que signifient ces résultats par rapport à notre objectif ?",
+"helper.q.next": "Que devrais-je faire ensuite ?",
+"helper.q.addSplit": "Dois-je ajouter un changement de phase ici ?",
+"helper.q.xmrLimits": "Pourquoi mes limites XmR sont-elles différentes ?",
+"helper.q.pPrime": "Pourquoi utilise-t-on une carte P′ ?",
+"helper.q.uPrime": "Pourquoi utilise-t-on une carte U′ ?",
+"helper.q.sigmaZ": "Que signifie Sigma Z ?",
+"helper.q.exclude": "Quand faut-il exclure un point du calcul des limites ?",
+
+// QUESTIONS SUR LE PARETO
+"helper.q.pareto80": "Que signifie la ligne des 80 % ?",
+"helper.q.paretoCauses": "Les catégories les plus fréquentes sont-elles les causes du problème ?"
+
 
 
 
