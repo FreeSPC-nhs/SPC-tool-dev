@@ -1271,93 +1271,132 @@ function buildSigmaZExplanation(ctx) {
 }
 
 
+
 function buildRunChartAnswer(ctx) {
   const a = ctx.run;
+  const t = helperDynamicText;
 
   if (!a) {
-    return "Generate a Run chart first so I can interpret it.";
+    return t(
+      "helper.stability.run.noChart",
+      "Generate a Run chart first so I can interpret it."
+    );
   }
 
   const splitCount =
     Array.isArray(a.splits) ? a.splits.length : 0;
 
-  // With splits, rules are assessed separately within
-  // each period. No within-period signal does not mean
-  // that the overall process level has not changed.
+  // Preserve existing split-period interpretation.
   if (splitCount > 0) {
     const periodCount = splitCount + 1;
 
-    let answer =
-      `This Run chart has been divided into ${periodCount} ` +
-      "periods using splits. Each period has its own median, " +
-      "and SimpleSPC checks for shifts and trends separately " +
-      "within each period.\n\n";
+    let answer = t(
+      "helper.stability.run.splitIntro",
+      "This Run chart has been divided into {count} periods using splits. Each period has its own median, and SimpleSPC checks for shifts and trends separately within each period.\n\n",
+      { count: periodCount }
+    );
 
+    // No within-period signal does not prove that
+    // the process stayed unchanged across splits.
     if (a.isStable === true) {
-      answer +=
-        "No shift or trend has been detected within the " +
-        "individual periods using the current rule settings. " +
-        "However, this does not mean that the overall process " +
-        "has remained unchanged.\n\n";
+      answer += t(
+        "helper.stability.run.splitStable",
+        "No shift or trend has been detected within the individual periods using the current rule settings. However, this does not mean that the overall process has remained unchanged.\n\n"
+      );
     } else {
-      answer +=
-        "One or more periods contain a shift or trend signal " +
-        "that may warrant investigation.\n\n";
+      answer += t(
+        "helper.stability.run.splitSignals",
+        "One or more periods contain a shift or trend signal that may warrant investigation.\n\n"
+      );
     }
 
-    answer +=
-      "Compare the medians reported for the different periods. " +
-      "A difference in their levels may indicate an important " +
-      "change in performance, even if there are no further " +
-      "signals within each period.\n\n" +
-      "A split is a boundary chosen for analysis; it does not " +
-      "by itself prove a statistically significant change. " +
-      "Consider why the split was introduced, what happened " +
-      "in the process around that time, and whether the new " +
-      "level is sustained.";
+    answer += t(
+      "helper.stability.run.splitAdvice",
+      "Compare the medians reported for the different periods. A difference in their levels may indicate an important change in performance, even if there are no further signals within each period.\n\nA split is a boundary chosen for analysis; it does not by itself prove a statistically significant change. Consider why the split was introduced, what happened in the process around that time, and whether the new level is sustained."
+    );
 
     return answer;
   }
 
-  // Existing behaviour for an unsplit Run chart.
+  // Preserve existing unsplit Run-chart interpretation.
   if (a.isStable === true) {
-    return (
-      "Looking at the current Run chart, no shift or trend " +
-      "has been detected using the selected run-chart rules."
+    return t(
+      "helper.stability.run.stable",
+      "Looking at the current Run chart, no shift or trend has been detected using the selected run-chart rules."
     );
   }
 
-  return (
-    "The current Run chart shows one or more shift or trend " +
-    "signals, suggesting that the pattern may have changed. " +
-    "Investigate what happened in the process around that time."
+  return t(
+    "helper.stability.run.signals",
+    "The current Run chart shows one or more shift or trend signals, suggesting that the pattern may have changed. Investigate what happened in the process around that time."
   );
 }
 
 
-
-
-  function buildLatestPeriodSummary(ctx) {
+  
+function buildLatestPeriodSummary(ctx) {
   const chartType = ctx.chartType;
+  const t = helperDynamicText;
 
-  if (
-    chartType === "pareto"
-  ) {
+  // Translate the chart name for shared attribute
+  // and rare-event explanations.
+  const chartName = t(
+    `helper.stability.chart.${chartType}`,
+    titleCaseChartType(chartType).toLowerCase()
+  );
+
+  // Translate existing signal descriptions for display.
+  // Do not modify the underlying analysis or signals.
+  function displaySignals(signals) {
+    const items = signalTextList(signals);
+
+    if (!items.length) {
+      return t(
+        "helper.stability.signalFallback",
+        "one or more SPC signals"
+      );
+    }
+
+    return helperXmRSignalList(signals);
+  }
+
+  // PARETO: categorisation, not stability assessment.
+  if (chartType === "pareto") {
     return (
       buildParetoAnswer(ctx) +
-      "\n\nA Pareto chart does not assess process stability because the categories are not plotted in time order."
+      "\n\n" +
+      t(
+        "helper.stability.pareto",
+        "A Pareto chart does not assess process stability because the categories are not plotted in time order."
+      )
     );
   }
 
+  // XmR: retain provisional, stable and special-cause
+  // outcomes exactly as before.
   if (chartType === "xmr" && ctx.xmr) {
     const a = ctx.xmr;
+
     const start = (a.startIndex ?? 0) + 1;
     const end = (a.endIndex ?? 0) + 1;
 
     const periodText =
       (a.periodCount && a.periodCount > 1)
-        ? `Looking at the latest period (Period ${a.periodIndex} of ${a.periodCount}, points ${start}–${end})`
-        : `Looking at the chart (points ${start}–${end})`;
+        ? t(
+            "helper.stability.xmr.latest",
+            "Looking at the latest period (Period {period} of {total}, points {start}–{end})",
+            {
+              period: a.periodIndex,
+              total: a.periodCount,
+              start,
+              end
+            }
+          )
+        : t(
+            "helper.stability.xmr.single",
+            "Looking at the chart (points {start}–{end})",
+            { start, end }
+          );
 
     if (!isXmRPeriodAssessable(a)) {
       const count =
@@ -1376,40 +1415,58 @@ function buildRunChartAnswer(ctx) {
         !!a.hasTrend ||
         !!a.hasAstronomical;
 
-      let out =
-        `${periodText}, there are not yet enough data to make a firm judgement about stability. ` +
-        `${count !== null ? `There are currently ${count} points in this period, and ` : ""}` +
-        `SimpleSPC uses at least ${minimum} points before making a formal XmR stability interpretation.`;
+      const countText = count !== null
+        ? t(
+            "helper.stability.xmr.count",
+            "There are currently {count} points in this period, and ",
+            { count }
+          )
+        : "";
+
+      let out = t(
+        "helper.stability.xmr.provisional",
+        "{scope}, there are not yet enough data to make a firm judgement about stability. {count}SimpleSPC uses at least {minimum} points before making a formal XmR stability interpretation.",
+        {
+          scope: periodText,
+          count: countText,
+          minimum
+        }
+      );
 
       if (provisionalHasWarning) {
-        out +=
-          "\n\nThere are already some features in this short period that are worth watching, so I would not yet describe the process as stable. More data will help show whether these are temporary fluctuations or part of a real pattern.";
+        out += t(
+          "helper.stability.xmr.warning",
+          "\n\nThere are already some features in this short period that are worth watching, so I would not yet describe the process as stable. More data will help show whether these are temporary fluctuations or part of a real pattern."
+        );
       } else {
-        out +=
-          "\n\nSo far, the pattern looks fairly consistent and there are no obvious warning signs in this short period. That is encouraging, but it is still provisional rather than proof of stability.";
+        out += t(
+          "helper.stability.xmr.calm",
+          "\n\nSo far, the pattern looks fairly consistent and there are no obvious warning signs in this short period. That is encouraging, but it is still provisional rather than proof of stability."
+        );
       }
 
       return out;
     }
 
     if (a.isStable === true) {
-      return (
-        `${periodText}, I cannot see a clear special-cause signal using the current rule settings. ` +
-        "This suggests the process is behaving broadly consistently around its current level."
+      return t(
+        "helper.stability.xmr.stable",
+        "{scope}, I cannot see a clear special-cause signal using the current rule settings. This suggests the process is behaving broadly consistently around its current level.",
+        { scope: periodText }
       );
     }
 
-    const sigs =
-      joinNice(
-        signalTextList(a.signals)
-      );
-
-    return (
-      `${periodText}, this XmR chart shows possible special-cause variation — specifically ` +
-      `${sigs || "one or more SPC signals"}.`
+    return t(
+      "helper.stability.xmr.signals",
+      "{scope}, this XmR chart shows possible special-cause variation — specifically {signals}.",
+      {
+        scope: periodText,
+        signals: displaySignals(a.signals)
+      }
     );
   }
 
+  // X̄–S: preserve all four existing combinations.
   if (chartType === "xbars" && ctx.xbars) {
     const xStable =
       !!ctx.xbars.xbar?.isStable;
@@ -1418,81 +1475,83 @@ function buildRunChartAnswer(ctx) {
       !!ctx.xbars.s?.isStable;
 
     if (xStable && sStable) {
-      return (
-        "Looking at the latest X̄–S period, both the subgroup averages and the within-subgroup variation look stable. " +
-        "I cannot see a clear special-cause signal in either part of the chart."
+      return t(
+        "helper.stability.xbars.bothStable",
+        "Looking at the latest X̄–S period, both the subgroup averages and the within-subgroup variation look stable. I cannot see a clear special-cause signal in either part of the chart."
       );
     }
 
     if (!xStable && sStable) {
-      return (
-        "Looking at the latest X̄–S period, the subgroup averages show possible change, " +
-        "but the within-subgroup variation looks stable."
+      return t(
+        "helper.stability.xbars.xChanged",
+        "Looking at the latest X̄–S period, the subgroup averages show possible change, but the within-subgroup variation looks stable."
       );
     }
 
     if (xStable && !sStable) {
-      return (
-        "Looking at the latest X̄–S period, the subgroup averages look stable, " +
-        "but the within-subgroup variation shows possible change."
+      return t(
+        "helper.stability.xbars.sChanged",
+        "Looking at the latest X̄–S period, the subgroup averages look stable, but the within-subgroup variation shows possible change."
       );
     }
 
-    return (
+    return t(
+      "helper.stability.xbars.bothChanged",
       "Looking at the latest X̄–S period, both the subgroup averages and the within-subgroup variation show possible change."
     );
   }
 
+  // C, P, P′, U and U′: preserve the original verdict.
   if (ctx.attribute) {
-    const sigs =
-      joinNice(
-        signalTextList(
-          ctx.attribute.signals
-        )
-      );
-
     if (ctx.attribute.isStable === true) {
-      return (
-        `Looking at the latest ${titleCaseChartType(chartType).toLowerCase()} period, ` +
-        "I cannot see a clear special-cause signal using the current rule settings."
+      return t(
+        "helper.stability.attribute.stable",
+        "Looking at the latest {chart} period, I cannot see a clear special-cause signal using the current rule settings.",
+        { chart: chartName }
       );
     }
 
-    return (
-      `Looking at the latest ${titleCaseChartType(chartType).toLowerCase()} period, ` +
-      `there are signs of possible special-cause variation — specifically ${sigs || "one or more SPC signals"}.`
+    return t(
+      "helper.stability.attribute.signals",
+      "Looking at the latest {chart} period, there are signs of possible special-cause variation — specifically {signals}.",
+      {
+        chart: chartName,
+        signals: displaySignals(ctx.attribute.signals)
+      }
     );
   }
 
+  // T and G: use the existing rare-event rule verdict.
   if (ctx.rare) {
-    const sigs =
-      joinNice(
-        signalTextList(
-          ctx.rare.signals
-        )
-      );
-
     if (ctx.rare.isStable === true) {
-      return (
-        `Looking at the latest ${titleCaseChartType(chartType).toLowerCase()} period, ` +
-        "I cannot see a clear special-cause signal using the current rare-event rule settings."
+      return t(
+        "helper.stability.rare.stable",
+        "Looking at the latest {chart} period, I cannot see a clear special-cause signal using the current rare-event rule settings.",
+        { chart: chartName }
       );
     }
 
-    return (
-      `Looking at the latest ${titleCaseChartType(chartType).toLowerCase()} period, ` +
-      `there are signs of possible special-cause variation — specifically ${sigs || "one or more SPC signals"}.`
+    return t(
+      "helper.stability.rare.signals",
+      "Looking at the latest {chart} period, there are signs of possible special-cause variation — specifically {signals}.",
+      {
+        chart: chartName,
+        signals: displaySignals(ctx.rare.signals)
+      }
     );
   }
 
-    if (ctx.run) {
+  // Run charts share their answer with the change question.
+  if (ctx.run) {
     return buildRunChartAnswer(ctx);
   }
 
-  return (
+  return t(
+    "helper.stability.noChart",
     "Generate the currently selected chart first and I can give you a chart-specific interpretation."
   );
 }
+
 
   function buildTargetAnswer(ctx) {
   const chartType = ctx.chartType;
