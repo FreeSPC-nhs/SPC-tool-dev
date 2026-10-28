@@ -172,36 +172,60 @@
   };
 }
 
+
 function describeRulesForCurrentChart(chartType) {
+  const t = helperDynamicText;
+
+  // Use the same chart-family policy as before.
+  // Translate only the explanation.
+
   switch (chartType) {
     case "p":
     case "pprime":
     case "u":
     case "uprime":
     case "c":
-      return "For this chart, SimpleSPC uses beyond-limit signals and the run rule. Zone rules are blocked because they may create misleading alerts on attribute charts.";
+      return t(
+        "helper.rules.attribute",
+        "For this chart, SimpleSPC uses beyond-limit signals and the run rule. Zone rules are blocked because they may create misleading alerts on attribute charts."
+      );
 
     case "t":
     case "g":
-      return "For this chart, beyond-limit signals are used by default. Run and trend rules are advanced options only, because rare-event charts can naturally look irregular.";
+      return t(
+        "helper.rules.rare",
+        "For this chart, beyond-limit signals are used by default. Run and trend rules are advanced options only, because rare-event charts can naturally look irregular."
+      );
 
     case "xmr":
-      return "For this XmR chart, beyond-limit signals and the run rule are used by default. Trend and zone-style rules are advanced options because adding more rules can increase false alerts.";
+      return t(
+        "helper.rules.xmr",
+        "For this XmR chart, beyond-limit signals and the run rule are used by default. Trend and zone-style rules are advanced options because adding more rules can increase false alerts."
+      );
 
     case "xbars":
-      return "For this X̄–S chart, beyond-limit signals and the run rule are used by default. Trend and zone rules are available as advanced options.";
+      return t(
+        "helper.rules.xbars",
+        "For this X̄–S chart, beyond-limit signals and the run rule are used by default. Trend and zone rules are available as advanced options."
+      );
 
     case "run":
-      return "For this run chart, SimpleSPC uses run-chart rules such as shifts and, where enabled, trends. Control-limit rules do not apply to run charts.";
+      return t(
+        "helper.rules.run",
+        "For this run chart, SimpleSPC uses run-chart rules such as shifts and, where enabled, trends. Control-limit rules do not apply to run charts."
+      );
 
     case "pareto":
-  return (
-    "SPC signal rules are not used on a Pareto chart. " +
-    "A Pareto chart ranks categories rather than showing process behaviour over time."
-  );
+      return t(
+        "helper.rules.pareto",
+        "SPC signal rules are not used on a Pareto chart. A Pareto chart ranks categories rather than showing process behaviour over time."
+      );
 
     default:
-      return "SimpleSPC uses a conservative, chart-aware rule set. Not every rule is available for every chart type.";
+      return t(
+        "helper.rules.default",
+        "SimpleSPC uses a conservative, chart-aware rule set. Not every rule is available for every chart type."
+      );
   }
 }
 
@@ -2271,13 +2295,15 @@ return buildLatestPeriodSummary(
 );
 }
 
+
 function buildChangeAnswer(ctx) {
   const chartType = ctx.chartType;
+  const t = helperDynamicText;
 
-  
+  // Pareto: preserve the translation from Batch 34.
   if (chartType === "pareto") {
     return (
-      helperDynamicText(
+      t(
         "helper.pareto.changeIntro",
         "A Pareto chart cannot tell whether something has changed over time because it deliberately removes the time order and ranks categories by frequency.\n\n"
       ) +
@@ -2285,11 +2311,13 @@ function buildChangeAnswer(ctx) {
     );
   }
 
-
+  // XmR: preserve the detailed Batch 29 interpretation,
+  // including provisional limits and multiple periods.
   if (chartType === "xmr" && ctx.xmr) {
     return buildXmRChangeAnswer(ctx);
   }
 
+  // X-bar and S: retain the four original combinations.
   if (chartType === "xbars" && ctx.xbars) {
     const xStable =
       !!ctx.xbars.xbar?.isStable;
@@ -2298,61 +2326,97 @@ function buildChangeAnswer(ctx) {
       !!ctx.xbars.s?.isStable;
 
     if (xStable && sStable) {
-      return (
-        "I cannot see clear evidence that the process has changed in the latest X̄–S period. " +
-        "Neither the subgroup averages nor the within-subgroup variation shows a special-cause signal."
+      return t(
+        "helper.change.xbars.bothStable",
+        "I cannot see clear evidence that the process has changed in the latest X̄–S period. Neither the subgroup averages nor the within-subgroup variation shows a special-cause signal."
       );
     }
 
     if (!xStable && sStable) {
-      return (
+      return t(
+        "helper.change.xbars.xOnly",
         "There are signs that the process level may have changed: the X̄ chart shows a signal, while the S chart remains stable."
       );
     }
 
     if (xStable && !sStable) {
-      return (
+      return t(
+        "helper.change.xbars.sOnly",
         "There are signs that the process variation may have changed: the S chart shows a signal, while the X̄ chart remains stable."
       );
     }
 
-    return (
+    return t(
+      "helper.change.xbars.bothSignals",
       "There are signs that the process may have changed: both the X̄ and S charts show special-cause signals."
     );
   }
 
+  // Attribute and rare-event charts:
+  // retain the original analysis and stable/unstable test.
   const a =
     ctx.attribute ||
     ctx.rare;
 
   if (a) {
-    const sigs =
-      joinNice(
-        signalTextList(a.signals)
-      );
+    const isRare = !!ctx.rare;
+
+    const chartName = t(
+      `helper.stability.chart.${chartType}`,
+      titleCaseChartType(chartType).toLowerCase()
+    );
+
+    // Batch 29 and the Batch 30 corrections already
+    // translate known signal descriptions.
+    // Preserve original flags and signal arrays.
+    const existingSignals =
+      signalTextList(a.signals).filter(Boolean);
+
+    const sigs = existingSignals.length
+      ? helperXmRSignalList(a.signals)
+      : t(
+          "helper.stability.signalFallback",
+          "one or more SPC signals"
+        );
 
     if (a.isStable === true) {
-      return (
-        `I cannot see clear evidence that the process has changed in the latest ${titleCaseChartType(chartType).toLowerCase()} period. ` +
-        "No special-cause signal is detected using the current rule settings."
+      return t(
+        isRare
+          ? "helper.change.rare.stable"
+          : "helper.change.attribute.stable",
+        "I cannot see clear evidence that the process has changed in the latest {chart} period. No special-cause signal is detected using the current rule settings.",
+        { chart: chartName }
       );
     }
 
-    return (
-      `There are signs that the process may have changed in the latest ${titleCaseChartType(chartType).toLowerCase()} period — specifically ` +
-      `${sigs || "one or more SPC signals"}. ` +
+    const assessment = t(
+      isRare
+        ? "helper.change.rare.signals"
+        : "helper.change.attribute.signals",
+      "There are signs that the process may have changed in the latest {chart} period — specifically {signals}.",
+      {
+        chart: chartName,
+        signals: sigs
+      }
+    );
+
+    return assessment + " " + t(
+      "helper.change.investigate",
       "That is a prompt to investigate what changed around that time."
     );
   }
 
-    if (ctx.run) {
+  // Run chart: reuse the already translated answer.
+  if (ctx.run) {
     return buildRunChartAnswer(ctx);
   }
 
-  return (
+  return t(
+    "helper.change.noChart",
     "Generate the currently selected chart first and I can look for evidence of change."
   );
 }
+
 
 
 function buildImprovementAnswer(ctx) {
