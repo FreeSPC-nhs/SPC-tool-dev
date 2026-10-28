@@ -1187,150 +1187,228 @@ function buildXmRChangeAnswer(ctx) {
 }
 
 
+
+/*
+ * Batch 33 — Laney P′, U′ and Sigma Z explanations.
+ *
+ * Preserve the original sigmaZ values and the existing
+ * > 1, < 1 and === 1 interpretation branches.
+ * Only the explanatory text is translated.
+ */
+
 function buildPPrimeExplanation(ctx) {
   const a = ctx.attribute;
+  const t = helperDynamicText;
 
   if (!a || ctx.chartType !== "pprime") {
-    return (
+    return t(
+      "helper.laney.pprime.noChart",
       "A P′ chart is a Laney-adjusted version of a P chart. " +
       "It is used for proportion data when the amount of variation is noticeably different from what a standard P chart expects."
     );
   }
 
+  // Use exactly the same calculated Sigma Z value.
   const sigmaZ =
     a.stats && finiteNumber(a.stats.sigmaZ)
       ? a.stats.sigmaZ
       : null;
 
-  let out =
+  let out = t(
+    "helper.laney.pprime.intro",
     "This P′ chart uses the same numerator, denominator, observed proportions and centre line as a standard P chart. " +
-    "The difference is that it adjusts the width of the control limits so they better match the amount of variation actually seen in the data.";
+    "The difference is that it adjusts the width of the control limits so they better match the amount of variation actually seen in the data."
+  );
 
   if (sigmaZ != null) {
     if (sigmaZ > 1) {
-      out +=
+      out += t(
+        "helper.laney.pprime.more",
         "\n\nYour data vary more than a standard P chart expects, so P′ uses wider control limits. " +
-        "This helps avoid treating ordinary variation as a possible process change.";
+        "This helps avoid treating ordinary variation as a possible process change."
+      );
+
     } else if (sigmaZ < 1) {
-      out +=
+      out += t(
+        "helper.laney.pprime.less",
         "\n\nYour data vary less than a standard P chart expects, so P′ uses narrower control limits. " +
-        "This can make genuinely unusual variation easier to detect.";
+        "This can make genuinely unusual variation easier to detect."
+      );
+
     } else {
-      out +=
-        "\n\nThe amount of variation is very close to what a standard P chart expects, so the P′ adjustment is very small.";
+      out += t(
+        "helper.laney.pprime.equal",
+        "\n\nThe amount of variation is very close to what a standard P chart expects, so the P′ adjustment is very small."
+      );
     }
 
-    out +=
-      `\n\nThe Sigma Z adjustment factor for this chart is ${sigmaZ.toFixed(3)}. ` +
-      "A value above 1 widens the standard P-chart limits; a value below 1 narrows them.";
+    out += t(
+      "helper.laney.pprime.factor",
+      "\n\nThe Sigma Z adjustment factor for this chart is {sigmaZ}. " +
+      "A value above 1 widens the standard P-chart limits; a value below 1 narrows them.",
+      { sigmaZ: sigmaZ.toFixed(3) }
+    );
   }
 
   return out;
 }
 
+
 function buildUPrimeExplanation(ctx) {
   const a = ctx.attribute;
+  const t = helperDynamicText;
 
   if (!a || ctx.chartType !== "uprime") {
-    return (
+    return t(
+      "helper.laney.uprime.noChart",
       "A U′ chart is a Laney-adjusted version of a U chart. " +
       "It is used for rate data when the amount of variation is noticeably different from what a standard U chart expects."
     );
   }
 
+  // Preserve the original calculated value.
   const sigmaZ =
     a.stats && finiteNumber(a.stats.sigmaZ)
       ? a.stats.sigmaZ
       : null;
 
-  let out =
+  let out = t(
+    "helper.laney.uprime.intro",
     "This U′ chart uses the same event counts, opportunities, observed rates and centre line as a standard U chart. " +
-    "The difference is that it adjusts the width of the control limits so they better match the amount of variation actually seen in the data.";
+    "The difference is that it adjusts the width of the control limits so they better match the amount of variation actually seen in the data."
+  );
 
   if (sigmaZ != null) {
     if (sigmaZ > 1) {
-      out +=
+      out += t(
+        "helper.laney.uprime.more",
         "\n\nYour data vary more than a standard U chart expects, so U′ uses wider control limits. " +
-        "This helps avoid treating ordinary variation as a possible process change.";
+        "This helps avoid treating ordinary variation as a possible process change."
+      );
+
     } else if (sigmaZ < 1) {
-      out +=
+      out += t(
+        "helper.laney.uprime.less",
         "\n\nYour data vary less than a standard U chart expects, so U′ uses narrower control limits. " +
-        "This can make genuinely unusual variation easier to detect.";
+        "This can make genuinely unusual variation easier to detect."
+      );
+
     } else {
-      out +=
-        "\n\nThe amount of variation is very close to what a standard U chart expects, so the U′ adjustment is very small.";
+      out += t(
+        "helper.laney.uprime.equal",
+        "\n\nThe amount of variation is very close to what a standard U chart expects, so the U′ adjustment is very small."
+      );
     }
 
-    out +=
-      `\n\nThe Sigma Z adjustment factor for this chart is ${sigmaZ.toFixed(3)}. ` +
-      "A value above 1 widens the standard U-chart limits; a value below 1 narrows them.";
+    out += t(
+      "helper.laney.uprime.factor",
+      "\n\nThe Sigma Z adjustment factor for this chart is {sigmaZ}. " +
+      "A value above 1 widens the standard U-chart limits; a value below 1 narrows them.",
+      { sigmaZ: sigmaZ.toFixed(3) }
+    );
   }
 
   return out;
 }
 
+
 function buildSigmaZExplanation(ctx) {
   const chartType = ctx.chartType;
   const a = ctx.attribute;
+  const t = helperDynamicText;
 
-  const isPPrime =
-    chartType === "pprime";
+  const isPPrime = chartType === "pprime";
+  const isUPrime = chartType === "uprime";
 
-  const isUPrime =
-    chartType === "uprime";
-
+  // Generic explanation when the selected chart is
+  // not a Laney P′ or U′ chart.
   if (!isPPrime && !isUPrime) {
-    return (
+    return t(
+      "helper.laney.sigma.general",
       "Sigma Z is used on Laney P′ and U′ charts. " +
       "It is an adjustment factor that tells SimpleSPC whether the data are varying more or less than a standard P or U chart would normally expect."
     );
   }
 
   const sigmaZ =
-    a?.stats &&
-    finiteNumber(a.stats.sigmaZ)
+    a?.stats && finiteNumber(a.stats.sigmaZ)
       ? a.stats.sigmaZ
       : null;
 
-  const standardChart =
-    isPPrime
-      ? "P chart"
-      : "U chart";
+  // Translate the displayed names only.
+  const standardChart = isPPrime
+    ? t("helper.laney.chart.p", "P chart")
+    : t("helper.laney.chart.u", "U chart");
 
-  const primeChart =
-    isPPrime
-      ? "P′ chart"
-      : "U′ chart";
+  const primeChart = isPPrime
+    ? t("helper.laney.chart.pprime", "P′ chart")
+    : t("helper.laney.chart.uprime", "U′ chart");
 
-  let out =
+  let out = t(
+    "helper.laney.sigma.intro",
     "Sigma Z is the adjustment factor used by a Laney chart. " +
-    `It tells SimpleSPC whether your data are varying more or less than a standard ${standardChart} expects.\n\n` +
-    "A Sigma Z of about 1 means the amount of variation is close to what the standard chart expects. " +
+    "It tells SimpleSPC whether your data are varying more or less than a standard {standard} expects.",
+    { standard: standardChart }
+  );
+
+  out += t(
+    "helper.laney.sigma.guidance",
+    "\n\nA Sigma Z of about 1 means the amount of variation is close to what the standard chart expects. " +
     "A value above 1 means there is more variation than expected, so the control limits are made wider. " +
-    "A value below 1 means there is less variation than expected, so the control limits are made narrower.\n\n" +
+    "A value below 1 means there is less variation than expected, so the control limits are made narrower.\n\n"
+  );
+
+  out += t(
+    "helper.laney.sigma.unchanged",
     "Sigma Z does not change your original observations or the centre line. " +
-    `It only adjusts the width of the control limits on the ${primeChart}.`;
+    "It only adjusts the width of the control limits on the {prime}.",
+    { prime: primeChart }
+  );
 
   if (sigmaZ != null) {
-    out +=
-      `\n\nFor your current chart, Sigma Z = ${sigmaZ.toFixed(3)}.`;
+    out += t(
+      "helper.laney.sigma.value",
+      "\n\nFor your current chart, Sigma Z = {sigmaZ}.",
+      { sigmaZ: sigmaZ.toFixed(3) }
+    );
 
+    // Retain all original greater-than,
+    // less-than and equal-to-one decisions.
     if (sigmaZ > 1) {
-      out +=
-        ` This means the data are showing more variation than the standard ${standardChart} expects, so the ${primeChart} uses wider limits.`;
+      out += t(
+        "helper.laney.sigma.more",
+        " This means the data are showing more variation than the standard {standard} expects, so the {prime} uses wider limits.",
+        {
+          standard: standardChart,
+          prime: primeChart
+        }
+      );
+
     } else if (sigmaZ < 1) {
-      out +=
-        ` This means the data are showing less variation than the standard ${standardChart} expects, so the ${primeChart} uses narrower limits.`;
+      out += t(
+        "helper.laney.sigma.less",
+        " This means the data are showing less variation than the standard {standard} expects, so the {prime} uses narrower limits.",
+        {
+          standard: standardChart,
+          prime: primeChart
+        }
+      );
+
     } else {
-      out +=
-        ` This is exactly 1, so the Laney adjustment does not change the width of the standard ${standardChart} limits.`;
+      out += t(
+        "helper.laney.sigma.equal",
+        " This is exactly 1, so the Laney adjustment does not change the width of the standard {standard} limits.",
+        { standard: standardChart }
+      );
     }
   }
 
-  out +=
+  out += t(
+    "helper.laney.sigma.technical",
     "\n\nTechnical detail: SimpleSPC first allows for the amount of variation the standard chart expects at each point. " +
     "It then looks at the point-to-point changes in those standardised values. " +
-    "Sigma Z summarises that extra or reduced variation into a single adjustment factor.";
+    "Sigma Z summarises that extra or reduced variation into a single adjustment factor."
+  );
 
   return out;
 }
