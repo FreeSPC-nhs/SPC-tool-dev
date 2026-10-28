@@ -1771,7 +1771,46 @@ window.SimpleSPCi18n.registerLanguage("en", {
   // HAS ANYTHING CHANGED?
 
   "helper.pareto.changeIntro":
-    "A Pareto chart cannot tell whether something has changed over time because it deliberately removes the time order and ranks categories by frequency.\n\n"
+    "A Pareto chart cannot tell whether something has changed over time because it deliberately removes the time order and ranks categories by frequency.\n\n",
+
+  // PARETO STATISTICAL SUMMARY
+
+  "summary.pareto.largestLabel": "Largest category:",
+  "summary.pareto.topThreeLabel": "Top three categories:",
+  "summary.pareto.eightyHeading": "80% guide:",
+  "summary.pareto.cautionLabel": "Caution:",
+  "summary.pareto.dataCheckLabel": "Data check:",
+  "summary.pareto.interpretationLabel": "Interpretation:",
+  "summary.pareto.spcNoteLabel": "SPC note:",
+
+  "summary.pareto.occurrenceOne": "occurrence",
+  "summary.pareto.occurrenceMany": "occurrences",
+  "summary.pareto.ofTotal": "of the total",
+
+  "summary.pareto.cutoffOneStart": "the first category",
+  "summary.pareto.cutoffOneEnd": "accounts for",
+  "summary.pareto.cutoffManyStart": "the first",
+  "summary.pareto.cutoffManyEnd": "categories account for",
+  "summary.pareto.ofOccurrences": "of the occurrences.",
+
+  "summary.pareto.eightyCaution":
+    "The dashed 80% line is a prioritisation guide, not a statistical control limit.",
+
+  "summary.pareto.smallSample":
+    "this Pareto chart contains fewer than 30 occurrences. With small numbers, the apparent ranking can be unstable, so interpret it cautiously.",
+
+  "summary.pareto.blankOne":
+    "row was ignored because the category was blank.",
+
+  "summary.pareto.blankMany":
+    "rows were ignored because the category was blank.",
+
+  "summary.pareto.interpretation":
+    "the categories on the left are the most frequent and may be useful places to focus further investigation or improvement effort. A category is not automatically a cause of the problem.",
+
+  "summary.pareto.spcNote":
+    "a Pareto chart is not time ordered and cannot tell you whether variation is common cause or special cause. Where relevant, interpret it alongside an appropriate run or Shewhart chart."
+	
 
 
 

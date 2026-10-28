@@ -1775,7 +1775,46 @@ window.SimpleSPCi18n.registerLanguage("fr", {
   // UN CHANGEMENT S'EST-IL PRODUIT ?
 
   "helper.pareto.changeIntro":
-    "Un diagramme de Pareto ne permet pas de déterminer si quelque chose a changé au fil du temps, car il supprime volontairement l'ordre chronologique pour classer les catégories selon leur fréquence.\n\n"
+    "Un diagramme de Pareto ne permet pas de déterminer si quelque chose a changé au fil du temps, car il supprime volontairement l'ordre chronologique pour classer les catégories selon leur fréquence.\n\n",
+
+  // RÉSUMÉ STATISTIQUE PARETO
+
+  "summary.pareto.largestLabel": "Catégorie la plus fréquente :",
+  "summary.pareto.topThreeLabel": "Trois catégories principales :",
+  "summary.pareto.eightyHeading": "Repère des 80 % :",
+  "summary.pareto.cautionLabel": "Attention :",
+  "summary.pareto.dataCheckLabel": "Vérification des données :",
+  "summary.pareto.interpretationLabel": "Interprétation :",
+  "summary.pareto.spcNoteLabel": "Remarque SPC :",
+
+  "summary.pareto.occurrenceOne": "occurrence",
+  "summary.pareto.occurrenceMany": "occurrences",
+  "summary.pareto.ofTotal": "du total",
+
+  "summary.pareto.cutoffOneStart": "la première catégorie",
+  "summary.pareto.cutoffOneEnd": "représente",
+  "summary.pareto.cutoffManyStart": "les",
+  "summary.pareto.cutoffManyEnd": "premières catégories représentent",
+  "summary.pareto.ofOccurrences": "des occurrences.",
+
+  "summary.pareto.eightyCaution":
+    "La ligne pointillée des 80 % sert à définir des priorités d'investigation ; elle ne constitue pas une limite de contrôle statistique.",
+
+  "summary.pareto.smallSample":
+    "ce diagramme de Pareto contient moins de 30 occurrences. Avec un faible nombre d'observations, le classement apparent des catégories peut être instable. Il doit donc être interprété avec prudence.",
+
+  "summary.pareto.blankOne":
+    "ligne a été ignorée parce que la catégorie était vide.",
+
+  "summary.pareto.blankMany":
+    "lignes ont été ignorées parce que la catégorie était vide.",
+
+  "summary.pareto.interpretation":
+    "les catégories situées à gauche sont les plus fréquentes et peuvent constituer des priorités pour les investigations ou les actions d'amélioration. Une catégorie ne représente pas automatiquement une cause du problème.",
+
+  "summary.pareto.spcNote":
+    "un diagramme de Pareto ne présente pas les données dans l'ordre chronologique et ne permet pas de déterminer si la variation relève de causes communes ou spéciales. Lorsque cela est pertinent, interprétez-le parallèlement à une carte de suivi (Run) ou à une carte de Shewhart adaptée."
+
 
 
 
