@@ -17550,6 +17550,55 @@ function drawCChart(points, baselineCount, labels) {
   // Keep "latest" available for anything else that expects it
   lastAttributeAnalysis = analyses[analyses.length - 1];
 
+
+
+  // Colour C-chart points using the signals already detected
+  // by analyzeAttributeChart().
+  // This does not run any new statistical calculations.
+  const showSpecialCause =
+    typeof shouldFlagSpecialCauseOnChart === "function"
+      ? shouldFlagSpecialCauseOnChart()
+      : true;
+
+  const updatedPointColours =
+    new Array(n).fill(SPC_STYLE.seriesBlue);
+
+  if (showSpecialCause) {
+    analyses.forEach(a => {
+      const start = a.startIndex;
+      const end = a.endIndex;
+
+      for (let i = start; i <= end; i++) {
+        const localIndex = i - start;
+
+        if (a.flags?.beyond?.[localIndex]) {
+          updatedPointColours[i] =
+            SPC_STYLE.pointBeyond;
+
+        } else if (a.flags?.special?.[localIndex]) {
+          updatedPointColours[i] =
+            SPC_STYLE.pointSpecial;
+        }
+      }
+    });
+  }
+
+  // Update the already-drawn chart's point colours.
+  // Keep the same data, limits and chart instance.
+  if (
+    currentChart &&
+    currentChart.data?.datasets?.[0]
+  ) {
+    currentChart.data.datasets[0].pointBackgroundColor =
+      updatedPointColours;
+
+    currentChart.data.datasets[0].pointBorderColor =
+      updatedPointColours;
+
+    currentChart.update("none");
+  }
+
+
 }
 
 

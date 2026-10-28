@@ -790,35 +790,100 @@ function helperDynamicText(key, englishFallback, values = {}) {
  * Unrecognised descriptions are preserved unchanged.
  * The original signals array is never modified.
  */
+
 function helperXmRSignalDescription(text) {
+  const original = String(text ?? "").trim();
+  const normalised = original.toLowerCase();
+
+  // Existing fixed descriptions from signalTextList().
   const keys = {
     "one or more points above the upper limit":
       "helper.xmr.signal.above",
-
     "one or more points below the lower limit":
       "helper.xmr.signal.below",
-
     "a sustained run on one side of the centre line":
       "helper.xmr.signal.run",
-
     "a sustained trend":
       "helper.xmr.signal.trend",
-
     "an unusual outlier":
       "helper.xmr.signal.outlier",
-
     "an unusual clustering of points far from the centre line":
       "helper.xmr.signal.cluster",
-
     "a sustained bias away from the centre line":
       "helper.xmr.signal.bias"
   };
 
-  const key = keys[text];
+  if (keys[normalised]) {
+    return helperDynamicText(
+      keys[normalised],
+      original
+    );
+  }
 
-  return key
-    ? helperDynamicText(key, text)
-    : text;
+  // Original XmR shift descriptor.
+  if (
+    normalised ===
+    "a sustained shift (many points on the same side of the mean)"
+  ) {
+    return helperDynamicText(
+      "helper.signal.shiftMean",
+      original
+    );
+  }
+
+  // Attribute-chart shift descriptors.
+  // Retain the rule threshold and original date range.
+  const shift =
+    /^Shift: (\d+)\+ points in a row (above|below) the centre line \(from (.+?) to (.+)\)$/i
+      .exec(original);
+
+  if (shift) {
+    const direction = helperDynamicText(
+      shift[2].toLowerCase() === "above"
+        ? "helper.signal.sideAbove"
+        : "helper.signal.sideBelow",
+      shift[2].toLowerCase()
+    );
+
+    return helperDynamicText(
+      "helper.signal.shiftDetailed",
+      "Shift: {count}+ points in a row {direction} the centre line (from {start} to {end})",
+      {
+        count: shift[1],
+        direction,
+        start: shift[3],
+        end: shift[4]
+      }
+    );
+  }
+
+  // Attribute-chart trend descriptors.
+  const trend =
+    /^Trend: (\d+)\+ points steadily (increasing|decreasing) \(from (.+?) to (.+)\)$/i
+      .exec(original);
+
+  if (trend) {
+    const direction = helperDynamicText(
+      trend[2].toLowerCase() === "increasing"
+        ? "helper.signal.directionIncreasing"
+        : "helper.signal.directionDecreasing",
+      trend[2].toLowerCase()
+    );
+
+    return helperDynamicText(
+      "helper.signal.trendDetailed",
+      "Trend: {count}+ points steadily {direction} (from {start} to {end})",
+      {
+        count: trend[1],
+        direction,
+        start: trend[3],
+        end: trend[4]
+      }
+    );
+  }
+
+  // Do not invent translations for unknown messages.
+  return original;
 }
 
 function helperXmRSignalList(signals) {
