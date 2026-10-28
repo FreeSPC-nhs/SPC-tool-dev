@@ -1599,13 +1599,81 @@ window.SimpleSPCi18n.registerLanguage("fr", {
     "Seulement {count} points sont actuellement utilisés pour estimer ses limites. ",
 
   "helper.xmrLimits.provisionalMinimum":
-    "SimpleSPC attend qu'au moins {minimum} points soient disponibles avant de procéder à une interprétation formelle de la stabilité."
+    "SimpleSPC attend qu'au moins {minimum} points soient disponibles avant de procéder à une interprétation formelle de la stabilité.",
 
+//  CARTES P′, U′ ET FACTEUR SIGMA Z
 
+// Explications de la carte P′
+"helper.laney.pprime.noChart":
+  "La carte P′ est une version ajustée de la carte P selon la méthode de Laney. Elle est utilisée pour les données de proportions lorsque la variation observée diffère sensiblement de celle attendue avec une carte P standard.",
 
+"helper.laney.pprime.intro":
+  "Cette carte P′ utilise les mêmes numérateurs, dénominateurs, proportions observées et ligne centrale qu'une carte P standard. Elle ajuste uniquement la largeur des limites de contrôle pour mieux refléter la variation effectivement observée dans les données.",
 
+"helper.laney.pprime.more":
+  "\n\nVos données varient davantage que ne le prévoit une carte P standard. La carte P′ utilise donc des limites de contrôle plus larges. Cela évite de considérer à tort une variation habituelle comme un changement possible du processus.",
 
+"helper.laney.pprime.less":
+  "\n\nVos données varient moins que ne le prévoit une carte P standard. La carte P′ utilise donc des limites de contrôle plus étroites. Cela peut faciliter la détection de variations réellement inhabituelles.",
 
+"helper.laney.pprime.equal":
+  "\n\nLa variation observée est très proche de celle attendue avec une carte P standard. L'ajustement de la carte P′ est donc très faible.",
+
+"helper.laney.pprime.factor":
+  "\n\nLe facteur d'ajustement Sigma Z de cette carte est de {sigmaZ}. Une valeur supérieure à 1 élargit les limites de la carte P standard ; une valeur inférieure à 1 les rétrécit.",
+
+// Explications de la carte U′
+"helper.laney.uprime.noChart":
+  "La carte U′ est une version ajustée de la carte U selon la méthode de Laney. Elle est utilisée pour les données de taux lorsque la variation observée diffère sensiblement de celle attendue avec une carte U standard.",
+
+"helper.laney.uprime.intro":
+  "Cette carte U′ utilise les mêmes nombres d'événements, opportunités, taux observés et ligne centrale qu'une carte U standard. Elle ajuste uniquement la largeur des limites de contrôle pour mieux refléter la variation effectivement observée dans les données.",
+
+"helper.laney.uprime.more":
+  "\n\nVos données varient davantage que ne le prévoit une carte U standard. La carte U′ utilise donc des limites de contrôle plus larges. Cela évite de considérer à tort une variation habituelle comme un changement possible du processus.",
+
+"helper.laney.uprime.less":
+  "\n\nVos données varient moins que ne le prévoit une carte U standard. La carte U′ utilise donc des limites de contrôle plus étroites. Cela peut faciliter la détection de variations réellement inhabituelles.",
+
+"helper.laney.uprime.equal":
+  "\n\nLa variation observée est très proche de celle attendue avec une carte U standard. L'ajustement de la carte U′ est donc très faible.",
+
+"helper.laney.uprime.factor":
+  "\n\nLe facteur d'ajustement Sigma Z de cette carte est de {sigmaZ}. Une valeur supérieure à 1 élargit les limites de la carte U standard ; une valeur inférieure à 1 les rétrécit.",
+
+// Noms des cartes pour les explications techniques
+"helper.laney.chart.p": "carte P",
+"helper.laney.chart.u": "carte U",
+"helper.laney.chart.pprime": "carte P′",
+"helper.laney.chart.uprime": "carte U′",
+
+// Explications du facteur Sigma Z
+"helper.laney.sigma.general":
+  "Sigma Z est utilisé sur les cartes P′ et U′ de Laney. Ce facteur d'ajustement indique si les données présentent une variation plus forte ou plus faible que celle normalement attendue avec une carte P ou U standard.",
+
+"helper.laney.sigma.intro":
+  "Sigma Z est le facteur d'ajustement utilisé par une carte de Laney. Il indique si vos données varient davantage ou moins que ne le prévoit une {standard} standard.",
+
+"helper.laney.sigma.guidance":
+  "\n\nUne valeur de Sigma Z proche de 1 signifie que la variation observée correspond approximativement à celle attendue avec la carte standard. Une valeur supérieure à 1 indique une variation plus importante, ce qui élargit les limites de contrôle. Une valeur inférieure à 1 indique une variation plus faible, ce qui rétrécit les limites de contrôle.\n\n",
+
+"helper.laney.sigma.unchanged":
+  "Sigma Z ne modifie ni les observations d'origine ni la ligne centrale. Il ajuste uniquement la largeur des limites de contrôle sur la {prime}.",
+
+"helper.laney.sigma.value":
+  "\n\nPour votre graphique actuel, Sigma Z = {sigmaZ}.",
+
+"helper.laney.sigma.more":
+  " Cela signifie que les données varient davantage que ne le prévoit une {standard} standard. La {prime} utilise donc des limites plus larges.",
+
+"helper.laney.sigma.less":
+  " Cela signifie que les données varient moins que ne le prévoit une {standard} standard. La {prime} utilise donc des limites plus étroites.",
+
+"helper.laney.sigma.equal":
+  " Cette valeur est exactement égale à 1. L'ajustement de Laney ne modifie donc pas la largeur des limites de la {standard} standard.",
+
+"helper.laney.sigma.technical":
+  "\n\nDétail technique : SimpleSPC tient d'abord compte de la variation attendue pour chaque point selon la carte standard. Il examine ensuite les changements entre valeurs standardisées consécutives. Sigma Z résume cette variation supplémentaire ou réduite en un seul facteur d'ajustement."
 
 
 

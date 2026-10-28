@@ -1595,7 +1595,83 @@ window.SimpleSPCi18n.registerLanguage("en", {
     "Only {count} points are currently being used to estimate its limits. ",
 
   "helper.xmrLimits.provisionalMinimum":
-    "SimpleSPC waits until at least {minimum} points are available before making a formal stability interpretation."
+    "SimpleSPC waits until at least {minimum} points are available before making a formal stability interpretation.",
+
+// LANEY P-PRIME, U-PRIME AND SIGMA Z
+
+// P′ explanations
+"helper.laney.pprime.noChart":
+  "A P′ chart is a Laney-adjusted version of a P chart. It is used for proportion data when the amount of variation is noticeably different from what a standard P chart expects.",
+
+"helper.laney.pprime.intro":
+  "This P′ chart uses the same numerator, denominator, observed proportions and centre line as a standard P chart. The difference is that it adjusts the width of the control limits so they better match the amount of variation actually seen in the data.",
+
+"helper.laney.pprime.more":
+  "\n\nYour data vary more than a standard P chart expects, so P′ uses wider control limits. This helps avoid treating ordinary variation as a possible process change.",
+
+"helper.laney.pprime.less":
+  "\n\nYour data vary less than a standard P chart expects, so P′ uses narrower control limits. This can make genuinely unusual variation easier to detect.",
+
+"helper.laney.pprime.equal":
+  "\n\nThe amount of variation is very close to what a standard P chart expects, so the P′ adjustment is very small.",
+
+"helper.laney.pprime.factor":
+  "\n\nThe Sigma Z adjustment factor for this chart is {sigmaZ}. A value above 1 widens the standard P-chart limits; a value below 1 narrows them.",
+
+// U′ explanations
+"helper.laney.uprime.noChart":
+  "A U′ chart is a Laney-adjusted version of a U chart. It is used for rate data when the amount of variation is noticeably different from what a standard U chart expects.",
+
+"helper.laney.uprime.intro":
+  "This U′ chart uses the same event counts, opportunities, observed rates and centre line as a standard U chart. The difference is that it adjusts the width of the control limits so they better match the amount of variation actually seen in the data.",
+
+"helper.laney.uprime.more":
+  "\n\nYour data vary more than a standard U chart expects, so U′ uses wider control limits. This helps avoid treating ordinary variation as a possible process change.",
+
+"helper.laney.uprime.less":
+  "\n\nYour data vary less than a standard U chart expects, so U′ uses narrower control limits. This can make genuinely unusual variation easier to detect.",
+
+"helper.laney.uprime.equal":
+  "\n\nThe amount of variation is very close to what a standard U chart expects, so the U′ adjustment is very small.",
+
+"helper.laney.uprime.factor":
+  "\n\nThe Sigma Z adjustment factor for this chart is {sigmaZ}. A value above 1 widens the standard U-chart limits; a value below 1 narrows them.",
+
+// Chart names for technical explanations
+"helper.laney.chart.p": "P chart",
+"helper.laney.chart.u": "U chart",
+"helper.laney.chart.pprime": "P′ chart",
+"helper.laney.chart.uprime": "U′ chart",
+
+// Sigma Z explanations
+"helper.laney.sigma.general":
+  "Sigma Z is used on Laney P′ and U′ charts. It is an adjustment factor that tells SimpleSPC whether the data are varying more or less than a standard P or U chart would normally expect.",
+
+"helper.laney.sigma.intro":
+  "Sigma Z is the adjustment factor used by a Laney chart. It tells SimpleSPC whether your data are varying more or less than a standard {standard} expects.",
+
+"helper.laney.sigma.guidance":
+  "\n\nA Sigma Z of about 1 means the amount of variation is close to what the standard chart expects. A value above 1 means there is more variation than expected, so the control limits are made wider. A value below 1 means there is less variation than expected, so the control limits are made narrower.\n\n",
+
+"helper.laney.sigma.unchanged":
+  "Sigma Z does not change your original observations or the centre line. It only adjusts the width of the control limits on the {prime}.",
+
+"helper.laney.sigma.value":
+  "\n\nFor your current chart, Sigma Z = {sigmaZ}.",
+
+"helper.laney.sigma.more":
+  " This means the data are showing more variation than the standard {standard} expects, so the {prime} uses wider limits.",
+
+"helper.laney.sigma.less":
+  " This means the data are showing less variation than the standard {standard} expects, so the {prime} uses narrower limits.",
+
+"helper.laney.sigma.equal":
+  " This is exactly 1, so the Laney adjustment does not change the width of the standard {standard} limits.",
+
+"helper.laney.sigma.technical":
+  "\n\nTechnical detail: SimpleSPC first allows for the amount of variation the standard chart expects at each point. It then looks at the point-to-point changes in those standardised values. Sigma Z summarises that extra or reduced variation into a single adjustment factor."
+
+
 
 
 
