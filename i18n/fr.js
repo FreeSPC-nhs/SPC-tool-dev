@@ -1547,7 +1547,7 @@ window.SimpleSPCi18n.registerLanguage("fr", {
   "helper.improvement.general.stable":
     "Sur le graphique actuel ({chart}), aucun signal clair de cause spéciale n'est détecté. Le graphique seul ne fournit donc pas de preuve solide d'une nouvelle amélioration. Une amélioration est plus convaincante lorsqu'un changement durable se produit dans la direction souhaitée, plutôt qu'un seul point favorable.",
   "helper.improvement.general.unstable":
-    "Le graphique actuel ({chart}) présente des signes suggérant que le processus a pu changer. Il peut s'agir d'une amélioration, d'une détérioration ou d'un autre changement du système. Pour parler d'amélioration, vérifiez que le changement va dans la direction souhaitée, qu'il est durable et qu'il est cohérent avec le contexte local. Le graphique seul ne prouve pas la causalité."
+    "Le graphique actuel ({chart}) présente des signes suggérant que le processus a pu changer. Il peut s'agir d'une amélioration, d'une détérioration ou d'un autre changement du système. Pour parler d'amélioration, vérifiez que le changement va dans la direction souhaitée, qu'il est durable et qu'il est cohérent avec le contexte local. Le graphique seul ne prouve pas la causalité.",
   "helper.improvement.general.noChart":
     "Générez d'abord la carte actuellement sélectionnée pour que je puisse vous aider à déterminer si le comportement observé correspond à une amélioration réelle."
 
