@@ -6400,7 +6400,22 @@ function updateColumnCheckWarning(chartType) {
     `
   };
 
-  const message = warnings[chartType];
+
+  const englishMessage = warnings[chartType];
+
+  const translationKey =
+    chartType === "t"
+      ? (
+          tChartInputMode === "gaps"
+            ? "chart.columnWarning.tGaps"
+            : "chart.columnWarning.tDates"
+        )
+      : `chart.columnWarning.${chartType}`;
+
+  const message = englishMessage
+    ? chartPanelText(translationKey, englishMessage)
+    : null;
+
 
   if (!message) {
     columnCheckWarning.style.display = "none";
@@ -6760,6 +6775,7 @@ document.addEventListener("simplespc:languagechange", () => {
   // Do not recalculate charts or change user selections.
   updateMrToggleVisibility();
   refreshDynamicChartPanelLanguage();
+   updateColumnCheckWarning(getSelectedChartType_NoSideEffects());
   refreshChartAvailabilityTextOnly();
   updateDateFormatWarning();
   updateDateControlsState();

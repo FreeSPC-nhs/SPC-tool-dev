@@ -2394,25 +2394,34 @@ function buildImprovementAnswer(ctx) {
   );
 }
 
-function buildDecisionAnswer(ctx) {
 
-  if (
-    ctx.chartType === "pareto"
-  ) {
+function buildDecisionAnswer(ctx) {
+  const t = helperDynamicText;
+
+  // Preserve the existing Pareto-specific advice.
+  // The main Pareto analysis will be translated in Batch 34.
+  if (ctx.chartType === "pareto") {
     return (
       buildParetoAnswer(ctx) +
-      "\n\nA sensible next step is to investigate the leading categories in more detail, using local knowledge and, where useful, further stratification. Do not assume the category itself is the underlying cause."
+      t(
+        "helper.decision.paretoNext",
+        "\n\nA sensible next step is to investigate the leading categories in more detail, using local knowledge and, where useful, further stratification. Do not assume the category itself is the underlying cause."
+      )
     );
   }
 
+  // Preserve the original chart-specific assessment.
   const latestSummary =
     buildLatestPeriodSummary(ctx);
 
-  return latestSummary + "\n\n" +
+  // Only translate the general improvement advice.
+  return latestSummary + "\n\n" + t(
+    "helper.decision.general",
     "From a healthcare improvement point of view, the next step is usually:\n" +
     "• if the process looks stable but performance is not good enough, think about redesigning the system\n" +
     "• if the chart shows a signal, investigate what changed in the service, pathway, demand, staffing, coding, or measurement\n" +
-    "• avoid reacting to individual points as if each one proves success or failure";
+    "• avoid reacting to individual points as if each one proves success or failure"
+  );
 }
 
   function answerQuestion(question) {
