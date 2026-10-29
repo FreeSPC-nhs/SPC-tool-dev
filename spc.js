@@ -23546,6 +23546,204 @@ if (s.step === 1 && a.kind === "unsure") {
   }
 }
 
+
+/*
+ * Batch 36A-1 — Chart-selection wizard translations.
+ *
+ * Keep the existing wizard logic, question identifiers,
+ * recommendations and inline button handlers unchanged.
+ * Only translate the rendered text.
+ */
+
+function wizardDisplayText(key, englishFallback) {
+  const i18n = window.SimpleSPCi18n;
+  const translated = i18n?.translate?.(key);
+
+  return translated && translated !== key
+    ? translated
+    : englishFallback;
+}
+
+function wizardRecommendationReasonKey(answers) {
+  switch (answers.kind) {
+    case "measurement":
+      return answers.measurementShape === "subgroups"
+        ? "measurementSubgroups"
+        : "measurementSingle";
+
+    case "count":
+      return answers.countOpportunity === "varies"
+        ? "countVaries"
+        : "countConstant";
+
+    case "proportion":
+      return answers.proportionHasDenom === "yes"
+        ? "proportionYes"
+        : "proportionNo";
+
+    case "pareto":
+      return answers.paretoDataFormat === "counts"
+        ? "paretoCounts"
+        : "paretoRows";
+
+    case "rare":
+      return answers.rareType === "opportunities"
+        ? "rareOpportunities"
+        : "rareTime";
+
+    default:
+      return "unsure";
+  }
+}
+
+function localiseChartWizardContent() {
+  if (!chartWizardBody) return;
+
+  const state = chartWizardState;
+
+  const stage =
+    state.step === 0
+      ? "start"
+      : state.step === 99
+        ? "result"
+        : state.answers.kind;
+
+  // Opening and follow-up questions.
+  const question =
+    chartWizardBody.querySelector(".chart-wizard-question");
+
+  if (question) {
+    question.textContent = wizardDisplayText(
+      `wizard.${stage}.question`,
+      question.textContent.trim()
+    );
+  }
+
+  // Helpful explanatory paragraphs.
+  // These contain only trusted application text.
+  const hints = chartWizardBody.querySelectorAll(
+    "p.hint.small-hint"
+  );
+
+  hints.forEach((hint, index) => {
+    const key = stage === "result"
+      ? "wizard.result.hint"
+      : `wizard.${stage}.hint`;
+
+    const translated = wizardDisplayText(
+      key,
+      hint.innerHTML
+    );
+
+    if (translated !== key) {
+      hint.innerHTML = translated;
+    }
+  });
+
+  // Change displayed option labels only.
+  // onclick="wizardNext(...)" is left untouched.
+  const options = chartWizardBody.querySelectorAll(
+    ".chart-wizard-option"
+  );
+
+  options.forEach((button, index) => {
+    button.textContent = wizardDisplayText(
+      `wizard.${stage}.option${index}`,
+      button.textContent.trim()
+    );
+  });
+
+  // Final chart recommendation.
+  if (stage === "result" && state.recommendation) {
+    const recommendation = state.recommendation;
+
+    const title = chartWizardBody.querySelector(
+      ".chart-wizard-result-title"
+    );
+
+    const explanation = chartWizardBody.querySelector(
+      ".chart-wizard-result > div:nth-child(2)"
+    );
+
+    if (title) {
+      const chartName = wizardDisplayText(
+        `wizard.chart.${recommendation.chartType}`,
+        recommendation.label
+      );
+
+      title.textContent =
+        wizardDisplayText(
+          "wizard.result.heading",
+          "Recommended chart:"
+        ) + " " + chartName;
+    }
+
+    if (explanation) {
+      const reasonKey = wizardRecommendationReasonKey(
+        state.answers
+      );
+
+      explanation.textContent = wizardDisplayText(
+        `wizard.reason.${reasonKey}`,
+        recommendation.reason
+      );
+    }
+  }
+
+  // Back, Skip, Choose manually, Use this chart.
+  const actions = {
+    "Back": "back",
+    "Skip": "skip",
+    "Choose manually": "manual",
+    "Use this chart": "use"
+  };
+
+  chartWizardBody.querySelectorAll(
+    ".chart-wizard-actions button"
+  ).forEach(button => {
+    const englishText = button.textContent.trim();
+    const actionKey = actions[englishText];
+
+    if (actionKey) {
+      button.textContent = wizardDisplayText(
+        `wizard.action.${actionKey}`,
+        englishText
+      );
+    }
+  });
+}
+
+/*
+ * Wrap the original renderer rather than replacing it.
+ * All existing wizard calculations and navigation run first.
+ */
+const originalRenderChartWizard = renderChartWizard;
+
+renderChartWizard = function() {
+  originalRenderChartWizard();
+  localiseChartWizardContent();
+};
+
+/*
+ * Live language switching while the wizard is open.
+ * Preserve the current step and all selected answers.
+ */
+document.addEventListener(
+  "simplespc:languagechange",
+  () => {
+    const modal = document.getElementById(
+      "chartWizardModal"
+    );
+
+    if (!modal?.classList.contains("visible")) {
+      return;
+    }
+
+    renderChartWizard();
+  }
+);
+
+
 // Make wizard functions callable from inline onclick in the HTML strings
 window.wizardNext = wizardNext;
 window.wizardBack = wizardBack;
