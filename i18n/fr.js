@@ -1940,7 +1940,89 @@ window.SimpleSPCi18n.registerLanguage("fr", {
     "\n\nSur votre carte XmR actuelle, le filtrage des étendues mobiles est activé.",
 
   "helper.xmrEducation.nelson.off":
-    "\n\nSur votre carte XmR actuelle, le filtrage des étendues mobiles est désactivé."
+    "\n\nSur votre carte XmR actuelle, le filtrage des étendues mobiles est désactivé.",
+
+  // ASSISTANT DE CHOIX DU GRAPHIQUE
+
+  "wizard.title": "Aidez-moi à choisir une carte",
+  "wizard.subtitle": "Répondez à quelques questions pour obtenir une recommandation de carte et connaître les colonnes supplémentaires éventuellement nécessaires.",
+  "wizard.close": "Fermer",
+  "wizard.closeAria": "Fermer l'assistant de choix du graphique",
+
+  "wizard.action.back": "Retour",
+  "wizard.action.skip": "Passer",
+  "wizard.action.manual": "Choisir manuellement",
+  "wizard.action.use": "Utiliser cette carte",
+
+  "wizard.start.question": "Que souhaitez-vous représenter ?",
+  "wizard.start.option0": "Une mesure — par exemple un temps d'attente, un score, une température ou une durée de séjour",
+  "wizard.start.option1": "Un nombre d'événements par période — par exemple des chutes par semaine ou des plaintes par mois",
+  "wizard.start.option2": "Une proportion — par exemple 5 sur 100 ou un taux de conformité",
+  "wizard.start.option3": "Des catégories — par exemple les causes de retard ou les types de plaintes",
+  "wizard.start.option4": "Des événements rares — temps ou nombre d'opportunités entre les événements",
+  "wizard.start.option5": "Je ne sais pas",
+
+  "wizard.unsure.question": "Quelle description correspond le mieux à vos données ?",
+  "wizard.unsure.hint": "Le type de carte dépend de ce que représente chaque valeur. Choisissez la description la plus proche de vos données. Si aucune ne convient, vous pouvez revenir à la liste et choisir une carte manuellement.",
+  "wizard.unsure.option0": "Une mesure à chaque point temporel — par exemple un temps d'attente, un score ou une durée de séjour",
+  "wizard.unsure.option1": "Un nombre d'événements par période — par exemple des chutes, des plaintes ou des incidents",
+  "wizard.unsure.option2": "Une proportion ou un pourcentage — par exemple 5 sur 100 ou un taux de conformité",
+  "wizard.unsure.option3": "Des catégories d'occurrences — par exemple les types de plaintes ou les motifs de retard",
+  "wizard.unsure.option4": "Le temps ou le nombre d'opportunités entre des événements rares",
+
+  "wizard.measurement.question": "Disposez-vous d'une seule mesure par point temporel ou de plusieurs mesures ?",
+  "wizard.measurement.option0": "Une mesure à chaque point temporel",
+  "wizard.measurement.option1": "Plusieurs mesures par point temporel — sous-groupes ou échantillons",
+  "wizard.measurement.option2": "Je ne sais pas",
+
+  "wizard.count.question": "Le volume d'activité ou le nombre d'opportunités varie-t-il ?",
+  "wizard.count.hint": "Si le volume d'activité est globalement similaire à chaque période, considérez-le comme relativement constant. Si le volume varie fortement ou si vous disposez d'un dénominateur, par exemple des journées d'hospitalisation, des consultations ou des inspections, choisissez l'option indiquant une variation.<br><br>SimpleSPC commencera normalement par une carte U, puis vérifiera si une carte U′ de Laney correspond mieux à la variation observée.",
+  "wizard.count.option0": "Non — volume globalement similaire à chaque période",
+  "wizard.count.option1": "Oui — le volume varie ou je dispose d'une colonne de dénominateur",
+  "wizard.count.option2": "Je ne sais pas",
+
+  "wizard.proportion.question": "Disposez-vous des deux éléments nécessaires au calcul de la proportion ?",
+  "wizard.proportion.hint": "Par exemple, si 8 patients sur 100 satisfont au critère, le numérateur est 8 et le dénominateur est 100.<br><br>SimpleSPC commencera normalement par une carte P, puis vérifiera si une carte P′ de Laney correspond mieux à la variation observée.",
+  "wizard.proportion.option0": "Oui — j'ai des colonnes pour le numérateur et le dénominateur",
+  "wizard.proportion.option1": "Non — je dispose uniquement du pourcentage ou de la proportion",
+  "wizard.proportion.option2": "Je ne sais pas",
+
+  "wizard.pareto.question": "Comment vos données de catégories sont-elles enregistrées ?",
+  "wizard.pareto.hint": "Un diagramme de Pareto compare la fréquence des différentes catégories. Vous pouvez utiliser des enregistrements individuels ou des données contenant déjà les effectifs de chaque catégorie.",
+  "wizard.pareto.option0": "Une ligne par occurrence — par exemple une ligne pour chaque plainte",
+  "wizard.pareto.option1": "Effectifs déjà regroupés — par exemple Chutes : 20, Retards : 15",
+  "wizard.pareto.option2": "Je ne sais pas",
+
+  "wizard.rare.question": "Quelle description correspond le mieux à vos données ?",
+  "wizard.rare.hint": "Choisissez cette option lorsque l'événement est peu fréquent et que vous examinez l'intervalle entre les événements.",
+  "wizard.rare.option0": "Temps entre les événements — par exemple le nombre de jours entre des incidents",
+  "wizard.rare.option1": "Opportunités entre les événements — par exemple le nombre d'interventions entre des incidents",
+  "wizard.rare.option2": "Je ne sais pas",
+
+  "wizard.result.heading": "Carte recommandée :",
+  "wizard.result.hint": "Vous pouvez toujours choisir manuellement un autre type de carte.",
+
+  "wizard.chart.xmr": "Carte XmR",
+  "wizard.chart.xbars": "Carte X̄–S",
+  "wizard.chart.c": "Carte C",
+  "wizard.chart.p": "Carte P",
+  "wizard.chart.u": "Carte U",
+  "wizard.chart.t": "Carte T",
+  "wizard.chart.g": "Carte G",
+  "wizard.chart.pareto": "Diagramme de Pareto",
+
+  "wizard.reason.measurementSingle": "Vous disposez d'une mesure par point temporel.",
+  "wizard.reason.measurementSubgroups": "Vous disposez de plusieurs mesures par point temporel, regroupées en sous-groupes.",
+  "wizard.reason.countConstant": "Vous disposez de nombres d'événements avec un volume d'activité ou un nombre d'opportunités relativement constant.",
+  "wizard.reason.countVaries": "Vous disposez de nombres d'événements dont le volume d'activité ou le nombre d'opportunités varie. Une carte U constitue donc un bon point de départ. Après la génération, SimpleSPC vérifiera si les taux varient davantage ou moins que ne le prévoit une carte U standard. Si nécessaire, il proposera une carte U′ de Laney et en expliquera la raison.",
+  "wizard.reason.proportionYes": "Vous disposez d'un numérateur et d'un dénominateur pour chaque point temporel. Une carte P constitue donc un bon point de départ. Après la génération, SimpleSPC vérifiera si les données varient davantage ou moins que ne le prévoit une carte P standard. Si nécessaire, il proposera une carte P′ de Laney et en expliquera la raison.",
+  "wizard.reason.proportionNo": "Sans numérateur et dénominateur, une carte P ou P′ ne peut pas calculer correctement la variation attendue. Vous pouvez plutôt représenter le pourcentage ou la proportion comme une mesure unique au fil du temps, à l'aide d'une carte XmR.",
+  "wizard.reason.paretoCounts": "Vous souhaitez comparer des catégories et déterminer celles qui regroupent le plus d'occurrences. Un diagramme de Pareto les classe par fréquence et présente leur pourcentage cumulé. Vos données contiennent déjà les effectifs : sélectionnez la colonne des catégories et la colonne numérique des fréquences. Le diagramme aide à définir les priorités d'investigation, mais ne permet pas d'identifier les causes profondes ni d'évaluer la stabilité statistique du processus.",
+  "wizard.reason.paretoRows": "Vous souhaitez comparer des catégories et déterminer celles qui regroupent le plus d'occurrences. Un diagramme de Pareto les classe par fréquence et présente leur pourcentage cumulé. Si chaque ligne correspond à une occurrence, sélectionnez la colonne des catégories et l'option permettant de compter chaque ligne comme une occurrence. Le diagramme aide à définir les priorités d'investigation, mais ne permet pas d'identifier les causes profondes ni d'évaluer la stabilité statistique du processus.",
+  "wizard.reason.rareTime": "Vous disposez du temps entre des événements rares.",
+  "wizard.reason.rareOpportunities": "Vous disposez du nombre d'opportunités entre des événements rares.",
+  "wizard.reason.unsure": "En cas d'incertitude, une carte XmR constitue un point de départ approprié pour une mesure unique suivie au fil du temps."
+
 
 
 

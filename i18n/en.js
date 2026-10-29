@@ -1936,7 +1936,89 @@ window.SimpleSPCi18n.registerLanguage("en", {
     "\n\nOn your current XmR chart, moving-range screening is enabled.",
 
   "helper.xmrEducation.nelson.off":
-    "\n\nOn your current XmR chart, moving-range screening is disabled."
+    "\n\nOn your current XmR chart, moving-range screening is disabled.",
+
+  // CHART SELECTION WIZARD
+
+  "wizard.title": "Help me choose a chart",
+  "wizard.subtitle": "Answer a couple of questions and the tool will pick a chart type and show the extra columns (if needed).",
+  "wizard.close": "Close",
+  "wizard.closeAria": "Close chart wizard",
+
+  "wizard.action.back": "Back",
+  "wizard.action.skip": "Skip",
+  "wizard.action.manual": "Choose manually",
+  "wizard.action.use": "Use this chart",
+
+  "wizard.start.question": "What are you charting?",
+  "wizard.start.option0": "A measurement — e.g. waiting time, score, temperature, length of stay",
+  "wizard.start.option1": "A count per time period — e.g. falls per week, complaints per month",
+  "wizard.start.option2": "A proportion out of a total — e.g. 5 out of 100, pass rate",
+  "wizard.start.option3": "Categories — e.g. reasons for delays, types of complaints",
+  "wizard.start.option4": "Rare events — time or opportunities between events",
+  "wizard.start.option5": "Not sure",
+
+  "wizard.unsure.question": "Which description is closest to your data?",
+  "wizard.unsure.hint": "The chart type depends on what each value represents. Choose the closest description below. If none fits, you can return to the chart list and select a chart manually.",
+  "wizard.unsure.option0": "One measurement at each time point — e.g. waiting time, score, length of stay",
+  "wizard.unsure.option1": "A number of events in each time period — e.g. falls, complaints, incidents",
+  "wizard.unsure.option2": "A proportion or percentage — e.g. 5 out of 100, compliance rate",
+  "wizard.unsure.option3": "Categories of occurrences — e.g. complaint types or reasons for delays",
+  "wizard.unsure.option4": "The time or opportunities between rare events",
+
+  "wizard.measurement.question": "Do you have one value per time point, or multiple values?",
+  "wizard.measurement.option0": "One value each time point",
+  "wizard.measurement.option1": "Multiple values per time point — subgroups or samples",
+  "wizard.measurement.option2": "Not sure",
+
+  "wizard.count.question": "Does the amount of work or opportunity vary?",
+  "wizard.count.hint": "If activity is broadly similar each time, treat it as roughly constant. If volume changes a lot, or you have a denominator such as bed-days, attendances or inspections, choose varies.<br><br>SimpleSPC will normally start with a U chart and then check whether a Laney U′ chart would better match the amount of variation in your data.",
+  "wizard.count.option0": "No — roughly similar volume each time",
+  "wizard.count.option1": "Yes — volume varies, or I have a denominator column",
+  "wizard.count.option2": "Not sure",
+
+  "wizard.proportion.question": "Do you have both parts of the proportion?",
+  "wizard.proportion.hint": "For example, if 8 out of 100 patients met the measure, the numerator is 8 and the denominator is 100.<br><br>SimpleSPC will normally start with a P chart and then check whether a Laney P′ chart would better match the amount of variation in your data.",
+  "wizard.proportion.option0": "Yes — I have numerator and denominator columns",
+  "wizard.proportion.option1": "No — I only have the percentage or proportion value",
+  "wizard.proportion.option2": "Not sure",
+
+  "wizard.pareto.question": "How are your category data recorded?",
+  "wizard.pareto.hint": "A Pareto chart compares the frequency of different categories. You can use individual records or data that already contain counts for each category.",
+  "wizard.pareto.option0": "One row per occurrence — e.g. one row for each complaint",
+  "wizard.pareto.option1": "Summarised counts — e.g. Falls: 20, Delays: 15",
+  "wizard.pareto.option2": "Not sure",
+
+  "wizard.rare.question": "Which best describes your data?",
+  "wizard.rare.hint": "Choose this when the event is uncommon and you are looking at the gap between events.",
+  "wizard.rare.option0": "Time between events — e.g. days between incidents",
+  "wizard.rare.option1": "Opportunities between events — e.g. procedures between harms",
+  "wizard.rare.option2": "Not sure",
+
+  "wizard.result.heading": "Recommended chart:",
+  "wizard.result.hint": "You can still pick a different chart type manually if you prefer.",
+
+  "wizard.chart.xmr": "XmR",
+  "wizard.chart.xbars": "X̄–S",
+  "wizard.chart.c": "C chart",
+  "wizard.chart.p": "P chart",
+  "wizard.chart.u": "U chart",
+  "wizard.chart.t": "T",
+  "wizard.chart.g": "G",
+  "wizard.chart.pareto": "Pareto chart",
+
+  "wizard.reason.measurementSingle": "You have one measurement per time point.",
+  "wizard.reason.measurementSubgroups": "You have multiple measurements per time point (subgroups).",
+  "wizard.reason.countConstant": "You have counts with a roughly constant amount of opportunity or activity each time.",
+  "wizard.reason.countVaries": "You have counts where the amount of opportunity or activity varies, so a U chart is the right starting point. After the chart is generated, SimpleSPC will check whether the rates vary more or less than a standard U chart expects. If so, it will suggest a Laney U′ chart and explain why.",
+  "wizard.reason.proportionYes": "You have a numerator and denominator for each time point, so a P chart is the right starting point. After the chart is generated, SimpleSPC will check whether the data vary more or less than a standard P chart expects. If so, it will suggest a Laney P′ chart and explain why.",
+  "wizard.reason.proportionNo": "Without the numerator and denominator, a P or P′ chart cannot calculate the expected variation correctly. The percentage or proportion can instead be treated as a single measurement over time using an XmR chart.",
+  "wizard.reason.paretoCounts": "You want to compare categories and identify which account for the most occurrences. A Pareto chart ranks categories from most to least frequent and shows their cumulative percentage. Your data already contain counts, so select the category column and the numeric frequency/count column. The chart helps prioritise investigation, but does not identify root causes or assess statistical process stability.",
+  "wizard.reason.paretoRows": "You want to compare categories and identify which account for the most occurrences. A Pareto chart ranks categories from most to least frequent and shows their cumulative percentage. If each row represents one occurrence, select the category column and choose (count each row as 1). The chart helps prioritise investigation, but does not identify root causes or assess statistical process stability.",
+  "wizard.reason.rareTime": "You have time between rare events.",
+  "wizard.reason.rareOpportunities": "You have opportunities between rare events.",
+  "wizard.reason.unsure": "When unsure, XmR is a safe default for a single value over time."
+
 
 
 
