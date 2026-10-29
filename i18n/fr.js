@@ -2282,7 +2282,18 @@ window.SimpleSPCi18n.registerLanguage("fr", {
       <br><br>
       Lorsque vous utilisez une colonne d'effectifs numériques, les valeurs doivent être des nombres entiers non négatifs. Il faut au moins deux catégories présentant des effectifs positifs.
     </p>
-  `
+  `,
+
+//ENREGISTREMENT DU GRAPHIQUE PORTABLE
+
+"portable.saveConfirm":
+  "Enregistrer une copie hors ligne modifiable de cette carte SPC ?\n\n" +
+  "Le fichier HTML contiendra les données du graphique ainsi que " +
+  "l'application FreeSPC. Conservez et partagez ce fichier conformément " +
+  "aux exigences de gouvernance de l'information de votre organisation.",
+
+"portable.creating":
+  "Création du fichier portable…"
 
 
 });

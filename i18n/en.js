@@ -2078,7 +2078,18 @@ window.SimpleSPCi18n.registerLanguage("en", {
   "setup.example.category": "Category",
   "setup.example.count": "Count",
   "setup.example.medication": "Medication",
-  "setup.example.pressureDamage": "Pressure damage"
+  "setup.example.pressureDamage": "Pressure damage",
+
+//  PORTABLE SAVE MESSAGES
+
+"portable.saveConfirm":
+  "Save an editable offline copy of this SPC chart?\n\n" +
+  "The HTML file will contain the underlying chart data as well as " +
+  "the FreeSPC application. Store and share the saved file in line " +
+  "with your organisation's information-governance requirements.",
+
+"portable.creating":
+  "Creating portable file…"
 
 
 
