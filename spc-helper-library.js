@@ -2750,9 +2750,16 @@ function buildDecisionAnswer(ctx) {
     q === "what rules apply to this chart" ||
     q === "what is the rule policy for this chart";
 
+  
   const asksXmRLimits =
     ctx.chartType === "xmr" &&
+
+    // Exclusion questions must not be intercepted
+    // by the broad "limit calculation" matcher.
+    !/\b(exclude|excluded|excluding|exclusion|ghost|ghosting)\b/.test(q) &&
+
     (
+
       includesAny(q, [
         "moving range screening",
         "mr screening",
@@ -2850,24 +2857,83 @@ function buildDecisionAnswer(ctx) {
   // which intentionally recognises many related words.
   // Existing English question identifiers are preserved.
 
+  
+  // Batch 37 matching correction.
+  // Recognise a small set of common alternative phrasings.
+  // These all point to the existing bilingual answers.
+
   const xmrEducationQuestions = new Map([
+
+    // Why signals disappear
     [
       norm("Why do XmR signals disappear with a short baseline?"),
       "short"
     ],
     [
+      norm("Why have signals disappeared?"),
+      "short"
+    ],
+    [
+      norm("Why have my signals disappeared?"),
+      "short"
+    ],
+    [
+      norm("Why did my XmR signals disappear?"),
+      "short"
+    ],
+    [
+      norm("Why did the SPC signals disappear?"),
+      "short"
+    ],
+
+    // Minimum number of points
+    [
       norm("Why does XmR need 12 usable points?"),
       "minimum"
     ],
+    [
+      norm("Why XmR needs 12 usable points"),
+      "minimum"
+    ],
+    [
+      norm("Why do I need 12 points for XmR?"),
+      "minimum"
+    ],
+    [
+      norm("Why are 12 points needed for XmR?"),
+      "minimum"
+    ],
+
+    // Disabled exclusion
     [
       norm("Why is excluding this point from the limits disabled?"),
       "exclusion"
     ],
     [
+      norm("Why can't I exclude this point?"),
+      "exclusion"
+    ],
+    [
+      norm("Why is point exclusion disabled?"),
+      "exclusion"
+    ],
+
+    // Nelson screening
+    [
       norm("Why doesn't Nelson screening flag changes after the baseline?"),
       "nelson"
+    ],
+    [
+      norm("Why doesn't Nelson screening detect changes after the baseline?"),
+      "nelson"
+    ],
+    [
+      norm("Why doesn't Nelson catch later changes?"),
+      "nelson"
     ]
+
   ]);
+
 
   const xmrEducationTopic =
     xmrEducationQuestions.get(q);
