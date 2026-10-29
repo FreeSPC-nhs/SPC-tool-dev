@@ -2082,13 +2082,207 @@ window.SimpleSPCi18n.registerLanguage("fr", {
   "setup.example.category": "Catégorie",
   "setup.example.count": "Effectif",
   "setup.example.medication": "Médicaments",
-  "setup.example.pressureDamage": "Lésions de pression"
+  "setup.example.pressureDamage": "Lésions de pression",
 
+  //  CONTENU DES CARTES STANDARD
 
+  // RUN
+  "setup.run.card1": `
+    <p style="margin:0;">Vous souhaitez suivre une mesure au fil du temps à l'aide d'une ligne centrale correspondant à la <strong>médiane</strong>.</p>
+  `,
+  "setup.run.card2": `
+    <ul style="margin:0;">
+      <li><strong>Colonne des dates / axe X</strong> → temps ou ordre des observations</li>
+      <li><strong>Colonne des valeurs / axe Y</strong> → mesure à suivre</li>
+    </ul>
+  `,
+  "setup.run.card4": `
+    <p style="margin:0;">Ne sélectionnez pas un numéro de ligne ou une colonne d'identifiants comme mesure. Le graphique pourrait sembler correct sans avoir de signification statistique.</p>
+  `,
 
+  // XmR
+  "setup.xmr.card1": `
+    <p style="margin:0;">Vous disposez d'<strong>une mesure par point temporel</strong> et souhaitez obtenir une moyenne et des limites de contrôle.</p>
+  `,
+  "setup.xmr.card2": `
+    <ul style="margin:0;">
+      <li><strong>Colonne des dates / axe X</strong> → date, semaine, mois ou séquence</li>
+      <li><strong>Colonne des valeurs / axe Y</strong> → mesure numérique</li>
+    </ul>
+  `,
+  "setup.xmr.card4": `
+    <p style="margin:0;">Utilisez XmR lorsque vous disposez d'une seule mesure par point temporel. Si chaque point temporel comporte plusieurs mesures, utilisez plutôt une carte <strong>X̄–S</strong>.</p>
+  `,
 
+  // C
+  "setup.c.card1": `
+    <p style="margin:0;">Vous représentez un <strong>nombre d'événements</strong> par période, avec un volume d'opportunités relativement constant.</p>
+  `,
+  "setup.c.card2": `
+    <ul style="margin:0;">
+      <li><strong>Colonne des dates / axe X</strong> → date, semaine, mois ou séquence</li>
+      <li><strong>Colonne des valeurs / axe Y</strong> → nombre d'événements</li>
+    </ul>
+  `,
+  "setup.c.card4": `
+    <p style="margin:0;">Si le dénominateur varie fortement d'une période à l'autre, une <strong>carte U</strong> peut être plus adaptée qu'une carte C.</p>
+  `,
 
+  // P
+  "setup.p.card1": `
+    <p style="margin:0;">Vous souhaitez suivre une <strong>proportion</strong>, par exemple 5 sur 100 ou le pourcentage de cas respectant une norme.</p>
+  `,
+  "setup.p.card2": `
+    <ul style="margin:0;">
+      <li><strong>Colonne des dates / axe X</strong> → temps ou ordre des observations</li>
+      <li><strong>Colonne des valeurs / axe Y</strong> → numérateur</li>
+      <li><strong>Troisième colonne</strong> → dénominateur</li>
+    </ul>
+  `,
+  "setup.p.card4": `
+    <p style="margin:0;">Le numérateur ne doit pas être supérieur au dénominateur.</p>
+  `,
 
+  // U
+  "setup.u.card1": `
+    <p style="margin:0;">Vous souhaitez suivre un <strong>taux</strong> lorsque le dénominateur varie d'un point à l'autre.</p>
+  `,
+  "setup.u.card2": `
+    <ul style="margin:0;">
+      <li><strong>Colonne des dates / axe X</strong> → temps ou ordre des observations</li>
+      <li><strong>Colonne des valeurs / axe Y</strong> → nombre d'événements</li>
+      <li><strong>Troisième colonne</strong> → opportunités ou exposition</li>
+    </ul>
+  `,
+  "setup.u.card4": `
+    <p style="margin:0;">Utilisez une carte U lorsque le dénominateur varie. S'il reste relativement constant, une <strong>carte C</strong> peut être plus adaptée.</p>
+  `,
+
+  // X̄–S
+  "setup.xbars.card1": `
+    <p style="margin:0;">Vous disposez de <strong>plusieurs mesures dans chaque sous-groupe</strong> et souhaitez étudier à la fois les moyennes des sous-groupes et la variation à l'intérieur de ceux-ci.</p>
+  `,
+  "setup.xbars.card2": `
+    <ul style="margin:0;">
+      <li><strong>Colonne des dates / axe X</strong> → libellé de sous-groupe ou repère temporel</li>
+      <li><strong>Colonne des valeurs / axe Y</strong> → valeur mesurée</li>
+      <li><strong>Troisième colonne</strong> → identifiant du sous-groupe</li>
+    </ul>
+  `,
+  "setup.xbars.card4": `
+    <p style="margin:0;">N'utilisez pas X̄–S si chaque sous-groupe ne contient qu'une seule mesure. Utilisez plutôt une carte <strong>XmR</strong>.</p>
+  `,
+
+  // LANEY P′
+  "setup.pprime.card1": `
+    <p style="margin:0;">Vous suivez une <strong>proportion</strong> à partir d'un numérateur et d'un dénominateur, mais la variation observée est plus forte ou plus faible que celle attendue avec une carte P standard. La carte P′ ajuste la largeur des limites de contrôle pour tenir compte de cette variation supplémentaire ou réduite.</p>
+  `,
+  "setup.pprime.card2": `
+    <ul style="margin:0;">
+      <li><strong>Colonne des dates / axe X</strong> → temps ou ordre des observations</li>
+      <li><strong>Colonne des valeurs / axe Y</strong> → numérateur (nombre de cas répondant à la définition)</li>
+      <li><strong>Troisième colonne</strong> → dénominateur (nombre total de cas évalués)</li>
+    </ul>
+  `,
+  "setup.pprime.card4": `
+    <p style="margin:0;">
+      Commencez normalement par une <strong>carte P</strong>. SimpleSPC vérifie si la variation observée diffère de celle attendue avec une carte P standard et peut recommander de passer à une carte P′.
+      <br><br>
+      Le facteur d'ajustement est appelé <strong>Sigma Z</strong>. Il modifie les limites de contrôle, mais pas les proportions représentées. Le choix de changer de carte vous appartient.
+    </p>
+  `,
+  "setup.pprime.card5": `
+    <p style="margin:0;">Saisissez les effectifs réels du numérateur et du dénominateur, et non un pourcentage déjà calculé. Le numérateur ne peut pas dépasser le dénominateur.</p>
+  `,
+
+  // LANEY U′
+  "setup.uprime.card1": `
+    <p style="margin:0;">Vous suivez le <strong>nombre d'événements par opportunité</strong>, mais la variation observée est plus forte ou plus faible que celle attendue avec une carte U standard. La carte U′ ajuste les limites de contrôle pour refléter cette variation.</p>
+  `,
+  "setup.uprime.card2": `
+    <ul style="margin:0;">
+      <li><strong>Colonne des dates / axe X</strong> → temps ou ordre des observations</li>
+      <li><strong>Colonne des valeurs / axe Y</strong> → nombre d'événements</li>
+      <li><strong>Troisième colonne</strong> → nombre d'opportunités ou niveau d'exposition</li>
+    </ul>
+  `,
+  "setup.uprime.card4": `
+    <p style="margin:0;">
+      Commencez normalement par une <strong>carte U</strong>. SimpleSPC vérifie si la variation observée diffère de celle attendue avec une carte U standard et peut recommander de passer à une carte U′.
+      <br><br>
+      Le facteur d'ajustement est appelé <strong>Sigma Z</strong>. Il modifie les limites de contrôle, mais pas les taux d'événements sous-jacents. Le choix de changer de carte vous appartient.
+    </p>
+  `,
+  "setup.uprime.card5": `
+    <p style="margin:0;">Dans l'onglet Graphique, utilisez l'option <strong>Afficher le taux pour</strong> afin de présenter les taux pour 1, 100, 1 000 ou une autre unité disponible. Cette option modifie l'échelle d'affichage, mais pas le calcul statistique.</p>
+  `,
+  "setup.uprime.card6": `
+    <p style="margin:0;">Saisissez les nombres réels d'événements et d'opportunités, et non un taux déjà calculé. Contrairement à une proportion, un taux peut dépasser un événement par opportunité.</p>
+  `,
+
+  // T — ÉVÉNEMENTS RARES
+  "setup.t.card1": `
+    <p style="margin:0;">Vous souhaitez suivre le <strong>temps entre des événements rares</strong>.</p>
+  `,
+  "setup.t.card2": `
+    <label style="display:block; margin:0.25rem 0;">
+      <input type="radio" name="tChartInputMode" value="eventDates" {checkedDates}>
+      <strong>Je dispose des dates des événements</strong> (une ligne par événement)
+    </label>
+    <div class="hint small-hint" style="margin-top:0.15rem; margin-bottom:0.5rem;">
+      Indiquez la date ou l'heure de l'événement dans la <em>colonne des dates / axe X</em>. La <em>colonne des valeurs / axe Y</em> n'est pas utilisée.
+    </div>
+    <label style="display:block; margin:0.25rem 0;">
+      <input type="radio" name="tChartInputMode" value="gaps" {checkedGaps}>
+      <strong>Je dispose déjà des intervalles</strong> (temps numérique entre événements)
+    </label>
+    <div class="hint small-hint" style="margin-top:0.15rem;">
+      Saisissez les valeurs des intervalles dans la <em>colonne des valeurs / axe Y</em>.
+    </div>
+  `,
+  "setup.t.card4": `
+    <p style="margin:0;">N'utilisez pas une carte T pour représenter un nombre d'événements par mois. Utilisez plutôt une carte <strong>C</strong>, <strong>P</strong> ou <strong>U</strong>.</p>
+  `,
+
+  // G — ÉVÉNEMENTS RARES
+  "setup.g.card1": `
+    <p style="margin:0;">Vous souhaitez suivre le <strong>nombre d'opportunités entre des événements rares</strong>.</p>
+  `,
+  "setup.g.card2": `
+    <ul style="margin:0;">
+      <li><strong>Colonne des dates / axe X</strong> → colonne facultative de libellé ou d'ordre</li>
+      <li><strong>Colonne des valeurs / axe Y</strong> → nombre d'opportunités entre les événements</li>
+    </ul>
+  `,
+  "setup.g.card4": `
+    <p style="margin:0;">Utilisez une carte G si l'intervalle entre les événements correspond à un <strong>nombre d'opportunités</strong>. S'il s'agit d'une durée écoulée, utilisez une <strong>carte T</strong>.</p>
+  `,
+
+  // PARETO
+  "setup.pareto.card1": `
+    <p style="margin:0;">Vous souhaitez déterminer les catégories qui regroupent le plus grand nombre d'occurrences enregistrées. Un diagramme de Pareto classe les catégories de la plus fréquente à la moins fréquente et présente une courbe de pourcentage cumulé.</p>
+  `,
+  "setup.pareto.card2": `
+    <ul style="margin:0;">
+      <li><strong>Colonne des catégories</strong> → catégorie à comparer</li>
+      <li><strong>Colonne des fréquences / effectifs</strong> → méthode de dénombrement des occurrences</li>
+    </ul>
+    <p style="margin-bottom:0;">Si chaque ligne correspond à une occurrence, choisissez <strong>(compter chaque ligne comme 1)</strong>. Si les données sont déjà regroupées, sélectionnez la colonne numérique contenant les effectifs.</p>
+  `,
+  "setup.pareto.card5": `
+    <p style="margin:0;">
+      Les barres bleues indiquent le nombre d'occurrences dans chaque catégorie. La courbe rouge représente le pourcentage cumulé.
+      <br><br>
+      La ligne pointillée des 80 % sert à définir des priorités : ce n'est <strong>pas une limite de contrôle statistique</strong>.
+    </p>
+  `,
+  "setup.pareto.card6": `
+    <p style="margin:0;">
+      Ne supposez pas que les catégories les plus fréquentes correspondent nécessairement aux causes sous-jacentes du problème. Elles constituent des points de départ utiles pour les investigations.
+      <br><br>
+      Lorsque vous utilisez une colonne d'effectifs numériques, les valeurs doivent être des nombres entiers non négatifs. Il faut au moins deux catégories présentant des effectifs positifs.
+    </p>
+  `
 
 
 });
