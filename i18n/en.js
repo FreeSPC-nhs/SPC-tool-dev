@@ -1877,11 +1877,66 @@ window.SimpleSPCi18n.registerLanguage("en", {
     "I’m not fully sure which answer fits best. Try one of these:",
 
   "helper.response.libraryMissing":
-    "The SPC helper library is not available. Please check that spc-helper-library.js is loaded before spc.js."
+    "The SPC helper library is not available. Please check that spc-helper-library.js is loaded before spc.js.",
 
+  // XmR EDUCATIONAL QUESTIONS
 
+  "helper.q.xmrShortSignals":
+    "Why do XmR signals disappear with a short baseline?",
 
+  "helper.q.xmrMinimum":
+    "Why does XmR need 12 usable points?",
 
+  "helper.q.xmrExclusionDisabled":
+    "Why is excluding this point from the limits disabled?",
+
+  "helper.q.xmrNelsonOutside":
+    "Why doesn't Nelson screening flag changes after the baseline?",
+
+  // No current XmR chart
+  "helper.xmrEducation.noChart":
+    "Generate an XmR chart to see information about your current period. The general explanation is below.\n\n",
+
+  // Short baseline and provisional limits
+  "helper.xmrEducation.short.intro":
+    "SimpleSPC deliberately does not give formal special-cause interpretations when the XmR control limits are provisional. The limits may still be displayed, but an apparent signal is not reported as a confirmed SPC signal until there are enough usable observations in the limit-estimation period.",
+
+  "helper.xmrEducation.short.provisional":
+    "Your latest XmR period currently has {count} usable points for estimating the limits; at least {minimum} are required for interpretation. This explains why a signal may disappear when you shorten the baseline, even if later plotted values look unusual.",
+
+  "helper.xmrEducation.short.provisionalUnknown":
+    "The latest XmR period does not yet meet the minimum of {minimum} usable points. Its limits and stability interpretation therefore remain provisional.",
+
+  "helper.xmrEducation.short.assessable":
+    "Your latest period has {count} usable points and meets the {minimum}-point minimum, so the selected SPC rules can now be interpreted. Not finding a signal does not necessarily mean performance is satisfactory.",
+
+  // Why the threshold is twelve
+  "helper.xmrEducation.minimum":
+    "SimpleSPC uses a conservative minimum of {minimum} usable points for interpreting XmR limits, special-cause signals and capability. This is a safeguard against treating limits estimated from very little information as sufficiently reliable. It is a rule adopted by this tool, not a guarantee that any process with 12 points is stable.\n\n" +
+    "The distinction matters: having {minimum} points somewhere on the chart is not enough. They must contribute to the relevant period's limit estimate. If the initial baseline contains only 10 points, or a split starts a short new period, the limits may remain provisional. Excluded observations are not automatically replaced by later points.",
+
+  "helper.xmrEducation.minimum.current":
+    "\n\nFor your current period, {count} usable points contribute to the limit estimate; the minimum is {minimum}.",
+
+  // Disabled manual point exclusion
+  "helper.xmrEducation.exclusion":
+    "Excluding a point from control-limit calculations is only useful if that point contributes to the limits being estimated. If you fixed the initial baseline, a later point outside that baseline does not contribute to those limits, so excluding it would have no effect. A later period created by a split has its own limit-estimation window.\n\n" +
+    "SimpleSPC may also disable a new exclusion if it would leave too few included observations, or — for an XmR chart — no consecutive pair of included observations for estimating moving-range variation.\n\n" +
+    "An excluded observation remains visible. Its adjacent moving ranges are omitted from the variation estimate; the tool does not join the observations across the gap to create an artificial moving range.\n\n" +
+    "Only exclude an observation after investigating a known special cause. If you believe the process has moved to a lasting new level, consider whether a justified phase split is more appropriate. The right-click menu provides the specific reason when an exclusion is unavailable; this helper answer does not identify which point you clicked.",
+
+  // Nelson screening versus special-cause detection
+  "helper.xmrEducation.nelson":
+    "Nelson moving-range screening is a method for estimating XmR control limits, not a rule for flagging changes anywhere on the chart.\n\n" +
+    "SimpleSPC examines consecutive moving ranges within the period used to estimate the limits. When screening is enabled, moving ranges strictly greater than 3.5 times the initial average moving range are omitted from the variation estimate. The observations and original moving ranges remain visible.\n\n" +
+    "A jump after a fixed baseline is not part of that baseline's variation estimate, so Nelson screening will not remove or flag it. Later observations are assessed separately using the selected SPC signal rules, provided the relevant period has enough usable data for interpretation. A split starts a separate period with its own limit estimate.\n\n" +
+    "Nelson screening also differs from manually excluding a point: screening omits qualifying moving ranges from the variation estimate; a manual exclusion omits an investigated observation and its adjacent moving ranges.",
+
+  "helper.xmrEducation.nelson.on":
+    "\n\nOn your current XmR chart, moving-range screening is enabled.",
+
+  "helper.xmrEducation.nelson.off":
+    "\n\nOn your current XmR chart, moving-range screening is disabled."
 
 
 

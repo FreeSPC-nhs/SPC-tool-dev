@@ -1881,12 +1881,66 @@ window.SimpleSPCi18n.registerLanguage("fr", {
     "Je ne suis pas certain de la réponse la plus adaptée. Voici quelques questions que vous pouvez essayer :",
 
   "helper.response.libraryMissing":
-    "La bibliothèque de l'assistant SPC n'est pas disponible. Vérifiez que spc-helper-library.js est chargé avant spc.js."
+    "La bibliothèque de l'assistant SPC n'est pas disponible. Vérifiez que spc-helper-library.js est chargé avant spc.js.",
 
+  // QUESTIONS PÉDAGOGIQUES SUR LES CARTES XmR
 
+  "helper.q.xmrShortSignals":
+    "Pourquoi les signaux XmR disparaissent-ils avec une courte période de référence ?",
 
+  "helper.q.xmrMinimum":
+    "Pourquoi une carte XmR nécessite-t-elle 12 points utilisables ?",
 
+  "helper.q.xmrExclusionDisabled":
+    "Pourquoi l'exclusion de ce point du calcul des limites est-elle désactivée ?",
 
+  "helper.q.xmrNelsonOutside":
+    "Pourquoi le filtrage de Nelson ne détecte-t-il pas les changements après la période de référence ?",
+
+  // Aucune carte XmR disponible
+  "helper.xmrEducation.noChart":
+    "Générez une carte XmR pour obtenir des informations sur votre période actuelle. Voici l'explication générale.\n\n",
+
+  // Période de référence courte et limites provisoires
+  "helper.xmrEducation.short.intro":
+    "SimpleSPC ne fournit volontairement pas d'interprétation formelle des signaux de cause spéciale lorsque les limites de contrôle XmR sont provisoires. Les limites peuvent rester affichées, mais un comportement inhabituel n'est pas présenté comme un signal SPC confirmé tant que la période utilisée pour estimer les limites ne contient pas suffisamment d'observations utilisables.",
+
+  "helper.xmrEducation.short.provisional":
+    "Votre période XmR la plus récente compte actuellement {count} points utilisables pour estimer les limites ; au moins {minimum} sont nécessaires pour l'interprétation. Cela explique pourquoi un signal peut disparaître lorsque vous raccourcissez la période de référence, même si les valeurs ultérieures semblent inhabituelles.",
+
+  "helper.xmrEducation.short.provisionalUnknown":
+    "La période XmR la plus récente ne satisfait pas encore au minimum de {minimum} points utilisables. Ses limites et son interprétation en matière de stabilité restent donc provisoires.",
+
+  "helper.xmrEducation.short.assessable":
+    "Votre période la plus récente compte {count} points utilisables et atteint le minimum de {minimum} points. Les règles SPC sélectionnées peuvent donc être interprétées. L'absence de signal ne signifie pas nécessairement que les performances sont satisfaisantes.",
+
+  // Pourquoi douze points ?
+  "helper.xmrEducation.minimum":
+    "SimpleSPC exige, par prudence, au moins {minimum} points utilisables pour interpréter les limites XmR, les signaux de cause spéciale et la capabilité. Cette précaution évite de considérer comme suffisamment fiables des limites estimées à partir de très peu d'informations. Il s'agit d'une règle adoptée par cet outil, et non d'une garantie qu'un processus comportant 12 points est stable.\n\n" +
+    "Cette distinction est importante : il ne suffit pas d'avoir {minimum} points quelque part sur le graphique. Ces points doivent contribuer à l'estimation des limites de la période concernée. Si la période de référence initiale ne contient que 10 points, ou si un changement de phase crée une nouvelle période courte, les limites peuvent rester provisoires. Les observations exclues ne sont pas automatiquement remplacées par des points ultérieurs.",
+
+  "helper.xmrEducation.minimum.current":
+    "\n\nPour votre période actuelle, {count} points utilisables contribuent à l'estimation des limites ; le minimum est de {minimum}.",
+
+  // Exclusion manuelle indisponible
+  "helper.xmrEducation.exclusion":
+    "L'exclusion d'un point du calcul des limites de contrôle n'est utile que si ce point contribue effectivement aux limites estimées. Lorsque la période de référence initiale est fixée, un point ultérieur situé en dehors de cette période ne contribue pas au calcul. Son exclusion ne modifierait donc pas les limites. Une période créée par un changement de phase possède sa propre fenêtre d'estimation des limites.\n\n" +
+    "SimpleSPC peut également désactiver une nouvelle exclusion si elle laisse trop peu d'observations incluses ou, dans le cas d'une carte XmR, aucune paire d'observations consécutives utilisables pour estimer la variation à partir des étendues mobiles.\n\n" +
+    "Une observation exclue reste visible. Les étendues mobiles adjacentes sont omises de l'estimation de la variation. L'outil ne relie pas les observations de part et d'autre du point exclu pour créer une étendue mobile artificielle.\n\n" +
+    "N'excluez une observation qu'après avoir identifié et étudié une cause spéciale connue. Si le processus semble avoir atteint durablement un nouveau niveau, examinez si un changement de phase justifié serait plus approprié. Le menu contextuel indique la raison précise lorsqu'une exclusion n'est pas disponible ; cette réponse de l'assistant n'identifie pas le point sur lequel vous avez cliqué.",
+
+  // Filtrage de Nelson et détection des causes spéciales
+  "helper.xmrEducation.nelson":
+    "Le filtrage des étendues mobiles selon Nelson sert à estimer les limites de contrôle XmR. Il ne s'agit pas d'une règle destinée à signaler les changements sur l'ensemble du graphique.\n\n" +
+    "SimpleSPC examine les étendues mobiles entre observations consécutives dans la période utilisée pour estimer les limites. Lorsque le filtrage est activé, les étendues mobiles strictement supérieures à 3,5 fois l'étendue mobile moyenne initiale sont omises de l'estimation de la variation. Les observations et les étendues mobiles d'origine restent visibles.\n\n" +
+    "Un saut survenant après une période de référence fixée ne fait pas partie de l'estimation de la variation de cette période. Le filtrage de Nelson ne va donc ni le supprimer ni le signaler. Les observations ultérieures sont évaluées séparément selon les règles SPC sélectionnées, à condition que la période concernée possède suffisamment de données utilisables pour être interprétée. Un changement de phase crée une période distincte, avec sa propre estimation des limites.\n\n" +
+    "Le filtrage de Nelson est également différent de l'exclusion manuelle d'un point : le filtrage omet certaines étendues mobiles de l'estimation de la variation, tandis qu'une exclusion manuelle retire du calcul une observation étudiée ainsi que ses étendues mobiles adjacentes.",
+
+  "helper.xmrEducation.nelson.on":
+    "\n\nSur votre carte XmR actuelle, le filtrage des étendues mobiles est activé.",
+
+  "helper.xmrEducation.nelson.off":
+    "\n\nSur votre carte XmR actuelle, le filtrage des étendues mobiles est désactivé."
 
 
 
