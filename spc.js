@@ -21522,22 +21522,57 @@ function helperQuestionDisplay(englishQuestion) {
     : englishQuestion;
 }
 
+/*
+ * Match known suggested questions despite harmless
+ * typing differences.
+ *
+ * This is not fuzzy matching: it only recognises
+ * questions already in our bilingual dictionary.
+ */
+function normaliseHelperSuggestedQuestion(value) {
+  return String(value ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/œ/g, "oe")
+    .replace(/æ/g, "ae")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
 function helperQuestionForMatching(question) {
-  const input = String(question || "").trim();
+  const input = String(question ?? "").trim();
 
-  // The existing English question is always valid.
-  if (SPC_HELPER_QUESTION_KEYS[input]) return input;
+  if (!input) return input;
 
-  // Recognise the translated suggested question too.
-  for (const english of Object.keys(SPC_HELPER_QUESTION_KEYS)) {
-    if (helperQuestionDisplay(english) === input) {
-      return english;
+  const normalised =
+    normaliseHelperSuggestedQuestion(input);
+
+  for (const englishQuestion of Object.keys(
+    SPC_HELPER_QUESTION_KEYS
+  )) {
+    const englishMatch =
+      normaliseHelperSuggestedQuestion(englishQuestion);
+
+    const translatedMatch =
+      normaliseHelperSuggestedQuestion(
+        helperQuestionDisplay(englishQuestion)
+      );
+
+    if (
+      normalised === englishMatch ||
+      normalised === translatedMatch
+    ) {
+      // Continue using the original English identifier.
+      return englishQuestion;
     }
   }
 
-  // Other free-text questions stay untouched.
+  // Preserve existing free-text and FAQ matching.
+  // Do not guess what an unrecognised question means.
   return input;
 }
+
 
 function renderHelperIntroText(hasChart) {
   if (!spcHelperIntro) return;
