@@ -243,9 +243,27 @@ function describeRulesForCurrentChart(chartType) {
     "What should I do next?",
     "Should I add a split here?",
 
+    
     chartType === "xmr"
       ? "Why are my XmR limits different?"
       : null,
+
+    chartType === "xmr"
+      ? "Why do XmR signals disappear with a short baseline?"
+      : null,
+
+    chartType === "xmr"
+      ? "Why does XmR need 12 usable points?"
+      : null,
+
+    chartType === "xmr"
+      ? "Why is excluding this point from the limits disabled?"
+      : null,
+
+    chartType === "xmr"
+      ? "Why doesn't Nelson screening flag changes after the baseline?"
+      : null,
+
 
     chartType === "pprime"
       ? "Why am I using a P′ chart?"
@@ -2007,6 +2025,129 @@ function buildTargetAnswer(ctx) {
 }
 
 
+/*
+ * Batch 37 — Educational XmR explanations.
+ *
+ * Reads the existing chart context without changing it.
+ * Does not perform any new SPC calculations.
+ */
+function buildXmREducationAnswer(ctx, topic) {
+  const t = helperDynamicText;
+
+  const a =
+    ctx.chartType === "xmr"
+      ? ctx.xmr
+      : null;
+
+  const minimum =
+    a && finiteNumber(a.minimumPointsForInterpretation)
+      ? a.minimumPointsForInterpretation
+      : 12;
+
+  const count =
+    a && finiteNumber(a.limitEstimatePointCount)
+      ? a.limitEstimatePointCount
+      : null;
+
+  const prefix = a
+    ? ""
+    : t(
+        "helper.xmrEducation.noChart",
+        "Generate an XmR chart to see information about your current period. The general explanation is below.\n\n"
+      );
+
+  // 1. Why signals disappear with a short baseline.
+  if (topic === "short") {
+    let answer = prefix + t(
+      "helper.xmrEducation.short.intro",
+      "SimpleSPC deliberately does not give formal special-cause interpretations when the XmR control limits are provisional. The limits may still be displayed, but an apparent signal is not reported as a confirmed SPC signal until there are enough usable observations in the limit-estimation period."
+    );
+
+    if (a && !isXmRPeriodAssessable(a)) {
+      answer += "\n\n" + (
+        count !== null
+          ? t(
+              "helper.xmrEducation.short.provisional",
+              "Your latest XmR period currently has {count} usable points for estimating the limits; at least {minimum} are required for interpretation. This explains why a signal may disappear when you shorten the baseline, even if later plotted values look unusual.",
+              { count, minimum }
+            )
+          : t(
+              "helper.xmrEducation.short.provisionalUnknown",
+              "The latest XmR period does not yet meet the minimum of {minimum} usable points. Its limits and stability interpretation therefore remain provisional.",
+              { minimum }
+            )
+      );
+    } else if (a && count !== null) {
+      answer += "\n\n" + t(
+        "helper.xmrEducation.short.assessable",
+        "Your latest period has {count} usable points and meets the {minimum}-point minimum, so the selected SPC rules can now be interpreted. Not finding a signal does not necessarily mean performance is satisfactory.",
+        { count, minimum }
+      );
+    }
+
+    return answer;
+  }
+
+  // 2. Why twelve usable observations are required.
+  if (topic === "minimum") {
+    let answer = prefix + t(
+      "helper.xmrEducation.minimum",
+      "SimpleSPC uses a conservative minimum of {minimum} usable points for interpreting XmR limits, special-cause signals and capability. This is a safeguard against treating limits estimated from very little information as sufficiently reliable. It is a rule adopted by this tool, not a guarantee that any process with 12 points is stable.\n\n" +
+      "The distinction matters: having {minimum} points somewhere on the chart is not enough. They must contribute to the relevant period's limit estimate. If the initial baseline contains only 10 points, or a split starts a short new period, the limits may remain provisional. Excluded observations are not automatically replaced by later points.",
+      { minimum }
+    );
+
+    if (a && count !== null) {
+      answer += t(
+        "helper.xmrEducation.minimum.current",
+        "\n\nFor your current period, {count} usable points contribute to the limit estimate; the minimum is {minimum}.",
+        { count, minimum }
+      );
+    }
+
+    return answer;
+  }
+
+  // 3. Why the right-click exclusion may be disabled.
+  // No specific clicked-point context is assumed.
+  if (topic === "exclusion") {
+    return prefix + t(
+      "helper.xmrEducation.exclusion",
+      "Excluding a point from control-limit calculations is only useful if that point contributes to the limits being estimated. If you fixed the initial baseline, a later point outside that baseline does not contribute to those limits, so excluding it would have no effect. A later period created by a split has its own limit-estimation window.\n\n" +
+      "SimpleSPC may also disable a new exclusion if it would leave too few included observations, or — for an XmR chart — no consecutive pair of included observations for estimating moving-range variation.\n\n" +
+      "An excluded observation remains visible. Its adjacent moving ranges are omitted from the variation estimate; the tool does not join the observations across the gap to create an artificial moving range.\n\n" +
+      "Only exclude an observation after investigating a known special cause. If you believe the process has moved to a lasting new level, consider whether a justified phase split is more appropriate. The right-click menu provides the specific reason when an exclusion is unavailable; this helper answer does not identify which point you clicked."
+    );
+  }
+
+  // 4. Why Nelson screening does not detect later changes.
+  if (topic === "nelson") {
+    let answer = prefix + t(
+      "helper.xmrEducation.nelson",
+      "Nelson moving-range screening is a method for estimating XmR control limits, not a rule for flagging changes anywhere on the chart.\n\n" +
+      "SimpleSPC examines consecutive moving ranges within the period used to estimate the limits. When screening is enabled, moving ranges strictly greater than 3.5 times the initial average moving range are omitted from the variation estimate. The observations and original moving ranges remain visible.\n\n" +
+      "A jump after a fixed baseline is not part of that baseline's variation estimate, so Nelson screening will not remove or flag it. Later observations are assessed separately using the selected SPC signal rules, provided the relevant period has enough usable data for interpretation. A split starts a separate period with its own limit estimate.\n\n" +
+      "Nelson screening also differs from manually excluding a point: screening omits qualifying moving ranges from the variation estimate; a manual exclusion omits an investigated observation and its adjacent moving ranges."
+    );
+
+    if (a && a.mrScreeningEnabled === true) {
+      answer += t(
+        "helper.xmrEducation.nelson.on",
+        "\n\nOn your current XmR chart, moving-range screening is enabled."
+      );
+    } else if (a && a.mrScreeningEnabled === false) {
+      answer += t(
+        "helper.xmrEducation.nelson.off",
+        "\n\nOn your current XmR chart, moving-range screening is disabled."
+      );
+    }
+
+    return answer;
+  }
+
+  return prefix;
+}
+
 
 function buildXmRLimitsAnswer(ctx) {
   const a = ctx.xmr;
@@ -2700,6 +2841,42 @@ function buildDecisionAnswer(ctx) {
         "A frequent category is not automatically a root cause, and a less frequent category may still deserve priority if its consequences are particularly serious."
       );
     }
+  }
+
+
+  // Batch 37 — Match the four new questions exactly.
+  //
+  // Handle these before the broad XmR/Nelson matcher,
+  // which intentionally recognises many related words.
+  // Existing English question identifiers are preserved.
+
+  const xmrEducationQuestions = new Map([
+    [
+      norm("Why do XmR signals disappear with a short baseline?"),
+      "short"
+    ],
+    [
+      norm("Why does XmR need 12 usable points?"),
+      "minimum"
+    ],
+    [
+      norm("Why is excluding this point from the limits disabled?"),
+      "exclusion"
+    ],
+    [
+      norm("Why doesn't Nelson screening flag changes after the baseline?"),
+      "nelson"
+    ]
+  ]);
+
+  const xmrEducationTopic =
+    xmrEducationQuestions.get(q);
+
+  if (xmrEducationTopic) {
+    return buildXmREducationAnswer(
+      ctx,
+      xmrEducationTopic
+    );
   }
 
 

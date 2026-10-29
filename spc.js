@@ -21491,6 +21491,19 @@ const SPC_HELPER_QUESTION_KEYS = {
   "What should I do next?": "helper.q.next",
   "Should I add a split here?": "helper.q.addSplit",
   "Why are my XmR limits different?": "helper.q.xmrLimits",
+
+  "Why do XmR signals disappear with a short baseline?":
+    "helper.q.xmrShortSignals",
+
+  "Why does XmR need 12 usable points?":
+    "helper.q.xmrMinimum",
+
+  "Why is excluding this point from the limits disabled?":
+    "helper.q.xmrExclusionDisabled",
+
+  "Why doesn't Nelson screening flag changes after the baseline?":
+    "helper.q.xmrNelsonOutside",
+
   "Why am I using a P′ chart?": "helper.q.pPrime",
   "Why am I using a U′ chart?": "helper.q.uPrime",
   "What does Sigma Z mean?": "helper.q.sigmaZ",
