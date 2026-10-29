@@ -24568,26 +24568,52 @@ function applyBasicInlineFormatting(escapedText) {
   return t;
 }
 
+/*
+ * Batch 38 — Remember the question behind the
+ * currently displayed SPC helper answer.
+ *
+ * The question is stored in the form understood
+ * by the original English matching engine.
+ */
+let lastSpcHelperAnsweredQuestion = null;
+
 function showHelperAnswer(questionText) {
   if (!spcHelperOutput) return;
 
-  const q = (questionText ?? aiQuestionInput?.value ?? "").trim();
+    const q = (
+    questionText ?? aiQuestionInput?.value ?? ""
+  ).trim();
+
   if (!q) {
-    
-spcHelperOutput.innerHTML =
-  `<p>${escapeHtml(chartPanelText(
-    "helper.emptyQuestion",
-    "Type a question (or click a suggestion) to get started."
-  ))}</p>`;
+    // No previous answer should be retranslated
+    // after an empty-question request.
+    lastSpcHelperAnsweredQuestion = null;
+
+    spcHelperOutput.innerHTML =
+      `<p>${escapeHtml(chartPanelText(
+        "helper.emptyQuestion",
+        "Type a question (or click a suggestion) to get started."
+      ))}</p>`;
 
     return;
   }
 
+  // Preserve the existing Batch 26 behaviour:
+  // suggested French questions use their original
+  // English identifiers when matched.
+  const questionForMatching =
+    helperQuestionForMatching(
+      aiQuestionInput?.dataset.helperQuestionEnglish || q
+    );
+
   const ans = answerSpcQuestion(
-  helperQuestionForMatching(
-    aiQuestionInput?.dataset.helperQuestionEnglish || q
-  )
-);
+    questionForMatching
+  );
+
+  // Remember the question that actually produced
+  // this answer, independently of the input field.
+  lastSpcHelperAnsweredQuestion =
+    questionForMatching;
 
   // Use your formatter if present; otherwise fall back safely
   if (typeof formatSpcHelperAnswerToHtml === "function") {
@@ -24776,6 +24802,46 @@ function refreshSpcHelperDynamicLanguage() {
           "helper.hideQuestions",
           "Hide suggested questions"
         );
+  }
+  // Batch 38 — Refresh the answer already on screen.
+  //
+  // The last matched question is stored separately
+  // from the editable input field.
+  //
+  // Do not call showHelperAnswer() here: that would
+  // reset the answer's scroll position and collapse
+  // the suggested-question panel.
+
+  if (
+    lastSpcHelperAnsweredQuestion &&
+    spcHelperOutput &&
+    spcHelperOutput.innerHTML.trim() !== ""
+  ) {
+    const previousScroll =
+      spcHelperOutput.scrollTop;
+
+    // Reuse the original answer engine and the
+    // chart analysis that already exists.
+    const translatedAnswer = answerSpcQuestion(
+      lastSpcHelperAnsweredQuestion
+    );
+
+    if (
+      typeof formatSpcHelperAnswerToHtml ===
+      "function"
+    ) {
+      spcHelperOutput.innerHTML =
+        formatSpcHelperAnswerToHtml(
+          translatedAnswer
+        );
+    } else {
+      spcHelperOutput.innerHTML =
+        `<p>${escapeHtml(translatedAnswer)}</p>`;
+    }
+
+    // Keep the reader at the same position.
+    spcHelperOutput.scrollTop =
+      previousScroll;
   }
 }
 
