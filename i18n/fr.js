@@ -2021,7 +2021,69 @@ window.SimpleSPCi18n.registerLanguage("fr", {
   "wizard.reason.paretoRows": "Vous souhaitez comparer des catégories et déterminer celles qui regroupent le plus d'occurrences. Un diagramme de Pareto les classe par fréquence et présente leur pourcentage cumulé. Si chaque ligne correspond à une occurrence, sélectionnez la colonne des catégories et l'option permettant de compter chaque ligne comme une occurrence. Le diagramme aide à définir les priorités d'investigation, mais ne permet pas d'identifier les causes profondes ni d'évaluer la stabilité statistique du processus.",
   "wizard.reason.rareTime": "Vous disposez du temps entre des événements rares.",
   "wizard.reason.rareOpportunities": "Vous disposez du nombre d'opportunités entre des événements rares.",
-  "wizard.reason.unsure": "En cas d'incertitude, une carte XmR constitue un point de départ approprié pour une mesure unique suivie au fil du temps."
+  "wizard.reason.unsure": "En cas d'incertitude, une carte XmR constitue un point de départ approprié pour une mesure unique suivie au fil du temps.",
+
+  // LOT 36A-2 — FENÊTRE DE PARAMÉTRAGE DES CARTES
+
+  "setup.title": "Paramètres du graphique",
+  "setup.close": "Fermer",
+  "setup.closeAria": "Fermer les paramètres du graphique",
+  "setup.dontShow": "Ne plus afficher automatiquement cette fenêtre",
+
+  // Sous-titres selon le type de carte
+  "setup.subtitle.run": "Carte de suivi (Run) : évolution des valeurs au fil du temps.",
+  "setup.subtitle.xmr": "Carte XmR : mesures individuelles suivies au fil du temps.",
+  "setup.subtitle.c": "Carte C : nombre d'événements par période.",
+  "setup.subtitle.p": "Carte P : proportion par rapport à un total.",
+  "setup.subtitle.pprime": "Carte P′ de Laney : carte de proportions avec limites ajustées.",
+  "setup.subtitle.u": "Carte U : taux par opportunité.",
+  "setup.subtitle.uprime": "Carte U′ de Laney : carte de taux avec limites ajustées.",
+  "setup.subtitle.xbars": "Carte X̄–S : mesures regroupées en sous-groupes.",
+  "setup.subtitle.t": "Carte T : temps entre des événements rares.",
+  "setup.subtitle.g": "Carte G : opportunités entre des événements rares.",
+  "setup.subtitle.pareto": "Diagramme de Pareto : comparer les catégories et définir des priorités.",
+
+  // Titres des rubriques
+  "setup.heading.when": "À utiliser lorsque…",
+  "setup.heading.columns": "Colonnes nécessaires",
+  "setup.heading.example": "Exemple de structure des données",
+  "setup.heading.mistake": "Erreur fréquente",
+  "setup.heading.mistakes": "Erreurs fréquentes",
+  "setup.heading.pprime": "Choisir entre P et P′",
+  "setup.heading.uprime": "Choisir entre U et U′",
+  "setup.heading.rates": "Affichage des taux",
+  "setup.heading.paretoRows": "Exemple 1 : une ligne par occurrence",
+  "setup.heading.paretoCounts": "Exemple 2 : effectifs déjà regroupés",
+  "setup.heading.paretoShows": "Ce que montre le diagramme",
+  "setup.heading.tMode": "Choisissez votre mode de saisie",
+  "setup.heading.fallback": "Conseils de paramétrage",
+
+  // En-têtes et catégories des exemples
+  "setup.example.week": "Semaine",
+  "setup.example.waitingTime": "Temps d'attente",
+  "setup.example.date": "Date",
+  "setup.example.lengthStay": "Durée de séjour",
+  "setup.example.falls": "Chutes",
+  "setup.example.patientsHarm": "Patients ayant subi un préjudice",
+  "setup.example.patientsReviewed": "Patients évalués",
+  "setup.example.month": "Mois",
+  "setup.example.infections": "Infections",
+  "setup.example.bedDays": "Journées d'hospitalisation",
+  "setup.example.jan": "Janv.",
+  "setup.example.feb": "Févr.",
+  "setup.example.mar": "Mars",
+  "setup.example.day": "Jour",
+  "setup.example.reading": "Mesure",
+  "setup.example.sampleId": "ID_sous-groupe",
+  "setup.example.mon": "Lun.",
+  "setup.example.tue": "Mar.",
+  "setup.example.eventDate": "Date de l'événement",
+  "setup.example.procedures": "Interventions entre événements indésirables",
+  "setup.example.category": "Catégorie",
+  "setup.example.count": "Effectif",
+  "setup.example.medication": "Médicaments",
+  "setup.example.pressureDamage": "Lésions de pression"
+
 
 
 

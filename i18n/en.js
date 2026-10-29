@@ -2017,7 +2017,69 @@ window.SimpleSPCi18n.registerLanguage("en", {
   "wizard.reason.paretoRows": "You want to compare categories and identify which account for the most occurrences. A Pareto chart ranks categories from most to least frequent and shows their cumulative percentage. If each row represents one occurrence, select the category column and choose (count each row as 1). The chart helps prioritise investigation, but does not identify root causes or assess statistical process stability.",
   "wizard.reason.rareTime": "You have time between rare events.",
   "wizard.reason.rareOpportunities": "You have opportunities between rare events.",
-  "wizard.reason.unsure": "When unsure, XmR is a safe default for a single value over time."
+  "wizard.reason.unsure": "When unsure, XmR is a safe default for a single value over time.",
+
+  //CHART SETUP MODAL
+
+  "setup.title": "Chart setup",
+  "setup.close": "Close",
+  "setup.closeAria": "Close chart setup",
+  "setup.dontShow": "Don’t automatically show this again",
+
+  // Chart-specific subtitles
+  "setup.subtitle.run": "Run chart: simple view of values over time.",
+  "setup.subtitle.xmr": "XmR chart: individual measurements over time.",
+  "setup.subtitle.c": "C chart: count per time period.",
+  "setup.subtitle.p": "P chart: proportion out of a total.",
+  "setup.subtitle.pprime": "Laney P′ chart: adjusted proportion control chart.",
+  "setup.subtitle.u": "U chart: rate per opportunity.",
+  "setup.subtitle.uprime": "Laney U′ chart: adjusted rate control chart.",
+  "setup.subtitle.xbars": "X̄–S chart: grouped measurements.",
+  "setup.subtitle.t": "T chart: time between rare events.",
+  "setup.subtitle.g": "G chart: opportunities between rare events.",
+  "setup.subtitle.pareto": "Pareto chart: compare and prioritise categories.",
+
+  // Reusable card headings
+  "setup.heading.when": "Use this when...",
+  "setup.heading.columns": "You need these columns",
+  "setup.heading.example": "Example layout",
+  "setup.heading.mistake": "Common mistake",
+  "setup.heading.mistakes": "Common mistakes",
+  "setup.heading.pprime": "Choosing P or P′",
+  "setup.heading.uprime": "Choosing U or U′",
+  "setup.heading.rates": "Displaying rates",
+  "setup.heading.paretoRows": "Example 1: one row per occurrence",
+  "setup.heading.paretoCounts": "Example 2: already summarised counts",
+  "setup.heading.paretoShows": "What the chart shows",
+  "setup.heading.tMode": "Choose your setup",
+  "setup.heading.fallback": "Setup guidance",
+
+  // Example-table headings and illustrative labels
+  "setup.example.week": "Week",
+  "setup.example.waitingTime": "Waiting time",
+  "setup.example.date": "Date",
+  "setup.example.lengthStay": "Length of stay",
+  "setup.example.falls": "Falls",
+  "setup.example.patientsHarm": "Patients with harm",
+  "setup.example.patientsReviewed": "Patients reviewed",
+  "setup.example.month": "Month",
+  "setup.example.infections": "Infections",
+  "setup.example.bedDays": "Bed days",
+  "setup.example.jan": "Jan",
+  "setup.example.feb": "Feb",
+  "setup.example.mar": "Mar",
+  "setup.example.day": "Day",
+  "setup.example.reading": "Reading",
+  "setup.example.sampleId": "Sample_ID",
+  "setup.example.mon": "Mon",
+  "setup.example.tue": "Tue",
+  "setup.example.eventDate": "Event date",
+  "setup.example.procedures": "Procedures between harms",
+  "setup.example.category": "Category",
+  "setup.example.count": "Count",
+  "setup.example.medication": "Medication",
+  "setup.example.pressureDamage": "Pressure damage"
+
 
 
 
