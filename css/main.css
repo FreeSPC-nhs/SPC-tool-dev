@@ -1605,3 +1605,55 @@ body.pdf-exporting #capability {
   padding: 0.18rem 0.2rem;
   text-align: left;
 }
+
+/* ===================================================
+   Batch 38 usability correction
+   SPC helper: responsive, scrollable questions
+   =================================================== */
+
+/*
+ * Keep the suggestion list within a sensible portion
+ * of the screen, regardless of the number or length
+ * of French/English suggested questions.
+ */
+#spcHelperSuggestions {
+  flex: 0 1 auto;
+  min-height: 0;
+
+  max-height: 32vh;
+  max-height: min(32vh, 240px);
+
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
+/*
+ * Keep the answer and input usable even when both
+ * question sections are expanded.
+ */
+#spcHelperOutput {
+  flex: 1 1 auto;
+  min-height: 4rem;
+  overflow-y: auto;
+}
+
+#spcHelperControls {
+  flex-shrink: 0;
+}
+
+#aiQuestionInput {
+  min-width: 0;
+}
+
+/*
+ * Allow a smaller suggestion area on narrow screens
+ * and devices with limited viewport height.
+ */
+@media (max-width: 650px), (max-height: 520px) {
+  #spcHelperSuggestions {
+    max-height: 25vh;
+    max-height: min(25vh, 180px);
+  }
+}
