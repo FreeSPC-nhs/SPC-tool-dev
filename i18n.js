@@ -13,8 +13,8 @@
     fr: { name: "Français", locale: "fr-FR" },
     es: { name: "Español", locale: "es-ES" },
     de: { name: "Deutsch", locale: "de-DE" },
-    it: { name: "Italiano (bozza)", locale: "it-IT", draftNotice: "Traduzione provvisoria: alcune sezioni sono ancora in inglese." },
-    pt: { name: "Português (rascunho)", locale: "pt-PT", draftNotice: "Tradução preliminar: algumas secções continuam em inglês." }
+    it: { name: "Italiano", locale: "it-IT" },
+    pt: { name: "Português (Portugal)", locale: "pt-PT" }
   };
 
   // English is the default; honour a previous manual choice when one exists.
