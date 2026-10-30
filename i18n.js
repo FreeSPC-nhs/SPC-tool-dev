@@ -11,7 +11,7 @@
   const languageMetadata = {
     en: { name: "English", locale: "en-GB" },
     fr: { name: "Français", locale: "fr-FR" },
-    es: { name: "Español (borrador)", locale: "es-ES", draftNotice: "Traducción preliminar: algunas secciones siguen en inglés." },
+    es: { name: "Español", locale: "es-ES" },
     de: { name: "Deutsch (Entwurf)", locale: "de-DE", draftNotice: "Übersetzungsentwurf: Einige Bereiche sind noch auf Englisch." },
     it: { name: "Italiano (bozza)", locale: "it-IT", draftNotice: "Traduzione provvisoria: alcune sezioni sono ancora in inglese." },
     pt: { name: "Português (rascunho)", locale: "pt-PT", draftNotice: "Tradução preliminar: algumas secções continuam em inglês." }
@@ -217,7 +217,7 @@
       });
     });
 
-    // Draft languages deliberately fall back to English for unreviewed strings.
+    // Only languages still under translation show a draft notice.
     const draftNotice = document.getElementById("translationDraftNotice");
     if (draftNotice) {
       const warning = languageMetadata[currentLanguage]?.draftNotice;
