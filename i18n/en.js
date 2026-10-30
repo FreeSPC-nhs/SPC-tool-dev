@@ -8,6 +8,270 @@
 
 window.SimpleSPCi18n.registerLanguage("en", {
 
+  // Translation and locale polish
+  "app.browserTitle": "Simple SPC Tool",
+  "data.chooseFile": "Choose file",
+  "data.noFileChosen": "No file selected",
+  "common.formatLetter.bold": "B",
+  "common.formatLetter.italic": "I",
+  "common.formatLetter.underline": "U",
+  "chart.columns.tDatesTooltip": "Not used for T chart when using event dates.",
+  "errors.annotationRequired": "Please enter both a date and a label for the annotation.",
+  "errors.noData": "No data loaded yet. Upload a CSV or use the data editor first.",
+  "errors.tMinEvents": "T chart needs at least 4 events.",
+  "errors.gMinPoints": "G chart needs at least 4 points (each value should be 1 or more).",
+  "errors.gPositive": "G chart values must be numbers 1 or greater.",
+  "errors.gProbability": "Could not compute G chart probability from your data (check values are >= 1).",
+  "errors.axisBounds": "Y-axis minimum cannot be greater than Y-axis maximum.",
+  "errors.tDatesAxis": "T chart (event dates mode) needs Date / time axis.",
+  "errors.tooFewValidPoints": "Not enough valid data points after parsing. Check your column choices.",
+  "errors.tDateModeAxis": "T chart needs Date / time axis (it uses event dates).",
+  "errors.tGapsMin": "T chart (gaps mode) needs at least 3 valid gap values.",
+  "errors.chartNotImplemented": "Chart type \"{chartType}\" is not implemented yet.",
+  "errors.cMinPoints": "C chart needs at least 2 points.",
+  "errors.pMinPoints": "P chart needs at least 2 points.",
+  "errors.pPrimeMinPoints": "P′ chart needs at least 2 points.",
+  "errors.uMinPoints": "U chart needs at least 2 points.",
+  "errors.clipboardUnsupported": "Copy to clipboard is not supported in this browser. Try 'Save chart(s) as…' instead.",
+  "errors.exportImageFailed": "Sorry — your browser could not export this image.",
+  "errors.imageCreationFailed": "Failed to create image.",
+  "errors.projectColumnsMissing": "Imported project settings were applied, but some saved columns could not be found. Please reselect: {columns}",
+  "errors.portableUnrecognised": "This file does not contain a recognised FreeSPC portable project.",
+  "errors.portableRead": "The saved SPC chart could not be read. The file may be damaged or incompatible. Technical detail: {message}",
+  "errors.portableLoaderMissing": "The saved SPC chart could not be loaded because the project loader was not available.",
+  "errors.portableLoad": "The saved SPC chart could not be loaded. Technical detail: {message}",
+  "errors.portableStart": "The saved FreeSPC file could not start correctly. Technical detail: {message}",
+
+
+  // English chart-setup cards (canonical counterparts to the French cards).
+  "setup.run.card1": `
+        <p style="margin:0;">You want a simple chart of a measure over time using a <strong>median</strong>.</p>
+      `,
+  "setup.run.card2": `
+        <ul style="margin:0;">
+          <li><strong>Date / X-axis column</strong> → time or order</li>
+          <li><strong>Value / Y-axis column</strong> → the measure you want to track</li>
+        </ul>
+      `,
+  "setup.run.card4": `
+        <p style="margin:0;">Do not choose a row number or ID column as the value. That can create a chart that looks valid but means nothing.</p>
+      `,
+  "setup.xmr.card1": `
+        <p style="margin:0;">You have <strong>one measurement per time point</strong> and want a mean plus control limits.</p>
+      `,
+  "setup.xmr.card2": `
+        <ul style="margin:0;">
+          <li><strong>Date / X-axis column</strong> → date, week, month or sequence</li>
+          <li><strong>Value / Y-axis column</strong> → the numeric measurement</li>
+        </ul>
+      `,
+  "setup.xmr.card4": `
+        <p style="margin:0;">Use XmR only when there is one value per time point. If each time point has several measurements, use <strong>X̄–S</strong> instead.</p>
+      `,
+  "setup.c.card1": `
+        <p style="margin:0;">You are plotting a <strong>count</strong> per period and the amount of opportunity is roughly the same each time.</p>
+      `,
+  "setup.c.card2": `
+        <ul style="margin:0;">
+          <li><strong>Date / X-axis column</strong> → date, week, month or sequence</li>
+          <li><strong>Value / Y-axis column</strong> → count of events</li>
+        </ul>
+      `,
+  "setup.c.card4": `
+        <p style="margin:0;">If the denominator changes a lot between points, use a <strong>U chart</strong> instead of a C chart.</p>
+      `,
+  "setup.p.card1": `
+        <p style="margin:0;">You want to track a <strong>proportion</strong>, such as 5 out of 100 or the percentage meeting a standard.</p>
+      `,
+  "setup.p.card2": `
+        <ul style="margin:0;">
+          <li><strong>Date / X-axis column</strong> → time or order</li>
+          <li><strong>Value / Y-axis column</strong> → numerator</li>
+          <li><strong>Third column</strong> → denominator</li>
+        </ul>
+      `,
+  "setup.p.card4": `
+        <p style="margin:0;">The numerator must not be larger than the denominator.</p>
+      `,
+  "setup.u.card1": `
+        <p style="margin:0;">You want to track a <strong>rate</strong>, where the denominator changes from point to point.</p>
+      `,
+  "setup.u.card2": `
+        <ul style="margin:0;">
+          <li><strong>Date / X-axis column</strong> → time or order</li>
+          <li><strong>Value / Y-axis column</strong> → count of events</li>
+          <li><strong>Third column</strong> → opportunities / exposure</li>
+        </ul>
+      `,
+  "setup.u.card4": `
+        <p style="margin:0;">Use U when the denominator varies. If the denominator is roughly constant, a <strong>C chart</strong> may be more appropriate.</p>
+      `,
+  "setup.pprime.card1": `
+        <p style="margin:0;">
+          You are tracking a <strong>proportion</strong> using a numerator
+          and denominator, but the observed variation is greater or
+          smaller than a standard P chart expects.
+          P′ adjusts the width of the control limits to reflect
+          this extra or reduced variation.
+        </p>
+      `,
+  "setup.pprime.card2": `
+        <ul style="margin:0;">
+          <li><strong>Date / X-axis column</strong> → time or order</li>
+          <li><strong>Value / Y-axis column</strong> → numerator (number meeting the definition)</li>
+          <li><strong>Third column</strong> → denominator (total number assessed)</li>
+        </ul>
+      `,
+  "setup.pprime.card4": `
+        <p style="margin:0;">
+          Normally start with a <strong>P chart</strong>.
+          SimpleSPC checks whether the observed variation differs
+          from what a standard P chart expects and can recommend
+          switching to P′.
+          <br><br>
+          The adjustment is called <strong>Sigma Z</strong>.
+          It changes the control limits, not the plotted proportions.
+          The choice to switch charts remains yours.
+        </p>
+      `,
+  "setup.pprime.card5": `
+        <p style="margin:0;">
+          Enter the actual numerator and denominator counts,
+          not a pre-calculated percentage. The numerator cannot
+          exceed the denominator.
+        </p>
+      `,
+  "setup.uprime.card1": `
+        <p style="margin:0;">
+          You are tracking <strong>events per opportunity</strong>,
+          but the observed variation is greater or smaller than
+          a standard U chart expects.
+          U′ adjusts the control limits to reflect this variation.
+        </p>
+      `,
+  "setup.uprime.card2": `
+        <ul style="margin:0;">
+          <li><strong>Date / X-axis column</strong> → time or order</li>
+          <li><strong>Value / Y-axis column</strong> → count of events</li>
+          <li><strong>Third column</strong> → number of opportunities or amount of exposure</li>
+        </ul>
+      `,
+  "setup.uprime.card4": `
+        <p style="margin:0;">
+          Normally start with a <strong>U chart</strong>.
+          SimpleSPC checks whether the observed variation differs
+          from what a standard U chart expects and can recommend
+          switching to U′.
+          <br><br>
+          The adjustment is called <strong>Sigma Z</strong>.
+          It changes the control limits, not the underlying event rates.
+          The choice to switch charts remains yours.
+        </p>
+      `,
+  "setup.uprime.card5": `
+        <p style="margin:0;">
+          Use <strong>Display rate as</strong> in the Chart tab
+          to show rates per 1, 100, 1,000 or another available unit.
+          This changes the display scale, not the statistical calculation.
+        </p>
+      `,
+  "setup.uprime.card6": `
+        <p style="margin:0;">
+          Enter the actual event counts and opportunities,
+          not a pre-calculated rate.
+          Unlike a proportion, a rate can exceed one event
+          per opportunity.
+        </p>
+      `,
+  "setup.pareto.card1": `
+        <p style="margin:0;">
+          You want to identify which categories account for
+          the most recorded occurrences.
+          A Pareto chart ranks categories from most to least frequent,
+          with a cumulative percentage line.
+        </p>
+      `,
+  "setup.pareto.card2": `
+        <ul style="margin:0;">
+          <li><strong>Category column</strong> → the category you want to compare</li>
+          <li><strong>Frequency / count column</strong> → choose how occurrences are counted</li>
+        </ul>
+        <p style="margin-bottom:0;">
+          If each row represents one occurrence, select
+          <strong>(count each row as 1)</strong>.
+          If your data are already summarised, select the numeric
+          column containing the counts.
+        </p>
+      `,
+  "setup.pareto.card5": `
+        <p style="margin:0;">
+          The blue bars show the number of occurrences in each category.
+          The red line shows the cumulative percentage.
+          <br><br>
+          The dashed 80% line is a guide for prioritisation,
+          <strong>not a statistical control limit</strong>.
+        </p>
+      `,
+  "setup.pareto.card6": `
+        <p style="margin:0;">
+          Do not assume that the most frequent categories
+          are necessarily the underlying causes of the problem.
+          They are useful starting points for investigation.
+          <br><br>
+          When using a numeric count column, counts must be
+          non-negative whole numbers. At least two categories
+          with positive counts are needed.
+        </p>
+      `,
+  "setup.xbars.card1": `
+        <p style="margin:0;">You have <strong>multiple measurements within each subgroup</strong> and want to understand both subgroup averages and within-group variation.</p>
+      `,
+  "setup.xbars.card2": `
+        <ul style="margin:0;">
+          <li><strong>Date / X-axis column</strong> → subgroup label or time label</li>
+          <li><strong>Value / Y-axis column</strong> → measurement value</li>
+          <li><strong>Third column</strong> → subgroup ID</li>
+        </ul>
+      `,
+  "setup.xbars.card4": `
+        <p style="margin:0;">Do not use X̄–S if each subgroup only has one reading. Use <strong>XmR</strong> instead.</p>
+      `,
+  "setup.t.card1": `
+        <p style="margin:0;">You want to track the <strong>time between rare events</strong>.</p>
+      `,
+  "setup.t.card2": `
+        <label style="display:block; margin:0.25rem 0;">
+          <input type="radio" name="tChartInputMode" value="eventDates" {checkedDates}>
+          <strong>I have event dates</strong> (one row per event)
+        </label>
+        <div class="hint small-hint" style="margin-top:0.15rem; margin-bottom:0.5rem;">
+          Put the event date/time in <em>Date / X-axis column</em>. The <em>Value / Y-axis column</em> is not used.
+        </div>
+
+        <label style="display:block; margin:0.25rem 0;">
+          <input type="radio" name="tChartInputMode" value="gaps" {checkedGaps}>
+          <strong>I already have the gaps</strong> (numeric time between events)
+        </label>
+        <div class="hint small-hint" style="margin-top:0.15rem;">
+          Put the gap values in <em>Value / Y-axis column</em>.
+        </div>
+      `,
+  "setup.t.card4": `
+        <p style="margin:0;">Do not use a T chart for event counts per month. Use a <strong>C</strong>, <strong>P</strong> or <strong>U</strong> chart instead.</p>
+      `,
+  "setup.g.card1": `
+        <p style="margin:0;">You want to track the <strong>number of opportunities between rare events</strong>.</p>
+      `,
+  "setup.g.card2": `
+        <ul style="margin:0;">
+          <li><strong>Date / X-axis column</strong> → optional label / order column</li>
+          <li><strong>Value / Y-axis column</strong> → number of opportunities between events</li>
+        </ul>
+      `,
+  "setup.g.card4": `
+        <p style="margin:0;">Use G when the thing between events is a <strong>count of opportunities</strong>. If it is elapsed time, use a <strong>T chart</strong>.</p>
+      `,
+
   // Application heading
   "app.title": "Simple SPC Web Tool",
 

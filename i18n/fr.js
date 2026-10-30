@@ -9,6 +9,40 @@
 
 window.SimpleSPCi18n.registerLanguage("fr", {
 
+  // Translation and locale polish
+  "app.browserTitle": "Outil SPC simple",
+  "data.chooseFile": "Choisir un fichier",
+  "data.noFileChosen": "Aucun fichier sélectionné",
+  "common.formatLetter.bold": "G",
+  "common.formatLetter.italic": "I",
+  "common.formatLetter.underline": "S",
+  "chart.columns.tDatesTooltip": "Non utilisée pour une carte T fondée sur les dates des événements.",
+  "errors.annotationRequired": "Veuillez saisir une date et un libellé pour l’annotation.",
+  "errors.noData": "Aucune donnée chargée. Importez un CSV ou utilisez d’abord l’éditeur de données.",
+  "errors.tMinEvents": "La carte T nécessite au moins 4 événements.",
+  "errors.gMinPoints": "La carte G nécessite au moins 4 points (chaque valeur doit être supérieure ou égale à 1).",
+  "errors.gPositive": "Les valeurs de la carte G doivent être des nombres supérieurs ou égaux à 1.",
+  "errors.gProbability": "Impossible de calculer la probabilité de la carte G à partir de ces données (vérifiez que les valeurs sont ≥ 1).",
+  "errors.axisBounds": "Le minimum de l’axe Y ne peut pas être supérieur au maximum.",
+  "errors.tDatesAxis": "La carte T utilisant les dates des événements nécessite un axe Date / heure.",
+  "errors.tooFewValidPoints": "Pas assez de points valides après lecture des données. Vérifiez les colonnes sélectionnées.",
+  "errors.tDateModeAxis": "La carte T nécessite un axe Date / heure (elle utilise les dates des événements).",
+  "errors.tGapsMin": "La carte T (mode intervalles) nécessite au moins 3 valeurs d’intervalle valides.",
+  "errors.chartNotImplemented": "Le type de graphique « {chartType} » n’est pas encore disponible.",
+  "errors.cMinPoints": "La carte C nécessite au moins 2 points.",
+  "errors.pMinPoints": "La carte P nécessite au moins 2 points.",
+  "errors.pPrimeMinPoints": "La carte P′ nécessite au moins 2 points.",
+  "errors.uMinPoints": "La carte U nécessite au moins 2 points.",
+  "errors.clipboardUnsupported": "La copie dans le presse-papiers n’est pas prise en charge par ce navigateur. Utilisez plutôt « Enregistrer le(s) graphique(s) sous… ».",
+  "errors.exportImageFailed": "Désolé, votre navigateur n’a pas pu exporter cette image.",
+  "errors.imageCreationFailed": "Impossible de créer l’image.",
+  "errors.projectColumnsMissing": "Les paramètres du projet ont été appliqués, mais certaines colonnes enregistrées sont introuvables. Veuillez resélectionner : {columns}",
+  "errors.portableUnrecognised": "Ce fichier ne contient pas de projet portable FreeSPC reconnu.",
+  "errors.portableRead": "Impossible de lire le graphique SPC enregistré. Le fichier peut être endommagé ou incompatible. Détail technique : {message}",
+  "errors.portableLoaderMissing": "Impossible de charger le graphique SPC enregistré car le chargeur de projet n’est pas disponible.",
+  "errors.portableLoad": "Impossible de charger le graphique SPC enregistré. Détail technique : {message}",
+  "errors.portableStart": "Impossible de démarrer correctement le fichier FreeSPC enregistré. Détail technique : {message}",
+
   // Application heading
   "app.title": "Outil Web Simple SPC",
 
