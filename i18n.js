@@ -12,7 +12,7 @@
     en: { name: "English", locale: "en-GB" },
     fr: { name: "Français", locale: "fr-FR" },
     es: { name: "Español", locale: "es-ES" },
-    de: { name: "Deutsch (Entwurf)", locale: "de-DE", draftNotice: "Übersetzungsentwurf: Einige Bereiche sind noch auf Englisch." },
+    de: { name: "Deutsch", locale: "de-DE" },
     it: { name: "Italiano (bozza)", locale: "it-IT", draftNotice: "Traduzione provvisoria: alcune sezioni sono ancora in inglese." },
     pt: { name: "Português (rascunho)", locale: "pt-PT", draftNotice: "Tradução preliminar: algumas secções continuam em inglês." }
   };
