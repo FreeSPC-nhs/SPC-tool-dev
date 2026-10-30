@@ -39,12 +39,14 @@ test('all six languages load and offer a selector choice',()=>{
   for(const lang of languages) assert.equal(i18n.setLanguage(lang),true);
   assert.equal(i18n.setLanguage('xx'),false);
 });
-test('English, French, Spanish and German dictionaries are complete, and remaining draft keys are valid',()=>{
+test('all six dictionaries are complete and placeholders are valid',()=>{
  const {entries}=load(),en=entries.en,fr=entries.fr;
  assert.equal(Object.keys(en).length,1350);
  assert.deepEqual(Object.keys(en).sort(),Object.keys(fr).sort());
  assert.deepEqual(Object.keys(en).sort(),Object.keys(entries.es).sort());
  assert.deepEqual(Object.keys(en).sort(),Object.keys(entries.de).sort());
+ assert.deepEqual(Object.keys(en).sort(),Object.keys(entries.it).sort());
+ assert.deepEqual(Object.keys(en).sort(),Object.keys(entries.pt).sort());
  const tokens=value=>Array.from(String(value).matchAll(/\{([a-zA-Z0-9_]+)\}/g),x=>x[1]).sort();
  for(const lang of ['es','de','it','pt']) {
   assert.ok(Object.keys(entries[lang]).length>=400,lang);
@@ -79,19 +81,25 @@ test('localized display and percent formatting',()=>{
   assert.equal(i18n.formatPercent(12.5,1),new Intl.NumberFormat(locale,{style:'percent',minimumFractionDigits:1,maximumFractionDigits:1,useGrouping:false}).format(0.125));
  }
 });
-test('draft notice is visible only for unreviewed languages',()=>{
- const {i18n,draft,document}=load();
+test('all completed languages show translated guidance without draft notices',()=>{
+ const {i18n,draft,document,entries}=load();
+ const tokens=value=>Array.from(String(value).matchAll(/\{([a-zA-Z0-9_]+)\}/g),x=>x[1]).sort();
+ for(const lang of ['en','fr','es','de','it','pt']) {
+  i18n.setLanguage(lang);
+  assert.equal(draft.hidden,true,lang);
+  assert.equal(document.documentElement.lang,lang);
+  assert.deepEqual(Object.keys(entries.en).sort(),Object.keys(entries[lang]).sort(),lang+' dictionary keys');
+  if(['it','pt'].includes(lang)) for(const [k,value] of Object.entries(entries.en)) {
+   assert.deepEqual(tokens(entries[lang][k]),tokens(value),lang+': '+k);
+  }
+ }
  for(const lang of ['it','pt']) {
   i18n.setLanguage(lang);
-  assert.equal(draft.hidden,false);
-  assert.ok(draft.textContent.length>20);
-  assert.equal(document.documentElement.lang,lang);
-  assert.notEqual(i18n.translate('buttons.generate'), 'Generate / Recalculate');
-  assert.equal(i18n.translate('helper.response.empty'), 'Please type a question about SPC or your chart.');
+  assert.notEqual(i18n.translate('helper.response.empty'),'Please type a question about SPC or your chart.');
+  assert.notEqual(i18n.translate('wizard.reason.paretoRows'),entries.en['wizard.reason.paretoRows']);
+  assert.notEqual(i18n.translate('setup.pprime.card4'),entries.en['setup.pprime.card4']);
+  assert.equal(i18n.formatFixed(12.5,2),'12,50');
  }
- for(const lang of ['en','fr','es','de']) {i18n.setLanguage(lang);assert.equal(draft.hidden,true);}
- i18n.setLanguage('es');
- assert.notEqual(i18n.translate('helper.response.empty'), 'Please type a question about SPC or your chart.');
 });
 
 test('Spanish wizard has no English fallback text except chart-name symbols',()=>{
