@@ -774,6 +774,10 @@ function describeRulesForCurrentChart(chartType) {
  * keywords and priority scores. Only the returned
  * answer text changes with the selected language.
  */
+function helperLocaleFixed(value, digits) {
+  return window.SimpleSPCi18n?.formatFixed?.(value, digits) ?? Number(value).toFixed(digits);
+}
+
 function localisedFaqAnswer(faq) {
   if (!faq) return "";
 
@@ -1001,7 +1005,7 @@ function describeXmRPeriods(periods) {
       ? t(
           "helper.xmr.period.mean",
           " around a mean of {mean}",
-          { mean: p.mean.toFixed(2) }
+          { mean: helperLocaleFixed(p.mean, 2) }
         )
       : "";
 
@@ -1288,7 +1292,7 @@ function buildPPrimeExplanation(ctx) {
       "helper.laney.pprime.factor",
       "\n\nThe Sigma Z adjustment factor for this chart is {sigmaZ}. " +
       "A value above 1 widens the standard P-chart limits; a value below 1 narrows them.",
-      { sigmaZ: sigmaZ.toFixed(3) }
+      { sigmaZ: helperLocaleFixed(sigmaZ, 3) }
     );
   }
 
@@ -1346,7 +1350,7 @@ function buildUPrimeExplanation(ctx) {
       "helper.laney.uprime.factor",
       "\n\nThe Sigma Z adjustment factor for this chart is {sigmaZ}. " +
       "A value above 1 widens the standard U-chart limits; a value below 1 narrows them.",
-      { sigmaZ: sigmaZ.toFixed(3) }
+      { sigmaZ: helperLocaleFixed(sigmaZ, 3) }
     );
   }
 
@@ -1411,7 +1415,7 @@ function buildSigmaZExplanation(ctx) {
     out += t(
       "helper.laney.sigma.value",
       "\n\nFor your current chart, Sigma Z = {sigmaZ}.",
-      { sigmaZ: sigmaZ.toFixed(3) }
+      { sigmaZ: helperLocaleFixed(sigmaZ, 3) }
     );
 
     // Retain all original greater-than,
@@ -1780,12 +1784,12 @@ function buildTargetAnswer(ctx) {
         ? t(
             "helper.target.xmr.meanFavourable",
             "The current period mean ({mean}) is on the favourable side of the target ({target}).",
-            { mean: a.mean.toFixed(2), target }
+            { mean: helperLocaleFixed(a.mean, 2), target }
           )
         : t(
             "helper.target.xmr.meanUnfavourable",
             "The current period mean ({mean}) is not yet on the favourable side of the target ({target}).",
-            { mean: a.mean.toFixed(2), target }
+            { mean: helperLocaleFixed(a.mean, 2), target }
           );
     }
 
@@ -1864,7 +1868,7 @@ function buildTargetAnswer(ctx) {
       ) {
         // Keep the existing percentage calculation.
         const percentage =
-          (a.capability.prob * 100).toFixed(1);
+          helperLocaleFixed(a.capability.prob * 100, 1);
 
         out += "\n\n" + t(
           "helper.target.xmr.capability",
@@ -1994,12 +1998,12 @@ function buildTargetAnswer(ctx) {
         ? t(
             "helper.target.general.centreFavourable",
             "The current centre line ({centre}) is on the favourable side of the target.",
-            { centre: centre.toFixed(3) }
+            { centre: helperLocaleFixed(centre, 3) }
           )
         : t(
             "helper.target.general.centreUnfavourable",
             "The current centre line ({centre}) is not yet on the favourable side of the target.",
-            { centre: centre.toFixed(3) }
+            { centre: helperLocaleFixed(centre, 3) }
           )
     );
   }
@@ -2218,9 +2222,9 @@ function buildXmRLimitsAnswer(ctx) {
         "• Nelson screening threshold = {threshold}\n" +
         "• average MR used for the limits = {average}",
         {
-          initial: a.initialAvgMR.toFixed(3),
-          threshold: a.mrScreeningThreshold.toFixed(3),
-          average: a.avgMR.toFixed(3)
+          initial: helperLocaleFixed(a.initialAvgMR, 3),
+          threshold: helperLocaleFixed(a.mrScreeningThreshold, 3),
+          average: helperLocaleFixed(a.avgMR, 3)
         }
       );
     }
@@ -2237,7 +2241,7 @@ function buildXmRLimitsAnswer(ctx) {
       out += t(
         "helper.xmrLimits.offAverage",
         "\n\nThe average MR currently being used for the limits is {average}.",
-        { average: a.avgMR.toFixed(3) }
+        { average: helperLocaleFixed(a.avgMR, 3) }
       );
     }
 
@@ -2347,7 +2351,7 @@ function buildParetoAnswer(ctx) {
           "helper.pareto.topShare",
           " ({percentage}% of the total)",
           {
-            percentage: topPct.toFixed(1)
+            percentage: helperLocaleFixed(topPct, 1)
           }
         )
       : "";
@@ -2381,7 +2385,7 @@ function buildParetoAnswer(ctx) {
         : "The first {count} categories account for about {percentage}% of the occurrences. That can help you decide where to investigate first, but the 80% line is a prioritisation guide rather than a statistical limit.",
       {
         count: p.cutoff80Count,
-        percentage: p.cutoff80Pct.toFixed(1)
+        percentage: helperLocaleFixed(p.cutoff80Pct, 1)
       }
     );
   }
@@ -2827,7 +2831,7 @@ function buildDecisionAnswer(ctx) {
             : "In your chart, the first {count} categories account for {percentage}% of all occurrences.",
           {
             count: p.cutoff80Count,
-            percentage: p.cutoff80Pct.toFixed(1)
+            percentage: helperLocaleFixed(p.cutoff80Pct, 1)
           }
         );
       }

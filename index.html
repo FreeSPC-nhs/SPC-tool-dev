@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Simple SPC Tool</title>
+  <title data-i18n="app.browserTitle">Simple SPC Tool</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <!-- Local third-party libraries -->
@@ -165,9 +165,14 @@
       Upload a CSV/Excel file or paste data in the editor.
     </div>
 
-    <input type="file"
-           id="fileInput"
-           accept=".csv,.xlsx,.xls" />
+    <div class="localised-file-picker">
+      <input type="file" id="fileInput" class="file-picker-native-input"
+             accept=".csv,.xlsx,.xls" data-i18n-aria-label="data.chooseFile" />
+      <button type="button" id="chooseDataFileButton"
+              data-i18n="data.chooseFile">Choose file</button>
+      <span id="selectedDataFileName" role="status" aria-live="polite"
+            data-i18n="data.noFileChosen">No file selected</span>
+    </div>
 
     <button id="openDataEditorButton"
             type="button"
@@ -449,7 +454,7 @@
   <span
     class="help-tooltip"
     tabindex="0"
-    aria-label="Secondary chart display help"
+    aria-label="Secondary chart display help" data-i18n-aria-label="chart.secondary.helpAria"
   >
     ?
     <span class="help-tooltip-text" data-i18n="chart.secondary.helpText">
@@ -727,8 +732,8 @@
       class="font-toggle-btn"
       aria-pressed="true"
       title="Bold"
-      data-i18n-title="common.bold"
-    ><strong>B</strong></button>
+      data-i18n-title="common.bold" data-i18n-aria-label="common.bold"
+    ><strong data-i18n="common.formatLetter.bold">B</strong></button>
 
     <button
       type="button"
@@ -736,8 +741,8 @@
       class="font-toggle-btn"
       aria-pressed="false"
       title="Italic"
-      data-i18n-title="common.italic"
-    ><em>I</em></button>
+      data-i18n-title="common.italic" data-i18n-aria-label="common.italic"
+    ><em data-i18n="common.formatLetter.italic">I</em></button>
 
     <button
       type="button"
@@ -745,8 +750,8 @@
       class="font-toggle-btn"
       aria-pressed="false"
       title="Underline"
-      data-i18n-title="common.underline"
-    ><u>U</u></button>
+      data-i18n-title="common.underline" data-i18n-aria-label="common.underline"
+    ><u data-i18n="common.formatLetter.underline">U</u></button>
   </div>
 
   <label class="radio-pill"
@@ -807,14 +812,14 @@
             class="font-toggle-btn"
             aria-pressed="false"
             title="Italic"
-            data-i18n-title="common.italic"><em>I</em></button>
+            data-i18n-title="common.italic" data-i18n-aria-label="common.italic"><em data-i18n="common.formatLetter.italic">I</em></button>
 
     <button type="button"
             id="xAxisBoldBtn"
             class="font-toggle-btn"
             aria-pressed="false"
             title="Bold"
-            data-i18n-title="common.bold"><strong>B</strong></button>
+            data-i18n-title="common.bold" data-i18n-aria-label="common.bold"><strong data-i18n="common.formatLetter.bold">B</strong></button>
   </div>
 
 </details>
@@ -938,14 +943,14 @@
             class="font-toggle-btn"
             aria-pressed="false"
             title="Italic"
-            data-i18n-title="common.italic"><em>I</em></button>
+            data-i18n-title="common.italic" data-i18n-aria-label="common.italic"><em data-i18n="common.formatLetter.italic">I</em></button>
 
     <button type="button"
             id="yAxisBoldBtn"
             class="font-toggle-btn"
             aria-pressed="false"
             title="Bold"
-            data-i18n-title="common.bold"><strong>B</strong></button>
+            data-i18n-title="common.bold" data-i18n-aria-label="common.bold"><strong data-i18n="common.formatLetter.bold">B</strong></button>
   </div>
 
 </details>
@@ -2538,7 +2543,7 @@
   <div class="modal-backdrop" aria-hidden="true" onclick="toggleChartSetupModal(false)"></div>
 
   <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="chartSetupTitle">
-    <button type="button" class="modal-close" aria-label="Close chart setup" onclick="toggleChartSetupModal(false)">×</button>
+    <button type="button" class="modal-close" aria-label="Close chart setup" data-i18n-aria-label="setup.closeAria" onclick="toggleChartSetupModal(false)">×</button>
 
     <section class="panel" style="display:block; margin:0;">
       <h2 id="chartSetupTitle">Chart setup</h2>

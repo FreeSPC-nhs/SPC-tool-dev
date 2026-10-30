@@ -1,6 +1,10 @@
 // Simple SPC logic + wiring for SPC charts
 
 let rawRows = [];
+// Lock the numeric interpretation used for loaded data so changing interface
+// language cannot silently change SPC results on regeneration.
+let dataNumberLanguage = "en";
+let restoringNumberLanguage = null;
 let currentChart = null;   // main I / run chart
 let mrChart = null;        // moving range chart
 let annotations = [];      // { date: 'YYYY-MM-DD', label: 'text', yAdjust?: number }
@@ -1188,7 +1192,19 @@ function getURateMultiplier() {
 }
 
 function formatURateMultiplier(multiplier) {
-  return Number(multiplier).toLocaleString("en-GB");
+  const i18n = window.SimpleSPCi18n;
+  return i18n?.formatNumber
+    ? i18n.formatNumber(Number(multiplier))
+    : Number(multiplier).toLocaleString("en-GB");
+}
+
+function formatLocaleFixed(value, digits = 3) {
+  return window.SimpleSPCi18n?.formatFixed?.(value, digits) ?? Number(value).toFixed(digits);
+}
+
+function formatLocalePercent(value, digits = 1) {
+  return formatLocaleFixed(value, digits) +
+    (window.SimpleSPCi18n?.getLanguage?.() === "fr" ? " %" : "%");
 }
 
 function rescaleNumericInput(input, ratio) {
@@ -1924,8 +1940,9 @@ if (
 
   if (missing.length && typeof showError === "function" && !silent) {
     showError(
-      "Imported settings/project applied, but some saved columns were not found in your current data. " +
-      "Please reselect: " + missing.join(", ")
+      chartPanelText("errors.projectColumnsMissing",
+        "Imported project settings were applied, but some saved columns were not found. Please reselect: " + missing.join(", "),
+        { columns: missing.join(", ") })
     );
   }
 
@@ -1938,6 +1955,8 @@ function collectProjectFile() {
     tool: "Simple SPC Web Tool",
     projectVersion: 1,
     savedAt: new Date().toISOString(),
+    language: window.SimpleSPCi18n?.getLanguage?.() || "en",
+    numericDataLanguage: dataNumberLanguage,
     data: {
       rawRows: Array.isArray(rawRows) ? rawRows : []
     },
@@ -1988,9 +2007,21 @@ alert(chartPanelText(
     return;
   }
 
+  // Restore the interface language before rebuilding saved labels and charts.
+  // Older JSON files without this field preserve the user's current language.
+  if (typeof projectObj.language === "string") {
+    window.SimpleSPCi18n?.setLanguage?.(projectObj.language, { remember: false });
+  }
+
+  lastImportedDataFileName = "";
+  if (typeof refreshSelectedDataFileName === "function") refreshSelectedDataFileName();
+  restoringNumberLanguage = ["en", "fr"].includes(projectObj.numericDataLanguage)
+    ? projectObj.numericDataLanguage
+    : null;
   resetAnnotationsAndSplitsForNewData();
 
   const ok = loadRows(rows);
+  restoringNumberLanguage = null;
   if (!ok) {
     
 alert(chartPanelText(
@@ -2293,6 +2324,7 @@ const ok = window.confirm(
     if (!ok) {
       // Allow the same file to be selected again later.
       if (fileInput) fileInput.value = "";
+      if (typeof refreshSelectedDataFileName === "function") refreshSelectedDataFileName();
       return false;
     }
   }
@@ -3009,6 +3041,7 @@ function loadRows(rows) {
     return false;
   }
 
+  dataNumberLanguage = restoringNumberLanguage || window.SimpleSPCi18n?.getLanguage?.() || "en";
   rawRows = rows;
   applyDefaultYBoundsForSelectedColumn();
 
@@ -3171,8 +3204,8 @@ function updateYAxisInputStep() {
   // Percent values are stored as proportions:
   // 0.01 = 1.0%, 0.001 = 0.1%, 0.05 = 5.0%
   if (format === "percent") {
-    const minRaw = parseFloat(yAxisMinInput.value);
-    const maxRaw = parseFloat(yAxisMaxInput.value);
+    const minRaw = parseOptionalNumber(yAxisMinInput.value);
+    const maxRaw = parseOptionalNumber(yAxisMaxInput.value);
 
     let rangeRaw = NaN;
 
@@ -3528,7 +3561,7 @@ if (addAnnotationBtn) {
     const labelVal = annotationLabelInput.value.trim();
 
     if (!dateVal || !labelVal) {
-      alert("Please enter both a date and a label for the annotation.");
+      alert(chartPanelText("errors.annotationRequired", "Please enter both a date and a label for the annotation."));
       return;
     }
 
@@ -3569,9 +3602,24 @@ if (toggleSidebarButton) {
 
 
 // ---- CSV / Excel upload & column selection ----
+const chooseDataFileButton = document.getElementById("chooseDataFileButton");
+const selectedDataFileName = document.getElementById("selectedDataFileName");
+let lastImportedDataFileName = "";
+if (chooseDataFileButton) {
+  chooseDataFileButton.addEventListener("click", () => fileInput?.click());
+}
+function refreshSelectedDataFileName() {
+  if (!selectedDataFileName) return;
+  const name = fileInput?.files?.[0]?.name || lastImportedDataFileName;
+  selectedDataFileName.textContent = name || chartPanelText("data.noFileChosen", "No file selected");
+}
+document.addEventListener("simplespc:languagechange", refreshSelectedDataFileName);
+
 fileInput.addEventListener("change", async () => {
   const file = fileInput.files[0];
   if (!file) return;
+  lastImportedDataFileName = file.name;
+  refreshSelectedDataFileName();
 
   clearError();
   if (summaryDiv) summaryDiv.innerHTML = "";
@@ -4438,6 +4486,7 @@ dataModelDirty = false;
 
   // --- Reset file input ---
   if (fileInput) fileInput.value = "";
+      if (typeof refreshSelectedDataFileName === "function") refreshSelectedDataFileName();
 
   // --- Hide column selectors ---
   if (columnSelectors) columnSelectors.style.display = "none";
@@ -4736,7 +4785,7 @@ function resetChartKeepData() {
 
 function validateBeforeGenerate() {
   if (!rawRows || rawRows.length === 0) {
-    showError("No data loaded yet. Upload a CSV or use the data editor first.");
+    showError(chartPanelText("errors.noData", "No data loaded yet. Upload a CSV or use the data editor first."));
     return false;
   }
 
@@ -6694,7 +6743,7 @@ if (chartType === "t" && valueSelect) {
 
   // Soft hint if disabled
   if (shouldDisableValue) {
-    valueSelect.title = "Not used for T chart when using event dates.";
+    valueSelect.title = chartPanelText("chart.columns.tDatesTooltip", "Not used for T chart when using event dates.");
   }
 }
 
@@ -6783,6 +6832,8 @@ document.addEventListener("simplespc:languagechange", () => {
   // Refresh Rules panel tooltips without changing
   // enabled states, checkboxes or statistical settings.
   refreshRuleTooltipsOnly();
+  if (typeof currentChart !== "undefined" && currentChart?.update) currentChart.update("none");
+  if (typeof mrChart !== "undefined" && mrChart?.update) mrChart.update("none");
 });
 
 
@@ -9628,7 +9679,7 @@ function drawTChart(points, baselineCount, labels) {
   // Sort by time
   const pts = [...points].sort((a, b) => a.x - b.x);
   if (pts.length < 4) {
-    showError("T chart needs at least 4 events.");
+    showError(chartPanelText("errors.tMinEvents", "T chart needs at least 4 events."));
     return;
   }
 
@@ -9645,7 +9696,7 @@ function drawTChart(points, baselineCount, labels) {
   }
 
   if (deltas.length < 3) {
-    showError("T chart needs at least 4 events.");
+    showError(chartPanelText("errors.tMinEvents", "T chart needs at least 4 events."));
     return;
   }
 
@@ -9786,13 +9837,13 @@ function drawTChart(points, baselineCount, labels) {
 // -----------------------------
 function drawGChart(values, baselineCount, labels) {
   if (!Array.isArray(values) || values.length < 4) {
-    showError("G chart needs at least 4 points (each value should be 1 or more).");
+    showError(chartPanelText("errors.gMinPoints", "G chart needs at least 4 points (each value should be 1 or more)."));
     return;
   }
 
   const gVals = values.map(v => Number(v)).filter(v => isFinite(v) && v >= 1);
   if (gVals.length !== values.length) {
-    showError("G chart values must be numbers 1 or greater.");
+    showError(chartPanelText("errors.gPositive", "G chart values must be numbers 1 or greater."));
     return;
   }
 
@@ -9840,7 +9891,7 @@ function drawGChart(values, baselineCount, labels) {
     // Geometric mean ≈ 1/p
     const p = gbar > 0 ? (1 / gbar) : NaN;
     if (!isFinite(p) || p <= 0 || p >= 1) {
-      showError("Could not compute G chart probability from your data (check values are >= 1).");
+      showError(chartPanelText("errors.gProbability", "Could not compute G chart probability from your data (check values are >= 1)."));
       return;
     }
 
@@ -9947,7 +9998,7 @@ function drawGChart(values, baselineCount, labels) {
 function parseOptionalNumber(value) {
   const s = String(value ?? "").trim();
   if (s === "") return undefined;
-  const n = Number(s);
+  const n = window.SimpleSPCi18n?.parseNumber?.(s) ?? Number(s);
   return Number.isFinite(n) ? n : undefined;
 }
 
@@ -10159,7 +10210,7 @@ function formatSPCNumber(value, fallback = "—") {
   const n = Number(value);
   if (!Number.isFinite(n)) return fallback;
 
-  return n.toFixed(getConfiguredDecimalPlaces(n));
+  return formatLocaleFixed(n, getConfiguredDecimalPlaces(n));
 }
 
 function buildTickFormatter(format) {
@@ -10169,12 +10220,12 @@ function buildTickFormatter(format) {
 
     const dp = getConfiguredDecimalPlaces(n);
 
-    if (!format || format === "auto") return n.toFixed(dp);
-    if (format === "integer") return String(Math.round(n));
-    if (format === "decimal") return n.toFixed(dp);
-    if (format === "percent") return `${(n * 100).toFixed(dp)}%`;
+    if (!format || format === "auto") return formatLocaleFixed(n, dp);
+    if (format === "integer") return window.SimpleSPCi18n?.formatNumber?.(Math.round(n), { maximumFractionDigits: 0 }) ?? String(Math.round(n));
+    if (format === "decimal") return formatLocaleFixed(n, dp);
+    if (format === "percent") return formatLocalePercent(n * 100, dp);
 
-    return n.toFixed(dp);
+    return formatLocaleFixed(n, dp);
   };
 }
 
@@ -10254,9 +10305,9 @@ function validateAxisSettings() {
 
   if (Number.isFinite(s.y.min) && Number.isFinite(s.y.max) && s.y.min > s.y.max) {
     if (typeof showError === "function") {
-      showError("Y-axis minimum cannot be greater than Y-axis maximum.");
+      showError(chartPanelText("errors.axisBounds", "Y-axis minimum cannot be greater than Y-axis maximum."));
     } else if (errorMessage) {
-      errorMessage.textContent = "Y-axis minimum cannot be greater than Y-axis maximum.";
+      errorMessage.textContent = chartPanelText("errors.axisBounds", "Y-axis minimum cannot be greater than Y-axis maximum.");
     }
     return false;
   }
@@ -12598,9 +12649,9 @@ function renderLaneySummaryText(chartType, st, fmt) {
       );
 
     // Preserve the existing diagnostic formatting.
-    const ratioText = Number(d.ratio).toFixed(1);
-    const lowerText = Number(d.lowerLimit).toFixed(1);
-    const upperText = Number(d.upperLimit).toFixed(1);
+    const ratioText = formatLocaleFixed(Number(d.ratio), 1);
+    const lowerText = formatLocaleFixed(Number(d.lowerLimit), 1);
+    const upperText = formatLocaleFixed(Number(d.upperLimit), 1);
 
     html +=
       `<div style="margin-top:0.45rem; font-size:0.92em;">` +
@@ -12721,7 +12772,7 @@ function renderAttributeMultiSummary(segmentAnalyses, totalPoints) {
       ? (
           typeof formatNumber === "function"
             ? formatNumber(v, 3)
-            : Number(v).toFixed(3)
+            : formatLocaleFixed(Number(v), 3)
         )
       : "—";
 
@@ -13151,7 +13202,7 @@ function renderRareChartSummary(aOrSegments, totalPointsMaybe) {
 
   const fmt = (v) =>
     Number.isFinite(v)
-      ? (typeof formatNumber === "function" ? formatNumber(v, 3) : Number(v).toFixed(3))
+      ? (typeof formatNumber === "function" ? formatNumber(v, 3) : formatLocaleFixed(Number(v), 3))
       : "—";
 
   
@@ -13609,7 +13660,7 @@ html +=
     "summary.medianPeriod",
     "Median (this period)"
   ) +
-  `: <strong>${Number.isFinite(median) ? median.toFixed(3) : "—"}</strong>.</li>`;
+  `: <strong>${Number.isFinite(median) ? formatLocaleFixed(median, 3) : "—"}</strong>.</li>`;
 
 
     
@@ -13976,7 +14027,7 @@ if (
       const prop = hits / n;
       
 targetCoverageText =
-  `${(prop * 100).toFixed(1)}% ` +
+  `${formatLocaleFixed(prop * 100, 1)}% ` +
   summaryUiText(
     "summary.xmr.targetCoverage",
     "of points in this period meet the target"
@@ -14100,13 +14151,13 @@ if (
 html +=
   `<li>` +
   summaryUiText("summary.mean", "Mean") +
-  `: <strong>${mean.toFixed(3)}</strong>; ` +
+  `: <strong>${formatLocaleFixed(mean, 3)}</strong>; ` +
   summaryUiText("summary.controlLimits", "control limits") +
   `: <strong>` +
   summaryUiText("summary.lowerLimit", "LCL") +
-  ` = ${lcl.toFixed(3)}</strong>, <strong>` +
+  ` = ${formatLocaleFixed(lcl, 3)}</strong>, <strong>` +
   summaryUiText("summary.upperLimit", "UCL") +
-  ` = ${ucl.toFixed(3)}</strong>.</li>`;
+  ` = ${formatLocaleFixed(ucl, 3)}</strong>.</li>`;
 
     
 html +=
@@ -14115,9 +14166,9 @@ html +=
     "summary.estimatedSigma",
     "Estimated σ (from MR)"
   ) +
-  `: <strong>${sigma.toFixed(3)}</strong> (` +
+  `: <strong>${formatLocaleFixed(sigma, 3)}</strong> (` +
   summaryUiText("summary.averageMr", "average MR") +
-  ` = ${avgMR.toFixed(3)}).</li>`;
+  ` = ${formatLocaleFixed(avgMR, 3)}).</li>`;
 
     
 if (manualAdjacentMRExclusions > 0) {
@@ -14188,17 +14239,17 @@ if (manualAdjacentMRExclusions > 0) {
           "summary.xmr.initialMR",
           "initial average MR"
         ) +
-        ` = ${initialAvgMR.toFixed(3)}; ` +
+        ` = ${formatLocaleFixed(initialAvgMR, 3)}; ` +
         summaryUiText(
           "summary.xmr.threshold",
           "screening threshold"
         ) +
-        ` = ${mrScreeningThreshold.toFixed(3)}; ` +
+        ` = ${formatLocaleFixed(mrScreeningThreshold, 3)}; ` +
         summaryUiText(
           "summary.xmr.revisedMR",
           "revised average MR"
         ) +
-        ` = ${avgMR.toFixed(3)}.</li>`;
+        ` = ${formatLocaleFixed(avgMR, 3)}.</li>`;
     }
 
   } else if (mrScreeningEnabled === false) {
@@ -14408,7 +14459,7 @@ if (capability && sigma > 0) {
         "summary.xmr.ifStable",
         "if the process remains stable, about"
       ) +
-      ` <strong>${(capability.prob * 100).toFixed(1)}%</strong> ` +
+      ` <strong>${formatLocaleFixed(capability.prob * 100, 1)}%</strong> ` +
       summaryUiText(
         "summary.xmr.futureMeet",
         "of future points are expected to meet the target."
@@ -14539,7 +14590,7 @@ if (target !== null && segments.length > 1) {
   "PROCESS CAPABILITY (last period)"
 )}</div>
         <div style="font-size:1.4rem; font-weight:bold; text-align:center; margin-top:0.2rem;">
-          ${(lastPeriodCapability.prob * 100).toFixed(1)}%
+          ${formatLocaleFixed(lastPeriodCapability.prob * 100, 1)}%
         </div>
         <div style="font-size:0.8rem; margin-top:0.2rem;">
           ${summaryUiText(
@@ -14606,8 +14657,7 @@ function renderXbarSSummary(
   const fmt =
     (value) =>
       Number.isFinite(value)
-        ? Number(value)
-            .toFixed(3)
+        ? formatLocaleFixed(Number(value), 3)
         : "not available";
 
   const signalText =
@@ -15392,14 +15442,11 @@ function toNumericValue(raw) {
   const s = String(raw).trim();
   if (!s) return NaN;
 
-  // Handle simple percentages, e.g. "55.17%" or "55.17 %"
-  const percentMatch = s.match(/^(-?\d+(?:\.\d+)?)\s*%$/);
-  if (percentMatch) {
-    return Number(percentMatch[1]); // return 55.17
-  }
+  // Percentages remain in percentage points (55,17 % => 55.17),
+  // matching the original tool's numeric representation.
 
-  const num = Number(s);
-  return isFinite(num) ? num : NaN;
+  const num = window.SimpleSPCi18n?.parseNumber?.(s, { language: dataNumberLanguage }) ?? Number(s);
+  return Number.isFinite(num) ? num : NaN;
 }
 
 function formatColumnName(colName, fallbackLabel = "this column") {
@@ -15773,7 +15820,7 @@ generateButton.addEventListener("click", (evt) => {
       // If using event dates, we require date axis and we IGNORE the value column.
       if (tChartInputMode === "eventDates") {
         if (axisType !== "date") {
-          showError("T chart (event dates mode) needs Date / time axis.");
+          showError(chartPanelText("errors.tDatesAxis", "T chart (event dates mode) needs Date / time axis."));
           return;
         }
 
@@ -15845,7 +15892,7 @@ generateButton.addEventListener("click", (evt) => {
 
     // You can lower this if you want charts from fewer points
     if (parsedPoints.length < 3) {
-      showError("Not enough valid data points after parsing. Check your column choices.");
+      showError(chartPanelText("errors.tooFewValidPoints", "Not enough valid data points after parsing. Check your column choices."));
       return;
     }
 
@@ -16315,7 +16362,7 @@ if (chartType === "run") {
   if (tChartInputMode === "eventDates") {
     // T chart needs date axis (uses event dates)
     if (document.querySelector("input[name='axisType']:checked")?.value !== "date") {
-      showError("T chart needs Date / time axis (it uses event dates).");
+      showError(chartPanelText("errors.tDateModeAxis", "T chart needs Date / time axis (it uses event dates)."));
       return;
     }
     drawTChart(points, baselineCount, labels);
@@ -16323,7 +16370,7 @@ if (chartType === "run") {
     // Gaps mode: values are already "time between events"
     const gaps = points.map(p => p.y);
     if (gaps.length < 3) {
-      showError("T chart (gaps mode) needs at least 3 valid gap values.");
+      showError(chartPanelText("errors.tGapsMin", "T chart (gaps mode) needs at least 3 valid gap values."));
       return;
     }
 
@@ -16443,7 +16490,7 @@ yAxisLabelFallback: "Time between events",
   drawGChart(gValues, baselineCount, labels);
 
 } else {
-  showError(`Chart type "${chartType}" is not implemented yet.`);
+  showError(chartPanelText("errors.chartNotImplemented", `Chart type "${chartType}" is not implemented yet.`, { chartType }));
   return;
 }
 
@@ -17158,7 +17205,7 @@ tooltip: {
       // Cumulative percentage dataset
       if (context.dataset.yAxisID === "y1") {
         const percent =
-          item.cumulativePct.toFixed(1);
+          formatLocaleFixed(item.cumulativePct, 1);
 
         return chartPanelText(
           "visual.pareto.cumulative",
@@ -17169,7 +17216,7 @@ tooltip: {
 
       // Count dataset
       const share =
-        (item.share * 100).toFixed(1);
+        formatLocaleFixed(item.share * 100, 1);
 
       return chartPanelText(
         "visual.pareto.count",
@@ -17190,7 +17237,7 @@ tooltip: {
       }
 
       const percent =
-        item.cumulativePct.toFixed(1);
+        formatLocaleFixed(item.cumulativePct, 1);
 
       return [
         chartPanelText(
@@ -17357,7 +17404,7 @@ title: {
     ) +
     `</strong> ${escapeHtml(top.category)} — ` +
     `${top.count} ${paretoOccurrenceWord(top.count)} ` +
-    `(${(top.share * 100).toFixed(1)}% ` +
+    `(${formatLocaleFixed(top.share * 100, 1)}% ` +
     summaryUiText(
       "summary.pareto.ofTotal",
       "of the total"
@@ -17373,7 +17420,7 @@ title: {
     ) +
     `</strong> ${result.top3Count} ` +
     paretoOccurrenceWord(result.top3Count) +
-    ` (${(result.top3Share * 100).toFixed(1)}% ` +
+    ` (${formatLocaleFixed(result.top3Share * 100, 1)}% ` +
     summaryUiText(
       "summary.pareto.ofTotal",
       "of the total"
@@ -17414,7 +17461,7 @@ title: {
       "80% guide:"
     ) +
     `</strong> ${cutoffPhrase} ` +
-    `<strong>${result.cutoff80Pct.toFixed(1)}%</strong> ` +
+    `<strong>${formatLocaleFixed(result.cutoff80Pct, 1)}%</strong> ` +
     summaryUiText(
       "summary.pareto.ofOccurrences",
       "of the occurrences."
@@ -17593,7 +17640,7 @@ function drawCChart(points, baselineCount, labels) {
 
   const n = points.length;
   if (n < 2) {
-    showError("C chart needs at least 2 points.");
+    showError(chartPanelText("errors.cMinPoints", "C chart needs at least 2 points."));
     return;
   }
 
@@ -17784,7 +17831,7 @@ function drawPChart(pointsWithN, baselineCount, labels) {
 
   const n = pointsWithN.length;
   if (n < 2) {
-    showError("P chart needs at least 2 points.");
+    showError(chartPanelText("errors.pMinPoints", "P chart needs at least 2 points."));
     return;
   }
 
@@ -18188,7 +18235,7 @@ function drawUChart(pointsWithN, baselineCount, labels) {
 
   const n = pointsWithN.length;
   if (n < 2) {
-    showError("U chart needs at least 2 points.");
+    showError(chartPanelText("errors.uMinPoints", "U chart needs at least 2 points."));
     return;
   }
 
@@ -19203,7 +19250,7 @@ labelSegments.forEach(
           }
 
           const text =
-  `${seg.label} = ${centreValue.toFixed(3)}`;
+  `${seg.label} = ${formatLocaleFixed(centreValue, 3)}`;
 
           const paddingX = 5;
           const boxHeight = 18;
@@ -19856,7 +19903,7 @@ function formatMrValueForDisplay(v) {
   if (!Number.isFinite(v)) return "—";
   return (typeof formatNumber === "function")
     ? formatNumber(v, 3)
-    : Number(v).toFixed(3);
+    : formatLocaleFixed(Number(v), 3);
 }
 
 function buildMrLocalSeries(segmentPoints, segmentResult) {
@@ -22714,13 +22761,13 @@ async function copyCanvasToClipboard(canvas) {
   // Modern clipboard image API
   if (navigator.clipboard && window.ClipboardItem) {
     const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
-    if (!blob) throw new Error("Failed to create image.");
+    if (!blob) throw new Error(chartPanelText("errors.imageCreationFailed", "Failed to create image."));
     await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
     return;
   }
 
   // Fallback
-  alert("Copy to clipboard is not supported in this browser. Try 'Save chart(s) as…' instead.");
+  alert(chartPanelText("errors.clipboardUnsupported", "Copy to clipboard is not supported in this browser. Try 'Save chart(s) as…' instead."));
 }
 
 function downloadCanvasAsPng(canvas, filename) {
@@ -22729,7 +22776,7 @@ function downloadCanvasAsPng(canvas, filename) {
   // More reliable across browsers than link.click() on a detached node
   canvas.toBlob((blob) => {
     if (!blob) {
-      alert("Sorry — your browser could not export this image.");
+      alert(chartPanelText("errors.exportImageFailed", "Sorry — your browser could not export this image."));
       return;
     }
 
@@ -25004,6 +25051,7 @@ const ok = window.confirm(
       if (!ok) return;
     }
 
+    lastImportedDataFileName = "";
     resetAll();
   });
 }
@@ -25318,3 +25366,27 @@ if (downloadPdfBtn) {
 }
 
 renderHelperState();
+// Locale switches update Chart.js tooltips as well as its axis labels.
+// Regenerate an already calculated chart so narrative summaries and labels
+// use the new language; the underlying data and SPC formulas are unchanged.
+function refreshChartAfterLocaleChange() {
+  const locale = window.SimpleSPCi18n?.getLocale?.() || "en-GB";
+  if (typeof Chart !== "undefined") Chart.defaults.locale = locale;
+  if (currentChart?.options) currentChart.options.locale = locale;
+  if (mrChart?.options) mrChart.options.locale = locale;
+
+  if (!currentChart || !Array.isArray(rawRows) || !rawRows.length || dataModelDirty) {
+    currentChart?.update?.("none");
+    mrChart?.update?.("none");
+    return;
+  }
+  // Programmatic click is treated as automatic regeneration by existing code.
+  requestAnimationFrame(() => {
+    if (dataModelDirty || !rawRows.length || !currentChart) return;
+    generateButton?.click();
+  });
+}
+if (typeof Chart !== "undefined") {
+  Chart.defaults.locale = window.SimpleSPCi18n?.getLocale?.() || "en-GB";
+}
+document.addEventListener("simplespc:languagechange", refreshChartAfterLocaleChange);

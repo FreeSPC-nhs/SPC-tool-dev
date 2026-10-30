@@ -154,11 +154,8 @@ function portableUiText(key, englishFallback) {
     console.error("FreeSPC portable bootstrap error:", error);
 
     window.setTimeout(function () {
-      alert(
-        "The saved FreeSPC file could not start correctly.\n\n" +
-        "Technical detail: " +
-        error.message
-      );
+      alert(window.SimpleSPCi18n?.translate?.("errors.portableStart", { message: error.message }) ||
+        "The saved FreeSPC file could not start correctly. Technical detail: " + error.message);
     }, 0);
   }
 })();
@@ -575,7 +572,7 @@ async function getApplicationBundle() {
       !wrapper.project
     ) {
       throw new Error(
-        "This file does not contain a recognised FreeSPC portable project."
+        portableUiText("errors.portableUnrecognised", "This file does not contain a recognised FreeSPC portable project.")
       );
     }
 
@@ -590,12 +587,8 @@ async function getApplicationBundle() {
     } catch (error) {
       console.error("FreeSPC portable project read error:", error);
 
-      alert(
-        "The saved SPC chart could not be read.\n\n" +
-        "The file may be damaged or may have been created by an incompatible version.\n\n" +
-        "Technical detail: " +
-        error.message
-      );
+      alert(window.SimpleSPCi18n?.translate?.("errors.portableRead", { message: error.message }) ||
+        "The saved SPC chart could not be read. Technical detail: " + error.message);
 
       return;
     }
@@ -609,10 +602,7 @@ async function getApplicationBundle() {
         "FreeSPC portable project load error: loadProjectObject() was not found."
       );
 
-      alert(
-        "The saved SPC chart could not be loaded because the project loader " +
-        "was not available."
-      );
+      alert(portableUiText("errors.portableLoaderMissing", "The saved SPC chart could not be loaded because the project loader was not available."));
 
       return;
     }
@@ -625,11 +615,8 @@ async function getApplicationBundle() {
       Promise.resolve(loadProjectObject(project)).catch(function (error) {
         console.error("FreeSPC portable project load error:", error);
 
-        alert(
-          "The saved SPC chart could not be loaded.\n\n" +
-          "Technical detail: " +
-          error.message
-        );
+        alert(window.SimpleSPCi18n?.translate?.("errors.portableLoad", { message: error.message }) ||
+          "The saved SPC chart could not be loaded. Technical detail: " + error.message);
       });
     } catch (error) {
       console.error("FreeSPC portable project load error:", error);
