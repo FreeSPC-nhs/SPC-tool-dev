@@ -1203,8 +1203,8 @@ function formatLocaleFixed(value, digits = 3) {
 }
 
 function formatLocalePercent(value, digits = 1) {
-  return formatLocaleFixed(value, digits) +
-    (window.SimpleSPCi18n?.getLanguage?.() === "fr" ? " %" : "%");
+  return window.SimpleSPCi18n?.formatPercent?.(value, digits)
+    ?? (formatLocaleFixed(value, digits) + "%");
 }
 
 function rescaleNumericInput(input, ratio) {
@@ -2015,7 +2015,7 @@ alert(chartPanelText(
 
   lastImportedDataFileName = "";
   if (typeof refreshSelectedDataFileName === "function") refreshSelectedDataFileName();
-  restoringNumberLanguage = ["en", "fr"].includes(projectObj.numericDataLanguage)
+  restoringNumberLanguage = window.SimpleSPCi18n?.getAvailableLanguages?.().includes(projectObj.numericDataLanguage)
     ? projectObj.numericDataLanguage
     : null;
   resetAnnotationsAndSplitsForNewData();

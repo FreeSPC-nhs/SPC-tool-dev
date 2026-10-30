@@ -11,8 +11,10 @@
   const languageMetadata = {
     en: { name: "English", locale: "en-GB" },
     fr: { name: "Français", locale: "fr-FR" },
-    es: { name: "Español", locale: "es-ES" },
-    de: { name: "Deutsch", locale: "de-DE" }
+    es: { name: "Español (borrador)", locale: "es-ES", draftNotice: "Traducción preliminar: algunas secciones siguen en inglés." },
+    de: { name: "Deutsch (Entwurf)", locale: "de-DE", draftNotice: "Übersetzungsentwurf: Einige Bereiche sind noch auf Englisch." },
+    it: { name: "Italiano (bozza)", locale: "it-IT", draftNotice: "Traduzione provvisoria: alcune sezioni sono ancora in inglese." },
+    pt: { name: "Português (rascunho)", locale: "pt-PT", draftNotice: "Tradução preliminar: algumas secções continuam em inglês." }
   };
 
   // English is the default; honour a previous manual choice when one exists.
@@ -66,44 +68,73 @@
     });
   }
 
-  // Accept comma decimals (12,5, 1 234,56) and dot decimals (12.5)
-  // without changing the numeric values in charts or JSON files.
-  // Ambiguous "1,234" follows the selected language: en=1234, fr=1.234.
+  // Parse numbers using the locale in which the SOURCE DATA was entered,
+  // not necessarily the language currently shown in the user interface.
+  // All internal calculations continue to use JavaScript Numbers.
+  // Ambiguity is unavoidable: "1.234" can mean 1234 in de/es/it/pt or
+  // 1.234 in English. The selected source-data language resolves this case.
   function parseNumber(value, options = {}) {
     if (typeof value === "number") return Number.isFinite(value) ? value : NaN;
     if (value == null) return NaN;
     let s = String(value).trim().replace(/\u2212/g, "-");
     if (!s) return NaN;
-    s = s.replace(/\s*%\s*$/, "").trim(); // percentages remain percentage points
+    s = s.replace(/\s*%\s*$/, "").trim(); // retain percentage-point semantics
     if (!s) return NaN;
-    // Spaces, nonbreaking and narrow nonbreaking spaces are valid grouping only
-    // between groups of exactly three digits.
+
+    // Accept grouping spaces only in properly grouped thousands (including NBSP).
     if (/[\s\u00a0\u202f]/u.test(s)) {
       if (!/^[+-]?\d{1,3}(?:[\s\u00a0\u202f]\d{3})+(?:[.,]\d+)?$/u.test(s)) return NaN;
       s = s.replace(/[\s\u00a0\u202f]/gu, "");
     }
+
+    const language = String(options.language || currentLanguage).split("-")[0].toLowerCase();
+    const dotGroups = ["es", "de", "it", "pt"].includes(language);
+    const commaGroups = language === "en";
     const dot = s.lastIndexOf(".");
     const comma = s.lastIndexOf(",");
+
     if (dot >= 0 && comma >= 0) {
+      // Rightmost punctuation is decimal, the other must be grouped in threes.
       const decimal = dot > comma ? "." : ",";
       const group = decimal === "." ? "," : ".";
-      const chunks = s.split(decimal);
-      if (chunks.length !== 2 || !/^\d+$/.test(chunks[1])) return NaN;
-      const pattern = new RegExp("^[+-]?\\d{1,3}(?:\\" + group + "\\d{3})+$");
-      if (!pattern.test(chunks[0])) return NaN;
-      s = chunks[0].split(group).join("") + "." + chunks[1];
+      const parts = s.split(decimal);
+      if (parts.length !== 2 || !/^\d+$/.test(parts[1])) return NaN;
+      const groupPattern = new RegExp("^[+-]?\\d{1,3}(?:\\" + group + "\\d{3})+$");
+      if (!groupPattern.test(parts[0])) return NaN;
+      s = parts[0].split(group).join("") + "." + parts[1];
     } else if (comma >= 0) {
       if (/^[+-]?\d{1,3}(?:,\d{3}){2,}$/.test(s)) {
         s = s.replace(/,/g, "");
-      } else if (/^[+-]?\d{1,3},\d{3}$/.test(s) && (options.language || currentLanguage) === "en") {
-        s = s.replace(",", "");
+      } else if (/^[+-]?\d{1,3},\d{3}$/.test(s) && commaGroups) {
+        s = s.replace(/,/g, "");
       } else if (/^[+-]?\d+,\d+$/.test(s)) {
         s = s.replace(",", ".");
       } else return NaN;
+    } else if (dot >= 0) {
+      if (/^[+-]?\d{1,3}(?:\.\d{3}){2,}$/.test(s)) {
+        s = s.replace(/\./g, "");
+      } else if (/^[+-]?\d{1,3}\.\d{3}$/.test(s) && dotGroups) {
+        s = s.replace(".", "");
+      } else if (!/^[+-]?(?:\d+(?:\.\d+)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(s)) {
+        return NaN;
+      }
     }
     if (!/^[+-]?(?:\d+(?:\.\d+)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(s)) return NaN;
     const parsed = Number(s);
     return Number.isFinite(parsed) ? parsed : NaN;
+  }
+
+  // Input is already in percentage points: 12.5 means 12.5%, NOT 1250%.
+  function formatPercent(value, digits = 1) {
+    const places = Math.min(12, Math.max(0, Math.trunc(Number(digits) || 0)));
+    const n = Number(value);
+    if (!Number.isFinite(n)) return String(value ?? "");
+    return new Intl.NumberFormat(getLocale(), {
+      style: "percent",
+      minimumFractionDigits: places,
+      maximumFractionDigits: places,
+      useGrouping: false
+    }).format(n / 100);
   }
 
   function updateLanguageSelector() {
@@ -186,6 +217,14 @@
       });
     });
 
+    // Draft languages deliberately fall back to English for unreviewed strings.
+    const draftNotice = document.getElementById("translationDraftNotice");
+    if (draftNotice) {
+      const warning = languageMetadata[currentLanguage]?.draftNotice;
+      draftNotice.textContent = warning || "";
+      draftNotice.hidden = !warning;
+    }
+
     // Keep the language selector synchronised.
     const selector = document.getElementById("languageSelect");
 
@@ -248,6 +287,7 @@
     getLocale,
     formatNumber,
     formatFixed,
+    formatPercent,
     parseNumber,
     getAvailableLanguages: () => Object.keys(dictionaries)
   };
