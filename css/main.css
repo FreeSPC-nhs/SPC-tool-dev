@@ -1657,3 +1657,11 @@ body.pdf-exporting #capability {
     max-height: min(25vh, 180px);
   }
 }
+
+/* Localised file picker: the real input is retained for the native picker,
+   and the visible, keyboard-operable button has an application translation. */
+.localised-file-picker { display:flex; align-items:center; flex-wrap:wrap; gap:0.55rem; }
+.file-picker-native-input { position:absolute !important; width:1px !important; height:1px !important;
+  padding:0 !important; margin:0 !important; overflow:hidden !important;
+  clip-path:inset(50%) !important; white-space:nowrap !important; border:0 !important; }
+#selectedDataFileName { overflow-wrap:anywhere; font-size:0.86rem; color:#425563; }
