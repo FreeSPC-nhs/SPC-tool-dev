@@ -39,10 +39,11 @@ test('all six languages load and offer a selector choice',()=>{
   for(const lang of languages) assert.equal(i18n.setLanguage(lang),true);
   assert.equal(i18n.setLanguage('xx'),false);
 });
-test('French and English remain complete and all draft keys are valid',()=>{
+test('English, French and Spanish dictionaries are complete, and other draft keys are valid',()=>{
  const {entries}=load(),en=entries.en,fr=entries.fr;
  assert.equal(Object.keys(en).length,1350);
  assert.deepEqual(Object.keys(en).sort(),Object.keys(fr).sort());
+ assert.deepEqual(Object.keys(en).sort(),Object.keys(entries.es).sort());
  const tokens=value=>Array.from(String(value).matchAll(/\{([a-zA-Z0-9_]+)\}/g),x=>x[1]).sort();
  for(const lang of ['es','de','it','pt']) {
   assert.ok(Object.keys(entries[lang]).length>=400,lang);
@@ -79,13 +80,27 @@ test('localized display and percent formatting',()=>{
 });
 test('draft notice is visible only for unreviewed languages',()=>{
  const {i18n,draft,document}=load();
- for(const lang of ['es','de','it','pt']) {
+ for(const lang of ['de','it','pt']) {
   i18n.setLanguage(lang);
   assert.equal(draft.hidden,false);
   assert.ok(draft.textContent.length>20);
   assert.equal(document.documentElement.lang,lang);
   assert.notEqual(i18n.translate('buttons.generate'), 'Generate / Recalculate');
-  assert.equal(i18n.translate('helper.response.empty'), 'Please type a question about SPC or your chart.');
+  assert.equal(i18n.translate('helper.response.empty'), lang==='es' ? 'Escribe una pregunta sobre el CEP o sobre tu gráfico.' : 'Please type a question about SPC or your chart.');
  }
- for(const lang of ['en','fr']) {i18n.setLanguage(lang);assert.equal(draft.hidden,true);}
+ for(const lang of ['en','fr','es']) {i18n.setLanguage(lang);assert.equal(draft.hidden,true);}
+ i18n.setLanguage('es');
+ assert.notEqual(i18n.translate('helper.response.empty'), 'Please type a question about SPC or your chart.');
+});
+
+test('Spanish wizard has no English fallback text except chart-name symbols',()=>{
+ const {i18n,entries}=load();
+ i18n.setLanguage('es');
+ const unchangedAllowed=new Set(['wizard.chart.xmr','wizard.chart.xbars','wizard.chart.t','wizard.chart.g']);
+ for(const k of Object.keys(entries.en).filter(k=>k.startsWith('wizard.'))) {
+   assert.ok(Object.hasOwn(entries.es,k),'missing Spanish wizard entry: '+k);
+   if(!unchangedAllowed.has(k)) {
+     assert.notEqual(entries.es[k],entries.en[k],'English wizard fallback: '+k);
+   }
+ }
 });
