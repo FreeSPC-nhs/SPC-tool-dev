@@ -15580,58 +15580,6 @@ let lastGenerateWasManual = false;
 
 let axisTypeManuallyChanged = false;
 
-/**
- * Conservative ID/sequence warning heuristic for selected chart columns.
- * This is advisory only; do not alter imported data or SPC calculations.
- *
- * Whole-number measurements can be almost entirely unique (for example,
- * patient waiting times before and after an improvement). Uniqueness and
- * integer values therefore do NOT establish that a column contains IDs.
- */
-function isLikelyIdOrSequenceColumn(columnName, profile) {
-  if (!profile || !profile.isNumeric ||
-      !profile.isMostlyInteger || profile.looksLikeDate) {
-    return false;
-  }
-
-  const rawName = String(columnName || "").trim();
-  const name = rawName.toLowerCase().replace(/[\s-]+/g, "_");
-
-  // Strong header cues only. Avoid name.includes("id") or "number":
-  // these accidentally match ordinary descriptive measure names.
-  const explicitIdentifierName =
-    /(?:^|_)(?:id|identifier|uuid|guid)(?:_|$)/.test(name) ||
-    /^(?:patient|person|record|episode|visit|case|sample|row)id$/i.test(rawName) ||
-    /^(?:row|record|sequence|seq|serial|sample)_?(?:number|num|no|index)$/.test(name) ||
-    /^(?:index|sequence|seq|serial)$/.test(name);
-
-  if (explicitIdentifierName) return true;
-
-  // A clearly named outcome remains an outcome even if a short series
-  // happens to be 1, 2, 3, ... (e.g. growing patient counts).
-  const clearlyMeasurementName =
-    /(?:^|_)(?:measure|measurement|median|mean|rate|ratio|count|counts|total|time|times|minutes?|hours?|days?|waiting|wait|turnaround|score|percentage|percent|proportion|patients?|attendances?|appointments?|duration)(?:_|$)/.test(name);
-  if (clearlyMeasurementName) return false;
-
-  // Without a clear ID header, only flag a literal row-number sequence
-  // (0,1,2,... or 1,2,3,...). Do not flag monotonic, nearly-unique or
-  // steadily improving outcome measures: they are common in SPC.
-  if (!Array.isArray(rawRows) || rawRows.length < 8) return false;
-
-  const start = toNumericValue(rawRows[0]?.[columnName]);
-  if (start !== 0 && start !== 1) return false;
-
-  for (let i = 0; i < rawRows.length; i++) {
-    const raw = rawRows[i]?.[columnName];
-    if (raw === null || raw === undefined || String(raw).trim() === "") {
-      return false;
-    }
-    if (toNumericValue(raw) !== start + i) return false;
-  }
-
-  return true;
-}
-
 function validateColumnSelectionSafety({ chartType, dateCol, valueCol, axisType }) {
   if (!dateCol || !valueCol) return null;
 
@@ -15648,10 +15596,37 @@ function validateColumnSelectionSafety({ chartType, dateCol, valueCol, axisType 
 
   const warnings = [];
 
-  // A numeric column is not necessarily an ID just because its values are
-  // whole numbers and mostly unique. Use stronger identifier/sequence evidence.
-  const xLooksLikeSequence = isLikelyIdOrSequenceColumn(dateCol, xProf);
-  const yLooksLikeIndex = isLikelyIdOrSequenceColumn(valueCol, yProf);
+  const xLooksLikeSequence =
+    !!(xProf &&
+       xProf.isNumeric &&
+       xProf.isMostlyInteger &&
+       xProf.uniqueRatio >= 0.85 &&
+       !xProf.repeatsOften &&
+       !xProf.looksLikeDate);
+
+    // Only warn for a clearly named identifier or a true row-number series.
+  // Whole-number outcomes can be unique without being IDs.
+  const yName = String(valueCol).trim();
+  const namedId =
+    /(?:^|[_\s-])(?:id|identifier|index|sequence|seq|serial)(?:$|[_\s-])/i.test(yName) ||
+    /^(?:patient|person|record|episode|visit|case|sample|row)[_\s-]?(?:id|number|num|no)$/i.test(yName);
+
+  const namedMeasure =
+    /(?:median|mean|average|time|minute|hour|day|rate|count|percent|score|duration|turnaround|wait|measure|value|total|patient|attendance|appointment|number[_\s-]+of)/i.test(yName);
+
+  const firstY = rawRows.length ? toNumericValue(rawRows[0][valueCol]) : NaN;
+  const isRowNumberSequence =
+    rawRows.length >= 8 &&
+    (firstY === 0 || firstY === 1) &&
+    rawRows.every((row, index) =>
+      toNumericValue(row[valueCol]) === firstY + index
+    );
+
+  const yLooksLikeIndex =
+    !!(yProf &&
+       yProf.isNumeric &&
+       !yProf.looksLikeDate &&
+       (namedId || (isRowNumberSequence && !namedMeasure)));
 
   // T chart (event dates mode): value column is ignored, so only check X
   if (chartType === "t" && typeof tChartInputMode !== "undefined" && tChartInputMode === "eventDates") {
