@@ -144,23 +144,30 @@ select:disabled {
 
 .tab-bar {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.25rem;
   margin-bottom: 0.4rem;
 }
 
 .tab-btn {
   width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   border: 1px solid #005eb8;
   background: #005eb8;
   color: #ffffff;
   cursor: pointer;
-  padding: 0.45rem 0.5rem;
+  padding: 0.45rem 0.25rem;
   font-size: 0.85rem;
   border-radius: 0.55rem 0.55rem 0 0;
   font-weight: 600;
-  line-height: 1.1;
+  line-height: 1.2;
   text-align: center;
+
+  /* Allow longer translated labels to fit */
+  white-space: normal;
+  overflow-wrap: anywhere;
+  hyphens: auto;
 }
 
 .tab-btn:hover {
