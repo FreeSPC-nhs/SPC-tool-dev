@@ -22584,8 +22584,13 @@ async function prepareChartsForExport() {
     await document.fonts.ready;
   }
 
-  const mainContainer = chartCanvas?.parentElement;
-  const mrContainer = mrChartCanvas?.parentElement;
+  // Remember the plot height before resizing for export.
+  const originalPlotHeight = currentChart?.chartArea
+    ? currentChart.chartArea.bottom - currentChart.chartArea.top
+    : 0;
+
+  const mainContainer = chartCanvas?.parentElement;  
+ const mrContainer = mrChartCanvas?.parentElement;
 
   const backups = {
     mainWidth: mainContainer?.style.width || "",
@@ -22604,8 +22609,33 @@ async function prepareChartsForExport() {
     mrContainer.style.height = "360px";
   }
 
-  if (currentChart) {
+    if (currentChart) {
     currentChart.resize(1200, 640);
+
+    // Scale manually positioned annotations to match the export plot height.
+    const exportPlotHeight = currentChart.chartArea
+      ? currentChart.chartArea.bottom - currentChart.chartArea.top
+      : 0;
+
+    if (originalPlotHeight > 0 && exportPlotHeight > 0 &&
+        !currentChart.$disableUserAnnotations &&
+        currentChart.options?.plugins?.annotation) {
+
+      const exportAnnotations = buildAnnotationConfig(currentChart.data.labels);
+      const scale = exportPlotHeight / originalPlotHeight;
+
+      Object.entries(exportAnnotations).forEach(([key, config]) => {
+        const idx = Number(key.slice("annot".length));
+        const offset = annotations[idx]?.yAdjust;
+
+        if (Number.isFinite(offset) && config.label) {
+          config.label.yAdjust = offset * scale;
+        }
+      });
+
+      currentChart.options.plugins.annotation.annotations = exportAnnotations;
+    }
+
     currentChart.update("none");
   }
 
@@ -22627,8 +22657,16 @@ async function prepareChartsForExport() {
       mrContainer.style.height = backups.mrHeight;
     }
 
-    if (currentChart) {
+        if (currentChart) {
       currentChart.resize();
+
+      // Restore the original annotation positions.
+      if (!currentChart.$disableUserAnnotations &&
+          currentChart.options?.plugins?.annotation) {
+        currentChart.options.plugins.annotation.annotations =
+          buildAnnotationConfig(currentChart.data.labels);
+      }
+
       currentChart.update("none");
     }
 
