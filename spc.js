@@ -2794,7 +2794,7 @@ if (currentChart.options?.plugins?.title) {
   if (currentChart.options?.scales?.y) {
     if (currentChart.options.scales.y.title) {
       currentChart.options.scales.y.title.display = !!yLabel;
-      currentChart.options.scales.y.title.text = yLabel;
+      currentChart.options.scales.y.title.text = wrapYAxisTitle(yLabel);
       if (axisSettings?.y?.font) {
         currentChart.options.scales.y.title.font = cleanFontOptions(axisSettings.y.font);
       }
@@ -10187,15 +10187,36 @@ function withoutAxisBounds(settings) {
   return copy;
 }
 
-function buildAxisConfig(axisLabel, settings, extra = {}) {
+// Wrap long Y-axis titles without changing the saved label.
+function wrapYAxisTitle(text, maxChars = 30) {
+  const label = String(text ?? "").trim().replace(/\s+/g, " ");
+  if (label.length <= maxChars) return label;
+
+  const lines = [];
+  let line = "";
+
+  for (const word of label.split(" ")) {
+    if (line && (line.length + 1 + word.length > maxChars)) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = line ? `${line} ${word}` : word;
+    }
+  }
+
+  if (line) lines.push(line);
+
+  return lines.length > 1 ? lines : label;
+}
+
+function buildAxisConfig(axisLabel, settings, extra = {}, axis = "y") {
   const cfg = {
     grid: { display: false },
     title: {
       display: !!axisLabel,
-      text: axisLabel,
+      text: axis === "y" ? wrapYAxisTitle(axisLabel) : axisLabel,
       font: cleanFontOptions(settings?.font)
-    },
-    ticks: {
+    },    ticks: {
       font: cleanFontOptions(settings?.font),
       callback: buildTickFormatter(settings?.format)
     },
@@ -10230,10 +10251,9 @@ function buildCategoryXAxisConfig(axisLabel, settings, labels, extra = {}) {
   const cfg = buildAxisConfig(axisLabel, settings, {
     type: "category",
     ...extra
-  });
+  }, "x");
 
-  cfg.ticks = {
-    ...(cfg.ticks || {}),
+  cfg.ticks = {    ...(cfg.ticks || {}),
     callback: function(value, index) {
       if (Array.isArray(labels) && index >= 0 && index < labels.length) {
         return labels[index];
@@ -10410,7 +10430,7 @@ function refreshAutomaticChartLabelsLanguage() {
     }
 
     if (currentChart.options?.scales?.y?.title) {
-      currentChart.options.scales.y.title.text = label;
+      currentChart.options.scales.y.title.text = wrapYAxisTitle(label);
     }
   }
 
