@@ -22578,32 +22578,32 @@ function renderSummaryToCanvas(ctx, x, y, maxWidth) {
 
     if (!clean) return 0;
 
-    const words = clean.split(" ");
+        const words = clean.split(/\s+/);
     const lineHeight = Math.round(size * 1.35);
-    const bulletText = bullet ? "• " : "";
-
-    const usableWidth = Math.max(80, maxWidth - indent);
-    const drawX = startX + indent;
+    const bulletWidth = bullet ? 16 : 0;
+    const drawX = startX + indent + bulletWidth;
+    const usableWidth = Math.max(80, maxWidth - indent - bulletWidth);
 
     let line = "";
     let yy = startY;
 
-    for (const w of words) {
-      const test = line ? `${line} ${w}` : w;
-      const prefix = (line === "") ? bulletText : "";
-      const width = ctx.measureText(prefix + test).width;
+    // Draw the bullet once, independently of wrapped text.
+    if (bullet) ctx.fillText("•", startX + indent, yy);
 
-      if (width <= usableWidth) {
-        line = test;
-      } else {
-        ctx.fillText(((line === "") ? bulletText : "") + line, drawX, yy);
+    for (const word of words) {
+      const candidate = line ? `${line} ${word}` : word;
+
+      if (line && ctx.measureText(candidate).width > usableWidth) {
+        ctx.fillText(line, drawX, yy);
         yy += lineHeight;
-        line = w;
+        line = word;
+      } else {
+        line = candidate;
       }
     }
 
     if (line) {
-      ctx.fillText(bulletText + line, drawX, yy);
+      ctx.fillText(line, drawX, yy);
       yy += lineHeight;
     }
 
@@ -22613,45 +22613,72 @@ function renderSummaryToCanvas(ctx, x, y, maxWidth) {
   let cursorY = y;
   ctx.fillStyle = "#111";
 
-  const children = Array.from(root.children);
+    // Walk headings and list items even when nested inside period containers.
+  // Only export the contents of a details section when it is expanded.
+  const nodes = root.querySelectorAll("h3, h4, p, li, summary");
 
-  for (const node of children) {
-    const tag = node.tagName ? node.tagName.toLowerCase() : "";
-    const text = node.innerText || "";
+  for (const node of nodes) {
+    const tag = node.tagName.toLowerCase();
+
+    // Skip content inside collapsed details sections.
+    if (node.closest("details:not([open])")) continue;
+
+    // Avoid repeating the text of nested lists or details.
+    let text = (node.textContent || "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    if (tag === "li" && node.querySelector("ul, ol, details")) {
+      text = Array.from(node.childNodes)
+        .filter(child =>
+          child.nodeType === 3 ||
+          (child.nodeType === 1 &&
+           !["UL", "OL", "DETAILS"].includes(child.tagName))
+        )
+        .map(child => child.textContent || "")
+        .join(" ")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    if (tag === "p" && node.closest("li")) continue;
+    if (!text) continue;
 
     if (tag === "h3" || tag === "h4") {
       const st = styles[tag];
-      cursorY += st.gapTop;
-      cursorY += drawWrappedText(text, x, cursorY, st.size, st.bold, 0, false);
-      cursorY += st.gapBottom;
-      continue;
-    }
 
-    if (tag === "p") {
+      cursorY += st.gapTop;
+      cursorY += drawWrappedText(
+        text, x, cursorY, st.size, true
+      );
+      cursorY += st.gapBottom;
+
+    } else if (tag === "summary") {
+      cursorY += 6;
+      cursorY += drawWrappedText(
+        text, x, cursorY, 13, true, 18
+      );
+      cursorY += 3;
+
+    } else if (tag === "li") {
+      const st = styles.li;
+      const indent = node.closest("details") ? 34 : 18;
+
+      cursorY += st.gapTop;
+      cursorY += drawWrappedText(
+        text, x, cursorY, st.size, false, indent, true
+      );
+      cursorY += st.gapBottom;
+
+    } else if (tag === "p") {
       const st = styles.p;
+
       cursorY += st.gapTop;
-      cursorY += drawWrappedText(text, x, cursorY, st.size, st.bold, 0, false);
+      cursorY += drawWrappedText(
+        text, x, cursorY, st.size, false
+      );
       cursorY += st.gapBottom;
-      continue;
     }
-
-    if (tag === "ul") {
-      const items = Array.from(node.querySelectorAll(":scope > li"));
-      for (const li of items) {
-        const st = styles.li;
-        cursorY += st.gapTop;
-        cursorY += drawWrappedText(li.innerText || "", x, cursorY, st.size, false, 18, true);
-        cursorY += st.gapBottom;
-      }
-      cursorY += 4;
-      continue;
-    }
-
-    // fallback
-    const st = styles.p;
-    cursorY += st.gapTop;
-    cursorY += drawWrappedText(text, x, cursorY, st.size, st.bold, 0, false);
-    cursorY += st.gapBottom;
   }
 
   return cursorY - y;
