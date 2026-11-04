@@ -897,6 +897,176 @@ if (
 }
 
 
+function spcTooltipSignalLines(context) {
+  if (!context || context.datasetIndex !== 0) return [];
+
+  if (
+    typeof shouldFlagSpecialCauseOnChart === "function" &&
+    !shouldFlagSpecialCauseOnChart()
+  ) return [];
+
+  const chart = context.chart;
+  const index = context.dataIndex;
+
+  if (!chart || !Number.isInteger(index)) return [];
+
+  const tr = (key, fallback) =>
+    chartPanelText(key, fallback);
+
+  const above = tr("summary.xmr.detail.above", "Above");
+  const below = tr("summary.xmr.detail.below", "Below");
+  const shift = tr("summary.attr.shiftName", "Shift");
+  const trend = tr("summary.attr.trendName", "Trend");
+
+  const rawValue = chart.data.datasets[0]?.data?.[index];
+  const rawCentre = chart.data.datasets[1]?.data?.[index];
+
+  const value =
+    typeof rawValue === "number" ? rawValue : rawValue?.y;
+
+  const centre =
+    typeof rawCentre === "number" ? rawCentre : rawCentre?.y;
+
+  const side =
+    Number.isFinite(value) && Number.isFinite(centre)
+      ? (value > centre ? above : value < centre ? below : "")
+      : "";
+
+  const withSide = (label, direction) =>
+    direction ? `${label} — ${direction}` : label;
+
+  const lines = [];
+
+  // Run charts use median-based ranges with global point indices.
+  if (chart.$spcTooltipRun) {
+    const run = chart.$spcTooltipRun;
+
+    for (const r of run.shifts || []) {
+      if (index >= r.start && index <= r.end) {
+        const direction =
+          r.side === "above" || r.side === 1
+            ? above
+            : r.side === "below" || r.side === -1
+              ? below
+              : side;
+
+        lines.push(withSide(shift, direction));
+      }
+    }
+
+    for (const r of run.trends || []) {
+      if (index >= r.start && index <= r.end) {
+        const direction =
+          r.direction === "up" ||
+          r.direction === "increasing"
+            ? tr("summary.xmr.detail.increasing", "Increasing")
+            : r.direction === "down" ||
+              r.direction === "decreasing"
+              ? tr("summary.xmr.detail.decreasing", "Decreasing")
+              : "";
+
+        lines.push(withSide(trend, direction));
+      }
+    }
+
+  } else {
+    // Other SPC charts use period-local detection results.
+    const period = (chart.$spcTooltipPeriods || []).find(
+      p => index >= p.startIndex && index <= p.endIndex
+    );
+
+    if (!period || period.suppress) return [];
+
+    const analysis = period.analysis;
+    const local = index - period.startIndex;
+    const flags = analysis?.flags;
+
+    if (!flags?.special?.[local]) return [];
+
+    const matches = analysis.ruleMatches || {};
+
+    // Outside control limits
+    if (flags.beyond?.[local]) {
+      const hit = (
+        matches.beyond ||
+        analysis.outOfControl ||
+        []
+      ).find(h => h.i === local);
+
+      const direction =
+        hit?.type === "aboveUCL" ? above
+          : hit?.type === "belowLCL" ? below
+          : side;
+
+      lines.push(withSide(
+        tr("summary.xmr.detail.beyond", "Outside control limits"),
+        direction
+      ));
+    }
+
+    // Sustained shift
+    if (flags.shift?.[local]) {
+      const r = (matches.shifts || []).find(
+        r => local >= r.start && local <= r.end
+      );
+
+      const direction =
+        r?.side > 0 ? above : r?.side < 0 ? below : side;
+
+      lines.push(withSide(shift, direction));
+    }
+
+    // Increasing or decreasing trend
+    if (flags.trend?.[local]) {
+      const ranges = (matches.trends || []).filter(
+        r => local >= r.start && local <= r.end
+      );
+
+      if (!ranges.length) {
+        lines.push(trend);
+      }
+
+      for (const r of ranges) {
+        const direction =
+          r.direction === "up" ||
+          r.direction === "increasing"
+            ? tr("summary.xmr.detail.increasing", "Increasing")
+            : r.direction === "down" ||
+              r.direction === "decreasing"
+              ? tr("summary.xmr.detail.decreasing", "Decreasing")
+              : "";
+
+        lines.push(withSide(trend, direction));
+      }
+    }
+
+    // Optional zone rules
+    if (flags.zone23?.[local]) {
+      lines.push(withSide(
+        tr("summary.xmr.detail.zone23", "2 of 3 beyond 2σ"),
+        side
+      ));
+    }
+
+    if (flags.zone45?.[local]) {
+      lines.push(withSide(
+        tr("summary.xmr.detail.zone45", "4 of 5 beyond 1σ"),
+        side
+      ));
+    }
+  }
+
+  // Avoid repeated labels when rules overlap.
+  const distinct = [...new Set(lines)];
+
+  return distinct.length
+    ? [
+        `${tr("summary.attr.signals", "Signals")}:`,
+        ...distinct
+      ]
+    : [];
+}
+
 
     // Add observation or subgroup numbers to SPC tooltips.
     // Detailed special-cause explanations will follow in Batch D2.
@@ -968,6 +1138,9 @@ if (
             }
           }
         }
+
+    // Add rule explanations after the observation number.
+    lines.push(...spcTooltipSignalLines(context));
 
         return lines;
       };
@@ -9501,11 +9674,29 @@ function drawXbarSChart(
       effectiveSplits
   });
 
+  // Each panel has its own subgroup signal analysis.
+  if (currentChart) {
+    currentChart.$spcTooltipPeriods =
+      periodAnalyses.map(p => ({
+        startIndex: p.startIndex,
+        endIndex: p.endIndex,
+        analysis: p.xbar
+      }));
+  }
+
+  if (mrChart) {
+    mrChart.$spcTooltipPeriods =
+      periodAnalyses.map(p => ({
+        startIndex: p.startIndex,
+        endIndex: p.endIndex,
+        analysis: p.s
+      }));
+  }
+
   attachSubgroupLimitExclusionContext(
     currentChart,
     subgroupLabels
   );
-
   if (mrChart) {
     attachSubgroupLimitExclusionContext(
       mrChart,
@@ -9804,6 +9995,14 @@ function drawTChart(points, baselineCount, labels) {
     showLCL: false
   });
 
+if (currentChart) {
+    currentChart.$spcTooltipPeriods = [{
+      startIndex: 0,
+      endIndex: n - 1,
+      analysis: analysisForColour
+    }];
+  }
+
     // Build per-period analyses (XmR-style summary, respects splits/baseline)
   const segmentAnalyses = [];
 
@@ -9967,6 +10166,14 @@ function drawGChart(values, baselineCount, labels) {
     showUCL: true,
     showLCL: true
   });
+
+if (currentChart) {
+    currentChart.$spcTooltipPeriods = [{
+      startIndex: 0,
+      endIndex: n - 1,
+      analysis: analysisForColour
+    }];
+  }
 
     // Build per-period analyses (XmR-style summary, respects splits/baseline)
   const segmentAnalyses = [];
@@ -12829,6 +13036,17 @@ function renderLaneySummaryText(chartType, st, fmt) {
 
 
 function renderAttributeMultiSummary(segmentAnalyses, totalPoints) {
+
+  // Share the existing chart-analysis periods with tooltips.
+  if (currentChart) {
+    currentChart.$spcTooltipPeriods =
+      (segmentAnalyses || []).map(a => ({
+        startIndex: a.startIndex,
+        endIndex: a.endIndex,
+        analysis: a
+      }));
+  }
+
   if (!summaryDiv) return;
 
   const nameMap = {
@@ -16940,6 +17158,12 @@ currentChart = new Chart(chartCanvas, {
     }
   });
 
+    // Retain the run-chart ranges used for point colouring.
+    currentChart.$spcTooltipRun = {
+      shifts: runRangesAll,
+      trends: trendRangesAll
+    };
+
     clearDataModelDirty();
 
   // ----- Build summary inputs safely -----
@@ -20036,6 +20260,14 @@ currentChart = new Chart(chartCanvas, {
     })()
   }
 });
+
+// Retain the existing period analyses for tooltip explanations.
+currentChart.$spcTooltipPeriods = segmentSummaries.map(seg => ({
+  startIndex: seg.startIndex,
+  endIndex: seg.endIndex,
+  analysis: seg.analysis,
+  suppress: !seg.hasEnoughPointsForInterpretation
+}));
 
 attachRowLimitExclusionContext(
   currentChart,
