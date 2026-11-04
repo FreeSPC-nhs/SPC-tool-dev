@@ -13940,9 +13940,15 @@ function buildXmRSignalDetailsHtml(analysis, startIndex, astro) {
   html += zoneSection(zone23, policy.allowZone23, "zone23", "2 of 3 beyond 2σ");
   html += zoneSection(zone45, policy.allowZone45, "zone45", "4 of 5 beyond 1σ");
 
-  if (astro?.indices?.length) {
+    // Report astronomical outliers here only when they are NOT already
+  // listed above as points beyond the control limits.
+  const beyondIndices = new Set(beyond.map(hit => hit.i));
+  const additionalOutliers = (astro?.indices || [])
+    .filter(i => Number.isInteger(i) && !beyondIndices.has(i));
+
+  if (additionalOutliers.length) {
     html += `<li><strong>${tr("outliers", "Additional unusual observations")}</strong>: ` +
-      pointList(astro.indices) + `</li>`;
+      pointList(additionalOutliers) + `</li>`;
   }
 
   html += `</ul></details></li>`;
