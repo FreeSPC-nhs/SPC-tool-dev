@@ -1119,7 +1119,14 @@ function spcTooltipSignalLines(context) {
           if (chartType === "xbars") {
             // Secondary S chart: one measurement per subgroup.
             if (context.datasetIndex === 0) {
-              lines.push(`${subgroupWord} ${index + 1}`);
+              const offset =
+            Number.isInteger(chart.$spcPointOffset)
+              ? chart.$spcPointOffset
+              : 0;
+
+          lines.push(
+            `${subgroupWord} ${offset + index + 1}`
+          );
             }
 
           } else if (chartType === "xmr") {
@@ -4625,27 +4632,36 @@ function drawXbarSCombinedChart({
 
 
 
+    // Display the latest analysis period or the full S chart.
+  const sCurrentOnly = getMrDisplayMode() !== "all";
+
+  const sFirstIndex =
+    sCurrentOnly && splitAfterIndices.length
+      ? splitAfterIndices[splitAfterIndices.length - 1] + 1
+      : 0;
+
   mrChart =
     drawSecondarySPCChart({
       canvas:
         mrCanvas,
 
-      labels,
+      labels:
+        labels.slice(sFirstIndex),
 
       values:
-        sVals,
+        sVals.slice(sFirstIndex),
 
       pointColours:
-        pointColoursS,
+        pointColoursS.slice(sFirstIndex),
 
       cl:
-        clS,
+        clS.slice(sFirstIndex),
 
       ucl:
-        uclSArr,
+        uclSArr.slice(sFirstIndex),
 
       lcl:
-        lclSArr,
+        lclSArr.slice(sFirstIndex),
 
       title:
         sLabels.title,
@@ -4662,8 +4678,14 @@ function drawXbarSCombinedChart({
       suggestedMax:
         undefined,
 
-      splitAfterIndices
+            splitAfterIndices:
+        sCurrentOnly ? [] : splitAfterIndices
     });
+
+  // Remember where the displayed period begins.
+  if (mrChart) {
+    mrChart.$spcPointOffset = sFirstIndex;
+  }
 }
 
 
@@ -9693,14 +9715,46 @@ function drawXbarSChart(
       }));
   }
 
+
+  // Share X-bar and S chart analyses with the tooltips.
+  // The S chart may display only the latest period.
+
+  if (currentChart) {
+    currentChart.$spcTooltipPeriods =
+      periodAnalyses.map(p => ({
+        startIndex: p.startIndex,
+        endIndex: p.endIndex,
+        analysis: p.xbar
+      }));
+  }
+
+  if (mrChart) {
+    const offset =
+      Number.isInteger(mrChart.$spcPointOffset)
+        ? mrChart.$spcPointOffset
+        : 0;
+
+    mrChart.$spcTooltipPeriods =
+      periodAnalyses
+        .filter(p => p.endIndex >= offset)
+        .map(p => ({
+          startIndex: p.startIndex - offset,
+          endIndex: p.endIndex - offset,
+          analysis: p.s
+        }));
+  }
+
+
+
+
   attachSubgroupLimitExclusionContext(
     currentChart,
     subgroupLabels
   );
-  if (mrChart) {
+    if (mrChart) {
     attachSubgroupLimitExclusionContext(
       mrChart,
-      subgroupLabels
+      mrChart.data?.labels || subgroupLabels
     );
   }
 
@@ -15467,41 +15521,56 @@ return signals.length
       }
 
       
+            // Show the simple interpretation first.
       html +=
-        `<li><strong>${summaryUiText(
-          "summary.xbars.xChart",
-          "X̄ chart"
-        )}:</strong> ` +
-        signalText(
-          x,
-          summaryUiText(
-            "summary.xbars.stableX",
-            "stable (no clear signal of change in subgroup averages)."
-          )
-        ) +
-        `</li>`;
-
-      html +=
-        `<li><strong>${summaryUiText(
-          "summary.xbars.sChart",
-          "S chart"
-        )}:</strong> ` +
-        signalText(
-          s,
-          summaryUiText(
-            "summary.xbars.stableS",
-            "stable (no clear signal of change in within-subgroup variation)."
-          )
-        ) +
-        `</li>`;
-
-      html +=
-        `<li><strong>${summaryUiText(
+        `<li><strong>` +
+        summaryUiText(
           "summary.xbars.interpretation",
           "Interpretation"
-        )}:</strong> ` +
-        interpretation +
-        `</li>`;
+        ) +
+        `:</strong> ${interpretation}</li>`;
+
+      // Detailed signals are available on demand.
+      // Do not show an empty panel for stable periods.
+      if (!xStable || !sStable) {
+
+        html +=
+          `<li><details class="xmr-signal-details">` +
+          `<summary>` +
+          summaryUiText(
+            "summary.xmr.where",
+            "Where to look"
+          ) +
+          `</summary><ul>`;
+
+        // Only include the X-bar chart when it has signals.
+        if (!xStable) {
+          html +=
+            `<li><strong>` +
+            summaryUiText(
+              "summary.xbars.xChart",
+              "X̄ chart"
+            ) +
+            `:</strong> ` +
+            signalText(x, "") +
+            `</li>`;
+        }
+
+        // Only include the S chart when it has signals.
+        if (!sStable) {
+          html +=
+            `<li><strong>` +
+            summaryUiText(
+              "summary.xbars.sChart",
+              "S chart"
+            ) +
+            `:</strong> ` +
+            signalText(s, "") +
+            `</li>`;
+        }
+
+        html += `</ul></details></li>`;
+      }
 
 
       html += `</ul>`;
