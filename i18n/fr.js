@@ -2327,7 +2327,22 @@ window.SimpleSPCi18n.registerLanguage("fr", {
   "aux exigences de gouvernance de l'information de votre organisation.",
 
 "portable.creating":
-  "Création du fichier portable…"
+  "Création du fichier portable…",
+
+//  XmR detailed-summary labels.
+  "summary.xmr.detail.above": "Au-dessus",
+  "summary.xmr.detail.below": "Au-dessous",
+  "summary.xmr.detail.increasing": "Croissante",
+  "summary.xmr.detail.decreasing": "Décroissante",
+  "summary.xmr.detail.disabled": "Non évalué (règle désactivée)",
+  "summary.xmr.detail.distinct": "Observations distinctes signalées",
+  "summary.xmr.detail.overlap": "Une observation peut satisfaire plusieurs règles.",
+  "summary.xmr.detail.beyond": "Hors des limites de contrôle",
+  "summary.xmr.detail.zone23": "2 points sur 3 au-delà de 2σ",
+  "summary.xmr.detail.zone45": "4 points sur 5 au-delà de 1σ",
+  "summary.xmr.detail.windows": "fenêtres répondant à la règle",
+  "summary.xmr.detail.stretches": "séquences regroupées",
+  "summary.xmr.detail.outliers": "Autres observations inhabituelles"
 
 
 });

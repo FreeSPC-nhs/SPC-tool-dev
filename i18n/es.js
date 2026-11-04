@@ -1349,5 +1349,21 @@ window.SimpleSPCi18n.registerLanguage("es", {
   "setup.example.medication": "Medicación",
   "setup.example.pressureDamage": "Lesión por presión",
   "portable.saveConfirm": "¿Guardar una copia editable y sin conexión de este gráfico SPC?\n\nEl archivo HTML incluirá los datos del gráfico y la aplicación FreeSPC. Almacene y comparta el archivo guardado de acuerdo con las normas de gestión de la información de su organización.",
-  "portable.creating": "Creando archivo portátil…"
+  "portable.creating": "Creando archivo portátil…",
+
+//  XmR detailed-summary labels.
+  "summary.xmr.detail.above": "Por encima",
+  "summary.xmr.detail.below": "Por debajo",
+  "summary.xmr.detail.increasing": "Ascendente",
+  "summary.xmr.detail.decreasing": "Descendente",
+  "summary.xmr.detail.disabled": "No evaluado (regla desactivada)",
+  "summary.xmr.detail.distinct": "Observaciones distintas señaladas",
+  "summary.xmr.detail.overlap": "Una observación puede cumplir más de una regla.",
+  "summary.xmr.detail.beyond": "Fuera de los límites de control",
+  "summary.xmr.detail.zone23": "2 de 3 más allá de 2σ",
+  "summary.xmr.detail.zone45": "4 de 5 más allá de 1σ",
+  "summary.xmr.detail.windows": "ventanas que cumplen la regla",
+  "summary.xmr.detail.stretches": "tramos agrupados",
+  "summary.xmr.detail.outliers": "Otras observaciones inusuales"
+
 });

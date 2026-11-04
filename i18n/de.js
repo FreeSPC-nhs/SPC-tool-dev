@@ -1349,5 +1349,22 @@ window.SimpleSPCi18n.registerLanguage("de", {
   "setup.example.medication": "Medikation",
   "setup.example.pressureDamage": "Druckschaden",
   "portable.saveConfirm": "Eine bearbeitbare Offline-Kopie dieses SPC-Diagramms speichern?\n\nDie HTML-Datei enthält die zugrunde liegenden Diagrammdaten und die FreeSPC-Anwendung. Speichern und teilen Sie die Datei gemäß den Datenschutz- und Informationssicherheitsvorgaben Ihrer Organisation.",
-  "portable.creating": "Portable Datei wird erstellt…"
+  "portable.creating": "Portable Datei wird erstellt…",
+
+//  XmR detailed-summary labels.
+ "summary.xmr.detail.above": "Oberhalb",
+  "summary.xmr.detail.below": "Unterhalb",
+  "summary.xmr.detail.increasing": "Steigend",
+  "summary.xmr.detail.decreasing": "Fallend",
+  "summary.xmr.detail.disabled": "Nicht geprüft (Regel deaktiviert)",
+  "summary.xmr.detail.distinct": "Eindeutig markierte Messpunkte",
+  "summary.xmr.detail.overlap": "Ein Messpunkt kann mehrere Regeln erfüllen.",
+  "summary.xmr.detail.beyond": "Außerhalb der Regelgrenzen",
+  "summary.xmr.detail.zone23": "2 von 3 jenseits von 2σ",
+  "summary.xmr.detail.zone45": "4 von 5 jenseits von 1σ",
+  "summary.xmr.detail.windows": "zutreffende Prüfintervalle",
+  "summary.xmr.detail.stretches": "zusammengefasste Abschnitte",
+  "summary.xmr.detail.outliers": "Weitere ungewöhnliche Beobachtungen"
+
+
 });

@@ -1349,5 +1349,21 @@ window.SimpleSPCi18n.registerLanguage("pt", {
   "setup.example.medication": "Medicação",
   "setup.example.pressureDamage": "Lesão por pressão",
   "portable.saveConfirm": "Guardar uma cópia editável e offline desta carta SPC?\n\nO ficheiro HTML incluirá os dados da carta e a aplicação FreeSPC. Guarde e partilhe o ficheiro de acordo com as regras de governação da informação da sua organização.",
-  "portable.creating": "A criar ficheiro portátil…"
+  "portable.creating": "A criar ficheiro portátil…",
+
+// XmR detailed-summary labels.
+  "summary.xmr.detail.above": "Acima",
+  "summary.xmr.detail.below": "Abaixo",
+  "summary.xmr.detail.increasing": "Crescente",
+  "summary.xmr.detail.decreasing": "Decrescente",
+  "summary.xmr.detail.disabled": "Não avaliado (regra desativada)",
+  "summary.xmr.detail.distinct": "Observações distintas assinaladas",
+  "summary.xmr.detail.overlap": "Uma observação pode cumprir mais do que uma regra.",
+  "summary.xmr.detail.beyond": "Fora dos limites de controlo",
+  "summary.xmr.detail.zone23": "2 de 3 para além de 2σ",
+  "summary.xmr.detail.zone45": "4 de 5 para além de 1σ",
+  "summary.xmr.detail.windows": "janelas que cumprem a regra",
+  "summary.xmr.detail.stretches": "sequências agrupadas",
+  "summary.xmr.detail.outliers": "Outras observações invulgares"
+
 });

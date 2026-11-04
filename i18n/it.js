@@ -1349,5 +1349,22 @@ window.SimpleSPCi18n.registerLanguage("it", {
   "setup.example.medication": "Farmaco",
   "setup.example.pressureDamage": "Lesione da pressione",
   "portable.saveConfirm": "Salvare una copia modificabile offline di questa carta SPC?\n\nIl file HTML conterrà i dati del grafico e l’applicazione FreeSPC. Conserva e condividi il file secondo le regole di gestione delle informazioni della tua organizzazione.",
-  "portable.creating": "Creazione file portatile…"
+  "portable.creating": "Creazione file portatile…",
+
+//  XmR detailed-summary labels
+  "summary.xmr.detail.above": "Sopra",
+  "summary.xmr.detail.below": "Sotto",
+  "summary.xmr.detail.increasing": "Crescente",
+  "summary.xmr.detail.decreasing": "Decrescente",
+  "summary.xmr.detail.disabled": "Non valutato (regola disattivata)",
+  "summary.xmr.detail.distinct": "Osservazioni distinte segnalate",
+  "summary.xmr.detail.overlap": "Un’osservazione può soddisfare più di una regola.",
+  "summary.xmr.detail.beyond": "Fuori dai limiti di controllo",
+  "summary.xmr.detail.zone23": "2 su 3 oltre 2σ",
+  "summary.xmr.detail.zone45": "4 su 5 oltre 1σ",
+  "summary.xmr.detail.windows": "finestre che soddisfano la regola",
+  "summary.xmr.detail.stretches": "sequenze raggruppate",
+  "summary.xmr.detail.outliers": "Altre osservazioni insolite"
+
+
 });
