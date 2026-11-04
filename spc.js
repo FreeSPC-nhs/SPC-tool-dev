@@ -12013,9 +12013,13 @@ function analyzeAttributeChart({
     new Array(n)
       .fill(false);
 
-  let zone45Flags =
+    let zone45Flags =
     new Array(n)
       .fill(false);
+
+  // Keep the exact windows that produced the chart's zone-rule flags.
+  let zone23Hits = [];
+  let zone45Hits = [];
 
   if (
     (
@@ -12076,9 +12080,11 @@ function analyzeAttributeChart({
           twoDown
         );
 
-      zone23Flags =
+            zone23Flags =
         res23.flags ||
         zone23Flags;
+
+      zone23Hits = Array.isArray(res23.hits) ? res23.hits : [];
 
       if (
         res23.hits &&
@@ -12117,9 +12123,11 @@ function analyzeAttributeChart({
           oneDown
         );
 
-      zone45Flags =
+            zone45Flags =
         res45.flags ||
         zone45Flags;
+
+      zone45Hits = Array.isArray(res45.hits) ? res45.hits : [];
 
       if (
         res45.hits &&
@@ -12206,8 +12214,18 @@ function analyzeAttributeChart({
     isStable:
       signals.length === 0,
 
-    signals,
+        signals,
     outOfControl,
+
+    // Structured matches use local, zero-based indices within this period.
+    // These are the SAME results used to colour the chart points.
+    ruleMatches: {
+      beyond: outOfControl,
+      shifts: shiftRanges,
+      trends: trendRanges,
+      zone23: zone23Hits,
+      zone45: zone45Hits
+    },
 
     shiftLength:
       rs.shiftLength,
@@ -13912,36 +13930,21 @@ function updateXmRMultiSummary(segments, totalPoints) {
 const hasEnoughPointsForInterpretation =
   limitEstimatePointCount >= MIN_XMR_LIMIT_POINTS;
 
-    // --- Special-cause detection (simple, lay-focused labels) ---
-    // 1) Points beyond limits
-    const beyondIdx = [];
-    points.forEach((p, i) => {
-      if (p.beyondLimits) beyondIdx.push(i);
-    });
+    // Read the detection results already used to colour the XmR chart.
+    // Do not recalculate beyond-limit, shift or trend rules here.
+    const chartRules = seg.analysis?.ruleMatches;
 
-    // 2) Sustained shift (run on one side of mean)
-    let runRanges = [];
-    if (typeof findLongRunRanges === "function") {
-      runRanges = findLongRunRanges(values, mean, shiftLength) || [];
-    } else {
-      // fallback: your existing boolean flags
-      const runFlags = detectLongRuns(values, mean, shiftLength);
-      let any = runFlags.some(Boolean);
-      if (any) runRanges = [{ start: 0, end: 0 }]; // placeholder (we won't list ranges in fallback)
-    }
+    const beyondIdx = chartRules
+      ? chartRules.beyond.map(hit => hit.i)
+      : points.flatMap((p, i) => p.beyondLimits ? [i] : []);
 
-    // 3) Trend
-    let trendRanges = [];
+    const runRanges = chartRules
+      ? chartRules.shifts
+      : findLongRunRanges(values, mean, shiftLength);
 
-if (rs.allowTrend) {
-  if (typeof findTrendRanges === "function") {
-    trendRanges = findTrendRanges(values, trendLength) || [];
-  } else {
-    const hasTrend = detectTrend(values, trendLength);
-    if (hasTrend) trendRanges = [{ start: 0, end: 0 }];
-  }
-}
-
+    const trendRanges = rs.allowTrend
+      ? (chartRules ? chartRules.trends : findTrendRanges(values, trendLength))
+      : [];
     // 4) Astronomical point (robust outlier)
     // Use baseline of this *period* to set the reference for outlier detection where possible.
     let astro = { indices: [], flags: [] };
@@ -14536,8 +14539,14 @@ if (capability && sigma > 0) {
   baselineMRCount: result.baselineMRCount,
   effectiveMRCount: result.effectiveMRCount,
 
-  n,
+    n,
   signals: signals.slice(),
+
+  // Available to the next-stage expandable analysis and diagnostics.
+  ruleMatches: seg.analysis?.ruleMatches || null,
+  ruleFlags: seg.analysis?.flags || null,
+  rulePolicy: seg.analysis?.rulePolicy || null,
+
         hasTrend,
         hasRunViolation,
         hasAstronomical,
