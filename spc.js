@@ -4200,9 +4200,10 @@ function drawSecondarySPCChart({
   title,
   xLabel,
   yLabel,
-  suggestedMin,
+   suggestedMin,
   suggestedMax,
-  splitAfterIndices = []
+  splitAfterIndices = [],
+  showBaselineOverlay = true
 }) {
   if (!canvas) return null;
 
@@ -4303,8 +4304,12 @@ function drawSecondarySPCChart({
               title
             ),
 
-          legend:
+           legend:
             SPC_LEGEND,
+
+          baselineOverlay: {
+            enabled: showBaselineOverlay
+          },
 
           annotation: {
             annotations:
@@ -4675,10 +4680,14 @@ function drawXbarSCombinedChart({
       suggestedMin:
         0,
 
-      suggestedMax:
+            suggestedMax:
         undefined,
 
-            splitAfterIndices:
+      // Only shade the baseline when the original
+      // baseline observations are visible.
+      showBaselineOverlay: sFirstIndex === 0,
+
+      splitAfterIndices:
         sCurrentOnly ? [] : splitAfterIndices
     });
 
@@ -9696,26 +9705,7 @@ function drawXbarSChart(
       effectiveSplits
   });
 
-  // Each panel has its own subgroup signal analysis.
-  if (currentChart) {
-    currentChart.$spcTooltipPeriods =
-      periodAnalyses.map(p => ({
-        startIndex: p.startIndex,
-        endIndex: p.endIndex,
-        analysis: p.xbar
-      }));
-  }
-
-  if (mrChart) {
-    mrChart.$spcTooltipPeriods =
-      periodAnalyses.map(p => ({
-        startIndex: p.startIndex,
-        endIndex: p.endIndex,
-        analysis: p.s
-      }));
-  }
-
-
+ 
   // Share X-bar and S chart analyses with the tooltips.
   // The S chart may display only the latest period.
 
