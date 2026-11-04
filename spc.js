@@ -13845,7 +13845,7 @@ function xmRDisplaySignal(message) {
 
 // XmR detail report: use the same period-level matches and flags as the chart.
 // This function only formats results; it does not perform new SPC tests.
-function buildXmRSignalDetailsHtml(analysis, startIndex, astro) {
+function buildXmRSignalDetailsHtml(analysis, startIndex, astro, periodLabels = []) {
   const matches = analysis?.ruleMatches;
   if (!matches) return "";
 
@@ -13854,13 +13854,51 @@ function buildXmRSignalDetailsHtml(analysis, startIndex, astro) {
   const tr = (key, fallback) =>
     summaryUiText("summary.xmr.detail." + key, fallback);
 
-  const pointNo = i => startIndex + i + 1;
-  const rangeText = r => `${pointNo(r.start)}–${pointNo(r.end)}`;
+    const pointNo = i => startIndex + i + 1;
+
+  // Use the original X-axis label, while retaining point numbers.
+  const labelAt = i => {
+    const raw = periodLabels[i];
+    if (raw == null) return "";
+
+    const value =
+      (raw instanceof Date ||
+       /^\d{4}-\d{2}-\d{2}[T ]/.test(String(raw)))
+        ? formatDateOnlyLabel(raw)
+        : String(raw).trim();
+
+    return value ? escapeHtml(value) : "";
+  };
+
+  // Show dates or labels first, with point numbers for reference.
+  const rangeText = r => {
+    const points =
+      `${summaryUiText("summary.points", "points")} ` +
+      `${pointNo(r.start)}–${pointNo(r.end)}`;
+
+    const from = labelAt(r.start);
+    const to = labelAt(r.end);
+
+    return from && to
+      ? `${from} ${summaryUiText("summary.to", "to")} ${to} (${points})`
+      : points;
+  };
+
+  // Individual observations, including control-limit breaches.
   const pointList = indices => {
-    const nums = [...new Set(indices.filter(Number.isInteger))]
-      .sort((a, b) => a - b)
-      .map(pointNo);
-    return nums.length ? nums.join(", ") : "—";
+    const unique = [...new Set(indices.filter(Number.isInteger))]
+      .sort((a, b) => a - b);
+
+    return unique.length
+      ? unique.map(i => {
+          const point =
+            `${summaryUiText("summary.point", "point")} ${pointNo(i)}`;
+
+          const label = labelAt(i);
+
+          return label ? `${label} (${point})` : point;
+        }).join(", ")
+      : "—";
   };
 
   // Neighbouring/overlapping zone-rule windows are one readable stretch.
@@ -14527,7 +14565,12 @@ if (!hasEnoughPointsForInterpretation) {
     `</li>`;
 
     // Use the chart's structured matches for the expandable analysis.
-  html += buildXmRSignalDetailsHtml(seg.analysis, startIndex, astro);
+  html += buildXmRSignalDetailsHtml(
+    seg.analysis,
+    startIndex,
+    astro,
+    seg.labels
+  );
 }
 
 // Capability is conditional on adequate data, a target,
@@ -19743,8 +19786,9 @@ excludedIndices:
     segmentSummaries.push({
       startIndex: start,
       endIndex: end,
-      labelStart: labels[start],
+            labelStart: labels[start],
       labelEnd: labels[end],
+      labels: labels.slice(start, end + 1),
       result: segResult,
       analysis: segAnalysis,
   limitEstimatePointCount,
