@@ -897,6 +897,83 @@ if (
 }
 
 
+
+    // Add observation or subgroup numbers to SPC tooltips.
+    // Detailed special-cause explanations will follow in Batch D2.
+    if (typeof Chart !== "undefined" && Chart.defaults?.plugins?.tooltip?.callbacks) {
+      const tooltipCallbacks = Chart.defaults.plugins.tooltip.callbacks;
+      const previousAfterLabel = tooltipCallbacks.afterLabel;
+
+      tooltipCallbacks.afterLabel = function(context) {
+        const oldResult = typeof previousAfterLabel === "function"
+          ? previousAfterLabel.call(this, context)
+          : [];
+
+        const lines = Array.isArray(oldResult)
+          ? oldResult.slice()
+          : (oldResult ? [oldResult] : []);
+
+        const chart = context?.chart;
+        const index = context?.dataIndex;
+
+        if (!Number.isInteger(index) || index < 0) return lines;
+
+        const chartType = getSelectedChartType_NoSideEffects();
+
+        // Pareto categories are not chronological observations.
+        if (chartType === "pareto") return lines;
+
+        const capitalise = value =>
+          value.charAt(0).toLocaleUpperCase() + value.slice(1);
+
+        const pointWord = capitalise(
+          chartPanelText("summary.point", "point")
+        );
+
+        const subgroupWord = capitalise(
+          chartPanelText("auto.axis.subgroup", "Subgroup")
+        );
+
+        if (chart === currentChart) {
+          // Dataset 0 contains the observations, not the control lines.
+          if (context.datasetIndex !== 0) return lines;
+
+          lines.push(
+            chartType === "xbars"
+              ? `${subgroupWord} ${index + 1}`
+              : `${pointWord} ${index + 1}`
+          );
+
+        } else if (chart === mrChart) {
+
+          if (chartType === "xbars") {
+            // Secondary S chart: one measurement per subgroup.
+            if (context.datasetIndex === 0) {
+              lines.push(`${subgroupWord} ${index + 1}`);
+            }
+
+          } else if (chartType === "xmr") {
+            // MR corresponds to the change ending at this point.
+            const label = String(context.dataset?.label || "");
+
+            if (
+              label === "Moving range" ||
+              label.startsWith("Not used: ")
+            ) {
+              const offset = Number.isInteger(chart.$spcPointOffset)
+                ? chart.$spcPointOffset
+                : 0;
+
+              lines.push(`${pointWord} ${offset + index + 1}`);
+            }
+          }
+        }
+
+        return lines;
+      };
+    }
+
+
 // -----------------------------
 // Shared legend styling
 // Shows line datasets as line samples in the legend instead of filled boxes
@@ -20382,7 +20459,13 @@ if (strong) {
     const uclMR = 3.268 * avgMR;
     const mrLabels = labels.slice(lastSeg.startIndex, lastSeg.endIndex + 1);
 
-    renderMrChart(mrLabels, mrValues, mrReasons, avgMR, uclMR);
+        renderMrChart(mrLabels, mrValues, mrReasons, avgMR, uclMR);
+
+    // Keep MR point numbers aligned with the full XmR chart.
+    if (mrChart) {
+      mrChart.$spcPointOffset = lastSeg.startIndex;
+    }
+
     return;
   }
 
