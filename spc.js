@@ -13895,38 +13895,68 @@ function buildXmRSignalDetailsHtml(analysis, startIndex, astro) {
   const down = tr("below", "Below");
   const increasing = tr("increasing", "Increasing");
   const decreasing = tr("decreasing", "Decreasing");
-  const disabled = tr("disabled", "Not assessed (rule disabled)");
-  const none = "—";
-
   const beyondAbove = beyond.filter(h => h.type === "aboveUCL").map(h => h.i);
   const beyondBelow = beyond.filter(h => h.type === "belowLCL").map(h => h.i);
+
   let html = `<li><details class="xmr-signal-details"><summary>` +
     summaryUiText("summary.xmr.where", "Where to look") +
     `</summary><ul>`;
 
+  // Only mention overlapping rules when multiple rule types fired.
+  const categoriesFound = [
+    beyond.length > 0,
+    shifts.length > 0,
+    policy.allowTrend && trends.length > 0,
+    policy.allowZone23 && zone23.length > 0,
+    policy.allowZone45 && zone45.length > 0
+  ].filter(Boolean).length;
+
   html += `<li><strong>${tr("distinct", "Distinct flagged observations")}: ` +
-    `${distinct}</strong>. ${tr("overlap", "A point can meet more than one rule.")}</li>`;
+    `${distinct}</strong>` +
+    (categoriesFound > 1
+      ? `. ${tr("overlap", "A point can meet more than one rule.")}`
+      : "") + `</li>`;
 
-  html += `<li><strong>${tr("beyond", "Outside control limits")} (${beyond.length})</strong>` +
-    `<ul><li>${up}: ${pointList(beyondAbove)}</li>` +
-    `<li>${down}: ${pointList(beyondBelow)}</li></ul></li>`;
+  // Only show control-limit breaches when there are some.
+  if (beyond.length > 0) {
+    const sides = [];
 
-  const shiftItems = shifts.map(r =>
-    `<li>${r.side > 0 ? up : down}: ${rangeText(r)}</li>`).join("");
-  html += `<li><strong>` + summaryUiText("summary.attr.shiftName", "Shift") +
-    ` (${shifts.length})</strong>` +
-    (shiftItems ? `<ul>${shiftItems}</ul>` : `: ${none}`) + `</li>`;
+    if (beyondAbove.length) {
+      sides.push(`<li>${up}: ${pointList(beyondAbove)}</li>`);
+    }
 
-  const trendItems = trends.map(r =>
-    `<li>${r.direction === "up" ? increasing : decreasing}: ${rangeText(r)}</li>`
-  ).join("");
-  html += `<li><strong>` + summaryUiText("summary.attr.trendName", "Trend") +
-    ` (${trends.length})</strong>` +
-    (policy.allowTrend ? (trendItems ? `<ul>${trendItems}</ul>` : `: ${none}`)
-      : `: ${disabled}`) + `</li>`;
+    if (beyondBelow.length) {
+      sides.push(`<li>${down}: ${pointList(beyondBelow)}</li>`);
+    }
 
-  function zoneSection(hits, enabled, key, heading) {
-    if (!enabled) return `<li><strong>${tr(key, heading)}:</strong> ${disabled}</li>`;
+    html += `<li><strong>${tr("beyond", "Outside control limits")} ` +
+      `(${beyond.length})</strong><ul>${sides.join("")}</ul></li>`;
+  }
+
+   // Show shifts only when detected.
+  if (shifts.length > 0) {
+    const shiftItems = shifts.map(r =>
+      `<li>${r.side > 0 ? up : down}: ${rangeText(r)}</li>`
+    ).join("");
+
+    html += `<li><strong>` +
+      summaryUiText("summary.attr.shiftName", "Shift") +
+      ` (${shifts.length})</strong><ul>${shiftItems}</ul></li>`;
+  }
+
+  // Show trends only when enabled and detected.
+  if (policy.allowTrend && trends.length > 0) {
+    const trendItems = trends.map(r =>
+      `<li>${r.direction === "up" ? increasing : decreasing}: ${rangeText(r)}</li>`
+    ).join("");
+
+    html += `<li><strong>` +
+      summaryUiText("summary.attr.trendName", "Trend") +
+      ` (${trends.length})</strong><ul>${trendItems}</ul></li>`;
+  }
+
+   function zoneSection(hits, enabled, key, heading) {
+    if (!enabled || !hits.length) return "";
     const groups = groupZoneWindows(hits);
     const groupsHtml = groups.map(g =>
       `<li>${g.side === "above" ? up : down}: ${rangeText(g)}</li>`
