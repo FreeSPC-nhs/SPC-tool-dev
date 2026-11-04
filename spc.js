@@ -11589,6 +11589,41 @@ function findShiftWindow(values, cl, shiftLength) {
 }
 
 
+// Identify every sustained run on one side of the centre line.
+// Include all points in each qualifying run.
+function findShiftRanges(values, cl, shiftLength) {
+  const ranges = [];
+  let runStart = 0;
+  let previousSide = 0;
+
+  for (let i = 0; i <= values.length; i++) {
+    const value = values[i];
+    const centre = Array.isArray(cl) ? cl[i] : cl;
+
+    const side =
+      i < values.length &&
+      Number.isFinite(value) &&
+      Number.isFinite(centre)
+        ? (value > centre ? 1 : value < centre ? -1 : 0)
+        : 0;
+
+    if (side === previousSide) continue;
+
+    if (previousSide !== 0 && i - runStart >= shiftLength) {
+      ranges.push({
+        start: runStart,
+        end: i - 1,
+        side: previousSide
+      });
+    }
+
+    runStart = i;
+    previousSide = side;
+  }
+
+  return ranges;
+}
+
 function findTrendWindow(values, trendLength) {
   let inc = 1;
   let dec = 1;
@@ -11893,47 +11928,29 @@ function analyzeAttributeChart({
     }
   }
 
-  // 2) Shift / run
-  let shiftWindow =
-    null;
+    // 2) Shift / run: identify every qualifying shift
+  let shiftRanges = [];
 
-  if (
-    rs.allowRunShift &&
-    hasFiniteCentreLine
-  ) {
-    shiftWindow =
-      findShiftWindow(
-        analysisValues,
-        clArr,
-        rs.shiftLength
-      );
+  if (rs.allowRunShift && hasFiniteCentreLine) {
+    shiftRanges = findShiftRanges(
+      analysisValues,
+      clArr,
+      rs.shiftLength
+    );
 
-    if (shiftWindow) {
-      const sideText =
-        shiftWindow.side > 0
-          ? "above"
-          : "below";
+    shiftRanges.forEach(range => {
+      const sideText = range.side > 0 ? "above" : "below";
 
       const aLab =
-        labels
-          ?.[shiftWindow.start] ??
-        `point ${
-          shiftWindow.start +
-          1
-        }`;
+        labels?.[range.start] ?? `point ${range.start + 1}`;
 
       const bLab =
-        labels
-          ?.[shiftWindow.end] ??
-        `point ${
-          shiftWindow.end +
-          1
-        }`;
+        labels?.[range.end] ?? `point ${range.end + 1}`;
 
       signals.push(
         `Shift: ${rs.shiftLength}+ points in a row ${sideText} the centre line (from ${aLab} to ${bLab})`
       );
-    }
+    });
   }
 
   // 3) Trend
@@ -12135,22 +12152,13 @@ function analyzeAttributeChart({
     }
   );
 
-  const shiftFlags =
-    new Array(n)
-      .fill(false);
+    const shiftFlags = new Array(n).fill(false);
 
-  if (shiftWindow) {
-    for (
-      let i =
-        shiftWindow.start;
-      i <=
-        shiftWindow.end;
-      i++
-    ) {
-      shiftFlags[i] =
-        true;
+  shiftRanges.forEach(range => {
+    for (let i = range.start; i <= range.end; i++) {
+      shiftFlags[i] = true;
     }
-  }
+  });
 
   const trendFlags =
     new Array(n)
@@ -14356,6 +14364,16 @@ if (!hasEnoughPointsForInterpretation) {
   // Preserve the original investigation-point calculations.
   const whereBits = [];
 
+  // Include all sustained shifts in the investigation summary.
+  runRanges.forEach(range => {
+    whereBits.push(
+      summaryUiText(
+        "summary.run.whereShift",
+        "shift around points"
+      ) +
+      ` ${startIndex + range.start + 1}–${startIndex + range.end + 1}`
+    );
+  });
   if (beyondIdx.length > 0) {
     const shown = beyondIdx
       .slice(0, 3)
