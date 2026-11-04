@@ -11624,6 +11624,41 @@ function findShiftRanges(values, cl, shiftLength) {
   return ranges;
 }
 
+// Find all complete increasing and decreasing trends.
+// Include every point in each qualifying trend.
+function findAllTrendRangesForSignals(values, trendLength) {
+  const ranges = [];
+  let start = 0;
+  let direction = 0;
+
+  for (let i = 1; i <= values.length; i++) {
+    const previous = values[i - 1];
+    const current = values[i];
+
+    const step =
+      i < values.length &&
+      Number.isFinite(previous) &&
+      Number.isFinite(current)
+        ? (current > previous ? 1 : current < previous ? -1 : 0)
+        : 0;
+
+    if (step !== 0 && step === direction) continue;
+
+    if (direction !== 0 && i - start >= trendLength) {
+      ranges.push({
+        start,
+        end: i - 1,
+        direction: direction > 0 ? "up" : "down"
+      });
+    }
+
+    direction = step;
+    start = step === 0 ? i : i - 1;
+  }
+
+  return ranges;
+}
+
 function findTrendWindow(values, trendLength) {
   let inc = 1;
   let dec = 1;
@@ -11953,45 +11988,25 @@ function analyzeAttributeChart({
     });
   }
 
-  // 3) Trend
-  let trendWindow =
-    null;
+    // 3) Trend: identify all qualifying stretches, not only the first.
+  const trendRanges = rs.allowTrend
+    ? findAllTrendRangesForSignals(analysisValues, rs.trendLength)
+    : [];
 
-  if (rs.allowTrend) {
-    trendWindow =
-      findTrendWindow(
-        analysisValues,
-        rs.trendLength
-      );
+  trendRanges.forEach(range => {
+    const direction =
+      range.direction === "up" ? "increasing" : "decreasing";
 
-    if (trendWindow) {
-      const dirText =
-        trendWindow.direction ===
-        "up"
-          ? "increasing"
-          : "decreasing";
+    const first =
+      labels?.[range.start] ?? `point ${range.start + 1}`;
 
-      const aLab =
-        labels
-          ?.[trendWindow.start] ??
-        `point ${
-          trendWindow.start +
-          1
-        }`;
+    const last =
+      labels?.[range.end] ?? `point ${range.end + 1}`;
 
-      const bLab =
-        labels
-          ?.[trendWindow.end] ??
-        `point ${
-          trendWindow.end +
-          1
-        }`;
-
-      signals.push(
-        `Trend: ${rs.trendLength}+ points steadily ${dirText} (from ${aLab} to ${bLab})`
-      );
-    }
-  }
+    signals.push(
+      `Trend: ${rs.trendLength}+ points steadily ${direction} (from ${first} to ${last})`
+    );
+  });
 
   // 4) Zone rules
   let zone23Flags =
@@ -12160,22 +12175,13 @@ function analyzeAttributeChart({
     }
   });
 
-  const trendFlags =
-    new Array(n)
-      .fill(false);
+    const trendFlags = new Array(n).fill(false);
 
-  if (trendWindow) {
-    for (
-      let i =
-        trendWindow.start;
-      i <=
-        trendWindow.end;
-      i++
-    ) {
-      trendFlags[i] =
-        true;
+  trendRanges.forEach(range => {
+    for (let i = range.start; i <= range.end; i++) {
+      trendFlags[i] = true;
     }
-  }
+  });
 
   const specialFlags =
     new Array(n)
