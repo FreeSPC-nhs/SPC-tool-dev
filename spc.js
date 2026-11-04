@@ -14354,6 +14354,8 @@ if (!hasEnoughPointsForInterpretation) {
   const displayedSignals =
     signals.map(xmRDisplaySignal);
 
+    // Short interpretation visible by default.
+  // Reuse existing translated text.
   html +=
     `<li><strong>` +
     summaryUiText(
@@ -14362,10 +14364,35 @@ if (!hasEnoughPointsForInterpretation) {
     ) +
     `:</strong> ` +
     summaryUiText(
-      "summary.xmr.hasSignals",
-      "This period shows special-cause signals:"
+      "summary.attr.unstable",
+      "Based on the selected rules, special-cause signals were detected in this period (a pattern unlikely to be routine variation alone)."
     ) +
-    ` ${displayedSignals.join("; ")}.</li>`;
+    `</li>`;
+
+  // Simple advice for users new to SPC.
+  html +=
+    `<li>` +
+    summaryUiText(
+      "help.7.advice",
+      "Look for sustained changes, not just one good or bad point. Use local knowledge to interpret what was happening at that time."
+    ) +
+    `</li>`;
+
+  // Make detailed signal information expandable.
+  html +=
+    `<li><details class="xmr-signal-details">` +
+    `<summary>` +
+    summaryUiText(
+      "summary.xmr.where",
+      "Where to look"
+    ) +
+    `</summary><ul>` +
+    `<li><strong>` +
+    summaryUiText(
+      "summary.attr.signals",
+      "Signals"
+    ) +
+    `:</strong> ${displayedSignals.join("; ")}.</li>`;
 
   // Preserve the original investigation-point calculations.
   const whereBits = [];
@@ -14424,15 +14451,13 @@ if (!hasEnoughPointsForInterpretation) {
     );
   }
 
-  if (whereBits.length > 0) {
+   if (whereBits.length > 0) {
     html +=
-      `<li><strong>` +
-      summaryUiText(
-        "summary.xmr.where",
-        "Where to look"
-      ) +
-      `:</strong> ${whereBits.join("; ")}.</li>`;
+      `<li>${whereBits.join("; ")}.</li>`;
   }
+
+  // Close the expandable detail and its list item.
+  html += `</ul></details></li>`;
 }
 
 // Capability is conditional on adequate data, a target,
