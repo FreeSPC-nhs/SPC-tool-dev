@@ -13843,6 +13843,111 @@ function xmRDisplaySignal(message) {
     : message;
 }
 
+// XmR detail report: use the same period-level matches and flags as the chart.
+// This function only formats results; it does not perform new SPC tests.
+function buildXmRSignalDetailsHtml(analysis, startIndex, astro) {
+  const matches = analysis?.ruleMatches;
+  if (!matches) return "";
+
+  const policy = analysis.rulePolicy || {};
+  const flags = analysis.flags || {};
+  const tr = (key, fallback) =>
+    summaryUiText("summary.xmr.detail." + key, fallback);
+
+  const pointNo = i => startIndex + i + 1;
+  const rangeText = r => `${pointNo(r.start)}–${pointNo(r.end)}`;
+  const pointList = indices => {
+    const nums = [...new Set(indices.filter(Number.isInteger))]
+      .sort((a, b) => a - b)
+      .map(pointNo);
+    return nums.length ? nums.join(", ") : "—";
+  };
+
+  // Neighbouring/overlapping zone-rule windows are one readable stretch.
+  // Preserve side, so an above-mean match cannot merge with a below-mean match.
+  function groupZoneWindows(hits) {
+    const groups = [];
+    for (const side of ["above", "below"]) {
+      const sorted = (hits || [])
+        .filter(h => h.side === side &&
+          Number.isInteger(h.start) && Number.isInteger(h.end))
+        .slice().sort((a, b) => a.start - b.start);
+      for (const h of sorted) {
+        const last = groups[groups.length - 1];
+        if (last && last.side === side && h.start <= last.end + 1) {
+          last.end = Math.max(last.end, h.end);
+          last.windowCount++;
+        } else {
+          groups.push({ start: h.start, end: h.end, side, windowCount: 1 });
+        }
+      }
+    }
+    return groups;
+  }
+
+  const beyond = matches.beyond || [];
+  const shifts = matches.shifts || [];
+  const trends = matches.trends || [];
+  const zone23 = matches.zone23 || [];
+  const zone45 = matches.zone45 || [];
+  const distinct = (flags.special || []).filter(Boolean).length;
+  const up = tr("above", "Above");
+  const down = tr("below", "Below");
+  const increasing = tr("increasing", "Increasing");
+  const decreasing = tr("decreasing", "Decreasing");
+  const disabled = tr("disabled", "Not assessed (rule disabled)");
+  const none = "—";
+
+  const beyondAbove = beyond.filter(h => h.type === "aboveUCL").map(h => h.i);
+  const beyondBelow = beyond.filter(h => h.type === "belowLCL").map(h => h.i);
+  let html = `<li><details class="xmr-signal-details"><summary>` +
+    summaryUiText("summary.xmr.where", "Where to look") +
+    `</summary><ul>`;
+
+  html += `<li><strong>${tr("distinct", "Distinct flagged observations")}: ` +
+    `${distinct}</strong>. ${tr("overlap", "A point can meet more than one rule.")}</li>`;
+
+  html += `<li><strong>${tr("beyond", "Outside control limits")} (${beyond.length})</strong>` +
+    `<ul><li>${up}: ${pointList(beyondAbove)}</li>` +
+    `<li>${down}: ${pointList(beyondBelow)}</li></ul></li>`;
+
+  const shiftItems = shifts.map(r =>
+    `<li>${r.side > 0 ? up : down}: ${rangeText(r)}</li>`).join("");
+  html += `<li><strong>` + summaryUiText("summary.attr.shiftName", "Shift") +
+    ` (${shifts.length})</strong>` +
+    (shiftItems ? `<ul>${shiftItems}</ul>` : `: ${none}`) + `</li>`;
+
+  const trendItems = trends.map(r =>
+    `<li>${r.direction === "up" ? increasing : decreasing}: ${rangeText(r)}</li>`
+  ).join("");
+  html += `<li><strong>` + summaryUiText("summary.attr.trendName", "Trend") +
+    ` (${trends.length})</strong>` +
+    (policy.allowTrend ? (trendItems ? `<ul>${trendItems}</ul>` : `: ${none}`)
+      : `: ${disabled}`) + `</li>`;
+
+  function zoneSection(hits, enabled, key, heading) {
+    if (!enabled) return `<li><strong>${tr(key, heading)}:</strong> ${disabled}</li>`;
+    const groups = groupZoneWindows(hits);
+    const groupsHtml = groups.map(g =>
+      `<li>${g.side === "above" ? up : down}: ${rangeText(g)}</li>`
+    ).join("");
+    return `<li><strong>${tr(key, heading)}: ${hits.length} ` +
+      tr("windows", "qualifying windows") +
+      ` (${groups.length} ${tr("stretches", "grouped stretches")})</strong>` +
+      (groupsHtml ? `<ul>${groupsHtml}</ul>` : "") + `</li>`;
+  }
+
+  html += zoneSection(zone23, policy.allowZone23, "zone23", "2 of 3 beyond 2σ");
+  html += zoneSection(zone45, policy.allowZone45, "zone45", "4 of 5 beyond 1σ");
+
+  if (astro?.indices?.length) {
+    html += `<li><strong>${tr("outliers", "Additional unusual observations")}</strong>: ` +
+      pointList(astro.indices) + `</li>`;
+  }
+
+  html += `</ul></details></li>`;
+  return html;
+}
 
 // Multi-period XmR summary (handles baseline + splits) — lay-user interpretation + astronomical points
 function updateXmRMultiSummary(segments, totalPoints) {
@@ -13976,12 +14081,20 @@ if (hasEnoughPointsForInterpretation) {
     );
   }
 
-  if (astro.indices && astro.indices.length > 0) {
+    if (astro.indices && astro.indices.length > 0) {
     signals.push(
       "an unusual outlier (an ‘astronomical’ point)"
     );
   }
+
+  // Zone matches are also signals; do not report a zone-only chart as stable.
+  (seg.analysis?.signals || [])
+    .filter(text => text.startsWith("Zone: "))
+    .forEach(text => signals.push(text));
 }
+
+const hasSignals = signals.length > 0 ||
+  !!seg.analysis?.flags?.special?.some(Boolean);
 
     // Capability (only if target exists and sigma > 0)
     let capability = null;
@@ -14336,7 +14449,7 @@ if (!hasEnoughPointsForInterpretation) {
     ) +
     `</li>`;
 
-} else if (signals.length === 0) {
+} else if (!hasSignals) {
 
   html +=
     `<li><strong>` +
@@ -14352,10 +14465,6 @@ if (!hasEnoughPointsForInterpretation) {
     `</li>`;
 
 } else {
-
-  // Translate for display only. Do not modify signals.
-  const displayedSignals =
-    signals.map(xmRDisplaySignal);
 
     // Short interpretation visible by default.
   // Reuse existing translated text.
@@ -14381,93 +14490,15 @@ if (!hasEnoughPointsForInterpretation) {
     ) +
     `</li>`;
 
-  // Make detailed signal information expandable.
-  html +=
-    `<li><details class="xmr-signal-details">` +
-    `<summary>` +
-    summaryUiText(
-      "summary.xmr.where",
-      "Where to look"
-    ) +
-    `</summary><ul>` +
-    `<li><strong>` +
-    summaryUiText(
-      "summary.attr.signals",
-      "Signals"
-    ) +
-    `:</strong> ${displayedSignals.join("; ")}.</li>`;
-
-  // Preserve the original investigation-point calculations.
-  const whereBits = [];
-
-  // Include all sustained shifts in the investigation summary.
-  runRanges.forEach(range => {
-    whereBits.push(
-      summaryUiText(
-        "summary.run.whereShift",
-        "shift around points"
-      ) +
-      ` ${startIndex + range.start + 1}–${startIndex + range.end + 1}`
-    );
-  });
-  if (beyondIdx.length > 0) {
-    const shown = beyondIdx
-      .slice(0, 3)
-      .map(i => startIndex + i + 1);
-
-    whereBits.push(
-      (
-        shown.length === 1
-          ? summaryUiText(
-              "summary.xmr.outsideOne",
-              "outside limits at point"
-            )
-          : summaryUiText(
-              "summary.xmr.outsideMany",
-              "outside limits at points"
-            )
-      ) +
-      ` ${shown.join(", ")}` +
-      (beyondIdx.length > 3 ? ", …" : "")
-    );
-  }
-
-  if (astro.indices && astro.indices.length > 0) {
-    const shown = astro.indices
-      .slice(0, 3)
-      .map(i => startIndex + i + 1);
-
-    whereBits.push(
-      (
-        shown.length === 1
-          ? summaryUiText(
-              "summary.xmr.outlierOne",
-              "outlier at point"
-            )
-          : summaryUiText(
-              "summary.xmr.outlierMany",
-              "outliers at points"
-            )
-      ) +
-      ` ${shown.join(", ")}` +
-      (astro.indices.length > 3 ? ", …" : "")
-    );
-  }
-
-   if (whereBits.length > 0) {
-    html +=
-      `<li>${whereBits.join("; ")}.</li>`;
-  }
-
-  // Close the expandable detail and its list item.
-  html += `</ul></details></li>`;
+    // Use the chart's structured matches for the expandable analysis.
+  html += buildXmRSignalDetailsHtml(seg.analysis, startIndex, astro);
 }
 
 // Capability is conditional on adequate data, a target,
 // positive sigma, and the existing capability calculation.
 if (capability && sigma > 0) {
 
-  if (signals.length === 0) {
+  if (!hasSignals) {
 
     html +=
       `<li><strong>` +
@@ -14560,8 +14591,8 @@ if (capability && sigma > 0) {
         limitEstimatePointCount,
         minimumPointsForInterpretation: MIN_XMR_LIMIT_POINTS,
 
-        isStable: hasEnoughPointsForInterpretation
-          ? signals.length === 0
+                isStable: hasEnoughPointsForInterpretation
+          ? !hasSignals
           : null,
 
         // thresholds used (handy for helper explanations)
@@ -22671,7 +22702,10 @@ function renderSummaryToCanvas(ctx, x, y, maxWidth) {
 
     } else if (tag === "li") {
       const st = styles.li;
-      const indent = node.closest("details") ? 34 : 18;
+      // Give nested signal details a second indentation level in exports.
+      const indent = node.closest("details")
+        ? (node.parentElement?.closest("li") ? 52 : 34)
+        : 18;
 
       cursorY += st.gapTop;
       cursorY += drawWrappedText(
