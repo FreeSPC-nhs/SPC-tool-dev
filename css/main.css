@@ -1713,3 +1713,129 @@ body.pdf-exporting #capability {
   font-size: 13.3333px;
   color: #222;
 }
+
+.wn-button {
+  margin-left: .4rem;
+  padding: .45rem .7rem;
+  border: 1px solid #a8bdcb;
+  border-radius: 5px;
+  background: #fff;
+  color: #235c7c;
+  cursor: pointer;
+  font: inherit;
+}
+
+.wn-banner {
+  margin: .7rem 0 1rem;
+  border: 1px solid #c6d7e4;
+  border-left: 4px solid #3b789d;
+  border-radius: 6px;
+  background: #f5f9fc;
+  padding: .75rem 1rem;
+  color: #243b4a;
+}
+.wn-banner[hidden] { display: none !important; }
+.wn-banner strong { display: block; margin-bottom: .25rem; }
+.wn-banner p { margin: .2rem 0 .6rem; }
+.wn-banner button {
+  font: inherit;
+  padding: .3rem .65rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+#wn-view {
+  background: #fff;
+  border: 1px solid #4a7c99;
+  color: #225b7d;
+}
+#wn-dismiss {
+  margin-left: .45rem;
+  background: transparent;
+  border: none;
+  color: #345d77;
+  text-decoration: underline;
+}
+
+.wn-dialog {
+  box-sizing: border-box;
+  width: min(560px, calc(100vw - 2rem));
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 1.2rem;
+  border-radius: 9px;
+  border: 1px solid #bcd0dd;
+  background: #fff;
+  color: #243746;
+  box-shadow: 0 12px 38px #1233;
+}
+.wn-dialog:not([open]) { display: none; }
+.wn-dialog::backdrop { background: #122b3c88; }
+.wn-dialog-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: .8rem;
+}
+.wn-dialog h2 { font-size: 1.3rem; margin: 0; }
+.wn-dialog h3 { font-size: 1rem; margin: 0 0 .2rem; }
+.wn-dialog p { line-height: 1.5; }
+#wn-close {
+  border: 1px solid #c8d6df;
+  background: #fff;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1.3rem;
+  padding: .1rem .5rem;
+}
+.wn-release {
+  color: #526b7d;
+  font-size: .85rem;
+  margin: .4rem 0 .8rem;
+}
+.wn-feature {
+  padding: .65rem 0;
+  border-bottom: 1px solid #e4eaf0;
+}
+.wn-feature p { margin: 0; }
+.wn-reassure {
+  background: #f2f6f8;
+  padding: .7rem;
+  border-radius: 5px;
+}
+.wn-dialog details { margin-top: 1rem; }
+.wn-dialog summary { cursor: pointer; font-weight: 600; }
+.wn-footer a { color: #205e84; }
+
+
+/* What's new — hover and keyboard accessibility */
+.wn-button:hover:not(:disabled),
+#wn-view:hover:not(:disabled),
+#wn-close:hover:not(:disabled) {
+  background: #eaf3f9;
+  border-color: #005eb8;
+  color: #003f87;
+}
+
+#wn-dismiss:hover:not(:disabled) {
+  background: transparent;
+  border-color: transparent;
+  color: #003f87;
+  text-decoration: underline;
+}
+
+.wn-button:focus-visible,
+.wn-banner button:focus-visible,
+.wn-dialog button:focus-visible,
+.wn-dialog a:focus-visible {
+  outline: 3px solid #ffb81c;
+  outline-offset: 2px;
+}
+
+/* Release information should not appear on printed charts */
+@media print {
+  .wn-banner,
+  .wn-dialog {
+    display: none !important;
+  }
+}
+
