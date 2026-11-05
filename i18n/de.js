@@ -1364,7 +1364,28 @@ window.SimpleSPCi18n.registerLanguage("de", {
   "summary.xmr.detail.zone45": "4 von 5 jenseits von 1σ",
   "summary.xmr.detail.windows": "zutreffende Prüfintervalle",
   "summary.xmr.detail.stretches": "zusammengefasste Abschnitte",
-  "summary.xmr.detail.outliers": "Weitere ungewöhnliche Beobachtungen"
+  "summary.xmr.detail.outliers": "Weitere ungewöhnliche Beobachtungen",
+
+
+  // November 2026 — Neuerungen
+  "whatsNew.button": "Neuerungen",
+  "whatsNew.bannerTitle": "SimpleSPC wurde aktualisiert!",
+  "whatsNew.bannerText": "Weitere Sprachen und verständlichere Diagrammerklärungen sind verfügbar. Die gewohnten Funktionen bleiben erhalten.",
+  "whatsNew.view": "Neuerungen ansehen",
+  "whatsNew.dismiss": "Ausblenden",
+  "whatsNew.title": "Was ist neu in SimpleSPC?",
+  "whatsNew.release": "Aktualisierung November 2026 · v2026.11",
+  "whatsNew.intro": "Wir haben einige Verbesserungen vorgenommen, damit SPC-Diagramme leichter zu nutzen und zu verstehen sind.",
+  "whatsNew.languagesTitle": "Mehr Sprachen",
+  "whatsNew.languagesText": "Wählen Sie aus sechs Sprachen, mit übersetzten Hilfetexten und Diagrammerklärungen.",
+  "whatsNew.signalsTitle": "Verständlichere Erklärungen",
+  "whatsNew.signalsText": "Sehen Sie, welche Beobachtungen und Regeln Signale für Sonderursachen ausgelöst haben.",
+  "whatsNew.refinementsTitle": "Verbesserungen und Fehlerbehebungen",
+  "whatsNew.refinementsText": "Verbesserungen bei Tooltips, X̄–S-Diagrammen, Zahlenformaten und Exporten.",
+  "whatsNew.reassure": "Sie können SimpleSPC wie gewohnt weiterverwenden. Sie müssen nichts anders machen.",
+  "whatsNew.history": "Frühere Versionen auf GitHub",
+  "whatsNew.closeAria": "Neuerungen schließen"
+
 
 
 });

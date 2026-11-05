@@ -2181,7 +2181,28 @@ window.SimpleSPCi18n.registerLanguage("en", {
   "setup.pareto.card1": "<p style=\"margin:0;\">You want to identify which categories account for the most recorded occurrences. A Pareto chart ranks categories from most to least frequent, with a cumulative percentage line.</p>",
   "setup.pareto.card2": "<ul style=\"margin:0;\"><li><strong>Category column</strong> → category to compare</li><li><strong>Frequency / count column</strong> → how to count occurrences</li></ul><p style=\"margin-bottom:0;\">If each row is one occurrence, select <strong>(count each row as 1)</strong>. If your data are already summarised, select the numeric count column.</p>",
   "setup.pareto.card5": "<p style=\"margin:0;\">Blue bars show the number of occurrences per category. The red line shows cumulative percentage.<br><br>The dashed 80% line helps prioritisation; it is <strong>not a statistical control limit</strong>.</p>",
-  "setup.pareto.card6": "<p style=\"margin:0;\">Do not assume the most frequent categories are necessarily the root causes; they are starting points for investigation.<br><br>If using a numeric count column, values must be non-negative integers. At least two categories with positive counts are needed.</p>"
+  "setup.pareto.card6": "<p style=\"margin:0;\">Do not assume the most frequent categories are necessarily the root causes; they are starting points for investigation.<br><br>If using a numeric count column, values must be non-negative integers. At least two categories with positive counts are needed.</p>",
+
+
+  // November 2026 — What's new
+  "whatsNew.button": "What's new?",
+  "whatsNew.bannerTitle": "SimpleSPC has been updated!",
+  "whatsNew.bannerText": "SimpleSPC now supports more languages and offers clearer chart explanations. Your familiar features are still here.",
+  "whatsNew.view": "See what's new",
+  "whatsNew.dismiss": "Dismiss",
+  "whatsNew.title": "What's new in SimpleSPC?",
+  "whatsNew.release": "November 2026 update · v2026.11",
+  "whatsNew.intro": "We've made a few improvements to help you use and understand SPC charts.",
+  "whatsNew.languagesTitle": "More languages",
+  "whatsNew.languagesText": "Choose from six languages, with translated guidance and chart explanations.",
+  "whatsNew.signalsTitle": "Clearer chart explanations",
+  "whatsNew.signalsText": "Find out which observations and rules are behind special-cause signals.",
+  "whatsNew.refinementsTitle": "Improvements and fixes",
+  "whatsNew.refinementsText": "Refinements to tooltips, X̄–S charts, number formats and exporting.",
+  "whatsNew.reassure": "You can keep using SimpleSPC as before. You don't need to do anything differently.",
+  "whatsNew.history": "Previous releases on GitHub",
+  "whatsNew.closeAria": "Close What's new"
+
 
 
 
