@@ -1779,14 +1779,17 @@ body.pdf-exporting #capability {
 .wn-dialog h2 { font-size: 1.3rem; margin: 0; }
 .wn-dialog h3 { font-size: 1rem; margin: 0 0 .2rem; }
 .wn-dialog p { line-height: 1.5; }
+
 #wn-close {
   border: 1px solid #c8d6df;
   background: #fff;
+  color: #243746;
   border-radius: 5px;
   cursor: pointer;
   font-size: 1.3rem;
   padding: .1rem .5rem;
 }
+
 .wn-release {
   color: #526b7d;
   font-size: .85rem;
