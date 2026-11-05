@@ -82,16 +82,40 @@
   title="Keep your loaded data and selected columns, but reset chart settings including targets, splits, annotations, rules and formatting."
 >Reset chart</button>
 
-<button type="button" style="margin-left:0.5rem;" onclick="toggleHelpSection()" data-i18n="buttons.help">Help &amp; guidance</button>
-<button type="button" style="margin-left:0.5rem;" onclick="toggleSpcHelper()" data-i18n="buttons.spcHelper">SPC helper</button>
+
+<button
+  type="button"
+  style="margin-left:0.5rem;"
+  onclick="toggleHelpSection()"
+  data-i18n="buttons.help"
+  data-i18n-title="buttons.helpTitle"
+  title="Open instructions and practical guidance for using SimpleSPC.">
+  Help &amp; guidance
+</button>
+
+
+<button
+  type="button"
+  style="margin-left:0.5rem;"
+  onclick="toggleSpcHelper()"
+  data-i18n="buttons.spcHelper"
+  data-i18n-title="buttons.spcHelperTitle"
+  title="Ask questions about choosing, creating and interpreting SPC charts.">
+  SPC helper
+</button>
+
+
 
 <button
   id="whatsNewButton"
   type="button"
   class="wn-button"
-  data-i18n="whatsNew.button">
+  data-i18n="whatsNew.button"
+  data-i18n-title="whatsNew.buttonTitle"
+  title="See what's changed in the latest SimpleSPC update.">
   What's new?
 </button>
+
 
 <div id="errorMessage" class="error"></div>
 </div>
