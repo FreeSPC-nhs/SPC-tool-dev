@@ -25974,3 +25974,110 @@ if (downloadPdfBtn) {
 }
 
 renderHelperState();
+
+
+/* ============================================================
+   SIMPLESPC — WHAT'S NEW / RELEASE INFORMATION
+   ============================================================ */
+
+// Update these when preparing a new release.
+const SIMPLESPC_WHATS_NEW_VERSION = "v2026.11";
+const SIMPLESPC_WHATS_NEW_SHOW_NOTICE = true;
+
+function initWhatsNew() {
+  const button = document.getElementById("whatsNewButton");
+  const banner = document.getElementById("whatsNewBanner");
+  const view = document.getElementById("wn-view");
+  const dismiss = document.getElementById("wn-dismiss");
+  const dialog = document.getElementById("whatsNewDialog");
+  const close = document.getElementById("wn-close");
+
+  if (!button || !banner || !view ||
+      !dismiss || !dialog || !close) return;
+
+  // Do not show release announcements in portable HTML charts.
+  if (window.location.protocol === "file:") {
+    button.hidden = true;
+    banner.hidden = true;
+    return;
+  }
+
+  // Keep development and public preferences separate.
+  // Both GitHub Pages apps share the same browser origin.
+  const appPath =
+    window.location.pathname.split("/").filter(Boolean)[0] || "root";
+
+  const storageKey =
+    `simplespc:whats-new:seen:${appPath}`;
+
+  let storageAvailable = true;
+  let alreadySeen = false;
+
+  try {
+    alreadySeen =
+      window.localStorage.getItem(storageKey) ===
+      SIMPLESPC_WHATS_NEW_VERSION;
+  } catch (_) {
+    storageAvailable = false;
+  }
+
+  // Don't repeatedly announce an update already acknowledged.
+  // If storage is unavailable, retain the permanent button
+  // but omit the recurring banner.
+  banner.hidden =
+    !SIMPLESPC_WHATS_NEW_SHOW_NOTICE ||
+    alreadySeen ||
+    !storageAvailable;
+
+  function markSeen() {
+    banner.hidden = true;
+
+    if (storageAvailable) {
+      try {
+        window.localStorage.setItem(
+          storageKey,
+          SIMPLESPC_WHATS_NEW_VERSION
+        );
+      } catch (_) {
+        // The release information still works without storage.
+      }
+    }
+  }
+
+  let returnFocusTo = button;
+
+  function openWhatsNew(event) {
+    returnFocusTo = event.currentTarget;
+    markSeen();
+
+    if (!dialog.open) {
+      dialog.showModal();
+    }
+  }
+
+  // Open the release information from either location.
+  button.addEventListener("click", openWhatsNew);
+  view.addEventListener("click", openWhatsNew);
+
+  // Dismiss without opening the information.
+  dismiss.addEventListener("click", markSeen);
+
+  // Close the panel.
+  close.addEventListener("click", () => dialog.close());
+
+  // Return keyboard focus to the button that opened it.
+  dialog.addEventListener("close", () => {
+    returnFocusTo.focus();
+  });
+}
+
+// Initialise after the HTML has loaded.
+if (document.readyState === "loading") {
+  document.addEventListener(
+    "DOMContentLoaded",
+    initWhatsNew,
+    { once: true }
+  );
+} else {
+  initWhatsNew();
+}

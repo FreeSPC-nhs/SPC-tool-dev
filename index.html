@@ -85,8 +85,53 @@
 <button type="button" style="margin-left:0.5rem;" onclick="toggleHelpSection()" data-i18n="buttons.help">Help &amp; guidance</button>
 <button type="button" style="margin-left:0.5rem;" onclick="toggleSpcHelper()" data-i18n="buttons.spcHelper">SPC helper</button>
 
+<button
+  id="whatsNewButton"
+  type="button"
+  class="wn-button"
+  data-i18n="whatsNew.button">
+  What's new?
+</button>
+
 <div id="errorMessage" class="error"></div>
 </div>
+
+
+<!-- What's new — dismissible release notification -->
+<section
+  id="whatsNewBanner"
+  class="wn-banner"
+  role="status"
+  aria-live="polite"
+  hidden>
+
+  <strong data-i18n="whatsNew.bannerTitle">
+    SimpleSPC has been updated!
+  </strong>
+
+  <p data-i18n="whatsNew.bannerText">
+    SimpleSPC now supports more languages and offers
+    clearer chart explanations. Your familiar features
+    are still here.
+  </p>
+
+  <button
+    id="wn-view"
+    type="button"
+    data-i18n="whatsNew.view">
+    See what's new
+  </button>
+
+  <button
+    id="wn-dismiss"
+    type="button"
+    data-i18n="whatsNew.dismiss">
+    Dismiss
+  </button>
+
+</section>
+<!-- End release notification -->
+
 
 <p class="sub" data-i18n="app.intro">Add your data, choose your chart and settings, then click 'Generate / Recalculate' when needed. You can upload CSV or Excel files, clean data in the editor, and save chart to reopen later. Not sure about SPC? Ask the helper.</p>
 
@@ -2569,6 +2614,86 @@
     </section>
   </div>
 </div>
+
+
+<!-- What's new — release information panel -->
+<dialog
+  id="whatsNewDialog"
+  class="wn-dialog"
+  aria-labelledby="wn-title">
+
+  <div class="wn-dialog-top">
+    <h2 id="wn-title" data-i18n="whatsNew.title">
+      What's new in SimpleSPC?
+    </h2>
+
+    <button
+      id="wn-close"
+      type="button"
+      aria-label="Close What's new"
+      data-i18n-aria-label="whatsNew.closeAria">
+      ×
+    </button>
+  </div>
+
+  <p class="wn-release" data-i18n="whatsNew.release">
+    November 2026 update · v2026.11
+  </p>
+
+  <p data-i18n="whatsNew.intro">
+    We've made a few improvements to help you use
+    and understand SPC charts.
+  </p>
+
+  <section class="wn-feature">
+    <h3 data-i18n="whatsNew.languagesTitle">
+      More languages
+    </h3>
+    <p data-i18n="whatsNew.languagesText">
+      Choose from six languages, with translated
+      guidance and chart explanations.
+    </p>
+  </section>
+
+  <section class="wn-feature">
+    <h3 data-i18n="whatsNew.signalsTitle">
+      Clearer chart explanations
+    </h3>
+    <p data-i18n="whatsNew.signalsText">
+      Find out which observations and rules are
+      behind special-cause signals.
+    </p>
+  </section>
+
+  <section class="wn-feature">
+    <h3 data-i18n="whatsNew.refinementsTitle">
+      Improvements and fixes
+    </h3>
+    <p data-i18n="whatsNew.refinementsText">
+      Refinements to tooltips, X̄–S charts,
+      number formats and exporting.
+    </p>
+  </section>
+
+  <p class="wn-reassure" data-i18n="whatsNew.reassure">
+    You can keep using SimpleSPC as before.
+    You don't need to do anything differently.
+  </p>
+
+  <p class="wn-footer">
+    <a
+      href="https://github.com/FreeSPC-nhs/spc-web-tool/releases"
+      target="_blank"
+      rel="noopener noreferrer"
+      data-i18n="whatsNew.history">
+      Previous releases on GitHub
+    </a>
+  </p>
+
+</dialog>
+<!-- End What's new panel -->
+
+
 
 <!-- RULE EXPLAINER MODAL -->
 <div id="ruleExplainerModal" class="modal" aria-hidden="true">
