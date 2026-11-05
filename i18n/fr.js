@@ -2344,7 +2344,6 @@ window.SimpleSPCi18n.registerLanguage("fr", {
   "summary.xmr.detail.stretches": "séquences regroupées",
   "summary.xmr.detail.outliers": "Autres observations inhabituelles",
 
-
   // Novembre 2026 — Nouveautés
   "whatsNew.button": "Nouveautés",
   "whatsNew.bannerTitle": "SimpleSPC a été mis à jour !",
@@ -2362,7 +2361,13 @@ window.SimpleSPCi18n.registerLanguage("fr", {
   "whatsNew.refinementsText": "Améliorations des infobulles, des cartes X̄–S, des formats numériques et des exportations.",
   "whatsNew.reassure": "Vous pouvez continuer à utiliser SimpleSPC comme avant. Vous n’avez rien à faire différemment.",
   "whatsNew.history": "Versions précédentes sur GitHub",
-  "whatsNew.closeAria": "Fermer les nouveautés"
+  "whatsNew.closeAria": "Fermer les nouveautés",
+
+//Button tooltips
+  "buttons.helpTitle": "Ouvrir les instructions et les conseils pratiques pour utiliser SimpleSPC.",
+  "buttons.spcHelperTitle": "Poser des questions sur le choix, la création et l’interprétation des cartes SPC.",
+  "whatsNew.buttonTitle": "Découvrir les changements apportés lors de la dernière mise à jour de SimpleSPC."
+
 
 
 

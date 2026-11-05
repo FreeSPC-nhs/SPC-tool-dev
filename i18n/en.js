@@ -2183,7 +2183,6 @@ window.SimpleSPCi18n.registerLanguage("en", {
   "setup.pareto.card5": "<p style=\"margin:0;\">Blue bars show the number of occurrences per category. The red line shows cumulative percentage.<br><br>The dashed 80% line helps prioritisation; it is <strong>not a statistical control limit</strong>.</p>",
   "setup.pareto.card6": "<p style=\"margin:0;\">Do not assume the most frequent categories are necessarily the root causes; they are starting points for investigation.<br><br>If using a numeric count column, values must be non-negative integers. At least two categories with positive counts are needed.</p>",
 
-
   // November 2026 — What's new
   "whatsNew.button": "What's new?",
   "whatsNew.bannerTitle": "SimpleSPC has been updated!",
@@ -2201,10 +2200,12 @@ window.SimpleSPCi18n.registerLanguage("en", {
   "whatsNew.refinementsText": "Refinements to tooltips, X̄–S charts, number formats and exporting.",
   "whatsNew.reassure": "You can keep using SimpleSPC as before. You don't need to do anything differently.",
   "whatsNew.history": "Previous releases on GitHub",
-  "whatsNew.closeAria": "Close What's new"
+  "whatsNew.closeAria": "Close What's new",
 
-
-
+//Button tooltips
+  "buttons.helpTitle": "Open instructions and practical guidance for using SimpleSPC.",
+  "buttons.spcHelperTitle": "Ask questions about choosing, creating and interpreting SPC charts.",
+  "whatsNew.buttonTitle": "See what's changed in the latest SimpleSPC update."
 
 
 

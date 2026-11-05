@@ -1384,7 +1384,13 @@ window.SimpleSPCi18n.registerLanguage("es", {
   "whatsNew.refinementsText": "Mejoras en la información emergente, los gráficos X̄–S, los formatos numéricos y las exportaciones.",
   "whatsNew.reassure": "Puede seguir usando SimpleSPC como antes. No necesita hacer nada diferente.",
   "whatsNew.history": "Versiones anteriores en GitHub",
-  "whatsNew.closeAria": "Cerrar novedades"
+  "whatsNew.closeAria": "Cerrar novedades",
+
+//Button tooltips
+  "buttons.helpTitle": "Abrir instrucciones y consejos prácticos para utilizar SimpleSPC.",
+  "buttons.spcHelperTitle": "Hacer preguntas sobre cómo elegir, crear e interpretar gráficos SPC.",
+  "whatsNew.buttonTitle": "Consultar los cambios de la última actualización de SimpleSPC."
+
 
 
 });

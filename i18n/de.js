@@ -1384,7 +1384,14 @@ window.SimpleSPCi18n.registerLanguage("de", {
   "whatsNew.refinementsText": "Verbesserungen bei Tooltips, X̄–S-Diagrammen, Zahlenformaten und Exporten.",
   "whatsNew.reassure": "Sie können SimpleSPC wie gewohnt weiterverwenden. Sie müssen nichts anders machen.",
   "whatsNew.history": "Frühere Versionen auf GitHub",
-  "whatsNew.closeAria": "Neuerungen schließen"
+  "whatsNew.closeAria": "Neuerungen schließen",
+
+//Button tooltips
+  "buttons.helpTitle": "Anleitungen und praktische Hinweise zur Verwendung von SimpleSPC öffnen.",
+  "buttons.spcHelperTitle": "Fragen zur Auswahl, Erstellung und Interpretation von SPC-Diagrammen stellen.",
+  "whatsNew.buttonTitle": "Änderungen der neuesten SimpleSPC-Aktualisierung ansehen."
+
+
 
 
 

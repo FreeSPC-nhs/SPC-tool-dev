@@ -1384,7 +1384,14 @@ window.SimpleSPCi18n.registerLanguage("pt", {
   "whatsNew.refinementsText": "Melhorias nas informações apresentadas, nas cartas X̄–S, nos formatos numéricos e nas exportações.",
   "whatsNew.reassure": "Pode continuar a utilizar o SimpleSPC como antes. Não precisa de fazer nada de diferente.",
   "whatsNew.history": "Versões anteriores no GitHub",
-  "whatsNew.closeAria": "Fechar novidades"
+  "whatsNew.closeAria": "Fechar novidades",
+
+//Button tooltips
+  "buttons.helpTitle": "Abra instruções e orientações práticas sobre como utilizar o SimpleSPC.",
+  "buttons.spcHelperTitle": "Faça perguntas sobre como escolher, criar e interpretar cartas SPC.",
+  "whatsNew.buttonTitle": "Veja o que mudou na atualização mais recente do SimpleSPC."
+
+
 
 
 });
