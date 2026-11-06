@@ -11098,9 +11098,12 @@ const draggableAnnotationLabelsPlugin = {
       drag = {
         index: hitIndex,
         startY: event.clientY,
-        startAdjust: Number.isFinite(annotations[hitIndex].yAdjust)
-          ? annotations[hitIndex].yAdjust
-          : 0
+        // Use the existing offset, including the automatic
+// initial position when the label has never been dragged.
+startAdjust: Number.isFinite(annotations[hitIndex].yAdjust)
+  ? annotations[hitIndex].yAdjust
+  : (buildAnnotationConfig(chart.data.labels)["annot" + hitIndex]
+      ?.label?.yAdjust ?? 0)
       };
 
             canvas.setPointerCapture(event.pointerId);
@@ -11111,32 +11114,55 @@ const draggableAnnotationLabelsPlugin = {
       if (!Array.isArray(annotations)) return;
 
       if (drag) {
-        const deltaY = event.clientY - drag.startY;
+        
+const area = chart.chartArea;
+if (!area) return;
 
-        const chartTopLimit = chart.chartArea.top +10;
-const chartBottomLimit = chart.chartArea.bottom -10;
+// Convert pointer movement into chart coordinates.
+const rect = canvas.getBoundingClientRect();
+const scaleY = rect.height > 0
+  ? chart.height / rect.height
+  : 1;
 
-const proposedAdjust = drag.startAdjust + deltaY;
+const deltaY = (event.clientY - drag.startY) * scaleY;
 
+// Find the label and its position.
 const annotationConfig = buildAnnotationConfig(chart.data.labels);
-const thisConfig = annotationConfig["annot" + drag.index];
-const position = thisConfig?.label?.position || "end";
+const label = annotationConfig["annot" + drag.index]?.label;
+if (!label) return;
 
-let proposedY = position === "start"
-  ? chart.chartArea.bottom + proposedAdjust
-  : chart.chartArea.top + proposedAdjust;
+// Allow for the full height of the label, including
+// multiple text lines, padding and its border.
+const lineCount = Array.isArray(label.content)
+  ? Math.max(1, label.content.length)
+  : 1;
 
-if (proposedY < chartTopLimit) {
-  proposedY = chartTopLimit;
-}
+const fontSize = Number(label.font?.size) || 10;
+const padding = Number(label.padding) || 6;
 
-if (proposedY > chartBottomLimit) {
-  proposedY = chartBottomLimit;
-}
+const halfLabelHeight =
+  (lineCount * fontSize * 1.2 + 2 * padding + 2) / 2;
 
-annotations[drag.index].yAdjust = position === "start"
-  ? proposedY - chart.chartArea.bottom
-  : proposedY - chart.chartArea.top;
+// Keep a small margin inside the visible plot.
+const inset = halfLabelHeight + 4;
+
+// Existing labels can be anchored at the top or bottom.
+const anchorY = label.position === "start"
+  ? area.bottom
+  : area.top;
+
+const proposedY = anchorY + drag.startAdjust + deltaY;
+
+const topLimit = area.top + inset;
+const bottomLimit = area.bottom - inset;
+
+// Keep the complete label inside the plot boundaries.
+const boundedY = topLimit <= bottomLimit
+  ? Math.max(topLimit, Math.min(bottomLimit, proposedY))
+  : (area.top + area.bottom) / 2;
+
+annotations[drag.index].yAdjust = boundedY - anchorY;
+
 
         redraw();
         canvas.style.cursor = "ns-resize";
