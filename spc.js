@@ -10981,32 +10981,14 @@ function buildAnnotationConfig(labels) {
     .filter(a => a.xIndex >= 0)
     .sort((a, b) => a.xIndex - b.xIndex);
 
-  const laneLastEnd = [];
-
+    // All annotations now share one vertical starting position.
+  // Manually dragged offsets are retained.
   items.forEach((a) => {
     const wrapped = wrapAnnotationText(a.label, 24);
-    const longest = wrapped.reduce((m, l) => Math.max(m, l.length), 0);
 
-    const span = Math.max(1, Math.ceil(longest / 7));
-
-    let lane = 0;
-    while (laneLastEnd[lane] !== undefined && a.xIndex <= laneLastEnd[lane]) {
-      lane++;
-    }
-    laneLastEnd[lane] = a.xIndex + span;
-
-    const level = Math.floor(lane / 2);
-    const above = lane % 2 === 0;
-
-    // Positive offsets move top labels inward.
-// Negative offsets move bottom labels inward.
-const defaultYAdjust = above
-  ? (4 + level * 10)
-  : -(4 + level * 10);
-
-	const yAdjust = Number.isFinite(a.yAdjust)
-	  ? a.yAdjust
-	  : defaultYAdjust;
+    const yAdjust = Number.isFinite(a.yAdjust)
+      ? a.yAdjust
+      : 0;
 
     cfg["annot" + a._idx] = {
       type: "line",
@@ -11030,7 +11012,7 @@ const defaultYAdjust = above
         },
 
         // Keep labels near the ends of the annotation line
-        position: above ? "end" : "start",
+        position: "center",
 
         yAdjust: yAdjust,
         textAlign: "left"
@@ -11134,81 +11116,20 @@ function getRenderedAnnotationLabelBounds(index) {
 
       event.preventDefault();
 
-      drag = {
+      const label = buildAnnotationConfig(chart.data.labels)[
+  "annot" + hitIndex
+]?.label;
+
+drag = {
   index: hitIndex,
   startY: event.clientY,
-lastY: event.clientY,
-  startAdjust: Number.isFinite(
-    annotations[hitIndex].yAdjust
-  )
-    ? annotations[hitIndex].yAdjust
-    : (buildAnnotationConfig(chart.data.labels)[
-        "annot" + hitIndex
-      ]?.label?.yAdjust ?? 0),
-
-  startBounds:
-    getRenderedAnnotationLabelBounds(hitIndex)
+  startAdjust: Number(label?.yAdjust) || 0
 };
+if (drag) {
+  const area = chart.chartArea;
+  const rect = canvas.getBoundingClientRect();
 
-            canvas.setPointerCapture(event.pointerId);
-      canvas.style.cursor = "ns-resize";
-    }, { signal: dragEvents.signal });
-
-    canvas.addEventListener("pointermove", (event) => {
-      if (!Array.isArray(annotations)) return;
-
-      if (drag) {
-        
-
-
-const area = chart.chartArea;
-const rect = canvas.getBoundingClientRect();
-
-if (!area || rect.height <= 0) return;
-
-const scaleY = chart.height / rect.height;
-const margin = 2;
-
-// Read the label's actual current position.
-const rendered = getRenderedAnnotationLabelBounds(drag.index);
-
-if (rendered) {
-
-  // Use movement since the PREVIOUS pointer event,
-  // rather than recalculating from the start of the drag.
-  const deltaY =
-    (event.clientY - drag.lastY) * scaleY;
-
-  drag.lastY = event.clientY;
-
-  // The entire label must remain inside the plot.
-  const minMovement =
-    area.top + margin - rendered.top;
-
-  const maxMovement =
-    area.bottom - margin - rendered.bottom;
-
-  const movement = minMovement <= maxMovement
-    ? Math.max(
-        minMovement,
-        Math.min(maxMovement, deltaY)
-      )
-    : 0;
-
-  const config = buildAnnotationConfig(chart.data.labels);
-
-  const currentAdjust =
-    config["annot" + drag.index]?.label?.yAdjust ?? 0;
-
-  annotations[drag.index].yAdjust =
-    currentAdjust + movement;
-
-} else {
-
-  // Fallback for annotation-plugin versions that do
-  // not expose the actual rendered label rectangle.
-  const deltaY =
-    (event.clientY - drag.startY) * scaleY;
+  if (!area || rect.height <= 0) return;
 
   const label = buildAnnotationConfig(chart.data.labels)[
     "annot" + drag.index
@@ -11216,45 +11137,63 @@ if (rendered) {
 
   if (!label) return;
 
-  const count = Array.isArray(label.content)
+  // Measure the vertical space required by this label.
+  const lineCount = Array.isArray(label.content)
     ? Math.max(1, label.content.length)
     : 1;
 
-  const height =
-    count * (Number(label.font?.size) || 10) * 1.2 +
-    2 * (Number(label.padding) || 6) + 2;
+  const fontSize = Number(label.font?.size) || 10;
 
-  const anchor =
-    label.position === "start"
-      ? area.bottom
-      : area.top;
+  const lineHeight =
+    Number(Chart.helpers?.toFont?.(label.font)?.lineHeight) ||
+    fontSize * 1.2;
 
-  const fallbackTop =
-    anchor + drag.startAdjust - height / 2;
+  const padding = label.padding;
 
-  const bounds = drag.startBounds || {
-    top: fallbackTop,
-    bottom: fallbackTop + height
-  };
+  const padTop = typeof padding === "number"
+    ? padding
+    : (Number(padding?.top) || 0);
 
-  const minDelta = area.top + margin - bounds.top;
-  const maxDelta = area.bottom - margin - bounds.bottom;
+  const padBottom = typeof padding === "number"
+    ? padding
+    : (Number(padding?.bottom) || 0);
 
-  const boundedDelta = minDelta <= maxDelta
-    ? Math.max(minDelta, Math.min(maxDelta, deltaY))
-    : 0;
+  const border = Number(label.borderWidth) || 0;
 
-  annotations[drag.index].yAdjust =
-    drag.startAdjust + boundedDelta;
+  const halfHeight =
+    (lineCount * lineHeight +
+      padTop + padBottom + 2 * border) / 2;
+
+  // Every annotation is anchored at the chart centre.
+  // Keep its complete box within the plotting area.
+  const plotHeight = area.bottom - area.top;
+  const margin = 3;
+
+  const maxAdjust = Math.max(
+    0,
+    plotHeight / 2 - halfHeight - margin
+  );
+
+  // Convert pointer movement to chart pixels.
+  const scaleY = chart.height / rect.height;
+
+  const deltaY =
+    (event.clientY - drag.startY) * scaleY;
+
+  const proposedAdjust =
+    drag.startAdjust + deltaY;
+
+  annotations[drag.index].yAdjust = Math.max(
+    -maxAdjust,
+    Math.min(maxAdjust, proposedAdjust)
+  );
+
+  redraw();
+
+  canvas.style.cursor = "ns-resize";
+  return;
 }
 
-
-
-
-        redraw();
-        canvas.style.cursor = "ns-resize";
-        return;
-      }
 
             canvas.style.cursor = getHitAnnotation(event) !== null ? "ns-resize" : "";
     }, { signal: dragEvents.signal });
