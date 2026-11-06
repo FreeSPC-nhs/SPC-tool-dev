@@ -10998,10 +10998,11 @@ function buildAnnotationConfig(labels) {
     const level = Math.floor(lane / 2);
     const above = lane % 2 === 0;
 
-    // Small offsets only, unless the user has dragged the label
-	const defaultYAdjust = above
-	  ? -(4 + level * 10)
-	  : (4 + level * 10);
+    // Positive offsets move top labels inward.
+// Negative offsets move bottom labels inward.
+const defaultYAdjust = above
+  ? (4 + level * 10)
+  : -(4 + level * 10);
 
 	const yAdjust = Number.isFinite(a.yAdjust)
 	  ? a.yAdjust
@@ -11136,7 +11137,7 @@ function getRenderedAnnotationLabelBounds(index) {
       drag = {
   index: hitIndex,
   startY: event.clientY,
-
+lastY: event.clientY,
   startAdjust: Number.isFinite(
     annotations[hitIndex].yAdjust
   )
@@ -11159,71 +11160,94 @@ function getRenderedAnnotationLabelBounds(index) {
       if (drag) {
         
 
+
 const area = chart.chartArea;
 const rect = canvas.getBoundingClientRect();
 
 if (!area || rect.height <= 0) return;
 
-// Convert mouse movement into chart pixels.
 const scaleY = chart.height / rect.height;
-
-const deltaY =
-  (event.clientY - drag.startY) * scaleY;
-
-// Use the actual rendered label boundaries when available.
-const config = buildAnnotationConfig(chart.data.labels)[
-  "annot" + drag.index
-]?.label;
-
-// Fallback for annotation-plugin versions that do not
-// expose rendered label geometry.
-const lines = Array.isArray(config?.content)
-  ? config.content
-  : [config?.content || ""];
-
-const padding =
-  typeof config?.padding === "number"
-    ? config.padding
-    : 6;
-
-const fontSize = Number(config?.font?.size) || 10;
-
-const estimatedHeight =
-  Math.max(1, lines.length) * fontSize * 1.2 +
-  2 * padding + 2;
-
-const fallbackTop =
-  config?.position === "start"
-    ? area.bottom - estimatedHeight + drag.startAdjust
-    : area.top + drag.startAdjust;
-
-const bounds = drag.startBounds || {
-  top: fallbackTop,
-  bottom: fallbackTop + estimatedHeight
-};
-
-// Only a 2-pixel margin at the edges.
 const margin = 2;
 
-// Calculate allowable movement of the WHOLE label.
-const minDelta =
-  area.top + margin - bounds.top;
+// Read the label's actual current position.
+const rendered = getRenderedAnnotationLabelBounds(drag.index);
 
-const maxDelta =
-  area.bottom - margin - bounds.bottom;
+if (rendered) {
 
-// Constrain the mouse movement, not the label anchor.
-const boundedDelta =
-  minDelta <= maxDelta
+  // Use movement since the PREVIOUS pointer event,
+  // rather than recalculating from the start of the drag.
+  const deltaY =
+    (event.clientY - drag.lastY) * scaleY;
+
+  drag.lastY = event.clientY;
+
+  // The entire label must remain inside the plot.
+  const minMovement =
+    area.top + margin - rendered.top;
+
+  const maxMovement =
+    area.bottom - margin - rendered.bottom;
+
+  const movement = minMovement <= maxMovement
     ? Math.max(
-        minDelta,
-        Math.min(maxDelta, deltaY)
+        minMovement,
+        Math.min(maxMovement, deltaY)
       )
     : 0;
 
-// Preserve the original starting offset.
-annotations[drag.index].yAdjust =
-  drag.startAdjust + boundedDelta;
+  const config = buildAnnotationConfig(chart.data.labels);
+
+  const currentAdjust =
+    config["annot" + drag.index]?.label?.yAdjust ?? 0;
+
+  annotations[drag.index].yAdjust =
+    currentAdjust + movement;
+
+} else {
+
+  // Fallback for annotation-plugin versions that do
+  // not expose the actual rendered label rectangle.
+  const deltaY =
+    (event.clientY - drag.startY) * scaleY;
+
+  const label = buildAnnotationConfig(chart.data.labels)[
+    "annot" + drag.index
+  ]?.label;
+
+  if (!label) return;
+
+  const count = Array.isArray(label.content)
+    ? Math.max(1, label.content.length)
+    : 1;
+
+  const height =
+    count * (Number(label.font?.size) || 10) * 1.2 +
+    2 * (Number(label.padding) || 6) + 2;
+
+  const anchor =
+    label.position === "start"
+      ? area.bottom
+      : area.top;
+
+  const fallbackTop =
+    anchor + drag.startAdjust - height / 2;
+
+  const bounds = drag.startBounds || {
+    top: fallbackTop,
+    bottom: fallbackTop + height
+  };
+
+  const minDelta = area.top + margin - bounds.top;
+  const maxDelta = area.bottom - margin - bounds.bottom;
+
+  const boundedDelta = minDelta <= maxDelta
+    ? Math.max(minDelta, Math.min(maxDelta, deltaY))
+    : 0;
+
+  annotations[drag.index].yAdjust =
+    drag.startAdjust + boundedDelta;
+}
+
 
 
 
