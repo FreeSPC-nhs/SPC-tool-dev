@@ -11045,7 +11045,11 @@ const draggableAnnotationLabelsPlugin = {
 
   afterInit(chart) {
        const canvas = chart.canvas;
-    if (!canvas) return;
+        if (!canvas) return;
+
+    // Remove this chart's drag listeners when it is destroyed.
+    const dragEvents = new AbortController();
+    chart.$annotationDragEvents = dragEvents;
 
     let drag = null;
 
@@ -11099,9 +11103,9 @@ const draggableAnnotationLabelsPlugin = {
           : 0
       };
 
-      canvas.setPointerCapture(event.pointerId);
+            canvas.setPointerCapture(event.pointerId);
       canvas.style.cursor = "ns-resize";
-    });
+    }, { signal: dragEvents.signal });
 
     canvas.addEventListener("pointermove", (event) => {
       if (!Array.isArray(annotations)) return;
@@ -11139,22 +11143,29 @@ annotations[drag.index].yAdjust = position === "start"
         return;
       }
 
-      canvas.style.cursor = getHitAnnotation(event) !== null ? "ns-resize" : "";
-    });
+            canvas.style.cursor = getHitAnnotation(event) !== null ? "ns-resize" : "";
+    }, { signal: dragEvents.signal });
 
-    canvas.addEventListener("pointerup", () => {
+        canvas.addEventListener("pointerup", () => {
       drag = null;
       canvas.style.cursor = "";
-    });
+    }, { signal: dragEvents.signal });
 
     canvas.addEventListener("pointercancel", () => {
       drag = null;
       canvas.style.cursor = "";
-    });
+    }, { signal: dragEvents.signal });
 
     canvas.addEventListener("pointerleave", () => {
       if (!drag) canvas.style.cursor = "";
-    });
+    }, { signal: dragEvents.signal });
+  },
+
+  // Chart.js calls this when a chart is destroyed.
+  // Prevent old chart instances from handling future drags.
+  afterDestroy(chart) {
+    chart.$annotationDragEvents?.abort();
+    delete chart.$annotationDragEvents;
   }
 };
 
