@@ -11053,6 +11053,44 @@ const draggableAnnotationLabelsPlugin = {
 
     let drag = null;
 
+// Find the actual rendered position of an annotation label.
+function getRenderedAnnotationLabelBounds(index) {
+  const id = "annot" + index;
+
+  let plugin;
+
+  try {
+    plugin = Chart.registry?.getPlugin?.("annotation");
+  } catch (_) {
+    return null;
+  }
+
+  const elements = plugin?.getAnnotations?.(chart);
+
+  if (!Array.isArray(elements)) return null;
+
+  const element = elements.find(el =>
+    el?.$context?.id === id ||
+    el?.options?.id === id ||
+    el?.id === id
+  );
+
+  const label = element?.label;
+
+  if (
+    !label ||
+    !Number.isFinite(label.y) ||
+    !Number.isFinite(label.height) ||
+    label.height <= 0
+  ) {
+    return null;
+  }
+
+  return {
+    top: label.y,
+    bottom: label.y + label.height
+  };
+}
     
     function getHitAnnotation(event) {
       // Pareto charts do not support draggable user annotations.
@@ -11096,15 +11134,20 @@ const draggableAnnotationLabelsPlugin = {
       event.preventDefault();
 
       drag = {
-        index: hitIndex,
-        startY: event.clientY,
-        // Use the existing offset, including the automatic
-// initial position when the label has never been dragged.
-startAdjust: Number.isFinite(annotations[hitIndex].yAdjust)
-  ? annotations[hitIndex].yAdjust
-  : (buildAnnotationConfig(chart.data.labels)["annot" + hitIndex]
-      ?.label?.yAdjust ?? 0)
-      };
+  index: hitIndex,
+  startY: event.clientY,
+
+  startAdjust: Number.isFinite(
+    annotations[hitIndex].yAdjust
+  )
+    ? annotations[hitIndex].yAdjust
+    : (buildAnnotationConfig(chart.data.labels)[
+        "annot" + hitIndex
+      ]?.label?.yAdjust ?? 0),
+
+  startBounds:
+    getRenderedAnnotationLabelBounds(hitIndex)
+};
 
             canvas.setPointerCapture(event.pointerId);
       canvas.style.cursor = "ns-resize";
@@ -11115,53 +11158,73 @@ startAdjust: Number.isFinite(annotations[hitIndex].yAdjust)
 
       if (drag) {
         
+
 const area = chart.chartArea;
-if (!area) return;
-
-// Convert pointer movement into chart coordinates.
 const rect = canvas.getBoundingClientRect();
-const scaleY = rect.height > 0
-  ? chart.height / rect.height
-  : 1;
 
-const deltaY = (event.clientY - drag.startY) * scaleY;
+if (!area || rect.height <= 0) return;
 
-// Find the label and its position.
-const annotationConfig = buildAnnotationConfig(chart.data.labels);
-const label = annotationConfig["annot" + drag.index]?.label;
-if (!label) return;
+// Convert mouse movement into chart pixels.
+const scaleY = chart.height / rect.height;
 
-// Allow for the full height of the label, including
-// multiple text lines, padding and its border.
-const lineCount = Array.isArray(label.content)
-  ? Math.max(1, label.content.length)
-  : 1;
+const deltaY =
+  (event.clientY - drag.startY) * scaleY;
 
-const fontSize = Number(label.font?.size) || 10;
-const padding = Number(label.padding) || 6;
+// Use the actual rendered label boundaries when available.
+const config = buildAnnotationConfig(chart.data.labels)[
+  "annot" + drag.index
+]?.label;
 
-const halfLabelHeight =
-  (lineCount * fontSize * 1.2 + 2 * padding + 2) / 2;
+// Fallback for annotation-plugin versions that do not
+// expose rendered label geometry.
+const lines = Array.isArray(config?.content)
+  ? config.content
+  : [config?.content || ""];
 
-// Keep a small margin inside the visible plot.
-const inset = halfLabelHeight + 4;
+const padding =
+  typeof config?.padding === "number"
+    ? config.padding
+    : 6;
 
-// Existing labels can be anchored at the top or bottom.
-const anchorY = label.position === "start"
-  ? area.bottom
-  : area.top;
+const fontSize = Number(config?.font?.size) || 10;
 
-const proposedY = anchorY + drag.startAdjust + deltaY;
+const estimatedHeight =
+  Math.max(1, lines.length) * fontSize * 1.2 +
+  2 * padding + 2;
 
-const topLimit = area.top + inset;
-const bottomLimit = area.bottom - inset;
+const fallbackTop =
+  config?.position === "start"
+    ? area.bottom - estimatedHeight + drag.startAdjust
+    : area.top + drag.startAdjust;
 
-// Keep the complete label inside the plot boundaries.
-const boundedY = topLimit <= bottomLimit
-  ? Math.max(topLimit, Math.min(bottomLimit, proposedY))
-  : (area.top + area.bottom) / 2;
+const bounds = drag.startBounds || {
+  top: fallbackTop,
+  bottom: fallbackTop + estimatedHeight
+};
 
-annotations[drag.index].yAdjust = boundedY - anchorY;
+// Only a 2-pixel margin at the edges.
+const margin = 2;
+
+// Calculate allowable movement of the WHOLE label.
+const minDelta =
+  area.top + margin - bounds.top;
+
+const maxDelta =
+  area.bottom - margin - bounds.bottom;
+
+// Constrain the mouse movement, not the label anchor.
+const boundedDelta =
+  minDelta <= maxDelta
+    ? Math.max(
+        minDelta,
+        Math.min(maxDelta, deltaY)
+      )
+    : 0;
+
+// Preserve the original starting offset.
+annotations[drag.index].yAdjust =
+  drag.startAdjust + boundedDelta;
+
 
 
         redraw();
