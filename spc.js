@@ -11120,12 +11120,28 @@ function getRenderedAnnotationLabelBounds(index) {
   "annot" + hitIndex
 ]?.label;
 
+
 drag = {
   index: hitIndex,
   startY: event.clientY,
   startAdjust: Number(label?.yAdjust) || 0
 };
-if (drag) {
+
+// Capture the pointer while dragging.
+try {
+  canvas.setPointerCapture(event.pointerId);
+} catch (_) {
+  // Some browsers may not support pointer capture.
+}
+
+canvas.style.cursor = "ns-resize";
+
+}, { signal: dragEvents.signal });
+
+// Mouse movement must have its own event listener.
+canvas.addEventListener("pointermove", (event) => {
+  if (drag) {
+
   const area = chart.chartArea;
   const rect = canvas.getBoundingClientRect();
 
